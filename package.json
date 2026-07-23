@@ -1,0 +1,19 @@
+{
+  "name": "aglowy",
+  "version": "1.0.0",
+  "description": "Christian focused application for families or individuals who want to study the bible, create family study projects, and create notes. This is for Jehovah's Witnesses.",
+  "keywords": ["Jehovah's", "Witnesses"],
+  "homepage": "https://github.com/csrobinson86/aglowy#readme",
+  "bugs": { "url": "https://github.com/csrobinson86/aglowy/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/csrobinson86/aglowy.git" },
+  "license": "MIT",
+  "author": "Casey Robinson",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter api dev",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build"
+  }
+}
