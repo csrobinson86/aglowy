@@ -12,7 +12,7 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  apps:
+  apps/api:
     dependencies:
       express:
         specifier: ^5.2.1

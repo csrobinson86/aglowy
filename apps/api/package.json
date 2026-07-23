@@ -1,8 +1,8 @@
 {
-  "name": "apps",
+  "name": "api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "aglowy API server",
+  "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
