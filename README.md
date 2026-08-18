@@ -1,4 +1,4 @@
-  # KinRails
+  # Aglowy
 
   Rails 8.1 SaaS template. Start from kin.
 
@@ -21,7 +21,7 @@
   ## Starting a New Project From This Template
 
   ```bash
-  git clone https://github.com/Kinsley-Analytics/KinRails.git my_new_app
+  git clone https://github.com/Kinsley-Analytics/Aglowy.git my_new_app
   cd my_new_app
   rm -rf .git && git init
   bin/rename my_new_app

@@ -1,6 +1,6 @@
-# KinRails — Claude Code Guide
+# Aglowy — Claude Code Guide
 
-This document defines the architecture, patterns, and conventions for KinRails.
+This document defines the architecture, patterns, and conventions for Aglowy.
 Read this before writing any code. Follow these patterns consistently.
 
 ---
