@@ -1,9 +1,28 @@
-// Design System
-  @use "design_system/reset";
+// Primer design system — https://primer.style/product/getting-started/rails/
+@use "@primer/css/dist/primer";
+@use "@primer/view-components/app/assets/styles/primer_view_components";
 
-// Layouts
-//@use "layouts/design_system";
+// Primitives — mirrors @primer/primitives/dist/css/primitives.css. That file
+// is plain CSS @imports, which Sass leaves as browser requests (404s), so
+// each file is @use'd directly to inline it.
+@use "@primer/primitives/dist/css/base/motion/motion" as base-motion;
+@use "@primer/primitives/dist/css/base/size/size" as base-size;
+@use "@primer/primitives/dist/css/base/size/z-index" as base-z-index;
+@use "@primer/primitives/dist/css/base/typography/typography" as base-typography;
+@use "@primer/primitives/dist/css/functional/motion/motion";
+@use "@primer/primitives/dist/css/functional/size/border";
+@use "@primer/primitives/dist/css/functional/size/breakpoints";
+@use "@primer/primitives/dist/css/functional/size/radius";
+@use "@primer/primitives/dist/css/functional/size/size-coarse";
+@use "@primer/primitives/dist/css/functional/size/size-fine";
+@use "@primer/primitives/dist/css/functional/size/size";
+@use "@primer/primitives/dist/css/functional/size/z-index";
+@use "@primer/primitives/dist/css/functional/spacing/space";
+@use "@primer/primitives/dist/css/functional/typography/typography";
+
+// Themes
+@use "@primer/primitives/dist/css/functional/themes/light";
+@use "@primer/primitives/dist/css/functional/themes/dark";
 
 // Components (add as you build them)
 // @use "components/badge";
-// @use "components/button";

@@ -28,6 +28,10 @@ gem "dartsass-rails"              # Standalone Dart Sass binary — no Node need
 # Testable, reusable view components with sidecar ERB templates.
 # Design system components live in app/components/ with co-located templates.
 gem "view_component"
+# GitHub's Primer design system as ViewComponents. Pinned exactly: pre-1.0,
+# breaking changes land in patch releases. Keep in lockstep with the
+# @primer/view-components npm package. In maintenance mode since Feb 2026.
+gem "primer_view_components", "0.53.5"
 
 # ─── Background Jobs & Infrastructure ────────────────────────────────────────
 # Rails 8 defaults. All DB-backed, no Redis required.

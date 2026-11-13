@@ -1,255 +1,71 @@
-<%# app/views/design_system/show.html.erb %>
-<%# Available in development only at /design-system %>
+<header class="container-lg px-3 py-5">
+  <%= render Primer::Beta::Heading.new(tag: :h1) { "Aglowy Design System" } %>
+  <%= render Primer::Beta::Text.new(tag: :p, color: :muted) do %>
+    Built on Primer ViewComponents.
+    <%= render Primer::Beta::Link.new(href: "https://primer.style/product/components/") { "Component reference" } %>
+  <% end %>
+</header>
 
-<div class="ds">
-  <header class="ds__header">
-    <h1>Aglowy Design System</h1>
-    <p>Living style guide. Tokens, mixins, and components.</p>
-  </header>
+<main class="container-lg px-3 pb-6">
+  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+    <% subhead.with_heading(tag: :h2) { "Buttons" } %>
+  <% end %>
+  <div class="d-flex flex-wrap gap-2 mb-6">
+    <%= render Primer::Beta::Button.new(scheme: :primary) { "Primary" } %>
+    <%= render Primer::Beta::Button.new { "Default" } %>
+    <%= render Primer::Beta::Button.new(scheme: :danger) { "Danger" } %>
+    <%= render Primer::Beta::Button.new(scheme: :invisible) { "Invisible" } %>
+    <%= render Primer::Beta::Button.new do |button| %>
+      <% button.with_leading_visual_icon(icon: :heart) %>
+      With icon
+    <% end %>
+    <%= render Primer::Beta::IconButton.new(icon: :gear, "aria-label": "Settings") %>
+  </div>
 
-  <nav class="ds__nav">
-    <a href="#colors">Colors</a>
-    <a href="#typography">Typography</a>
-    <a href="#spacing">Spacing</a>
-    <a href="#radii">Border Radii</a>
-    <a href="#shadows">Shadows</a>
-    <a href="#buttons">Buttons</a>
-    <a href="#forms">Form Elements</a>
-    <a href="#cards">Cards</a>
-    <a href="#badges">Badges</a>
-  </nav>
+  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+    <% subhead.with_heading(tag: :h2) { "Labels & counters" } %>
+  <% end %>
+  <div class="d-flex flex-wrap flex-items-center gap-2 mb-6">
+    <% %i[default primary accent success attention danger severe done].each do |scheme| %>
+      <%= render Primer::Beta::Label.new(scheme: scheme) { scheme.to_s.humanize } %>
+    <% end %>
+    <%= render Primer::Beta::Counter.new(count: 25) %>
+  </div>
 
-  <%# ─── Colors ──────────────────────────────────────────────────────────── %>
-  <section id="colors" class="ds__section">
-    <h2>Colors</h2>
+  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+    <% subhead.with_heading(tag: :h2) { "Banners" } %>
+  <% end %>
+  <div class="d-flex flex-column gap-2 mb-6">
+    <% %i[default success warning danger].each do |scheme| %>
+      <%= render Primer::Alpha::Banner.new(scheme: scheme) { "This is a #{scheme} banner." } %>
+    <% end %>
+  </div>
 
-    <h3>Neutral</h3>
-    <div class="ds__swatches">
-      <div class="ds__swatch ds__swatch--white"><span>white</span></div>
-      <div class="ds__swatch ds__swatch--gray-50"><span>gray-50</span></div>
-      <div class="ds__swatch ds__swatch--gray-100"><span>gray-100</span></div>
-      <div class="ds__swatch ds__swatch--gray-200"><span>gray-200</span></div>
-      <div class="ds__swatch ds__swatch--gray-300"><span>gray-300</span></div>
-      <div class="ds__swatch ds__swatch--gray-400"><span>gray-400</span></div>
-      <div class="ds__swatch ds__swatch--gray-500"><span>gray-500</span></div>
-      <div class="ds__swatch ds__swatch--gray-600"><span>gray-600</span></div>
-      <div class="ds__swatch ds__swatch--gray-700"><span>gray-700</span></div>
-      <div class="ds__swatch ds__swatch--gray-800"><span>gray-800</span></div>
-      <div class="ds__swatch ds__swatch--gray-900"><span>gray-900</span></div>
-      <div class="ds__swatch ds__swatch--black"><span>black</span></div>
-    </div>
+  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+    <% subhead.with_heading(tag: :h2) { "Form controls" } %>
+  <% end %>
+  <div class="d-flex flex-column gap-3 mb-6 col-12 col-md-6">
+    <%= render Primer::Alpha::TextField.new(name: "email", label: "Email", placeholder: "you@example.com", caption: "We'll never share it.") %>
+    <%= render Primer::Alpha::TextArea.new(name: "notes", label: "Notes") %>
+    <%= render Primer::Alpha::ToggleSwitch.new(aria: { label: "Notifications" }) %>
+  </div>
 
-    <h3>Primary</h3>
-    <div class="ds__swatches">
-      <div class="ds__swatch ds__swatch--primary-50"><span>primary-50</span></div>
-      <div class="ds__swatch ds__swatch--primary-100"><span>primary-100</span></div>
-      <div class="ds__swatch ds__swatch--primary-500"><span>primary-500</span></div>
-      <div class="ds__swatch ds__swatch--primary-600"><span>primary-600</span></div>
-      <div class="ds__swatch ds__swatch--primary-700"><span>primary-700</span></div>
-    </div>
+  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+    <% subhead.with_heading(tag: :h2) { "Border box" } %>
+  <% end %>
+  <%= render Primer::Beta::BorderBox.new(mb: 6) do |box| %>
+    <% box.with_header { "Header" } %>
+    <% box.with_row { "First row" } %>
+    <% box.with_row { "Second row" } %>
+  <% end %>
 
-    <h3>Semantic</h3>
-    <div class="ds__swatches">
-      <div class="ds__swatch ds__swatch--success-50"><span>success-50</span></div>
-      <div class="ds__swatch ds__swatch--success-500"><span>success-500</span></div>
-      <div class="ds__swatch ds__swatch--success-700"><span>success-700</span></div>
-      <div class="ds__swatch ds__swatch--danger-50"><span>danger-50</span></div>
-      <div class="ds__swatch ds__swatch--danger-500"><span>danger-500</span></div>
-      <div class="ds__swatch ds__swatch--danger-700"><span>danger-700</span></div>
-      <div class="ds__swatch ds__swatch--warning-50"><span>warning-50</span></div>
-      <div class="ds__swatch ds__swatch--warning-500"><span>warning-500</span></div>
-      <div class="ds__swatch ds__swatch--warning-700"><span>warning-700</span></div>
-    </div>
-  </section>
-
-  <%# ─── Typography ──────────────────────────────────────────────────────── %>
-  <section id="typography" class="ds__section">
-    <h2>Typography</h2>
-
-    <h3>Type Scale</h3>
-    <div class="ds__type-samples">
-      <div class="ds__type-sample ds__type--3xl">
-        <span class="ds__type-label">3xl — 2.5rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__type--2xl">
-        <span class="ds__type-label">2xl — 2rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__type--xl">
-        <span class="ds__type-label">xl — 1.5rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__type--lg">
-        <span class="ds__type-label">lg — 1.25rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__type--base">
-        <span class="ds__type-label">base — 1rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__type--sm">
-        <span class="ds__type-label">sm — 0.875rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__type--xs">
-        <span class="ds__type-label">xs — 0.75rem</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-    </div>
-
-    <h3>Font Weights</h3>
-    <div class="ds__type-samples">
-      <div class="ds__type-sample ds__weight--normal">
-        <span class="ds__type-label">normal — 400</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__weight--medium">
-        <span class="ds__type-label">medium — 500</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__weight--semibold">
-        <span class="ds__type-label">semibold — 600</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-      <div class="ds__type-sample ds__weight--bold">
-        <span class="ds__type-label">bold — 700</span>
-        The quick brown fox jumps over the lazy dog
-      </div>
-    </div>
-  </section>
-
-  <%# ─── Spacing ─────────────────────────────────────────────────────────── %>
-  <section id="spacing" class="ds__section">
-    <h2>Spacing</h2>
-
-    <div class="ds__spacing-samples">
-      <div class="ds__spacing-sample">
-        <div class="ds__spacing-box ds__spacing--xs"></div>
-        <span>xs — 0.25rem (4px)</span>
-      </div>
-      <div class="ds__spacing-sample">
-        <div class="ds__spacing-box ds__spacing--sm"></div>
-        <span>sm — 0.5rem (8px)</span>
-      </div>
-      <div class="ds__spacing-sample">
-        <div class="ds__spacing-box ds__spacing--md"></div>
-        <span>md — 1rem (16px)</span>
-      </div>
-      <div class="ds__spacing-sample">
-        <div class="ds__spacing-box ds__spacing--lg"></div>
-        <span>lg — 1.5rem (24px)</span>
-      </div>
-      <div class="ds__spacing-sample">
-        <div class="ds__spacing-box ds__spacing--xl"></div>
-        <span>xl — 2rem (32px)</span>
-      </div>
-      <div class="ds__spacing-sample">
-        <div class="ds__spacing-box ds__spacing--2xl"></div>
-        <span>2xl — 3rem (48px)</span>
-      </div>
-    </div>
-  </section>
-
-  <%# ─── Border Radii ────────────────────────────────────────────────────── %>
-  <section id="radii" class="ds__section">
-    <h2>Border Radii</h2>
-
-    <div class="ds__radii-samples">
-      <div class="ds__radii-box ds__radius--sm"><span>sm</span></div>
-      <div class="ds__radii-box ds__radius--md"><span>md</span></div>
-      <div class="ds__radii-box ds__radius--lg"><span>lg</span></div>
-      <div class="ds__radii-box ds__radius--xl"><span>xl</span></div>
-      <div class="ds__radii-box ds__radius--2xl"><span>2xl</span></div>
-      <div class="ds__radii-box ds__radius--full"><span>full</span></div>
-    </div>
-  </section>
-
-  <%# ─── Shadows ─────────────────────────────────────────────────────────── %>
-  <section id="shadows" class="ds__section">
-    <h2>Shadows</h2>
-
-    <div class="ds__shadow-samples">
-      <div class="ds__shadow-box ds__shadow--sm"><span>sm</span></div>
-      <div class="ds__shadow-box ds__shadow--md"><span>md</span></div>
-      <div class="ds__shadow-box ds__shadow--lg"><span>lg</span></div>
-      <div class="ds__shadow-box ds__shadow--xl"><span>xl</span></div>
-    </div>
-  </section>
-
-  <%# ─── Buttons ─────────────────────────────────────────────────────────── %>
-  <section id="buttons" class="ds__section">
-    <h2>Buttons</h2>
-    <p>Rendered using <code>@include button-primary</code>, <code>@include button-secondary</code>, <code>@include button-danger</code> mixins.</p>
-
-    <div class="ds__button-samples">
-      <button class="ds-btn ds-btn--primary">Primary Button</button>
-      <button class="ds-btn ds-btn--secondary">Secondary Button</button>
-      <button class="ds-btn ds-btn--danger">Danger Button</button>
-      <button class="ds-btn ds-btn--primary" disabled>Disabled</button>
-    </div>
-  </section>
-
-  <%# ─── Form Elements ───────────────────────────────────────────────────── %>
-  <section id="forms" class="ds__section">
-    <h2>Form Elements</h2>
-    <p>Rendered using <code>@include input-base</code> and <code>@include label</code> mixins.</p>
-
-    <div class="ds__form-samples">
-      <div class="ds__form-group">
-        <label class="ds-label">Text Input</label>
-        <input type="text" class="ds-input" placeholder="Enter text...">
-      </div>
-
-      <div class="ds__form-group">
-        <label class="ds-label">Email Input</label>
-        <input type="email" class="ds-input" placeholder="you@example.com">
-      </div>
-
-      <div class="ds__form-group">
-        <label class="ds-label">Textarea</label>
-        <textarea class="ds-input" placeholder="Enter longer text..."></textarea>
-      </div>
-
-      <div class="ds__form-group">
-        <label class="ds-label">Select</label>
-        <select class="ds-input">
-          <option>Option 1</option>
-          <option>Option 2</option>
-          <option>Option 3</option>
-        </select>
-      </div>
-    </div>
-  </section>
-
-  <%# ─── Cards ───────────────────────────────────────────────────────────── %>
-  <section id="cards" class="ds__section">
-    <h2>Cards</h2>
-    <p>Rendered using <code>@include card</code> and <code>@include card-interactive</code> mixins.</p>
-
-    <div class="ds__card-samples">
-      <div class="ds-card">
-        <h3>Static Card</h3>
-        <p>Uses <code>@include card</code>. No hover effect.</p>
-      </div>
-
-      <div class="ds-card ds-card--interactive">
-        <h3>Interactive Card</h3>
-        <p>Uses <code>@include card-interactive</code>. Hover to see the lift effect.</p>
-      </div>
-    </div>
-  </section>
-
-  <%# ─── Badges ──────────────────────────────────────────────────────────── %>
-  <section id="badges" class="ds__section">
-    <h2>Badges</h2>
-    <p>Rendered using <code>@include badge($bg, $color)</code> mixin.</p>
-
-    <div class="ds__badge-samples">
-      <span class="ds-badge ds-badge--success">Success</span>
-      <span class="ds-badge ds-badge--danger">Danger</span>
-      <span class="ds-badge ds-badge--warning">Warning</span>
-      <span class="ds-badge ds-badge--neutral">Neutral</span>
-    </div>
-  </section>
-</div>
+  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+    <% subhead.with_heading(tag: :h2) { "Blankslate" } %>
+  <% end %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |slate| %>
+    <% slate.with_visual_icon(icon: :inbox) %>
+    <% slate.with_heading(tag: :h3) { "Nothing here yet" } %>
+    <% slate.with_description { "Empty states use Blankslate." } %>
+    <% slate.with_primary_action(href: "#") { "Create something" } %>
+  <% end %>
+</main>

@@ -9,6 +9,9 @@
   },
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
-    "@hotwired/turbo-rails": "^8.0.23"
+    "@hotwired/turbo-rails": "^8.0.23",
+    "@primer/css": "22.3.3",
+    "@primer/primitives": "11.10.0",
+    "@primer/view-components": "0.53.5"
   }
 }
