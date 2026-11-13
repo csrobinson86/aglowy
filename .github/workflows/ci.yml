@@ -5,9 +5,11 @@ on:
   push:
     branches: [ main ]
 
+# Runners pinned to ubuntu-24.04: ubuntu-latest moved to 26.04, which
+# ruby/setup-ruby has no prebuilt Ruby 4.0.2 for. Revisit when it does.
 jobs:
   scan_ruby:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -26,7 +28,7 @@ jobs:
         run: bin/bundler-audit
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
     steps:
@@ -53,7 +55,7 @@ jobs:
         run: bin/rubocop -f github
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -94,7 +96,7 @@ jobs:
         run: bin/rails db:test:prepare test
 
   system-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
