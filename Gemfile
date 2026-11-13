@@ -45,18 +45,6 @@ gem "mission_control-jobs"        # Web UI for Solid Queue
 # acts_as_message ActiveRecord mixins, Rails generator for chat UI.
 gem "ruby_llm"
 
-# ─── Billing ──────────────────────────────────────────────────────────────────
-# Subscriptions, checkout, customer portal.
-gem "pay"
-gem "stripe"
-
-# ─── Analytics ────────────────────────────────────────────────────────────────
-# First-party analytics stored in your own DB. No third-party data sharing.
-# MaxMind GeoLite2 for local IP geocoding — GDPR-friendly.
-gem "ahoy_matey"
-gem "maxminddb"
-gem "geocoder"
-
 # ─── Admin ────────────────────────────────────────────────────────────────────
 # Lightweight Rails admin engine by Chris Oliver (GoRails).
 gem "madmin"
