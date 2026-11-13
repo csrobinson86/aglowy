@@ -2,11 +2,10 @@
 # It sits on top of CI's hard gates (tests, coverage, rubocop, brakeman,
 # bundler-audit) and never approves or blocks a merge.
 #
-# Setup: run /install-github-app in Claude Code, or add one repository secret:
-#   ANTHROPIC_API_KEY        (Claude Console API key), or
-#   CLAUDE_CODE_OAUTH_TOKEN  (from `claude setup-token`, uses your Claude plan)
-# If you use the OAuth token, swap the anthropic_api_key line below for:
-#   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+# Setup: the CLAUDE_CODE_OAUTH_TOKEN secret, created by /install-github-app
+# (or `claude setup-token`). To use a Claude Console API key instead, add an
+# ANTHROPIC_API_KEY secret and swap the claude_code_oauth_token line for:
+#   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 #
 # Review rules: REVIEW.md and CLAUDE.md in this repository.
 # Workflow shape follows https://code.claude.com/docs/en/github-actions
@@ -37,7 +36,7 @@ jobs:
 
       - uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
           plugins: "code-review@claude-code-plugins"
           prompt: "/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
