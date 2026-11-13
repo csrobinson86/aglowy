@@ -1,10 +1,10 @@
   # Aglowy
 
-  Rails 8.1 SaaS template. Start from kin.
+  Rails 8.1 SaaS app, built from the [KinRails](https://github.com/Kinsley-Analytics/KinRails) template.
 
   ## Requirements
 
-  - Ruby 4.0.1
+  - Ruby 4.0.2 (see `.ruby-version`)
   - Rails 8.1
   - PostgreSQL
   - Node.js + Yarn (for esbuild JS bundling)
@@ -12,21 +12,25 @@
   ## Quick Start
 
   ```bash
+  git clone https://github.com/csrobinson86/aglowy.git
+  cd aglowy
+  cp .env.development.example .env.development   # then fill in your keys
+  cp .env.test.example .env.test
   bin/setup
   bin/dev
   ```
 
   Visit `http://localhost:3000`.
 
-  ## Starting a New Project From This Template
+  ## Pulling Template Updates
+
+  The KinRails template is tracked as the `template` remote. To review and merge upstream changes:
 
   ```bash
-  git clone https://github.com/Kinsley-Analytics/Aglowy.git my_new_app
-  cd my_new_app
-  rm -rf .git && git init
-  bin/rename my_new_app
-  bin/setup
-  bin/dev
+  git remote add template https://github.com/Kinsley-Analytics/KinRails.git   # once, on a fresh clone
+  git fetch template
+  git log main..template/main --oneline
+  git merge template/main
   ```
 
   ## Stack
@@ -48,7 +52,7 @@
 
   ## Architecture
 
-  This template follows the 37signals/DHH "vanilla Rails is plenty" philosophy. Business logic lives in models and POROs, never in service objects. See `CLAUDE.md` for the complete architectural guide.
+  Aglowy follows the 37signals/DHH "vanilla Rails is plenty" philosophy. Business logic lives in models and POROs, never in service objects. See `CLAUDE.md` for the complete architectural guide.
 
   ## Auth
 
@@ -64,12 +68,12 @@
   Sass design system with BEM naming in `app/assets/stylesheets/design_system/`:
 
   - `_tokens.scss` — spacing, type scale, colors, radii, shadows, breakpoints
-  - `_mixins.scss` — reusable patterns (`@include card`, `@include button-primary`, etc.)
+  - `_mixins.scss` — reusable multi-property patterns (add mixins here as they emerge)
   - `_reset.scss` — minimal modern CSS reset
 
-  Component styles in `app/assets/stylesheets/components/`, one file per ViewComponent.
+  Component styles go in `app/assets/stylesheets/components/`, one file per ViewComponent.
 
-  Living style guide available in development at `/design_system`.
+  Living style guide available in development at `/design-system`.
 
   ## Database
 
@@ -91,13 +95,14 @@
 
   ## Per-Project Setup
 
-  These gems are included but need generators run per project:
+  Ahoy analytics is already installed. These gems are included but their generators haven't been run yet:
 
   ```bash
-  bin/rails generate ahoy:install       # Analytics (check migration for UUIDs)
-  bin/rails generate pay:install        # Billing (configure Stripe keys in .env)
-  bin/rails generate ruby_llm:install   # AI chat (OpenAI + Anthropic)
+  bin/rails generate pay:install        # Billing — Pay 12.x (configure Stripe keys in .env)
+  bin/rails generate ruby_llm:install   # AI chat — RubyLLM 2.x (OpenAI + Anthropic)
   ```
+
+  Check generated migrations use `id: :uuid` and `type: :uuid` before running them.
 
   ## Key Directories
 
@@ -121,8 +126,7 @@
   - `bin/setup` — install dependencies, create database, run migrations
   - `bin/dev` — start Rails server + asset watchers
   - `bin/ci` — full CI suite (setup, lint, security scan, tests)
-  - `bin/rename <new_name>` — rename the app for a new project
-  - `bin/recreate` — rebuild the template from a fresh `rails new` (for Rails upgrades)
+  - `bin/rename` / `bin/recreate` — KinRails template maintenance scripts; not needed for day-to-day work
 
   ## License
 
