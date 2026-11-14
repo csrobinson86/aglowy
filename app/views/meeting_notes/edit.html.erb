@@ -36,6 +36,6 @@
 
   <div class="d-flex flex-items-center">
     <%= render MeetingNotes::NoteForm.new(f, field: :actions) %>
-    <p class="color-fg-muted f6 mb-0 ml-3"><%= meeting_note_save_hint(@meeting_note) %></p>
+    <p id="meeting-note-save-hint" class="color-fg-muted f6 mb-0 ml-3"><%= meeting_note_save_hint(@meeting_note) %></p>
   </div>
 <% end %>

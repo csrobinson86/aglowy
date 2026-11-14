@@ -3,13 +3,17 @@ require "test_helper"
 class MeetingNote::SharingTest < ActiveSupport::TestCase
   test "share and stop" do
     note = meeting_notes(:head_midweek)
+    assert_empty note.shared_households
 
     note.share_with(households(:home))
     assert note.shared_with?(households(:home))
     assert_not note.shared_with?(households(:parents))
+    assert_equal [ households(:home) ], note.shared_households
 
+    # The same instance, not reloaded: the page answers from it after stopping.
     note.stop_sharing_with(households(:home))
-    assert_not note.reload.shared_with?(households(:home))
+    assert_not note.shared_with?(households(:home))
+    assert_empty note.shared_households
   end
 
   test "sharing twice is one record" do

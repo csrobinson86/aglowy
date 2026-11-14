@@ -1,6 +1,7 @@
 <%# locals: (meeting_note:, household:) %>
 <%# Shares into the household in the URL only (frame share-dialog.png). Sharing asks first in a Primer Dialog,
-    never a browser confirm; stopping is one click and can be shared again. %>
+    never a browser confirm; stopping is one click and can be shared again. "Share note" closes the dialog as it
+    submits, since the answer replaces it in place. %>
 <% sharing_path = household_meeting_note_sharing_path(meeting_note_id: meeting_note) %>
 
 <% if meeting_note.shared_with?(household) %>
@@ -21,7 +22,7 @@
     <% dialog.with_footer do %>
       <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "share-meeting-note" })) { "Cancel" } %>
       <%= primer_form_with(url: sharing_path) do |f| %>
-        <%= render MeetingNotes::SharingForm.new(f, label: "Share note", scheme: :primary) %>
+        <%= render MeetingNotes::SharingForm.new(f, label: "Share note", scheme: :primary, dialog_id: "share-meeting-note") %>
       <% end %>
     <% end %>
   <% end %>

@@ -8,11 +8,7 @@
   <%# Wraps, so a long household name drops below the title and truncates instead of squeezing it. %>
   <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
     <span class="mr-2"><%= title %></span>
-    <% label = meeting_note_sharing_label(meeting_note) %>
-    <%= render(Primer::Beta::Label.new(title: label, classes: "css-truncate css-truncate-overflow min-width-0")) do %>
-      <%= render(Primer::Beta::Octicon.new(meeting_note.shared_households.any? ? :people : :lock, size: :xsmall)) %>
-      <%= label %>
-    <% end %>
+    <%= render "meeting_notes/sharing_label", meeting_note: %>
   <% end %>
   <% subhead.with_actions(display: :flex) do %>
     <% if edit_link %>
@@ -21,7 +17,9 @@
         Edit notes
       <% end %>
     <% end %>
-    <%= render "meeting_notes/sharing", meeting_note:, household: Current.household %>
+    <div id="meeting-note-sharing">
+      <%= render "meeting_notes/sharing", meeting_note:, household: Current.household %>
+    </div>
   <% end %>
   <% subhead.with_description do %>
     <%= meeting_note.display_week %> ·

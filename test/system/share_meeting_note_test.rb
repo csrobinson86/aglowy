@@ -30,6 +30,30 @@ class ShareMeetingNoteTest < ApplicationSystemTestCase
     assert_selector "button", text: "Share with household"
   end
 
+  test "sharing and stopping on the edit page keep unsaved edits" do
+    visit edit_household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
+    find_field("Title", match: :first).fill_in(with: "Not saved yet")
+
+    click_on "Share with household"
+    within("dialog[open]") { click_on "Share note" }
+
+    assert_text "Shared with The Head Family."
+    assert_no_selector "dialog[open]"
+    assert_no_selector "body.has-modal"
+    assert_selector "h1 .Label", text: "Shared with The Head Family"
+    assert_text "Members of The Head Family can read this note."
+    assert_equal "Not saved yet", find_field("Title", match: :first).value
+
+    click_on "Stop sharing"
+
+    assert_text "Stopped sharing with The Head Family."
+    assert_selector "main .container-xl > .flash:first-child", count: 1
+    assert_selector "h1 .Label", text: "Private"
+    assert_text "Only you can see this note."
+    assert_equal "Not saved yet", find_field("Title", match: :first).value
+    assert_current_path edit_household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_midweek))
+  end
+
   test "cancel leaves the note private" do
     visit edit_household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
 

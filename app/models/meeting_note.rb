@@ -53,10 +53,14 @@ class MeetingNote < ApplicationRecord
       user.memberships.active.find_by!(household: household)
       sharings.find_or_create_by!(household: household)
     end
+    shared_households.reset
   end
 
+  # The filtered delete_all leaves loaded sharings alone, so they're reset for the page that answers from this note.
   def stop_sharing_with(household)
     sharings.where(household: household).delete_all
+    sharings.reset
+    shared_households.reset
   end
 
   # Reads the loaded sharings, so a list that includes them asks nothing more.
