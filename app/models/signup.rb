@@ -26,5 +26,11 @@ class Signup
   rescue ActiveRecord::RecordInvalid => invalid
     errors.merge!(invalid.record.errors)
     false
+  rescue ActiveRecord::RecordNotUnique => conflict
+    raise unless conflict.cause.is_a?(PG::UniqueViolation) &&
+      conflict.cause.result.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME) == "index_identities_on_email"
+
+    errors.add(:email, :taken)
+    false
   end
 end
