@@ -1,0 +1,13 @@
+# Part notes are encrypted rich text (has_rich_text encrypted: true); encrypt_fixtures encrypts the body on load.
+_fixture:
+  model_class: ActionText::EncryptedRichText
+
+head_talk_notes:
+  record: head_talk (MeetingNote::Part)
+  name: notes
+  body: "<div>Jehovah promises to strengthen us, not just to watch from a distance.</div>"
+
+head_congregation_bible_study_notes:
+  record: head_congregation_bible_study (MeetingNote::Part)
+  name: notes
+  body: "<div>Ask: how can our family make prayer a habit before the busy week starts?</div>"

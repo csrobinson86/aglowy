@@ -1,0 +1,9 @@
+head_midweek:
+  user: head
+  kind: midweek
+  week_of: 2026-11-16
+
+head_weekend:
+  user: head
+  kind: weekend
+  week_of: 2026-11-16
