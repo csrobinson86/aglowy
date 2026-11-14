@@ -40,7 +40,7 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
 
     delete admin_impersonation_path
     follow_redirect!
-    assert_no_match "Impersonating", response.body
+    assert_select "x-banner", count: 0
     assert_equal identities(:staff).email, controller.current_identity.email
   end
 
@@ -51,7 +51,7 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
 
     follow_redirect!
-    assert_no_match "Impersonating", response.body
+    assert_select "x-banner", count: 0
   end
 
   test "stopping without impersonating redirects home" do

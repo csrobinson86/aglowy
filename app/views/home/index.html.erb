@@ -3,7 +3,3 @@
 <% if current_identity&.staff? %>
   <%= link_to "Madmin", "/madmin" %>
 <% end %>
-
-<% if session[:staff_identity_id] %>
-  <%= button_to "Stop impersonating", admin_impersonation_path, method: :delete %>
-<% end %>

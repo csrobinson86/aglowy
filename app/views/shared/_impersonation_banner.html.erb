@@ -1,7 +1,12 @@
 <%# locals: () %>
 <% if session[:staff_identity_id] && current_identity %>
-  <div class="impersonation-banner">
-    Impersonating <%= current_identity.email %> —
-    <%= button_to "Stop", admin_impersonation_path(household_id: nil), method: :delete %>
-  </div>
+  <%= render Primer::Alpha::Banner.new(scheme: :warning, mb: 3) do |banner| %>
+    <% banner.with_action_content do %>
+      <%# household_id: nil keeps HouseholdScoped#default_url_options out of the admin URL. %>
+      <%= primer_form_with(url: admin_impersonation_path(household_id: nil), method: :delete) do |f| %>
+        <%= render Admin::Impersonations::StopForm.new(f) %>
+      <% end %>
+    <% end %>
+    You're using <%= current_identity.user.name %>'s account (<%= current_identity.email %>).
+  <% end %>
 <% end %>
