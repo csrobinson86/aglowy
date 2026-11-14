@@ -29,6 +29,14 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_equal session.scheduled_at, session.local_scheduled_at
   end
 
+  test "local_ends_at is the study's duration after local_scheduled_at" do
+    households(:home).update!(time_zone: "Tokyo")
+    session = family_study_sessions(:weekly_next)
+
+    assert_equal "Tokyo", session.local_ends_at.time_zone.name
+    assert_equal session.scheduled_at + 45.minutes, session.local_ends_at
+  end
+
   test "a second session in the same slot is a validation error" do
     taken = family_study_sessions(:weekly_next)
     session = taken.family_study.sessions.new(recurrence_at: taken.recurrence_at, scheduled_at: 1.year.from_now)

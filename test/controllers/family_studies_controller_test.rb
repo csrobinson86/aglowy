@@ -29,6 +29,18 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .Box-row:not(:nth-of-type(3)) s", count: 0
   end
 
+  test "each row links to its session" do
+    sign_in identities(:spouse)
+
+    get household_family_studies_path(household_id: households(:home))
+
+    family_study_sessions(:one_off_first, :weekly_next, :weekly_cancelled, :weekly_later).each do |study_session|
+      path = household_family_study_session_path(household_id: households(:home), family_study_id: study_session.family_study, id: study_session)
+      assert_select "main .Box-row a[href='#{path}']", count: 1
+    end
+    assert_select "main .Box-row a", text: /Draw Close to Jehovah, chapter 1/
+  end
+
   test "another household's studies aren't shown" do
     study = households(:other).schedule_family_study(topic: "The Outsiders' study", frequency: :once, starts_on: 2.days.from_now.to_date, time_of_day: "18:00")
     assert study.persisted?

@@ -32,3 +32,7 @@ en:
   time:
     formats:
       session: "%a, %b %-d · %-l:%M %p"
+      session_day: "%A, %B %-d, %Y"
+      session_breadcrumb: "%b %-d, %Y"
+      clock: "%-l:%M"
+      clock_with_meridiem: "%-l:%M %p"

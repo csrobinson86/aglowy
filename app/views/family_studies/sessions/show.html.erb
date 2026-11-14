@@ -1,0 +1,41 @@
+<% title = @study_session.topic.presence || "Family study" %>
+<% content_for :title, title %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_family_studies_path) { "Family studies" } %>
+  <% breadcrumbs.with_item(href: household_family_study_session_path(family_study_id: @family_study, id: @study_session)) { l(@study_session.local_scheduled_at, format: :session_breadcrumb) } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { title } %>
+  <% subhead.with_description do %>
+    <%= l(@study_session.local_scheduled_at, format: :session_day) %> ·
+    <%= session_time_range(@study_session) %> ·
+    <%= @family_study.repeat_description %>
+    <% if @study_session.canceled? %>
+      <%= render(Primer::Beta::Label.new(scheme: :danger, ml: 1)) { "Cancelled" } %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%# Placeholders that the notes and resources stories fill in. %>
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Notes" } } %>
+  <% box.with_body do %>
+    <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+      <% blankslate.with_visual_icon(icon: :note) %>
+      <% blankslate.with_heading(tag: :h3) { "No notes yet" } %>
+      <% blankslate.with_description { "Notes from this study will show here." } %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Beta::BorderBox.new) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Resources" } } %>
+  <% box.with_body do %>
+    <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+      <% blankslate.with_visual_icon(icon: :link) %>
+      <% blankslate.with_heading(tag: :h3) { "No resources yet" } %>
+      <% blankslate.with_description { "Links and files for this study will show here." } %>
+    <% end %>
+  <% end %>
+<% end %>

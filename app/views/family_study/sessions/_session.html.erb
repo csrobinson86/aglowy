@@ -1,17 +1,18 @@
 <%# locals: (study_session:) -%>
 <%# Struck through when cancelled; the "Cancelled" label says so to screen readers too (scheduling rule 6). %>
 <% text_tag = study_session.canceled? ? :s : :span %>
-<div class="d-flex flex-wrap flex-items-center">
+<%# The whole row is the link, so its name says which session it opens. %>
+<%= render(Primer::Beta::Link.new(href: household_family_study_session_path(family_study_id: study_session.family_study, id: study_session), display: :flex, classes: "no-underline flex-wrap flex-items-center")) do %>
   <%= content_tag text_tag, l(study_session.local_scheduled_at, format: :session), class: "col-12 col-md-3 color-fg-muted" %>
   <% if study_session.topic.present? %>
     <%= content_tag text_tag, study_session.topic, class: "flex-1 min-width-0 mr-2 wb-break-word" %>
   <% else %>
     <%= content_tag text_tag, "Topic not chosen yet", class: "flex-1 min-width-0 mr-2 color-fg-muted" %>
   <% end %>
-  <span class="d-flex flex-shrink-0">
+  <span class="d-flex flex-shrink-0 color-fg-default">
     <% if study_session.canceled? %>
       <%= render(Primer::Beta::Label.new(scheme: :danger, mr: 1)) { "Cancelled" } %>
     <% end %>
     <%= render(Primer::Beta::Label.new) { study_session.family_study.frequency.humanize } %>
   </span>
-</div>
+<% end %>

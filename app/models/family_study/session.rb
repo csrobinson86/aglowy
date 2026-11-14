@@ -18,4 +18,9 @@ class FamilyStudy::Session < ApplicationRecord
   def local_scheduled_at
     scheduled_at.in_time_zone(family_study.household.time_zone)
   end
+
+  # A session's end is its study's duration after it starts.
+  def local_ends_at
+    local_scheduled_at + family_study.duration_minutes.minutes
+  end
 end

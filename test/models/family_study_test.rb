@@ -208,6 +208,24 @@ class FamilyStudyTest < ActiveSupport::TestCase
     assert_not study.last_week_of_month?(Date.new(2026, 12, 24))
   end
 
+  test "repeat_description says how the study repeats, from its start date's weekday" do
+    tuesday = { starts_on: Date.new(2026, 11, 17), time_of_day: "19:00" }
+
+    assert_equal "Once", FamilyStudy.new(frequency: :once, **tuesday).repeat_description
+    assert_equal "Daily", FamilyStudy.new(frequency: :daily, **tuesday).repeat_description
+    assert_equal "Weekly on Tuesday", FamilyStudy.new(frequency: :weekly, **tuesday).repeat_description
+    assert_equal "Monthly on the third Tuesday", FamilyStudy.new(frequency: :monthly, week_of_month: 3, **tuesday).repeat_description
+    assert_equal "Monthly on the last Tuesday", FamilyStudy.new(frequency: :monthly, week_of_month: -1, **tuesday).repeat_description
+  end
+
+  test "repeat_description counts an interval above one" do
+    tuesday = { starts_on: Date.new(2026, 11, 17), time_of_day: "19:00", interval: 2 }
+
+    assert_equal "Every 2 days", FamilyStudy.new(frequency: :daily, **tuesday).repeat_description
+    assert_equal "Every 2 weeks on Tuesday", FamilyStudy.new(frequency: :weekly, **tuesday).repeat_description
+    assert_equal "Every 2 months on the third Tuesday", FamilyStudy.new(frequency: :monthly, week_of_month: 3, **tuesday).repeat_description
+  end
+
   test "time_of_day keeps its wall-clock value whatever the process time zone" do
     @household.update!(time_zone: "Central Time (US & Canada)")
     study = Time.use_zone("Tokyo") { @household.schedule_family_study(starts_on: "2026-11-17", time_of_day: "19:00") }
