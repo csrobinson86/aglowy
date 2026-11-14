@@ -1,0 +1,31 @@
+<%# locals: (study_session:) -%>
+<% resources = study_session.resources.with_attached_file.to_a %>
+
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header(display: :flex, align_items: :center) do |header| %>
+    <% header.with_title(tag: :h2, flex: 1) { "Next family study" } %>
+    <%= render(Primer::Beta::Label.new) { study_session.family_study.repeat_description } %>
+  <% end %>
+  <% box.with_body do %>
+    <p class="d-flex flex-items-center color-fg-muted mb-2">
+      <%= render(Primer::Beta::Octicon.new(icon: :calendar, mr: 2, flex_shrink: 0)) %>
+      <span><%= l(study_session.local_scheduled_at, format: :next_session) %> · <%= session_time_range(study_session) %></span>
+    </p>
+    <% if study_session.topic.present? %>
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 3, classes: "wb-break-word")) { study_session.topic } %>
+    <% else %>
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 3, color: :muted)) { "Topic not chosen yet" } %>
+    <% end %>
+    <% if resources.any? %>
+      <ul class="list-style-none mt-2">
+        <% resources.each do |resource| %>
+          <li class="d-flex flex-items-center mt-1">
+            <%= render(Primer::Beta::Octicon.new(icon: resource.file? ? :file : :link, color: :muted, mr: 2, flex_shrink: 0)) %>
+            <%= render "family_study/resources/resource", resource: %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: household_family_study_session_path(family_study_id: study_session.family_study, id: study_session), block: true, mt: 3, classes: "width-md-auto")) { "Open study" } %>
+  <% end %>
+<% end %>

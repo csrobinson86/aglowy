@@ -3,21 +3,46 @@
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Home" } %>
   <% subhead.with_description { Current.household.name } %>
+  <%# Once there are sessions the empty state's Schedule action moves to the header, as in the app shell frames. %>
+  <% if @next_session && policy(FamilyStudy).create? %>
+    <% subhead.with_actions do %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_family_study_path, scheme: :primary)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        Schedule a study
+      <% end %>
+    <% end %>
+  <% end %>
 <% end %>
 
-<%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
-  <% blankslate.with_visual_icon(icon: :home) %>
-  <% blankslate.with_heading(tag: :h2) { "Welcome to #{Current.household.name}" } %>
-  <% if policy(Membership).create? %>
-    <% blankslate.with_description { "Add the people in your household. Family studies, goals and notes will show up here as you add them." } %>
-    <% blankslate.with_secondary_action(href: new_household_member_path) { "Add a member" } %>
-  <% else %>
-    <% blankslate.with_description { "Family studies, goals and notes will show up here." } %>
+<% if @next_session %>
+  <%= render "dashboards/next_session", study_session: @next_session %>
+
+  <% if @coming_up.any? %>
+    <%= render Primer::Beta::BorderBox.new do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h2) { "Coming up" } } %>
+      <% @coming_up.each do |study_session| %>
+        <% box.with_row { render "family_study/sessions/session", study_session: } %>
+      <% end %>
+      <% box.with_footer do %>
+        <%= render(Primer::Beta::Link.new(href: household_family_studies_path)) { "All family studies" } %>
+      <% end %>
+    <% end %>
   <% end %>
-  <% if policy(FamilyStudy).create? %>
-    <% blankslate.with_primary_action(href: new_household_family_study_path) do |button| %>
-      <% button.with_leading_visual_icon(icon: :plus) %>
-      Schedule a study
+<% else %>
+  <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :home) %>
+    <% blankslate.with_heading(tag: :h2) { "Welcome to #{Current.household.name}" } %>
+    <% if policy(Membership).create? %>
+      <% blankslate.with_description { "Add the people in your household. Family studies, goals and notes will show up here as you add them." } %>
+      <% blankslate.with_secondary_action(href: new_household_member_path) { "Add a member" } %>
+    <% else %>
+      <% blankslate.with_description { "Family studies, goals and notes will show up here." } %>
+    <% end %>
+    <% if policy(FamilyStudy).create? %>
+      <% blankslate.with_primary_action(href: new_household_family_study_path) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        Schedule a study
+      <% end %>
     <% end %>
   <% end %>
 <% end %>

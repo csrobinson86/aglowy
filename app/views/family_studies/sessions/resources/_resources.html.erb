@@ -18,15 +18,8 @@
     <% box.with_row(display: :flex, align_items: :center) do %>
       <%= render(Primer::Beta::Octicon.new(icon: resource.file? ? :file : :link, color: :muted, mr: 2, flex_shrink: 0)) %>
       <div class="flex-1 min-width-0">
-        <% if resource.file? %>
-          <%# Only through Aglowy, which checks the policy first; never Active Storage's own URLs (gotcha 22). %>
-          <%= render(Primer::Beta::Link.new(href: household_resource_file_path(resource_id: resource), target: "_blank", rel: "noopener noreferrer", classes: "wb-break-word")) { resource.title } %>
-          <span class="color-fg-muted text-small ml-1"><%= number_to_human_size(resource.file.byte_size) %></span>
-        <% else %>
-          <%# Only http and https URLs get this far (gotcha 23); a new tab never gets this page as its opener. %>
-          <%= render(Primer::Beta::Link.new(href: resource.url, target: "_blank", rel: "noopener noreferrer", classes: "wb-break-word")) { resource.title } %>
-          <span class="color-fg-muted text-small ml-1"><%= resource.host %></span>
-        <% end %>
+        <%= render "family_study/resources/resource", resource: %>
+        <span class="color-fg-muted text-small ml-1"><%= resource.file? ? number_to_human_size(resource.file.byte_size) : resource.host %></span>
       </div>
       <% if editable %>
         <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
