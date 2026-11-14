@@ -16,6 +16,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "The Head Family"
     assert_select "main", text: /Hannah Head.*Head.*Sam Spouse.*Adult.*Charlie Child.*Child/m
     assert_not_includes response.body, "Frances Former"
+    assert_select "header a[href='#{new_household_path}']"
   end
 
   test "a non-member gets 404" do

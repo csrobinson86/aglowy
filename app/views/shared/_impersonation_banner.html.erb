@@ -2,6 +2,6 @@
 <% if session[:staff_identity_id] && current_identity %>
   <div class="impersonation-banner">
     Impersonating <%= current_identity.email %> —
-    <%= button_to "Stop", admin_impersonation_path, method: :delete %>
+    <%= button_to "Stop", admin_impersonation_path(household_id: nil), method: :delete %>
   </div>
 <% end %>
