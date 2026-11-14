@@ -1,7 +1,22 @@
+<%# Below md the sidebar is hidden and this top bar takes its place (docs/design/app-shell.md, Phone). %>
+<header class="app-shell__top-bar d-flex d-md-none flex-items-center px-2 color-bg-subtle border-bottom">
+  <%= render Primer::Beta::IconButton.new(icon: :"three-bars", "aria-label": "Open menu", scheme: :invisible, mr: 2, data: { show_dialog_id: MENU_ID }) %>
+  <div class="flex-auto min-width-0">
+    <%= render AppShell::HouseholdSwitcherComponent.new(membership:, menu_id: "household-switcher-top-bar") %>
+  </div>
+</header>
+
+<%# The menu sits outside the top bar: an open modal inside the hidden top bar would vanish at md and leave the page inert. %>
+<%= render(Primer::Alpha::Dialog.new(id: MENU_ID, title: "Menu", position: :left, position_narrow: :left, bg: :subtle, classes: "app-shell__menu",
+      data: { controller: "app-shell", action: "turbo:before-cache@document->app-shell#close" })) do |dialog| %>
+  <% dialog.with_body(p: 0, display: :flex, direction: :column, flex: :auto) do %>
+    <%= render AppShell::SidebarComponent.new(membership:, selected_item:, label: "Menu") %>
+  <% end %>
+<% end %>
+
 <%= render Primer::Alpha::Layout.new(stacking_breakpoint: :md, gutter: :none, classes: "app-shell") do |layout| %>
-  <%# :start keeps navigation reachable on phones until the phone menu story switches it to :none. %>
-  <% layout.with_sidebar(width: :default, col_placement: :start, row_placement: :start, tag: :aside, bg: :subtle, border: :right) do %>
-    <%= render AppShell::SidebarComponent.new(membership:, selected_item:) %>
+  <% layout.with_sidebar(width: :default, col_placement: :start, row_placement: :none, tag: :aside, bg: :subtle, border: :right) do %>
+    <%= render AppShell::SidebarComponent.new(membership:, selected_item:, label: "Main") %>
   <% end %>
   <% layout.with_main(tag: :main, width: :xl, p: [3, nil, 5]) do %>
     <%= content %>

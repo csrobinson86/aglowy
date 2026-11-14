@@ -1,16 +1,17 @@
-<div class="d-flex flex-column height-full p-3">
-  <header class="mb-3">
+<div class="d-flex flex-column flex-auto height-full p-3">
+  <%# Plain divs: in the phone menu a <header> or <footer> would be a second banner or contentinfo. %>
+  <div class="mb-3">
     <%= render(Primer::Beta::Link.new(href: home_path, scheme: :primary, font_weight: :bold, font_size: 3, display: :flex, align_items: :center, mb: 3, classes: "no-underline")) do %>
       <%= render Primer::Beta::Octicon.new(:sun, color: :attention, size: :medium, mr: 2) %>
       Aglowy
     <% end %>
 
-    <%= render AppShell::HouseholdSwitcherComponent.new(membership:) %>
-  </header>
+    <%= render AppShell::HouseholdSwitcherComponent.new(membership:, menu_id: switcher_menu_id) %>
+  </div>
 
-  <%= render(Primer::Beta::NavList.new(aria: { label: "Main" }, selected_item_id: selected_item)) do |list| %>
+  <%= render(Primer::Beta::NavList.new(aria: { label: }, selected_item_id: selected_item)) do |list| %>
     <% list.with_group do |group| %>
-      <% group.with_heading(title: "Household") %>
+      <% group.with_heading(title: "Household", heading_level: 2) %>
       <% group.with_item(label: "Home", href: home_path, selected_by_ids: :dashboards) do |item| %>
         <% item.with_leading_visual_icon(icon: :home) %>
       <% end %>
@@ -20,11 +21,11 @@
     <% end %>
   <% end %>
 
-  <footer class="d-flex flex-items-center mt-auto pt-3 border-top">
+  <div class="d-flex flex-items-center mt-auto pt-3 border-top">
     <span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-2 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= initial %></span>
     <span class="flex-auto min-width-0 mr-2 Truncate"><span class="Truncate-text"><%= user.name %></span></span>
     <%= primer_form_with(url: destroy_identity_session_path, method: :delete) do |f| %>
       <%= render Sessions::SignOutForm.new(f) %>
     <% end %>
-  </footer>
+  </div>
 </div>
