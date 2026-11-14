@@ -405,6 +405,16 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
       request.filtered_path
   end
 
+  test "part titles and speakers are filtered from the logged path when the key's names are percent-encoded" do
+    sign_in identities(:head)
+    path = edit_note_path(meeting_notes(:head_weekend))
+
+    get "#{path}?meeting_note[parts_attributes][0][%73peaker]=Samuel&meeting_n%6Fte[parts_attributes][1][title]=Refuge&%74itle=Kept"
+
+    assert_equal "#{path}?meeting_note[parts_attributes][0][%73peaker]=[FILTERED]&meeting_n%6Fte[parts_attributes][1][title]=[FILTERED]&%74itle=Kept",
+      request.filtered_path
+  end
+
   test "the read view lists the gems with their references in bold, in order" do
     sign_in identities(:head)
 
