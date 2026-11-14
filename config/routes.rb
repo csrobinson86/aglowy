@@ -18,6 +18,11 @@ Rails.application.routes.draw do
     resource :impersonation, only: [ :create, :destroy ]
   end
 
+  scope "/:household_id", as: :household,
+        constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
+    get "/", to: "dashboards#show", as: :root
+  end
+
   if Rails.env.development?
     get "design-system" => "design_system#show"
   end

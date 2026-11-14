@@ -1,67 +1,28 @@
-# frozen_string_literal: true
-
+# Policies receive the current household Membership, never a User (gotcha 4).
+# It is nil outside household URLs.
 class ApplicationPolicy
-  attr_reader :user, :record
+  attr_reader :membership, :record
 
-  def initialize(user, record)
-    @user = user
+  def initialize(membership, record)
+    @membership = membership
     @record = record
   end
 
-  def index?
-    false
-  end
-
-  def show?
-    false
-  end
-
-  def create?
-    false
-  end
-
-  def new?
-    create?
-  end
-
-  def update?
-    false
-  end
-
-  def edit?
-    update?
-  end
-
-  def destroy?
-    false
-  end
+  def index?   = false
+  def show?    = false
+  def create?  = false
+  def new?     = create?
+  def update?  = false
+  def edit?    = update?
+  def destroy? = false
 
   private
 
-  def admin?
-    user.admin?
+  def member?
+    membership.present? && membership.active?
   end
 
-  def owner?
-    record.respond_to?(:user) && record.user == user
-  end
-
-  class Scope
-    def initialize(user, scope)
-      @user = user
-      @scope = scope
-    end
-
-    def resolve
-      if @user.admin?
-        @scope.all
-      else
-        @scope.where(user: @user)
-      end
-    end
-
-    private
-
-    attr_reader :user, :scope
+  def head?
+    member? && membership.head?
   end
 end

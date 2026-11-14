@@ -5,6 +5,8 @@ class Membership < ApplicationRecord
   enum :role, %i[ head adult child ].index_by(&:itself), default: :adult, validate: true
 
   scope :active, -> { where(active: true) }
+  scope :preloaded, -> { includes(:user) }
+  scope :by_role, -> { in_order_of(:role, roles.keys).order(:created_at) }
 
   def sole_head?
     head? && active? && household.memberships.active.head.where.not(id: id).none?
