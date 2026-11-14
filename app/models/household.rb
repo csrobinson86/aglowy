@@ -25,7 +25,7 @@ class Household < ApplicationRecord
     end
   end
 
-  def schedule_family_study(topic: nil, **attributes)
-    family_studies.build(attributes).tap { it.schedule(topic: topic) }
+  def schedule_family_study(topic: nil, notes: nil, **attributes)
+    family_studies.build(attributes).tap { it.schedule(topic: topic, notes: notes) }
   end
 end

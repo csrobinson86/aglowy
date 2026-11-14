@@ -1,0 +1,22 @@
+// Fits Lexxy (the notes editor) and the notes it writes to Primer's primitives, so they
+// follow the light and dark themes. Set on the elements, so they win over Lexxy's :root.
+lexxy-editor,
+.lexxy-content {
+  --lexxy-color-canvas: var(--bgColor-default);
+  --lexxy-color-text: var(--fgColor-default);
+  --lexxy-color-text-subtle: var(--fgColor-muted);
+  --lexxy-color-link: var(--fgColor-accent);
+  --lexxy-color-ink: var(--fgColor-default);
+  --lexxy-color-ink-medium: var(--fgColor-muted);
+  --lexxy-color-ink-light: var(--fgColor-muted);
+  --lexxy-color-ink-lighter: var(--borderColor-default);
+  --lexxy-color-ink-lightest: var(--bgColor-muted);
+  --lexxy-color-ink-inverted: var(--bgColor-default);
+  --lexxy-color-selected: var(--bgColor-accent-muted);
+  --lexxy-color-selected-hover: var(--bgColor-accent-muted);
+  --lexxy-color-code-bg: var(--bgColor-muted);
+  --lexxy-focus-ring-color: var(--focus-outlineColor);
+  --lexxy-font-base: var(--fontStack-system);
+  --lexxy-font-mono: var(--fontStack-monospace);
+  --lexxy-radius: var(--borderRadius-medium);
+}

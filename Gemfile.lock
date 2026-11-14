@@ -199,6 +199,8 @@ GEM
       logger (~> 1.6)
     letter_opener (1.10.0)
       launchy (>= 2.2, < 4)
+    lexxy (1.0.4)
+      railties (>= 8.0.2)
     lint_roller (1.1.0)
     logger (1.7.0)
     lograge (0.15.1)
@@ -519,6 +521,7 @@ DEPENDENCIES
   jsbundling-rails
   kamal
   letter_opener
+  lexxy (= 1.0.4)
   lograge
   madmin
   mission_control-jobs

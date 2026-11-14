@@ -7,6 +7,7 @@ class FamilyStudy::Scheduling
   attr_reader :household, :study
 
   attribute :topic, :string
+  attribute :notes, :string
   attribute :starts_on, :date
   attribute :starts_at, :time
   attribute :ends_at, :time
@@ -33,11 +34,11 @@ class FamilyStudy::Scheduling
     end
   end
 
-  # The study, its first session with the topic, then the later sessions (scheduling rule 1).
+  # The study, its first session with the topic and notes, then the later sessions (scheduling rule 1).
   def save
     return false unless valid?
 
-    @study = household.schedule_family_study(topic: topic.presence, **study_attributes)
+    @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, **study_attributes)
     study.persisted?
   end
 

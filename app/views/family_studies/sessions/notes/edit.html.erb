@@ -1,0 +1,23 @@
+<% content_for :title, "Edit notes" %>
+<% back_path = household_family_study_session_path(family_study_id: @family_study, id: @study_session) %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_family_studies_path) { "Family studies" } %>
+  <% breadcrumbs.with_item(href: back_path) { l(@study_session.local_scheduled_at, format: :session_breadcrumb) } %>
+  <% breadcrumbs.with_item(href: edit_household_family_study_session_notes_path(family_study_id: @family_study, session_id: @study_session)) { "Notes" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Edit notes" } %>
+  <% subhead.with_description(classes: "wb-break-word") do %>
+    <%= @study_session.topic.presence || "Family study" %> · <%= l(@study_session.local_scheduled_at, format: :session_day) %>
+  <% end %>
+<% end %>
+
+<div class="container-md ml-0">
+  <%= primer_form_with(model: @study_session, url: household_family_study_session_notes_path(family_study_id: @family_study, session_id: @study_session), method: :patch) do |f| %>
+    <div class="mb-4">
+      <%= render "family_studies/sessions/notes/field", form: f %>
+    </div>
+    <%= render FamilyStudies::Sessions::NotesForm.new(f, cancel_path: back_path) %>
+  <% end %>
+</div>

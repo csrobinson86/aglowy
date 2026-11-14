@@ -163,7 +163,7 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Session.count" ] do
       post household_family_studies_path(household_id: households(:home)),
-           params: { family_study_scheduling: valid_params.merge(topic: "Proverbs 3", ends_at: "18:00") }
+           params: { family_study_scheduling: valid_params.merge(topic: "Proverbs 3", ends_at: "18:00", notes: "<p>Questions to discuss</p>") }
     end
 
     assert_response :unprocessable_content
@@ -171,6 +171,7 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='family_study_scheduling[topic]'][value='Proverbs 3']"
     assert_select "input[name='family_study_scheduling[starts_at]'][value='19:00']"
     assert_select "option[value='weekly'][selected]"
+    assert_select "lexxy-editor[name='family_study_scheduling[notes]'][value='<p>Questions to discuss</p>']"
   end
 
   test "the Repeat choices follow the date in the query" do

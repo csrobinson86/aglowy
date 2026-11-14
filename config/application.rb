@@ -5,11 +5,11 @@ require "rails"
 require "active_model/railtie"
 require "active_job/railtie"
 require "active_record/railtie"
-# require "active_storage/engine"
+require "active_storage/engine"
 require "action_controller/railtie"
 require "action_mailer/railtie"
 # require "action_mailbox/engine"
-# require "action_text/engine"
+require "action_text/engine"
 require "action_view/railtie"
 require "action_cable/engine"
 require "rails/test_unit/railtie"
@@ -35,6 +35,21 @@ module Aglowy
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Action Text needs Active Storage, but nothing uploads yet: notes have attachments off.
+    # Its public upload and blob routes stay undrawn until the file story adds guarded ones
+    # (docs/design/family-studies.md, Files).
+    config.active_storage.draw_routes = false
+    config.active_storage.variant_processor = :disabled
+
+    # Lexxy widens Action Text's allowed tags for its media attachments. Notes have attachments
+    # off, so take the media tags back: nobody can post an <embed> or <video> that everyone in
+    # the household then loads. Ordered after Lexxy's, which sets the list after boot too.
+    initializer "aglowy.action_text_sanitizer", after: "lexxy.sanitization" do |app|
+      app.config.after_initialize do
+        ActionText::ContentHelper.allowed_tags -= %w[ embed video audio source ]
+      end
+    end
 
     # Limits for family studies, one place each (docs/design/family-studies.md, "Limits").
     config.x.family_studies.max_file_size   = 25.megabytes

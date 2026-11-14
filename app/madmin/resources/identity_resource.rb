@@ -17,8 +17,10 @@ class IdentityResource < Madmin::Resource
   # No association fields: Madmin 3.4.1 renders them via Madmin.resource_name_for,
   # which references ::ActiveStorage, and Active Storage isn't loaded yet.
 
+  # Leaving Madmin for the app swaps every asset, so Turbo would reload the page and drop the
+  # "Now impersonating" flash. A plain form post loads the app page once.
   member_action do |record|
-    button_to "Impersonate", main_app.admin_impersonation_path(identity_id: record.id), method: :post
+    button_to "Impersonate", main_app.admin_impersonation_path(identity_id: record.id), method: :post, data: { turbo: false }
   end
 
   def self.display_name(record) = record.email
