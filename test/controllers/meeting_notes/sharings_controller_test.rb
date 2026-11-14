@@ -77,6 +77,19 @@ class MeetingNotes::SharingsControllerTest < ActionDispatch::IntegrationTest
     assert_turbo_stream(action: :prepend, targets: "main .container-xl") { assert_select "template", text: /Shared with The Head Family\./ }
   end
 
+  # turbo_stream.update marks a String html_safe, so a household's name reaches the hint as text only if escaped.
+  test "sharing from the page shows the household's name as text" do
+    households(:home).update!(name: "<img src=x onerror=alert(1)>")
+    sign_in identities(:head)
+
+    post sharing_path(meeting_notes(:head_midweek), households(:home)), as: :turbo_stream
+
+    assert_turbo_stream(action: :update, target: "meeting-note-save-hint") do
+      assert_select "template img", count: 0
+      assert_select "template", text: "Members of <img src=x onerror=alert(1)> can read this note."
+    end
+  end
+
   test "stopping from the page updates it in place" do
     meeting_notes(:head_midweek).share_with(households(:home))
     sign_in identities(:head)
