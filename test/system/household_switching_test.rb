@@ -13,6 +13,7 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     assert_turbo_idle
 
     find("summary", text: "Switch household").click
+    capture_screens("household-switcher")
     click_on "The Grandparent Family"
     assert_selector "h1", text: "The Grandparent Family"
   end
@@ -20,10 +21,16 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
   test "every page on the way passes assert_accessible" do
     sign_in identities(:head)
 
-    [ households_url, new_household_url, household_root_url(household_id: households(:home)), household_root_url(household_id: households(:parents)) ].each do |url|
+    {
+      "households" => households_url,
+      "new-household" => new_household_url,
+      "dashboard" => household_root_url(household_id: households(:home)),
+      "dashboard-second-household" => household_root_url(household_id: households(:parents))
+    }.each do |name, url|
       visit url
       assert_selector "h1"
       assert_accessible
+      capture_screens(name)
     end
   end
 end

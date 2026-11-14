@@ -8,6 +8,7 @@ class AddMemberTest < ApplicationSystemTestCase
     click_on "Add a member"
     assert_selector "h1", text: "Add a member"
     assert_accessible
+    capture_screens("new-member")
 
     fill_in "Name", with: "Baby Head"
     select "Child", from: "Role"
@@ -16,6 +17,7 @@ class AddMemberTest < ApplicationSystemTestCase
     assert_text "Baby Head was added to the household."
     within("main") { assert_text(/Baby Head\s*Child/) }
     assert_accessible
+    capture_screens("dashboard-member-added")
   end
 
   test "an adult doesn't see the link to add a member" do
@@ -24,5 +26,6 @@ class AddMemberTest < ApplicationSystemTestCase
 
     assert_selector "h1", text: "The Head Family"
     assert_no_link "Add a member"
+    capture_screens("dashboard-adult")
   end
 end

@@ -1,9 +1,11 @@
 require "test_helper"
 require "axe/matchers/be_axe_clean"
 require_relative "support/accessibility_helper"
+require_relative "support/screenshot_helper"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   include AccessibilityHelper
+  include ScreenshotHelper
   include Devise::Test::IntegrationHelpers
 
   # Fixture passwords are in breach lists, so after a real sign-in Chrome's
