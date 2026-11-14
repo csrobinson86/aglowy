@@ -27,10 +27,13 @@ class MeetingNotesController < ApplicationController
   def edit
   end
 
-  # A part id from any other note isn't among this note's parts, so nested attributes raise RecordNotFound (404).
+  # A part or gem id from any other note isn't among this note's, so nested attributes raise RecordNotFound (404).
+  # A bad reference shows the form again with everything that was typed.
   def update
-    @meeting_note.revise!(parts_params)
+    @meeting_note.revise!(note_params)
     redirect_to household_meeting_note_path(id: @meeting_note), notice: "Notes saved."
+  rescue ActiveRecord::RecordInvalid
+    render :edit, status: :unprocessable_content
   end
 
   private
@@ -41,8 +44,8 @@ class MeetingNotesController < ApplicationController
     authorize @meeting_note
   end
 
-  def parts_params
-    params.expect(meeting_note: [ parts_attributes: [ [ :id, :title, :notes, :_destroy ] ] ])
+  def note_params
+    params.expect(meeting_note: [ parts_attributes: [ [ :id, :title, :notes, :_destroy ] ], gems_attributes: [ [ :id, :scripture, :insight, :_destroy ] ] ])
   end
 
   # Both are required: a missing one is a 400, not a missing keyword.

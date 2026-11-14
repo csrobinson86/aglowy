@@ -40,6 +40,10 @@ class MeetingNote::GemTest < ActiveSupport::TestCase
     assert_equal "Jehovah holds on to me when I feel weak", gem.reload.insight
   end
 
+  test "reference is the normalised reference" do
+    assert_equal "Philippians 4:6-7", meeting_note_gems(:head_anxiety).reference.to_s
+  end
+
   test "a gem on a weekend note is invalid" do
     gem = meeting_notes(:head_weekend).gems.new(position: 1, scripture: "Isaiah 41:10")
 

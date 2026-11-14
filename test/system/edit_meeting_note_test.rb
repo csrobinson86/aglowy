@@ -31,7 +31,7 @@ class EditMeetingNoteTest < ApplicationSystemTestCase
     assert_selector "h3", text: "Living as Christians part · Local needs"
     assert_selector "h3", text: "Living as Christians part · Be generous"
     assert_text "Give quietly."
-    assert_equal [ "Talk · Jehovah holds on to us", "Living as Christians part · Local needs",
+    assert_equal [ "Talk · Jehovah holds on to us", "Spiritual Gems", "Living as Christians part · Local needs",
                    "Living as Christians part · Be generous", "Congregation Bible Study" ], all("main h3").map(&:text)
   end
 

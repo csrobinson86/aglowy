@@ -119,6 +119,27 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert MeetingNote::Part.exists?(meeting_note_parts(:head_bible_reading).id)
   end
 
+  test "revise! adds gems after the others, whatever position is sent, and removes them" do
+    note = meeting_notes(:head_midweek)
+
+    note.revise!(gems_attributes: [
+      { id: meeting_note_gems(:head_anxiety).id, _destroy: "1" },
+      { scripture: "Ps 23", insight: "He leads.", position: 1 }
+    ])
+
+    assert_equal [ [ "Isaiah 41:10", 1 ], [ "Ps 23", 3 ] ], note.gems.reload.map { [ it.scripture, it.position ] }
+  end
+
+  test "filled sections show Spiritual Gems when the note has gems, and not otherwise" do
+    note = meeting_notes(:head_midweek)
+    _section, parts = note.filled_sections.first
+    assert_equal %w[ talk spiritual_gems ], parts.map(&:key)
+
+    note.gems.delete_all
+    _section, parts = note.reload.filled_sections.first
+    assert_equal %w[ talk ], parts.map(&:key)
+  end
+
   test "filled sections keep the outline's order, so a part added later still comes before the Bible study" do
     note = meeting_notes(:head_midweek)
     note.revise!(parts_attributes: [ { title: "Second part" } ])

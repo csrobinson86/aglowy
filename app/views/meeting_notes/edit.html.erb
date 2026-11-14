@@ -14,8 +14,28 @@
       <div class="mt-3"><%= render "meeting_notes/notes_field", form: part, hidden_label: "for Talk" %></div>
     <% end %>
 
-    <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mt: 4, mb: 2)) { "Spiritual Gems" } %>
-    <p class="color-fg-muted">Spiritual gems can't be added here yet.</p>
+    <div class="d-flex flex-wrap flex-items-baseline flex-justify-between mt-4 mb-2">
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mr: 2)) { "Spiritual Gems" } %>
+      <p class="color-fg-muted f6 mb-0">Each gem is a scripture and what you found in it</p>
+    </div>
+    <div data-controller="gems" data-gems-next-number-value="<%= @meeting_note.gems.size + 1 %>">
+      <div data-gems-target="list">
+        <% @meeting_note.gems.each.with_index(1) do |gem, number| %>
+          <%= f.fields_for :gems, gem do |gem_form| %>
+            <%= render "meeting_notes/gem", form: gem_form, number: number %>
+          <% end %>
+        <% end %>
+      </div>
+      <template data-gems-target="template">
+        <%= f.fields_for :gems, MeetingNote::Gem.new, child_index: "NEW_GEM" do |gem_form| %>
+          <%= render "meeting_notes/gem", form: gem_form, number: "GEM_NUMBER" %>
+        <% end %>
+      </template>
+      <%= render(Primer::Beta::Button.new(data: { gems_target: "add", action: "gems#add" })) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        Add a gem
+      <% end %>
+    </div>
 
     <%= f.fields_for :parts, parts.fetch("bible_reading", []) do |part| %>
       <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mt: 4, mb: 2)) { "Bible Reading" } %>

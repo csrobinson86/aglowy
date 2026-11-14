@@ -1,7 +1,8 @@
 <%# locals: (form:, number:) %>
 <%# One Living as Christians part on the edit page. number tells the parts apart for screen readers;
-    in the <template> it's a placeholder the living-parts controller fills in. %>
-<fieldset class="mb-3" data-living-parts-target="part" data-new-record="<%= form.object.new_record? %>">
+    in the <template> it's a placeholder the living-parts controller fills in. A part removed before a
+    failed save stays hidden. %>
+<fieldset class="mb-3" data-living-parts-target="part" data-new-record="<%= form.object.new_record? %>" <%= "hidden" if form.object.marked_for_destruction? %>>
   <legend class="sr-only">Living as Christians part <%= number %></legend>
   <div class="d-flex flex-items-start">
     <div class="flex-1 min-width-0">
