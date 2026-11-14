@@ -84,7 +84,7 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
 
   test "with no sessions, a child is told a parent will schedule one" do
     households(:home).family_studies.destroy_all
-    sign_in Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+    sign_in child_identity
 
     get household_family_studies_path(household_id: households(:home))
 
@@ -92,4 +92,113 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".blankslate", text: /When a parent schedules a family study, it will show up here\./
     assert_select ".blankslate", text: /Schedule your family's first study/, count: 0
   end
+
+  test "a head and an adult can create" do
+    [ identities(:head), identities(:spouse) ].each do |identity|
+      sign_in identity
+
+      assert_difference -> { households(:home).family_studies.count } => 1 do
+        post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params }
+      end
+
+      assert_redirected_to household_family_studies_path(household_id: households(:home))
+      assert_equal "Your family study is scheduled.", flash[:notice]
+    end
+  end
+
+  test "a head and an adult see the form and the Schedule a study buttons" do
+    households(:home).family_studies.destroy_all
+
+    [ identities(:head), identities(:spouse) ].each do |identity|
+      sign_in identity
+
+      get new_household_family_study_path(household_id: households(:home))
+      assert_response :success
+      assert_select "title", "Schedule a family study · The Head Family · Aglowy"
+      assert_select "h1", "Schedule a family study"
+      assert_select "nav[aria-label='Breadcrumb'] a", text: "Family studies"
+      assert_select "form[action='#{household_family_studies_path(household_id: households(:home))}']"
+      assert_select "main a[href='#{household_family_studies_path(household_id: households(:home))}']", "Cancel"
+
+      get household_family_studies_path(household_id: households(:home))
+      assert_select ".Subhead a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+      assert_select ".blankslate a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+    end
+  end
+
+  test "a child gets refused and sees no Schedule button" do
+    sign_in child_identity
+
+    get new_household_family_study_path(household_id: households(:home))
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_equal "You can't do that in this household.", flash[:alert]
+
+    assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Session.count" ] do
+      post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params }
+    end
+    assert_redirected_to household_root_path(household_id: households(:home))
+
+    get household_family_studies_path(household_id: households(:home))
+    assert_select "a", { text: "Schedule a study", count: 0 }
+
+    households(:home).family_studies.destroy_all
+    get household_family_studies_path(household_id: households(:home))
+    assert_select "a", { text: "Schedule a study", count: 0 }
+  end
+
+  test "invalid input re-renders with errors" do
+    sign_in identities(:head)
+
+    assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Session.count" ] do
+      post household_family_studies_path(household_id: households(:home)),
+           params: { family_study_scheduling: valid_params.merge(topic: "Proverbs 3", ends_at: "18:00") }
+    end
+
+    assert_response :unprocessable_content
+    assert_select ".FormControl-inlineValidation", text: /must be after Starts\. Studies that end after midnight aren't supported\./
+    assert_select "input[name='family_study_scheduling[topic]'][value='Proverbs 3']"
+    assert_select "input[name='family_study_scheduling[starts_at]'][value='19:00']"
+    assert_select "option[value='weekly'][selected]"
+  end
+
+  test "the Repeat choices follow the date in the query" do
+    sign_in identities(:head)
+
+    get new_household_family_study_path(household_id: households(:home)), params: { family_study_scheduling: { starts_on: "2026-11-24" } }
+
+    assert_select "turbo-frame#family_study_scheduling_repeat select option", text: "Monthly on the last Tuesday"
+    assert_select "turbo-frame#family_study_scheduling_repeat select option", text: "Monthly on the fourth Tuesday"
+  end
+
+  test "a malformed date query still shows the form" do
+    sign_in identities(:head)
+
+    get new_household_family_study_path(household_id: households(:home)), params: { family_study_scheduling: "x" }
+
+    assert_response :success
+  end
+
+  test "a non-member gets 404 for the form and for creating" do
+    sign_in identities(:outsider)
+
+    get new_household_family_study_path(household_id: households(:home))
+    assert_response :not_found
+
+    # The 404 response doesn't carry the session cookie, so sign in again.
+    sign_in identities(:outsider)
+    assert_no_difference "FamilyStudy.count" do
+      post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params }
+    end
+    assert_response :not_found
+  end
+
+  private
+    def valid_params
+      { topic: "", starts_on: 3.days.from_now.to_date.iso8601, starts_at: "19:00", ends_at: "19:45", repeat: "weekly" }
+    end
+
+    # Charlie Child has no login in the fixtures, so give them one here.
+    def child_identity
+      Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+    end
 end

@@ -9,3 +9,6 @@ application.register("flash", FlashController)
 
 import HelloController from "./hello_controller"
 application.register("hello", HelloController)
+
+import RepeatFieldController from "./repeat_field_controller"
+application.register("repeat-field", RepeatFieldController)

@@ -10,8 +10,14 @@
   <% blankslate.with_heading(tag: :h2) { "Welcome to #{Current.household.name}" } %>
   <% if policy(Membership).create? %>
     <% blankslate.with_description { "Add the people in your household. Family studies, goals and notes will show up here as you add them." } %>
-    <% blankslate.with_primary_action(href: new_household_member_path) { "Add a member" } %>
+    <% blankslate.with_secondary_action(href: new_household_member_path) { "Add a member" } %>
   <% else %>
     <% blankslate.with_description { "Family studies, goals and notes will show up here." } %>
+  <% end %>
+  <% if policy(FamilyStudy).create? %>
+    <% blankslate.with_primary_action(href: new_household_family_study_path) do |button| %>
+      <% button.with_leading_visual_icon(icon: :plus) %>
+      Schedule a study
+    <% end %>
   <% end %>
 <% end %>
