@@ -4,8 +4,32 @@ class IdentitySessionsTest < ActionDispatch::IntegrationTest
   test "a confirmed identity signs in with email and password" do
     sign_in_with identities(:head)
 
-    assert_redirected_to root_path
+    assert_redirected_to households_path
     assert_equal "Signed in successfully.", flash[:notice]
+  end
+
+  test "one active household lands on its page" do
+    sign_in_with identities(:spouse)
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+  end
+
+  test "several land on the chooser" do
+    sign_in_with identities(:head)
+
+    assert_redirected_to households_path
+  end
+
+  test "none lands on new household" do
+    sign_in_with identities(:staff)
+
+    assert_redirected_to new_household_path
+  end
+
+  test "an inactive membership doesn't count" do
+    sign_in_with identities(:former)
+
+    assert_redirected_to new_household_path
   end
 
   test "an unconfirmed identity can't" do

@@ -15,6 +15,18 @@ class ApplicationController < ActionController::Base
     Current.identity = current_identity
   end
 
+  # Only active memberships count: none, one, or several households.
+  def after_sign_in_path_for(identity)
+    households = identity.user.active_households.limit(2).to_a
+
+    stored_location_for(identity) ||
+      case households.size
+      when 0 then new_household_path
+      when 1 then household_root_path(household_id: households.first)
+      else households_path
+      end
+  end
+
   # Nil outside household URLs; policies for those actions must not read it.
   def pundit_user
     Current.membership

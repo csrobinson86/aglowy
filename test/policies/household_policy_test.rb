@@ -1,6 +1,21 @@
 require "test_helper"
 
 class HouseholdPolicyTest < ActiveSupport::TestCase
+  test "index? and create? are true with a nil membership" do
+    policy = HouseholdPolicy.new(nil, Household)
+
+    assert policy.index?
+    assert policy.create?
+  end
+
+  test "index?, new? and create? are true for every role" do
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      policy = HouseholdPolicy.new(memberships(membership), Household)
+
+      assert policy.index? && policy.new? && policy.create?, "expected #{membership} to list and create households"
+    end
+  end
+
   test "show? yes for head, adult and child" do
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       assert HouseholdPolicy.new(memberships(membership), households(:home)).show?, "expected #{membership} to see home"

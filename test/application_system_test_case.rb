@@ -7,4 +7,13 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   include Devise::Test::IntegrationHelpers
 
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
+
+  # The full suite runs in parallel workers, so pages can take longer than the 2s default.
+  Capybara.default_max_wait_time = 5
+
+  # Turbo marks <html aria-busy> until a visit completes and may move focus as
+  # it finishes, which closes an open menu. Wait for it before interacting.
+  def assert_turbo_idle
+    assert_selector "html:not([aria-busy])"
+  end
 end

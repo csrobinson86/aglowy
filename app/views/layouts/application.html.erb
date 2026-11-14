@@ -24,10 +24,11 @@
   </head>
 
   <body data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
-    <%= render "shared/flash" %>
-    <%= render "shared/impersonation_banner" %>
+    <%= render "shared/header" if Current.user %>
 
     <main>
+      <%= render "shared/flash" %>
+      <%= render "shared/impersonation_banner" %>
       <%= yield %>
     </main>
   </body>

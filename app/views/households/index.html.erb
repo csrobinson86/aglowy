@@ -1,0 +1,15 @@
+<% content_for :title, "Your households" %>
+
+<div class="container-md px-3 py-5">
+  <%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { "Your households" } %>
+
+  <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+    <% @households.each do |household| %>
+      <% box.with_row do %>
+        <%= render(Primer::Beta::Link.new(href: household_root_path(household_id: household))) { household.name } %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_path)) { "Create a household" } %>
+</div>
