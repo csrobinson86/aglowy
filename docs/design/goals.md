@@ -152,10 +152,11 @@ The same rules as meeting notes (`docs/design/meeting-notes.md`, "Leaving ends a
 
 `Membership#deactivate` also deletes the person's step assignments **and their ticks** on **steps not yet done** in that household's goals, in the same transaction and under the `household.lock!` it already takes (an explicit step in the method, not a callback). Otherwise a step naming only someone who left could never be finished. Assignments and ticks on done steps stay as history, so a stored tick always belongs to an assignee.
 
-**One lock for every write.** Creating or changing assignments (`reassign`), ticking and unticking (`tick`, `untick`), completing, reopening, archiving and restoring the goal, and the deactivation cleanup all take the same `household.lock!` first, then recheck under it before writing:
+**One lock for every write.** Adding, editing and removing steps, creating or changing assignments (`reassign`), ticking and unticking (`tick`, `untick`), completing, reopening, archiving and restoring the goal, and the deactivation cleanup all take the same `household.lock!` first, then recheck under it before writing:
 
+- Adding, editing or removing a step: the goal is still open.
 - `reassign`: each new assignee is an active member.
-- `tick`: the goal is still open, and the person whose part it is is still named on the step (or it's still an "Everyone" step) and still an active member.
+- `tick`: the goal is still open. On a named step, the person whose part it is is still named and still an active member. An "Everyone" step needs no person check, and personal goal steps have no household, so no membership check applies to them.
 - `untick`: the goal is still open. Nothing is checked about the person whose tick is removed, so an adult can always remove a departed member's tick.
 - Lifecycle writes: the goal's current state (completing an already completed goal stays a no-op).
 
