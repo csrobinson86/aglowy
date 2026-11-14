@@ -15,6 +15,11 @@
       <%= render(Primer::Beta::Label.new(scheme: :danger, ml: 1)) { "Cancelled" } %>
     <% end %>
   <% end %>
+  <% if policy(@study_session).update? %>
+    <% subhead.with_actions(display: :flex) do %>
+      <%= render "family_studies/sessions/actions", family_study: @family_study, study_session: @study_session %>
+    <% end %>
+  <% end %>
 <% end %>
 
 <%= render "family_studies/storage_warning", household: Current.household %>

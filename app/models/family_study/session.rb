@@ -17,6 +17,22 @@ class FamilyStudy::Session < ApplicationRecord
     canceled_at?
   end
 
+  # Moves this session only, to a date and time in the household's zone, and detaches it from the
+  # schedule (scheduling rule 7). recurrence_at stays, so the generator never brings the slot back (gotcha 21).
+  def reschedule(on:, at:)
+    moved_to = household_zone.local(on.year, on.month, on.day, at.hour, at.min)
+    update!(scheduled_at: moved_to, detached_at: Time.current) unless moved_to == scheduled_at
+  end
+
+  # Skips this session only; the row stays, so the generator never recreates it (scheduling rule 6).
+  def cancel
+    update!(canceled_at: Time.current) unless canceled?
+  end
+
+  def restore
+    update!(canceled_at: nil)
+  end
+
   # One file resource per uploaded file (signed blob ids), titled with its name. An id that can't be
   # found is dropped. If one file is refused, none are added; the refused one carries its errors.
   def add_files(files)
@@ -37,11 +53,16 @@ class FamilyStudy::Session < ApplicationRecord
 
   # Shown in the household's zone, never the server's or the browser's (gotcha 14).
   def local_scheduled_at
-    scheduled_at.in_time_zone(family_study.household.time_zone)
+    scheduled_at.in_time_zone(household_zone)
   end
 
   # A session's end is its study's duration after it starts.
   def local_ends_at
     local_scheduled_at + family_study.duration_minutes.minutes
   end
+
+  private
+    def household_zone
+      ActiveSupport::TimeZone[family_study.household.time_zone]
+    end
 end
