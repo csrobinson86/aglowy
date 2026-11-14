@@ -66,8 +66,8 @@ The Watchtower section says: "Follow along and mark your answers in JW Library. 
 | --- | --- | --- | --- |
 | `meeting_note_id` | uuid | FK → meeting_notes, not null, `on_delete: :cascade` | |
 | `key` | string | not null | One of the outline's part keys for the note's kind and version (validated in the model) |
-| `title` | string | nullable | Talk title, Living as Christians part title, Public Talk title, Watchtower article title |
-| `speaker` | string | nullable | Public Talk only |
+| `title` | string | nullable, `encrypts :title` | Talk title, Living as Christians part title, Public Talk title, Watchtower article title |
+| `speaker` | string | nullable, `encrypts :speaker` | Public Talk only. Another person's name, so it's encrypted |
 | `position` | integer | not null | Order within the note |
 | notes | Action Text | `has_rich_text :notes, encrypted: true` | Lexxy, same setup as family study notes |
 
@@ -134,7 +134,7 @@ All under `/:household_id` in the app shell, with "Meeting notes" (`note` icon) 
 
 ## Traps
 
-- Encrypted columns can't be searched or sorted in SQL. That's why gems keep `book_number`/`chapter`/`verse_*` in plain columns (references aren't personal) and `insight` encrypted.
+- Everything a person types is encrypted: part notes, titles, the speaker's name, gem insights. Encrypted columns can't be searched or sorted in SQL, so the one exception is a gem's reference (`scripture`, `book_number`, `chapter`, `verse_*`), which isn't personal and is needed for Bible order.
 - The household in the URL isn't the note's owner. Always load notes through `Current.user.meeting_notes` (author) or `MeetingNote.shared_with(Current.household)` (shared), never by id alone.
 - Turbo Stream updates on a shared note must never be broadcast to household members while the author is editing; there are no live updates in NOTES-01.
 - A person in two households sees their notes in both, but each share belongs to one household.
