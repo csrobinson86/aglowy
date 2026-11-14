@@ -90,6 +90,11 @@ class ScriptureTest < ActiveSupport::TestCase
     assert_equal "Philemon 4-6", Scripture.parse("Phm 1:4-6").to_s
   end
 
+  test "a one-chapter book has no second chapter" do
+    assert_nil Scripture.parse("Jude 2:3")
+    assert_nil Scripture.parse("Obad 3:1")
+  end
+
   test "an en dash range" do
     assert_equal 10..13, Scripture.parse("Isaiah 41:10–13").verses
   end

@@ -147,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_210000) do
     t.index ["meeting_note_id"], name: "index_meeting_note_gems_on_meeting_note_id"
     t.check_constraint "book_number >= 1 AND book_number <= 66", name: "meeting_note_gems_book_number_check"
     t.check_constraint "chapter > 0", name: "meeting_note_gems_chapter_check"
+    t.check_constraint "verse_start IS NULL AND verse_end IS NULL OR verse_start IS NOT NULL AND verse_end IS NOT NULL AND verse_start > 0 AND verse_end >= verse_start", name: "meeting_note_gems_verses_check"
   end
 
   create_table "meeting_note_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

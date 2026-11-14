@@ -1,6 +1,9 @@
 require "application_system_test_case"
 
 class SignUpTest < ApplicationSystemTestCase
+  # System tests don't clear the test mailer's deliveries between tests, and the Signup model test mails the same address.
+  setup { ActionMailer::Base.deliveries.clear }
+
   test "a visitor signs up, confirms, signs in and lands on the new household" do
     visit root_url
     assert_accessible

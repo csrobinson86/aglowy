@@ -88,8 +88,9 @@ class Scripture
       return unless book_number
 
       chapter_text, verses_text = numbers.split(":", 2)
-      chapter_text, verses_text = "1", chapter_text if verses_text.nil? && ONE_CHAPTER_BOOKS.include?(BOOKS[book_number - 1].first)
-      chapter = number(chapter_text, up_to: MOST_CHAPTERS)
+      one_chapter = ONE_CHAPTER_BOOKS.include?(BOOKS[book_number - 1].first)
+      chapter_text, verses_text = "1", chapter_text if verses_text.nil? && one_chapter
+      chapter = number(chapter_text, up_to: one_chapter ? 1 : MOST_CHAPTERS)
       verses = verse_numbers(verses_text) if verses_text
       return if chapter.nil? || (verses_text && verses.nil?)
 

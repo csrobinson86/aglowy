@@ -87,6 +87,18 @@ class MeetingNote::GemTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::CheckViolation) { meeting_note_gems(:head_strength).update_column(:chapter, 0) }
   end
 
+  test "database: a verse_start without a verse_end raises CheckViolation" do
+    assert_raises(ActiveRecord::CheckViolation) { meeting_note_gems(:head_strength).update_column(:verse_end, nil) }
+  end
+
+  test "database: verse_start 0 raises CheckViolation" do
+    assert_raises(ActiveRecord::CheckViolation) { meeting_note_gems(:head_strength).update_column(:verse_start, 0) }
+  end
+
+  test "database: a backwards verse range raises CheckViolation" do
+    assert_raises(ActiveRecord::CheckViolation) { meeting_note_gems(:head_anxiety).update_column(:verse_start, 8) }
+  end
+
   test "database: a gem without a scripture raises NotNullViolation" do
     assert_raises(ActiveRecord::NotNullViolation) { meeting_note_gems(:head_strength).update_column(:scripture, nil) }
   end
