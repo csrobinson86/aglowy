@@ -10,10 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_220100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "households", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "time_zone", default: "UTC", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "identities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
@@ -39,6 +46,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_220100) do
     t.index ["user_id"], name: "index_identities_on_user_id", unique: true
   end
 
+  create_table "memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.uuid "user_id", null: false
+    t.string "role", default: "adult", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id", "role"], name: "index_memberships_on_household_id_and_role"
+    t.index ["household_id", "user_id"], name: "index_memberships_on_household_id_and_user_id", unique: true
+    t.index ["user_id"], name: "index_memberships_on_user_id"
+    t.check_constraint "role::text = ANY (ARRAY['head'::character varying, 'adult'::character varying, 'child'::character varying]::text[])", name: "memberships_role_check"
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "time_zone"
@@ -47,4 +67,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_220100) do
   end
 
   add_foreign_key "identities", "users"
+  add_foreign_key "memberships", "households"
+  add_foreign_key "memberships", "users"
 end
