@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%= render "layouts/head" %>
+  </head>
+
+  <body data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+    <%# AppShellComponent renders the page's one <main>. %>
+    <%= render AppShellComponent.new(membership: Current.membership, selected_item: controller_name.to_sym) do %>
+      <%= render "shared/flash" %>
+      <%= render "shared/impersonation_banner" %>
+      <%= yield %>
+    <% end %>
+  </body>
+</html>

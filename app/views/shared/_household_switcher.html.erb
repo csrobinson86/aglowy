@@ -1,0 +1,12 @@
+<%# locals: (user:, direction: :sw) %>
+<%# Native <details>: opens without waiting for custom-element JS after a Turbo visit. %>
+<%= render(Primer::Alpha::Dropdown.new(with_caret: true)) do |dropdown| %>
+  <% dropdown.with_button(size: :small, aria_label_closed: "Switch household", aria_label_open: "Close household menu") { "Switch household" } %>
+  <% dropdown.with_menu(direction:) do |menu| %>
+    <% user.active_households.order(:name).each do |household| %>
+      <% menu.with_item(tag: :a, href: household_root_path(household_id: household)) { household.name } %>
+    <% end %>
+    <% menu.with_item(divider: true) %>
+    <% menu.with_item(tag: :a, href: new_household_path(household_id: nil)) { "Create a household" } %>
+  <% end %>
+<% end %>
