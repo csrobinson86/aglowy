@@ -645,6 +645,78 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
   end
 
+  test "the author can share from the read and edit views, after a dialog naming who will and won't see it" do
+    sign_in identities(:head)
+
+    [ note_path(meeting_notes(:head_midweek)), edit_note_path(meeting_notes(:head_midweek)) ].each do |path|
+      get path
+
+      assert_select ".Subhead button svg.octicon-people"
+      assert_select ".Subhead button", text: "Share with household"
+      assert_select "dialog#share-meeting-note h1", "Share with The Head Family?"
+      assert_select "dialog#share-meeting-note", text: /Everyone in The Head Family will be able to read this note, including children. Nobody else can change it./
+      assert_select "dialog#share-meeting-note", text: /The Grandparent Family won't see it. You can stop sharing at any time, and if you leave The Head Family it stops automatically./
+      assert_select "dialog#share-meeting-note form[action='#{household_meeting_note_sharing_path(household_id: households(:home), meeting_note_id: meeting_notes(:head_midweek))}'][method=post] button", "Share note"
+      assert_select "dialog#share-meeting-note button", "Cancel"
+    end
+  end
+
+  test "the share dialog leaves out other households when I have none" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    sign_in identities(:spouse)
+
+    get note_path(note)
+
+    assert_select "dialog#share-meeting-note", text: /including children/
+    assert_select "dialog#share-meeting-note", text: /won't see it/, count: 0
+    assert_select "dialog#share-meeting-note", text: /You can stop sharing at any time, and if you leave The Head Family it stops automatically./
+  end
+
+  test "a note shared here says so, offers Stop sharing and changes the save hint" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+    assert_select ".Subhead h1 .Label", "Shared with The Head Family"
+    assert_select "dialog#share-meeting-note", count: 0
+    assert_select ".Subhead form[action='#{household_meeting_note_sharing_path(household_id: households(:home), meeting_note_id: meeting_notes(:head_midweek))}'] input[name=_method][value=delete]"
+    assert_select ".Subhead form button", "Stop sharing"
+
+    get edit_note_path(meeting_notes(:head_midweek))
+    assert_select "main", text: /Members of The Head Family can read this note./
+    assert_not_includes response.body, "Only you can see this note."
+  end
+
+  test "a note shared in my other household isn't Private here, and the dialog doesn't claim that household won't see it" do
+    meeting_notes(:head_midweek).share_with(households(:parents))
+    sign_in identities(:head)
+
+    get edit_note_path(meeting_notes(:head_midweek))
+
+    assert_select ".Subhead h1 .Label", "Shared with The Grandparent Family"
+    assert_select ".Subhead button", text: "Share with household"
+    assert_select "dialog#share-meeting-note", text: /won't see it/, count: 0
+    assert_select "main", text: /Members of The Grandparent Family can read this note./
+
+    meeting_notes(:head_midweek).share_with(households(:home))
+    get edit_note_path(meeting_notes(:head_midweek))
+
+    assert_select ".Subhead h1 .Label", "Shared with The Grandparent Family and The Head Family"
+    assert_select "main", text: /Members of The Grandparent Family and The Head Family can read this note./
+  end
+
+  test "My notes shows a Shared label on shared notes" do
+    shared = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    shared.share_with(households(:home))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home))
+
+    assert_select "main .Box-row .Label", count: 1
+    assert_select "main .Box-row", text: /Life and Ministry.*Shared/m
+  end
+
   private
     def note_path(note, household = households(:home))
       household_meeting_note_path(household_id: household, id: note)

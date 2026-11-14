@@ -5,17 +5,23 @@
   <% breadcrumbs.with_item(href: household_meeting_note_path(id: meeting_note)) { meeting_note.display_week } %>
 <% end %>
 <%= render Primer::Beta::Subhead.new do |subhead| %>
-  <% subhead.with_heading(tag: :h1, display: :flex, align_items: :center) do %>
-    <%= title %>
-    <%= render(Primer::Beta::Label.new(ml: 2)) { "Private" } %>
+  <%# Wraps, so a long household name drops below the title and truncates instead of squeezing it. %>
+  <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
+    <span class="mr-2"><%= title %></span>
+    <% label = meeting_note_sharing_label(meeting_note) %>
+    <%= render(Primer::Beta::Label.new(title: label, classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+      <%= render(Primer::Beta::Octicon.new(meeting_note.shared_households.any? ? :people : :lock, size: :xsmall)) %>
+      <%= label %>
+    <% end %>
   <% end %>
-  <% if edit_link %>
-    <% subhead.with_actions do %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_path(id: meeting_note))) do |button| %>
+  <% subhead.with_actions(display: :flex) do %>
+    <% if edit_link %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_path(id: meeting_note), mr: 2)) do |button| %>
         <% button.with_leading_visual_icon(icon: :pencil) %>
         Edit notes
       <% end %>
     <% end %>
+    <%= render "meeting_notes/sharing", meeting_note:, household: Current.household %>
   <% end %>
   <% subhead.with_description do %>
     <%= meeting_note.display_week %> ·

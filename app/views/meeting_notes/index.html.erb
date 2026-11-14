@@ -24,6 +24,9 @@
           <%= render(Primer::Beta::Link.new(href: household_meeting_note_path(id: note), scheme: :primary, font_weight: :bold, mr: 3)) { meeting_note_title(note) } %>
           <div class="color-fg-muted"><%= note.display_week %></div>
         </div>
+        <% if note.sharings.any? %>
+          <%= render(Primer::Beta::Label.new(ml: :auto)) { "Shared" } %>
+        <% end %>
       <% end %>
     <% end %>
   <% else %>

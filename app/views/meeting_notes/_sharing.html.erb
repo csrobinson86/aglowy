@@ -1,0 +1,28 @@
+<%# locals: (meeting_note:, household:) %>
+<%# Shares into the household in the URL only (frame share-dialog.png). Sharing asks first in a Primer Dialog,
+    never a browser confirm; stopping is one click and can be shared again. %>
+<% sharing_path = household_meeting_note_sharing_path(meeting_note_id: meeting_note) %>
+
+<% if meeting_note.shared_with?(household) %>
+  <%= primer_form_with(url: sharing_path, method: :delete) do |f| %>
+    <%= render MeetingNotes::SharingForm.new(f, label: "Stop sharing") %>
+  <% end %>
+<% else %>
+  <% left_out = meeting_note.households_not_shared_with_besides(household).to_a %>
+  <%= render(Primer::Alpha::Dialog.new(id: "share-meeting-note", title: "Share with #{household.name}?")) do |dialog| %>
+    <% dialog.with_show_button do |button| %>
+      <% button.with_leading_visual_icon(icon: :people) %>
+      Share with household
+    <% end %>
+    <% dialog.with_body do %>
+      <p>Everyone in <strong><%= household.name %></strong> will be able to read this note, including children. Nobody else can change it.</p>
+      <p class="color-fg-muted mb-0"><%= "#{left_out.map(&:name).to_sentence} won't see it. " if left_out.any? %>You can stop sharing at any time, and if you leave <%= household.name %> it stops automatically.</p>
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "share-meeting-note" })) { "Cancel" } %>
+      <%= primer_form_with(url: sharing_path) do |f| %>
+        <%= render MeetingNotes::SharingForm.new(f, label: "Share note", scheme: :primary) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

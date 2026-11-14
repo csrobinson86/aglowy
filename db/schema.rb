@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -162,6 +162,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_210000) do
     t.index ["meeting_note_id"], name: "index_meeting_note_parts_on_meeting_note_id"
   end
 
+  create_table "meeting_note_sharings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_note_id", null: false
+    t.uuid "household_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["household_id"], name: "index_meeting_note_sharings_on_household_id"
+    t.index ["meeting_note_id", "household_id"], name: "index_meeting_note_sharings_on_note_and_household", unique: true
+  end
+
   create_table "meeting_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.string "kind", null: false
@@ -204,6 +212,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_210000) do
   add_foreign_key "identities", "users"
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
+  add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade
+  add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
