@@ -1,0 +1,21 @@
+<%# locals: (form:, gems:) %>
+<%# The note's Spiritual Gems on the edit page: a row for each, a <template> for a new one and "Add a gem"
+    (gems_controller.js). %>
+<div data-controller="gems" data-gems-next-number-value="<%= gems.size + 1 %>">
+  <div data-gems-target="list">
+    <% gems.each.with_index(1) do |gem, number| %>
+      <%= form.fields_for :gems, gem do |gem_form| %>
+        <%= render "meeting_notes/gem", form: gem_form, number: number %>
+      <% end %>
+    <% end %>
+  </div>
+  <template data-gems-target="template">
+    <%= form.fields_for :gems, MeetingNote::Gem.new, child_index: "NEW_GEM" do |gem_form| %>
+      <%= render "meeting_notes/gem", form: gem_form, number: "GEM_NUMBER" %>
+    <% end %>
+  </template>
+  <%= render(Primer::Beta::Button.new(data: { gems_target: "add", action: "gems#add" })) do |button| %>
+    <% button.with_leading_visual_icon(icon: :plus) %>
+    Add a gem
+  <% end %>
+</div>

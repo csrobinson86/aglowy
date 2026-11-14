@@ -1,0 +1,22 @@
+<%# locals: (form:, outline_part:, parts:) %>
+<%# The parts of a key that repeats, each with Remove, then a <template> for a new one and "Add another
+    part" (living_parts_controller.js). Only Living as Christians parts repeat for now: MeetingNote#revise!
+    gives every new part the living_part key, and the partial unique index leaves only that key out. %>
+<div data-controller="living-parts" data-living-parts-next-number-value="<%= parts.size + 1 %>">
+  <div data-living-parts-target="list">
+    <% parts.each.with_index(1) do |part, number| %>
+      <%= form.fields_for :parts, part do |part_form| %>
+        <%= render "meeting_notes/repeating_part", form: part_form, outline_part:, number: %>
+      <% end %>
+    <% end %>
+  </div>
+  <template data-living-parts-target="template">
+    <%= form.fields_for :parts, MeetingNote::Part.new, child_index: "NEW_PART" do |part_form| %>
+      <%= render "meeting_notes/repeating_part", form: part_form, outline_part:, number: "PART_NUMBER" %>
+    <% end %>
+  </template>
+  <%= render(Primer::Beta::Button.new(data: { living_parts_target: "add", action: "living-parts#add" })) do |button| %>
+    <% button.with_leading_visual_icon(icon: :plus) %>
+    Add another part
+  <% end %>
+</div>

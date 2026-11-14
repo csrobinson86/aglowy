@@ -38,14 +38,13 @@ class MeetingNotesController < ApplicationController
 
   private
 
-  # Only Life and Ministry notes can be edited until weekend notes have their own story.
   def set_editable_meeting_note
-    @meeting_note = Current.user.meeting_notes.midweek.preloaded.find(params[:id])
+    @meeting_note = Current.user.meeting_notes.preloaded.find(params[:id])
     authorize @meeting_note
   end
 
   def note_params
-    params.expect(meeting_note: [ parts_attributes: [ [ :id, :title, :notes, :_destroy ] ], gems_attributes: [ [ :id, :scripture, :insight, :_destroy ] ] ])
+    params.expect(meeting_note: [ parts_attributes: [ [ :id, :title, :speaker, :notes, :_destroy ] ], gems_attributes: [ [ :id, :scripture, :insight, :_destroy ] ] ])
   end
 
   # Both are required: a missing one is a 400, not a missing keyword.

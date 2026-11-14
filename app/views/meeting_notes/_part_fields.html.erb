@@ -1,0 +1,21 @@
+<%# locals: (form:, outline_part:) %>
+<%# A part's fields as its outline lists them: the text fields side by side from medium width, the first
+    taking the room left (frame weekend-note.png), then the notes. Notes with the default label say which
+    part they're for, for screen readers, since several share the page. %>
+<% text_fields = outline_part.fields.select { it.name.in?(%i[ title speaker ]) } %>
+<% notes = outline_part.field(:notes) %>
+<% if text_fields.any? %>
+  <div class="d-flex flex-column flex-md-row">
+    <% text_fields.each.with_index do |field, index| %>
+      <%= tag.div class: index.zero? ? "flex-1 min-width-0" : "col-md-4 mt-3 mt-md-0 ml-md-3" do %>
+        <%= render MeetingNotes::NoteForm.new(form, field: field.name, label: field.label, placeholder: field.placeholder) %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
+<% if notes %>
+  <%= tag.div class: { "mt-3": text_fields.any? } do %>
+    <%= render "meeting_notes/notes_field", form:, label: notes.label, placeholder: notes.placeholder, tall: notes.tall?,
+                                            hidden_label: ("for #{outline_part.label}" if notes.default_label?) %>
+  <% end %>
+<% end %>

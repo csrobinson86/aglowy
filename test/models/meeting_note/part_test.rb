@@ -28,6 +28,15 @@ class MeetingNote::PartTest < ActiveSupport::TestCase
     assert_not meeting_note_parts(:head_talk).repeats?
   end
 
+  test "only a part whose outline asks for a speaker can have one" do
+    part = meeting_note_parts(:head_talk)
+    part.speaker = "Daniel Okafor"
+
+    assert_not part.valid?
+    assert_includes part.errors[:speaker], "isn't asked for in this part"
+    assert meeting_note_parts(:head_public_talk).valid?
+  end
+
   test "requires a position" do
     part = meeting_notes(:head_midweek).parts.new(key: "living_part")
 

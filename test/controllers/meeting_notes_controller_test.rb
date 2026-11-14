@@ -194,7 +194,18 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main h3", text: "Public Talk · [The public talk's title]"
     assert_select "main", text: /Speaker: Daniel Okafor/
     assert_not_includes response.body, "Watchtower Study"
-    assert_select "a", text: "Edit notes", count: 0
+    assert_select "a[href='#{edit_note_path(meeting_notes(:head_weekend))}']", text: "Edit notes"
+  end
+
+  test "a weekend note shows the Watchtower Study once something is written in it" do
+    meeting_note_parts(:head_watchtower_study).update!(title: "Stay close to Jehovah", notes: "<p>Pray first</p>")
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_weekend))
+
+    assert_equal [ "Public Talk", "Watchtower Study" ], css_select("main h2").map { it.text.squish }
+    assert_select "main h3", text: "Watchtower Study · Stay close to Jehovah"
+    assert_select "main", text: /Pray first/
   end
 
   test "an empty note says nothing is written yet" do
@@ -368,12 +379,40 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Kept", filtered["title"]
   end
 
+  test "a public talk's speaker is filtered from the logs" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter("meeting_note" => { "parts_attributes" => { "0" => { "id" => "1", "speaker" => "Daniel Okafor" } } })
+
+    assert_equal({ "id" => "1", "speaker" => "[FILTERED]" }, filtered.dig("meeting_note", "parts_attributes", "0"))
+  end
+
   test "part titles sent as an array are filtered from the logs too" do
     filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
 
     filtered = filter.filter("meeting_note" => { "parts_attributes" => [ { "id" => "1", "title" => "Mine" } ] })
 
     assert_equal [ { "id" => "1", "title" => "[FILTERED]" } ], filtered.dig("meeting_note", "parts_attributes")
+  end
+
+  test "part titles and speakers in a query string are filtered from the logged path, other titles aren't" do
+    sign_in identities(:head)
+    path = edit_note_path(meeting_notes(:head_weekend))
+
+    get "#{path}?meeting_note[parts_attributes][0][speaker]=Samuel&meeting_note%5Bparts_attributes%5D%5B%5D%5Btitle%5D=Refuge&title=Kept"
+
+    assert_equal "#{path}?meeting_note[parts_attributes][0][speaker]=[FILTERED]&meeting_note%5Bparts_attributes%5D%5B%5D%5Btitle%5D=[FILTERED]&title=Kept",
+      request.filtered_path
+  end
+
+  test "part titles and speakers are filtered from the logged path when the key's names are percent-encoded" do
+    sign_in identities(:head)
+    path = edit_note_path(meeting_notes(:head_weekend))
+
+    get "#{path}?meeting_note[parts_attributes][0][%73peaker]=Samuel&meeting_n%6Fte[parts_attributes][1][title]=Refuge&%74itle=Kept"
+
+    assert_equal "#{path}?meeting_note[parts_attributes][0][%73peaker]=[FILTERED]&meeting_n%6Fte[parts_attributes][1][title]=[FILTERED]&%74itle=Kept",
+      request.filtered_path
   end
 
   test "the read view lists the gems with their references in bold, in order" do
@@ -552,12 +591,58 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal({ "scripture" => "Isaiah 41:10", "insight" => "[FILTERED]" }, filtered.dig("meeting_note", "gems_attributes", "0"))
   end
 
-  test "a weekend note can't be edited yet" do
+  test "the weekend edit page follows its outline: the public talk, then a light Watchtower Study" do
     sign_in identities(:head)
 
     get edit_note_path(meeting_notes(:head_weekend))
 
-    assert_response :not_found
+    assert_response :success
+    assert_select "title", "Edit Weekend meeting · The Head Family · Aglowy"
+    assert_select "main h1", /\AWeekend meeting\s+Private\z/
+    assert_select ".Subhead", text: /Weekend of November 21–22, 2026/
+    assert_equal [ "Public Talk", "Watchtower Study" ], css_select("main h2").map { it.text.squish }
+    assert_select "main h3", count: 0
+    assert_select "main input[type=text][placeholder='The title the speaker announces'][value=?]", "[The public talk's title]"
+    assert_select "main input[type=text][placeholder=Optional][value=?]", "Daniel Okafor"
+    assert_select "main label", text: "Talk title"
+    assert_select "main label", text: "Speaker"
+    assert_select "main label", text: "Article title"
+    assert_select "main", text: /Follow along and mark your answers in JW Library. Keep anything you want to remember here./
+
+    editors = css_select("main lexxy-editor")
+    assert_equal [ "Notes for Public Talk", "A point to remember" ], editors.map { css_select("label[for='#{it["id"]}']").sole.text.squish }
+    assert_equal "Type as the speaker goes: main points, scriptures read, anything to apply.", editors.first["placeholder"]
+    assert_equal [ true, false ], editors.map { it.classes.include?("meeting-note-editor--tall") }
+    assert editors.all? { it.classes.include?("lexxy-content") }, "a class mustn't replace Lexxy's own"
+
+    assert_select "main template", count: 0
+    assert_select "main button", text: /Add/, count: 0
+    assert_select "main button[type=submit]", text: "Save notes"
+    assert_select "main", text: /Only you can see this note./
+  end
+
+  test "the author can save a weekend note's talk title, speaker, notes and Watchtower point" do
+    sign_in identities(:head)
+
+    patch note_path(meeting_notes(:head_weekend)), params: { meeting_note: { parts_attributes: {
+      "0" => { id: meeting_note_parts(:head_public_talk).id, title: "Find Refuge in Jehovah", speaker: "Samuel Mensah", notes: "<p>Psalm 91</p>" },
+      "1" => { id: meeting_note_parts(:head_watchtower_study).id, title: "Stay close to Jehovah", notes: "<p>Pray first</p>" }
+    } } }
+
+    assert_redirected_to note_path(meeting_notes(:head_weekend))
+    public_talk = meeting_note_parts(:head_public_talk).reload
+    assert_equal [ "Find Refuge in Jehovah", "Samuel Mensah", "Psalm 91" ], [ public_talk.title, public_talk.speaker, public_talk.notes.to_plain_text ]
+    watchtower_study = meeting_note_parts(:head_watchtower_study).reload
+    assert_equal [ "Stay close to Jehovah", "Pray first" ], [ watchtower_study.title, watchtower_study.notes.to_plain_text ]
+  end
+
+  test "a weekend note can't take gems" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { MeetingNote::Gem.count } do
+      patch note_path(meeting_notes(:head_weekend)), params: { meeting_note: { gems_attributes: { "0" => { scripture: "Ps 91", insight: "Refuge" } } } }
+    end
+    assert_response :unprocessable_content
   end
 
   private

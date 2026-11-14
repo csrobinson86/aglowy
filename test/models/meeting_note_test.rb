@@ -9,10 +9,10 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_equal 1, note.outline_version
   end
 
-  test "starting a weekend note creates its two parts in order" do
+  test "starting a weekend note builds the public talk and the Watchtower Study in order" do
     note = users(:spouse).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 16))
 
-    assert_equal %w[ public_talk watchtower_study ], note.reload.parts.map(&:key)
+    assert_equal [ [ "public_talk", 1 ], [ "watchtower_study", 2 ] ], note.reload.parts.map { [ it.key, it.position ] }
   end
 
   test "starting it twice returns the same note" do
@@ -101,6 +101,23 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_equal "Jehovah holds on to us", meeting_note_parts(:head_talk).reload.title
     added = note.parts.reload.last(2)
     assert_equal [ [ "living_part", 7, "Second part" ], [ "living_part", 8, "Third part" ] ], added.map { [ it.key, it.position, it.title ] }
+  end
+
+  test "revise! saves the speaker, title and notes on the public talk" do
+    note = meeting_notes(:head_weekend)
+
+    note.revise!(parts_attributes: [ { id: meeting_note_parts(:head_public_talk).id, title: "Find Refuge in Jehovah",
+                                        speaker: "Samuel Mensah", notes: "<p>Psalm 91</p>" } ])
+
+    part = meeting_note_parts(:head_public_talk).reload
+    assert_equal [ "Find Refuge in Jehovah", "Samuel Mensah", "Psalm 91" ], [ part.title, part.speaker, part.notes.to_plain_text ]
+  end
+
+  test "revise! can't add a part to a weekend note, since only Living as Christians parts repeat" do
+    note = meeting_notes(:head_weekend)
+
+    assert_raises(ActiveRecord::RecordInvalid) { note.revise!(parts_attributes: [ { title: "Another talk" } ]) }
+    assert_equal 2, note.parts.reload.count
   end
 
   test "revise! removes a Living as Christians part" do
