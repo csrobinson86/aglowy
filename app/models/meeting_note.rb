@@ -21,7 +21,7 @@ class MeetingNote < ApplicationRecord
   validates :week_of, presence: true
   validate :only_repeating_parts_removed
 
-  scope :preloaded, -> { includes(:gems, :shared_households, parts: :rich_text_notes) }
+  scope :preloaded, -> { includes(:user, :gems, :shared_households, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
 
   # The notes household members can read: shared there by an author who is still an active member there.

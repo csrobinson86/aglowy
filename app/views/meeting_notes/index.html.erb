@@ -34,7 +34,7 @@
     <% box.with_body do %>
       <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
         <% blankslate.with_visual_icon(icon: :note) %>
-        <% blankslate.with_heading(tag: :h3) { "No earlier notes" } %>
+        <% blankslate.with_heading(tag: :h2) { "No earlier notes" } %>
         <% blankslate.with_description { "Notes from earlier weeks will show here." } %>
       <% end %>
     <% end %>

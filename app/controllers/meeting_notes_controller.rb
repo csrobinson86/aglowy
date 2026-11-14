@@ -25,7 +25,7 @@ class MeetingNotesController < ApplicationController
   # My own note first, else one shared into this household, else 404.
   def show
     @meeting_note = Current.user.meeting_notes.preloaded.find_by(id: params[:id]) ||
-      MeetingNote.shared_with(Current.household).preloaded.includes(:user).find(params[:id])
+      MeetingNote.shared_with(Current.household).preloaded.find(params[:id])
     authorize @meeting_note
   end
 

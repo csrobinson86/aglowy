@@ -111,7 +111,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     get household_meeting_notes_path(household_id: households(:home), page: "9" * 20)
 
     assert_response :success
-    assert_select "main h3", text: "No earlier notes"
+    assert_select "main h2", text: "No earlier notes"
     assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: Page::LAST - 1)}']", text: "Newer notes"
   end
 
@@ -121,7 +121,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     get household_meeting_notes_path(household_id: households(:home))
 
     assert_select "main nav[aria-label='Meeting notes'] a[aria-current='page']", text: "My notes"
-    assert_select "main h3", text: "No earlier notes"
+    assert_select "main h2", text: "No earlier notes"
   end
 
   test "starting a note twice redirects to the same one" do
