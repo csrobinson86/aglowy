@@ -12,3 +12,6 @@ application.register("hello", HelloController)
 
 import RepeatFieldController from "./repeat_field_controller"
 application.register("repeat-field", RepeatFieldController)
+
+import ResourceLinksController from "./resource_links_controller"
+application.register("resource-links", ResourceLinksController)

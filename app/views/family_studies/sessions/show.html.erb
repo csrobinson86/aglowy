@@ -41,15 +41,4 @@
   <% end %>
 <% end %>
 
-<%# A placeholder that the resources story fills in. %>
-
-<%= render(Primer::Beta::BorderBox.new) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "Resources" } } %>
-  <% box.with_body do %>
-    <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
-      <% blankslate.with_visual_icon(icon: :link) %>
-      <% blankslate.with_heading(tag: :h3) { "No resources yet" } %>
-      <% blankslate.with_description { "Links and files for this study will show here." } %>
-    <% end %>
-  <% end %>
-<% end %>
+<%= render "family_studies/sessions/resources/resources", family_study: @family_study, study_session: @study_session, resource: @resource || FamilyStudy::Resource.new %>

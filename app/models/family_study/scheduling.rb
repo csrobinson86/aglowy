@@ -12,10 +12,12 @@ class FamilyStudy::Scheduling
   attribute :starts_at, :time
   attribute :ends_at, :time
   attribute :repeat, :string, default: "once"
+  attribute :link_urls, default: -> { [] }
+  attribute :link_url, :string
 
   validates :starts_on, :starts_at, :ends_at, presence: true
   validates :repeat, inclusion: { in: ->(scheduling) { scheduling.repeat_choices.map(&:last) } }
-  validate :starts_on_not_in_the_past, :ends_after_starts
+  validate :starts_on_not_in_the_past, :ends_after_starts, :links_are_web_links
 
   def initialize(household:, **attributes)
     @household = household
@@ -34,11 +36,16 @@ class FamilyStudy::Scheduling
     end
   end
 
-  # The study, its first session with the topic and notes, then the later sessions (scheduling rule 1).
+  # The links added to the list, then one still in the field, so nothing typed is lost.
+  def links
+    [ *link_urls, link_url ].compact_blank
+  end
+
+  # The study, its first session with the topic, notes and links, then the later sessions (scheduling rule 1).
   def save
     return false unless valid?
 
-    @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, **study_attributes)
+    @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, **study_attributes)
     study.persisted?
   end
 
@@ -78,6 +85,17 @@ class FamilyStudy::Scheduling
 
     def starts_on_not_in_the_past
       errors.add(:starts_on, "can't be in the past") if starts_on && starts_on < today
+    end
+
+    # Shown on the "Add a link" field. A refused link from the list goes back into the field,
+    # since the list has no way to edit or remove one; a valid link in the field moves to the list.
+    def links_are_web_links
+      refused = links.reject { FamilyStudy::Resource.new(url: it).web_link? }
+      return if refused.empty?
+
+      errors.add(:link_url, FamilyStudy::Resource::NOT_A_WEB_LINK)
+      self.link_urls = links - refused
+      self.link_url = refused.join(" ")
     end
 
     # Both times are on the same day, so an end after midnight looks like one before the start.

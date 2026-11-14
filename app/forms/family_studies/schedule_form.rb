@@ -1,7 +1,7 @@
 # Rendered one section at a time, so the page can give each its box and heading (frame
 # schedule-form.png) and wrap Repeat in a Turbo Frame that reloads when the date changes.
 class FamilyStudies::ScheduleForm < ApplicationForm
-  # section: :topic, :when, :repeat or :actions. Only :actions needs cancel_path.
+  # section: :topic, :when, :repeat, :resources or :actions. Only :actions needs cancel_path.
   # Each section autofocuses its own first invalid input; the browser focuses the first in the page.
   def initialize(section:, cancel_path: nil)
     @section = section
@@ -24,6 +24,13 @@ class FamilyStudies::ScheduleForm < ApplicationForm
       f.select_list(name: :repeat, label: "Repeat", full_width: false, data: { repeat_field_target: "repeat" },
                     caption: "Repeating studies are planned through the end of the service year (August 31) and keep going until you end them.") do |list|
         f.builder.object.repeat_choices.each { |label, value| list.option(label: label, value: value) }
+      end
+    when :resources
+      # A plain button: the resource-links Stimulus controller moves the URL into the list instead of submitting.
+      f.group(layout: :horizontal) do |row|
+        row.text_field(name: :link_url, label: "Add a link", type: :url, placeholder: "https://www.jw.org/…", full_width: true,
+                       data: { resource_links_target: "input", action: "keydown.enter->resource-links#add input->resource-links#resetValidity" })
+        row.button(name: :add_link, label: "Add link", align_self: :end, data: { action: "resource-links#add" })
       end
     when :actions
       f.group(layout: :horizontal) do |actions|

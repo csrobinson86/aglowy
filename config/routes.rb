@@ -34,6 +34,7 @@ Rails.application.routes.draw do
     resources :family_studies, only: %i[ index new create ] do
       resources :sessions, only: :show, module: :family_studies do
         resource :notes, only: %i[ edit update ], module: :sessions
+        resources :resources, only: %i[ create destroy ], module: :sessions
       end
     end
   end

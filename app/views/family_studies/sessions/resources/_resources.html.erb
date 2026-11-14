@@ -1,0 +1,40 @@
+<%# locals: (family_study:, study_session:, resource:) %>
+<%# A link that failed to save is shown in the form with its error, not in the list. %>
+<% resources = study_session.resources.reject(&:new_record?) %>
+<% editable = policy(study_session).update? %>
+
+<%= render(Primer::Beta::BorderBox.new) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Resources" } } %>
+  <% if resources.empty? %>
+    <% box.with_body do %>
+      <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :link) %>
+        <% blankslate.with_heading(tag: :h3) { "No resources yet" } %>
+        <% blankslate.with_description { "Links for this study will show here." } %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% resources.each do |link| %>
+    <% box.with_row(display: :flex, align_items: :center) do %>
+      <%= render(Primer::Beta::Octicon.new(icon: :link, color: :muted, mr: 2, flex_shrink: 0)) %>
+      <div class="flex-1 min-width-0">
+        <%# Only http and https URLs get this far (gotcha 23); a new tab never gets this page as its opener. %>
+        <%= render(Primer::Beta::Link.new(href: link.url, target: "_blank", rel: "noopener noreferrer", classes: "wb-break-word")) { link.title } %>
+        <span class="color-fg-muted text-small ml-1"><%= link.host %></span>
+      </div>
+      <% if editable %>
+        <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
+        <%= primer_form_with(url: household_family_study_session_resource_path(family_study_id: family_study, session_id: study_session, id: link), method: :delete, class: "ml-2") do %>
+          <%= render(Primer::Beta::IconButton.new(icon: :x, type: :submit, scheme: :invisible, show_tooltip: false, "aria-label": "Remove #{link.title}")) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% if editable %>
+    <% box.with_footer do %>
+      <%= primer_form_with(model: resource, url: household_family_study_session_resources_path(family_study_id: family_study, session_id: study_session)) do |f| %>
+        <%= render FamilyStudies::Sessions::Resources::LinkForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

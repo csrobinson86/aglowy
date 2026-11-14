@@ -1,0 +1,7 @@
+<%# locals: (url:) %>
+<%# A link added on the Schedule a study form, kept as a hidden input until the form is sent. %>
+<li class="d-flex flex-items-center mb-2">
+  <%= render(Primer::Beta::Octicon.new(icon: :link, color: :muted, mr: 2, flex_shrink: 0)) %>
+  <span class="wb-break-all" data-link-text><%= url %></span>
+  <%= hidden_field_tag "family_study_scheduling[link_urls][]", url, id: nil %>
+</li>
