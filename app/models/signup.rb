@@ -28,8 +28,7 @@ class Signup
     false
   rescue ActiveRecord::RecordNotUnique => conflict
     # Another sign-up took the email between Devise's check and our insert (gotcha 3).
-    raise unless conflict.cause.is_a?(PG::UniqueViolation) &&
-      conflict.cause.result.error_field(PG::Result::PG_DIAG_CONSTRAINT_NAME) == "index_identities_on_email"
+    raise unless conflict.message.include?("index_identities_on_email")
 
     errors.add(:email, :taken)
     false
