@@ -1,0 +1,22 @@
+<% content_for :title, "Members" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Members" } %>
+  <% if policy(Membership).create? %>
+    <% subhead.with_actions do %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_path, scheme: :primary)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        Add a member
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render Primer::Beta::BorderBox.new do |box| %>
+  <% @memberships.each do |membership| %>
+    <% box.with_row(display: :flex, justify_content: :space_between, align_items: :center) do %>
+      <%= membership.user.name %>
+      <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary)) { membership.role.humanize } %>
+    <% end %>
+  <% end %>
+<% end %>

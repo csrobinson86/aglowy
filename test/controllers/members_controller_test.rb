@@ -1,6 +1,45 @@
 require "test_helper"
 
 class MembersControllerTest < ActionDispatch::IntegrationTest
+  test "a member sees the active members with their roles, heads first, not the former member" do
+    sign_in identities(:spouse)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select "h1", "Members"
+    assert_select "main .Box-row", count: 3
+    assert_select "main", text: /Hannah Head.*Head.*Sam Spouse.*Adult.*Charlie Child.*Child/m
+    assert_not_includes response.body, "Frances Former"
+  end
+
+  test "a non-member gets 404 for the member list" do
+    sign_in identities(:outsider)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_response :not_found
+  end
+
+  test "a head sees Add a member on the member list" do
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "main a[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
+  end
+
+  test "an adult and a child don't see Add a member" do
+    [ identities(:spouse), child_identity ].each do |identity|
+      sign_in identity
+
+      get household_members_path(household_id: households(:home))
+
+      assert_response :success
+      assert_select "a", { text: "Add a member", count: 0 }, "expected #{identity.email} not to see Add a member"
+    end
+  end
+
   test "a head sees the add member form" do
     sign_in identities(:head)
 
@@ -23,7 +62,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert membership.child?
     assert_equal "Baby Head", membership.user.name
     assert_nil membership.user.identity
-    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_redirected_to household_members_path(household_id: households(:home))
   end
 
   test "an adult is refused with an alert and nothing is created" do
@@ -68,4 +107,10 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  private
+    # Charlie Child has no login in the fixtures (a young child needs none), so give them one here.
+    def child_identity
+      Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+    end
 end

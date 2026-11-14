@@ -1,6 +1,10 @@
 <% content_for :title, "Add a member" %>
 
 <div class="container-sm px-3 py-5">
+  <%= render(Primer::Beta::Breadcrumbs.new(mb: 3)) do |breadcrumbs| %>
+    <% breadcrumbs.with_item(href: household_members_path) { "Members" } %>
+    <% breadcrumbs.with_item(href: new_household_member_path) { "Add a member" } %>
+  <% end %>
   <%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { "Add a member" } %>
 
   <%= primer_form_with(model: @member, scope: :member, url: household_members_path) do |f| %>
