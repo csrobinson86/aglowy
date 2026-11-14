@@ -4,10 +4,12 @@ class SignUpTest < ApplicationSystemTestCase
   test "a visitor signs up, confirms, signs in and lands on the new household" do
     visit new_identity_session_url
     assert_accessible
+    capture_screens("sign-in")
     click_on "Sign up"
 
     assert_selector "h1", text: "Sign up"
     assert_accessible
+    capture_screens("sign-up")
     fill_in "Your name", with: "Rosa Robinson"
     fill_in "Email", with: "rosa@example.com"
     fill_in "Password", with: "password123"
@@ -17,6 +19,7 @@ class SignUpTest < ApplicationSystemTestCase
 
     assert_text "Check your email to confirm your account."
     assert_accessible
+    capture_screens("sign-in-check-email")
 
     # The test mailer's links point at example.com, so visit the path on this server.
     email = ActionMailer::Base.deliveries.find { it.to == [ "rosa@example.com" ] }
@@ -30,5 +33,6 @@ class SignUpTest < ApplicationSystemTestCase
 
     assert_selector "h1", text: "The Robinson Family"
     assert_accessible
+    capture_screens("dashboard-new-household")
   end
 end

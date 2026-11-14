@@ -91,6 +91,7 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
+          SCREENSHOTS: 1
         run: bin/rails db:test:prepare test:all
 
       - name: Keep screenshots from failed system tests
@@ -98,5 +99,15 @@ jobs:
         if: failure()
         with:
           name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
+          path: |
+            ${{ github.workspace }}/tmp/screenshots
+            !${{ github.workspace }}/tmp/screenshots/ui
+          if-no-files-found: ignore
+
+      - name: Keep UI screenshots
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ui-screenshots
+          path: ${{ github.workspace }}/tmp/screenshots/ui
           if-no-files-found: ignore
