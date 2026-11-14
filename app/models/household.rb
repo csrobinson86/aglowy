@@ -5,6 +5,7 @@ class Household < ApplicationRecord
   # Never dependent: :destroy on users: a shared-custody child belongs to other households too.
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
+  has_many :family_studies, dependent: :destroy
 
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }
@@ -21,5 +22,9 @@ class Household < ApplicationRecord
     transaction do
       memberships.create!(user: User.create!(name: name), role: role)
     end
+  end
+
+  def schedule_family_study(topic: nil, **attributes)
+    family_studies.build(attributes).tap { it.schedule(topic: topic) }
   end
 end

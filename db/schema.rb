@@ -10,10 +10,46 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "family_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.string "frequency", default: "once", null: false
+    t.integer "interval", default: 1, null: false
+    t.date "starts_on", null: false
+    t.integer "week_of_month", limit: 2
+    t.time "time_of_day", null: false
+    t.integer "duration_minutes", default: 60, null: false
+    t.date "ends_on"
+    t.uuid "default_conductor_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["default_conductor_id"], name: "index_family_studies_on_default_conductor_id"
+    t.index ["household_id"], name: "index_family_studies_on_household_id"
+    t.check_constraint "\"interval\" > 0", name: "family_studies_interval_check"
+    t.check_constraint "duration_minutes > 0", name: "family_studies_duration_minutes_check"
+    t.check_constraint "frequency::text <> 'monthly'::text OR week_of_month IS NOT NULL", name: "family_studies_monthly_week_of_month_check"
+    t.check_constraint "frequency::text = ANY (ARRAY['once'::character varying, 'daily'::character varying, 'weekly'::character varying, 'monthly'::character varying]::text[])", name: "family_studies_frequency_check"
+    t.check_constraint "week_of_month = ANY (ARRAY[1, 2, 3, 4, 5, '-1'::integer])", name: "family_studies_week_of_month_check"
+  end
+
+  create_table "family_study_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "family_study_id", null: false
+    t.datetime "recurrence_at", null: false
+    t.datetime "scheduled_at", null: false
+    t.string "topic"
+    t.uuid "conductor_id"
+    t.datetime "detached_at"
+    t.datetime "canceled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conductor_id"], name: "index_family_study_sessions_on_conductor_id"
+    t.index ["family_study_id", "recurrence_at"], name: "index_family_study_sessions_on_study_and_recurrence_at", unique: true
+    t.index ["scheduled_at"], name: "index_family_study_sessions_on_scheduled_at"
+  end
 
   create_table "households", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
@@ -66,6 +102,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_000100) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "family_studies", "households"
+  add_foreign_key "family_studies", "users", column: "default_conductor_id"
+  add_foreign_key "family_study_sessions", "family_studies"
+  add_foreign_key "family_study_sessions", "users", column: "conductor_id"
   add_foreign_key "identities", "users"
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
