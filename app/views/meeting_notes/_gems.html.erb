@@ -4,7 +4,7 @@
   <% gems.each do |gem| %>
     <li class="d-flex flex-items-baseline mb-2 wb-break-word">
       <%= render Primer::Beta::Octicon.new(:ruby, color: :done, mr: 2, flex_shrink: 0) %>
-      <span><strong><%= gem.reference %></strong><% if gem.insight.present? %> — <%= simple_format(gem.insight, {}, wrapper_tag: "span") %><% end %></span>
+      <span><strong><%= gem.reference %></strong><% if gem.insight.present? %> — <%= meeting_note_insight(gem.insight) %><% end %></span>
     </li>
   <% end %>
 </ul>

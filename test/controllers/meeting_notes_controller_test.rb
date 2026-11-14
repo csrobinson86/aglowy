@@ -518,9 +518,30 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     get note_path(meeting_notes(:head_midweek))
 
-    assert_select "main ul li span span", text: /He holds my hand.\s*He holds me up./ do
+    assert_select "main ul li span", text: /He holds my hand.\s*He holds me up./ do
       assert_select "br", count: 1
     end
+  end
+
+  test "an insight keeps its paragraph breaks on the read view" do
+    meeting_note_gems(:head_strength).update!(insight: "He holds my hand.\r\n\r\nHe holds me up.")
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_select "main ul li span", text: /He holds my hand.\s*He holds me up./ do
+      assert_select "br", count: 2
+    end
+  end
+
+  test "an insight is shown as plain text on the read view" do
+    meeting_note_gems(:head_strength).update!(insight: "<b>Bold</b> claim")
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_select "main ul li span", text: /<b>Bold<\/b> claim/
+    assert_select "main ul li b", count: 0
   end
 
   test "gem insights are filtered from the logs" do

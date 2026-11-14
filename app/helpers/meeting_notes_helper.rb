@@ -11,6 +11,12 @@ module MeetingNotesHelper
     render Primer::Beta::Octicon.new(:"dot-fill", color: color, mr: 1)
   end
 
+  # A gem's insight inline after its reference (frame shared-note-read-only.png), each typed line break
+  # kept as a <br>, so a blank line between paragraphs still shows. Escaped: the insight is plain text.
+  def meeting_note_insight(insight)
+    safe_join(insight.strip.split(/\r?\n/), tag.br)
+  end
+
   # "2 gems, 3 parts with notes", "Nothing written yet", or "Not started" for a note that doesn't exist yet.
   def meeting_note_summary(note)
     return "Not started" if note.new_record?
