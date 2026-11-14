@@ -1,4 +1,6 @@
 class HouseholdsController < ApplicationController
+  layout "focused"
+
   before_action { authorize Household }
 
   def index

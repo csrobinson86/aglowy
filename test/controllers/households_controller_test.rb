@@ -19,6 +19,18 @@ class HouseholdsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /The Outsider Family/, count: 0
   end
 
+  test "the chooser renders without the sidebar navigation" do
+    sign_in identities(:head)
+
+    get households_path
+
+    assert_response :success
+    assert_select "header a[href='/'] svg.octicon-sun"
+    assert_select "main h1", text: "Your households"
+    assert_select "aside", count: 0
+    assert_select "nav[aria-label='Main']", count: 0
+  end
+
   test "create makes the current user head and redirects to the new household" do
     sign_in identities(:spouse)
 
