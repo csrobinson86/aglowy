@@ -16,8 +16,8 @@
 
 <%= render Primer::Beta::BorderBox.new do |box| %>
   <% box.with_header { |header| header.with_title(tag: :h2) { "My notes" } } %>
-  <% if @notes.any? %>
-    <% @notes.first(MeetingNotesController::PER_PAGE).each do |note| %>
+  <% if @earlier.records.any? %>
+    <% @earlier.records.each do |note| %>
       <% box.with_row(display: :flex, align_items: :center) do %>
         <%= meeting_note_dot(MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)) %>
         <div class="d-md-flex">
@@ -37,13 +37,13 @@
   <% end %>
 <% end %>
 
-<% if @page > 1 || @notes.size > MeetingNotesController::PER_PAGE %>
+<% if @earlier.previous? || @earlier.next? %>
   <div class="d-flex flex-justify-between mt-3">
-    <% if @page > 1 %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @page - 1))) { "Newer notes" } %>
+    <% if @earlier.previous? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number - 1))) { "Newer notes" } %>
     <% end %>
-    <% if @notes.size > MeetingNotesController::PER_PAGE %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @page + 1), ml: :auto)) { "Older notes" } %>
+    <% if @earlier.next? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number + 1), ml: :auto)) { "Older notes" } %>
     <% end %>
   </div>
 <% end %>

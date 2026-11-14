@@ -6,6 +6,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
   test "lists only my notes" do
     mine = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    later = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 23))
     theirs = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 2))
     sign_in identities(:head)
 
@@ -19,6 +20,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a[href='#{note_path(meeting_notes(:head_midweek))}']", text: "Open notes"
     assert_select "main a[href='#{note_path(meeting_notes(:head_weekend))}']", text: "Open notes"
     assert_select "main a[href='#{note_path(theirs)}']", count: 0
+    assert_select "main a[href='#{note_path(later)}']", count: 0
     assert_not_includes response.body, "November 2–8"
   end
 
@@ -102,6 +104,17 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 1)}']", text: "Newer notes"
   end
 
+  test "a page number past the end or too large shows no notes, not an error" do
+    users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), page: "9" * 20)
+
+    assert_response :success
+    assert_select "main h3", text: "No earlier notes"
+    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: Page::LAST - 1)}']", text: "Newer notes"
+  end
+
   test "no earlier notes shows an empty state" do
     sign_in identities(:head)
 
@@ -126,6 +139,15 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
       post path, params: { meeting_note: { kind: "midweek", week_of: "2026-11-16" } }
     end
     assert_redirected_to note_path(note)
+  end
+
+  test "starting a note without its week is a bad request" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { MeetingNote.count } do
+      post household_meeting_notes_path(household_id: households(:home)), params: { meeting_note: { kind: "midweek" } }
+    end
+    assert_response :bad_request
   end
 
   test "the note shows its kind, the week, the program link and a Private label" do
