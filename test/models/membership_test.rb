@@ -67,6 +67,28 @@ class MembershipTest < ActiveSupport::TestCase
     assert_not memberships(:spouse_in_home).reload.active?
   end
 
+  test "deactivate deletes the person's meeting-note sharings into that household only" do
+    note = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    note.share_with(households(:home))
+    note.share_with(households(:parents))
+    meeting_notes(:head_midweek).share_with(households(:home))
+    users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16)).share_with(households(:home))
+    memberships(:spouse_in_home).update!(role: :head)
+
+    assert_difference -> { MeetingNote::Sharing.count }, -2 do
+      assert memberships(:head_in_home).deactivate
+    end
+    assert_equal [ households(:parents) ], note.reload.shared_households
+  end
+
+  test "a refused deactivate keeps the person's sharings" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+
+    assert_no_difference -> { MeetingNote::Sharing.count } do
+      assert_not memberships(:head_in_home).deactivate
+    end
+  end
+
   test "change_role refuses to demote the sole head" do
     membership = memberships(:head_in_home)
 

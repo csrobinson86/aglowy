@@ -236,4 +236,54 @@ class MeetingNoteTest < ActiveSupport::TestCase
       MeetingNote.where(id: meeting_notes(:head_weekend).id).delete_all
     end
   end
+
+  test "shared_with includes a shared note" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+
+    assert_equal [ meeting_notes(:head_midweek) ], MeetingNote.shared_with(households(:home)).to_a
+  end
+
+  test "shared_with excludes a note after its author stops sharing" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    meeting_notes(:head_midweek).stop_sharing_with(households(:home))
+
+    assert_empty MeetingNote.shared_with(households(:home))
+  end
+
+  test "shared_with excludes a note when the author's membership is deactivated" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+
+    assert memberships(:spouse_in_home).deactivate
+
+    assert_empty MeetingNote.shared_with(households(:home))
+  end
+
+  # The second guard: a sharing row left behind while the author is inactive still never shows.
+  test "shared_with excludes a note whose author is inactive even if its sharing is still there" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+
+    memberships(:spouse_in_home).update_column(:active, false)
+
+    assert_equal 1, note.sharings.count
+    assert_empty MeetingNote.shared_with(households(:home))
+  end
+
+  test "shared_with stays private after the author's membership is deactivated and then made active again" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+    assert memberships(:spouse_in_home).deactivate
+
+    memberships(:spouse_in_home).update!(active: true)
+
+    assert_empty MeetingNote.shared_with(households(:home))
+  end
+
+  test "shared_with excludes notes shared to another household" do
+    meeting_notes(:head_midweek).share_with(households(:parents))
+
+    assert_empty MeetingNote.shared_with(households(:home))
+    assert_equal [ meeting_notes(:head_midweek) ], MeetingNote.shared_with(households(:parents)).to_a
+  end
 end
