@@ -7,12 +7,16 @@ class MeetingNote < ApplicationRecord
   has_many :parts, -> { order(:position) }, dependent: :destroy
   has_many :gems, -> { order(:position) }, dependent: :delete_all
 
+  # Only Living as Christians parts can be removed (only_repeating_parts_removed); new ones come from revise!.
+  accepts_nested_attributes_for :parts, allow_destroy: true
+
   enum :kind, %w[ midweek weekend ].index_by(&:itself), validate: true
 
   # Also applies to lookups, so start_meeting_note finds the note from any day of its week.
   normalizes :week_of, with: -> { it.to_date.beginning_of_week(:monday) }
 
   validates :week_of, presence: true
+  validate :only_repeating_parts_removed
 
   scope :preloaded, -> { includes(:gems, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
@@ -26,16 +30,27 @@ class MeetingNote < ApplicationRecord
     outline.parts.each.with_index(1) { |part, position| parts.build(key: part.key, position: position) }
   end
 
+  # Saves the edit form: titles and notes, with Living as Christians parts added and removed. A part
+  # added in the form is always a Living as Christians part, numbered after the others; its key and
+  # position never come from the form.
+  def revise!(attributes)
+    assign_attributes(attributes)
+    last = parts.reject(&:new_record?).map(&:position).max.to_i
+    parts.select(&:new_record?).each.with_index(last + 1) { |part, position| part.assign_attributes(key: "living_part", position: position) }
+    save!
+  end
+
   # The parts the person has written something in. Gems are counted on their own.
   def filled_parts
     parts.select(&:filled?)
   end
 
-  # Each outline section with its filled parts, leaving out sections with none.
+  # Each outline section with its filled parts in the outline's order, leaving out sections with none.
+  # A part added later has the highest position, but still comes before the Congregation Bible Study.
   def filled_sections
     outline.sections.filter_map do |section|
       keys = section.parts.map(&:key)
-      filled = filled_parts.select { keys.include?(it.key) }
+      filled = filled_parts.select { keys.include?(it.key) }.sort_by { [ keys.index(it.key), it.position ] }
       [ section, filled ] if filled.any?
     end
   end
@@ -51,6 +66,10 @@ class MeetingNote < ApplicationRecord
   end
 
   private
+    def only_repeating_parts_removed
+      parts.select(&:marked_for_destruction?).reject(&:repeats?).each { errors.add(:parts, "can't lose #{it.label}") }
+    end
+
     def date_range(first, last)
       if first.year != last.year
         "#{first.strftime("%B %-d, %Y")}–#{last.strftime("%B %-d, %Y")}"

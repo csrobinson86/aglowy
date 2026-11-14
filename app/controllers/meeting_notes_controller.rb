@@ -3,6 +3,8 @@
 class MeetingNotesController < ApplicationController
   include HouseholdScoped
 
+  before_action :set_editable_meeting_note, only: %i[ edit update ]
+
   def index
     authorize MeetingNote
     @week_of = Current.membership.this_week
@@ -22,7 +24,26 @@ class MeetingNotesController < ApplicationController
     authorize @meeting_note
   end
 
+  def edit
+  end
+
+  # A part id from any other note isn't among this note's parts, so nested attributes raise RecordNotFound (404).
+  def update
+    @meeting_note.revise!(parts_params)
+    redirect_to household_meeting_note_path(id: @meeting_note), notice: "Notes saved."
+  end
+
   private
+
+  # Only Life and Ministry notes can be edited until weekend notes have their own story.
+  def set_editable_meeting_note
+    @meeting_note = Current.user.meeting_notes.midweek.preloaded.find(params[:id])
+    authorize @meeting_note
+  end
+
+  def parts_params
+    params.expect(meeting_note: [ parts_attributes: [ [ :id, :title, :notes, :_destroy ] ] ])
+  end
 
   # Both are required: a missing one is a 400, not a missing keyword.
   def meeting_note_params

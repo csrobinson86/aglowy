@@ -162,7 +162,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".Subhead h1 .Label", "Private"
     assert_select ".Subhead", text: /Week of November 16–22, 2026/
     assert_select "a[href='https://wol.jw.org/en/wol/meetings/r1/lp-e/2026/47'][target=_blank][rel=noopener]", text: "This week's program on wol.jw.org"
-    assert_select "a", text: "Edit notes", count: 0
+    assert_select ".Subhead a[href='#{edit_note_path(meeting_notes(:head_midweek))}']", text: "Edit notes"
   end
 
   test "the note shows filled parts under their sections, and hides empty ones" do
@@ -193,6 +193,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main h3", text: "Public Talk · [The public talk's title]"
     assert_select "main", text: /Speaker: Daniel Okafor/
     assert_not_includes response.body, "Watchtower Study"
+    assert_select "a", text: "Edit notes", count: 0
   end
 
   test "an empty note says nothing is written yet" do
@@ -241,8 +242,153 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "the edit page has each part's fields, with a uniquely labelled editor for each part's notes" do
+    sign_in identities(:head)
+
+    get edit_note_path(meeting_notes(:head_midweek))
+
+    assert_response :success
+    assert_select "title", "Edit Life and Ministry · The Head Family · Aglowy"
+    assert_select "main h1", /\ALife and Ministry\s+Private\z/
+    assert_select "main form[action='#{note_path(meeting_notes(:head_midweek))}'] input[name=_method][value=patch]"
+    assert_select "main h2", text: "Treasures From God's Word"
+    assert_select "main h2", text: "Apply Yourself to the Field Ministry"
+    assert_select "main h2", text: "Living as Christians"
+    assert_select "main input[type=text][value=?]", "[This week's talk title]"
+    assert_select "main label", text: "Part title"
+    assert_select "main label", text: "Notes for the whole section"
+    assert_select "main", text: /Spiritual gems can't be added here yet./
+
+    editors = css_select("main lexxy-editor").reject { it.ancestors("template").any? }
+    assert_equal 5, editors.size
+    assert_equal editors.size, editors.map { it["id"] }.uniq.size
+    labels = editors.map { css_select("label[for='#{it["id"]}']").sole.text.squish }
+    assert_equal [ "Notes for Talk", "Notes for Bible Reading", "Notes for the whole section",
+                   "Notes for Living as Christians part 1", "Notes for Congregation Bible Study" ], labels
+
+    assert_select "main template lexxy-editor", count: 1
+    assert_select "main button", text: "Add another part"
+    assert_select "main button[aria-label='Remove Living as Christians part 1']"
+    assert_select "main template button[aria-label='Remove Living as Christians part PART_NUMBER']"
+    assert_select "main button[type=submit]", text: "Save notes"
+    assert_select "main", text: /Only you can see this note./
+  end
+
+  test "the author can update titles and notes" do
+    sign_in identities(:head)
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+      "0" => { id: meeting_note_parts(:head_talk).id, title: "Jehovah holds on to us", notes: "<p>Isaiah 41:10</p>" },
+      "4" => { id: meeting_note_parts(:head_living_part).id, title: "Local needs", notes: "<p>The hall cleaning</p>" }
+    } } }
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    assert_equal "Notes saved.", flash[:notice]
+    assert_equal "Jehovah holds on to us", meeting_note_parts(:head_talk).reload.title
+    assert_equal "Isaiah 41:10", meeting_note_parts(:head_talk).notes.to_plain_text
+    assert_equal "Local needs", meeting_note_parts(:head_living_part).reload.title
+    assert_equal "The hall cleaning", meeting_note_parts(:head_living_part).notes.to_plain_text
+  end
+
+  test "adding a Living as Christians part makes it a living part, whatever key is sent" do
+    sign_in identities(:head)
+
+    assert_difference -> { meeting_notes(:head_midweek).parts.count }, 1 do
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+        "1731900000000" => { title: "Second part", notes: "<p>More</p>", key: "talk", position: "1" }
+      } } }
+    end
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    added = meeting_notes(:head_midweek).parts.order(:created_at).last
+    assert_equal [ "living_part", 7, "Second part" ], [ added.key, added.position, added.title ]
+  end
+
+  test "removing a Living as Christians part works" do
+    sign_in identities(:head)
+
+    assert_difference -> { MeetingNote::Part.count }, -1 do
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+        "4" => { id: meeting_note_parts(:head_living_part).id, _destroy: "1" }
+      } } }
+    end
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    assert_not MeetingNote::Part.exists?(meeting_note_parts(:head_living_part).id)
+  end
+
+  test "removing the Talk part is refused" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { MeetingNote::Part.count } do
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+        "0" => { id: meeting_note_parts(:head_talk).id, _destroy: "1" }
+      } } }
+    end
+
+    assert_response :unprocessable_content
+    assert MeetingNote::Part.exists?(meeting_note_parts(:head_talk).id)
+  end
+
+  test "a part from another note, mine or someone else's, can't be updated through this one" do
+    theirs = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16)).parts.first
+
+    [ meeting_note_parts(:head_public_talk), theirs ].each do |part|
+      sign_in identities(:head) # a 404 doesn't keep the session
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+        "0" => { id: part.id, title: "Overwritten", _destroy: "1" }
+      } } }
+
+      assert_response :not_found
+      assert_not_equal "Overwritten", part.reload.title
+    end
+  end
+
+  test "another person gets 404 on the edit page and on saving" do
+    sign_in identities(:spouse)
+
+    get edit_note_path(meeting_notes(:head_midweek))
+    assert_response :not_found
+
+    sign_in identities(:spouse)
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+      "0" => { id: meeting_note_parts(:head_talk).id, title: "Overwritten" }
+    } } }
+    assert_response :not_found
+    assert_equal "[This week's talk title]", meeting_note_parts(:head_talk).reload.title
+  end
+
+  test "part titles and notes are filtered from the logs, other titles aren't" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter("meeting_note" => { "parts_attributes" => { "0" => { "id" => "1", "title" => "Mine", "notes" => "Mine" } } }, "title" => "Kept")
+
+    assert_equal({ "id" => "1", "title" => "[FILTERED]", "notes" => "[FILTERED]" }, filtered.dig("meeting_note", "parts_attributes", "0"))
+    assert_equal "Kept", filtered["title"]
+  end
+
+  test "part titles sent as an array are filtered from the logs too" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter("meeting_note" => { "parts_attributes" => [ { "id" => "1", "title" => "Mine" } ] })
+
+    assert_equal [ { "id" => "1", "title" => "[FILTERED]" } ], filtered.dig("meeting_note", "parts_attributes")
+  end
+
+  test "a weekend note can't be edited yet" do
+    sign_in identities(:head)
+
+    get edit_note_path(meeting_notes(:head_weekend))
+
+    assert_response :not_found
+  end
+
   private
     def note_path(note, household = households(:home))
       household_meeting_note_path(household_id: household, id: note)
+    end
+
+    def edit_note_path(note, household = households(:home))
+      edit_household_meeting_note_path(household_id: household, id: note)
     end
 end

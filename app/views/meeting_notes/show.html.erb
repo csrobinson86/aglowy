@@ -1,20 +1,7 @@
-<% title = meeting_note_title(@meeting_note) %>
-<% content_for :title, title %>
+<% content_for :title, meeting_note_title(@meeting_note) %>
 
-<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
-  <% breadcrumbs.with_item(href: household_meeting_notes_path) { "Meeting notes" } %>
-  <% breadcrumbs.with_item(href: household_meeting_note_path(id: @meeting_note)) { @meeting_note.display_week } %>
-<% end %>
-<%= render Primer::Beta::Subhead.new do |subhead| %>
-  <% subhead.with_heading(tag: :h1, display: :flex, align_items: :center) do %>
-    <%= title %>
-    <%= render(Primer::Beta::Label.new(ml: 2)) { "Private" } %>
-  <% end %>
-  <% subhead.with_description do %>
-    <%= @meeting_note.display_week %> ·
-    <%= render(Primer::Beta::Link.new(href: @meeting_note.program_url, target: "_blank", rel: "noopener")) { "This week's program on wol.jw.org" } %>
-  <% end %>
-<% end %>
+<%# Weekend notes get their edit page in their own story. %>
+<%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: @meeting_note.midweek? %>
 
 <% sections = @meeting_note.filled_sections %>
 <% if sections.any? %>
