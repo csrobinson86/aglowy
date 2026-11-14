@@ -4,7 +4,7 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
   test "staff can start and stop impersonating an identity" do
     sign_in identities(:staff)
 
-    post admin_impersonation_path(identity_id: identities(:head).id)
+    impersonate_from_madmin identities(:head)
     assert_redirected_to root_path
     assert_equal "Now impersonating head@example.com", flash[:notice]
 
@@ -22,7 +22,7 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
   test "impersonating an unconfirmed identity is refused" do
     sign_in identities(:staff)
 
-    post admin_impersonation_path(identity_id: identities(:newcomer).id)
+    impersonate_from_madmin identities(:newcomer)
     assert_redirected_to "/madmin"
     assert_equal "newcomer@example.com can't sign in, so it can't be impersonated", flash[:alert]
 
@@ -33,7 +33,7 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
   test "impersonating again while impersonating is refused" do
     identities(:spouse).update!(staff: true)
     sign_in identities(:staff)
-    post admin_impersonation_path(identity_id: identities(:spouse).id)
+    impersonate_from_madmin identities(:spouse)
 
     post admin_impersonation_path(identity_id: identities(:head).id)
     assert_redirected_to root_path
@@ -60,5 +60,19 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
     delete admin_impersonation_path
 
     assert_redirected_to root_path
+  end
+
+  private
+
+  # Starts where staff do: the identity's Madmin page, submitting its Impersonate button.
+  def impersonate_from_madmin(identity)
+    get madmin_identity_path(identity)
+    assert_response :success
+
+    form = css_select("form").find { it.at_css("button")&.text == "Impersonate" }
+    assert form, "the identity's Madmin page should have an Impersonate button"
+    assert_equal admin_impersonation_path(identity_id: identity.id), form["action"]
+
+    post form["action"]
   end
 end
