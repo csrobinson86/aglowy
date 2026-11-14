@@ -100,6 +100,113 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::InvalidForeignKey) { family_study_sessions(:weekly_next).update_column(:conductor_id, SecureRandom.uuid_v7) }
   end
 
+  test "rescheduling sets scheduled_at in the household zone and detached_at" do
+    households(:home).update!(time_zone: "Tokyo")
+    session = family_study_sessions(:weekly_next)
+    recurrence_at = session.recurrence_at
+
+    freeze_time do
+      session.reschedule(on: Date.new(2027, 3, 14), at: Time.zone.parse("18:30"))
+
+      assert_equal Time.utc(2027, 3, 14, 9, 30), session.reload.scheduled_at
+      assert_equal Time.current, session.detached_at
+      assert_equal recurrence_at, session.recurrence_at
+    end
+  end
+
+  test "rescheduling to the time it already has doesn't detach" do
+    session = family_study_sessions(:weekly_next)
+
+    session.reschedule(on: session.local_scheduled_at.to_date, at: session.local_scheduled_at)
+
+    assert_nil session.reload.detached_at
+  end
+
+  test "a topic-only edit in the repeated fall-back hour keeps the session where it is" do
+    households(:home).update!(time_zone: "Eastern Time (US & Canada)")
+    session = family_study_sessions(:weekly_next)
+    session.update!(scheduled_at: Time.utc(2027, 11, 7, 6, 30)) # The second 01:30, in EST
+
+    assert FamilyStudy::Session::Edit.new(session, topic: "Ruth 3").save
+
+    session.reload
+    assert_equal Time.utc(2027, 11, 7, 6, 30), session.scheduled_at
+    assert_nil session.detached_at
+  end
+
+  test "a topic-only edit doesn't detach" do
+    session = family_study_sessions(:weekly_next)
+    scheduled_at = session.scheduled_at
+
+    assert FamilyStudy::Session::Edit.new(session, topic: "Imitate Their Faith, chapter 4").save
+
+    session.reload
+    assert_equal "Imitate Their Faith, chapter 4", session.topic
+    assert_equal scheduled_at, session.scheduled_at
+    assert_nil session.detached_at
+  end
+
+  test "an edit with a new date or time reschedules and detaches" do
+    session = family_study_sessions(:weekly_next)
+    new_day = session.local_scheduled_at.to_date + 1
+
+    assert FamilyStudy::Session::Edit.new(session, topic: "", starts_on: new_day.iso8601, starts_at: "20:15").save
+
+    session.reload
+    assert_nil session.topic
+    assert_equal ActiveSupport::TimeZone[households(:home).time_zone].local(new_day.year, new_day.month, new_day.day, 20, 15), session.scheduled_at
+    assert session.detached_at
+  end
+
+  test "an edit without a date or time is invalid and changes nothing" do
+    session = family_study_sessions(:weekly_next)
+    edit = FamilyStudy::Session::Edit.new(session, topic: "Ruth 2", starts_on: "", starts_at: "")
+
+    assert_not edit.save
+    assert_includes edit.errors[:starts_on], "can't be blank"
+    assert_includes edit.errors[:starts_at], "can't be blank"
+    assert_nil session.reload.topic
+  end
+
+  test "an edit starts from the session's topic, date and time in the household's zone" do
+    households(:home).update!(time_zone: "Tokyo")
+    session = family_study_sessions(:one_off_first)
+    edit = FamilyStudy::Session::Edit.new(session)
+
+    assert_equal "Draw Close to Jehovah, chapter 1", edit.topic
+    assert_equal session.local_scheduled_at.to_date, edit.starts_on
+    assert_equal session.local_scheduled_at.strftime("%H:%M"), edit.starts_at.strftime("%H:%M")
+  end
+
+  test "cancel sets canceled_at and restore clears it" do
+    session = family_study_sessions(:weekly_next)
+
+    freeze_time do
+      session.cancel
+      assert_equal Time.current, session.reload.canceled_at
+    end
+
+    session.restore
+    assert_nil session.reload.canceled_at
+  end
+
+  test "the generator doesn't recreate a rescheduled or cancelled session" do
+    travel_to Date.new(2026, 11, 14) do
+      study = households(:home).schedule_family_study(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00")
+      moved = study.sessions.find_by!(recurrence_at: study.session_time_on(Date.new(2026, 11, 21)))
+      canceled = study.sessions.find_by!(recurrence_at: study.session_time_on(Date.new(2026, 11, 28)))
+
+      moved.reschedule(on: Date.new(2026, 11, 22), at: Time.zone.parse("10:00"))
+      canceled.cancel
+
+      assert_no_difference -> { study.sessions.count } do
+        study.extend_sessions
+      end
+      assert_not study.sessions.exists?(scheduled_at: moved.recurrence_at)
+      assert_predicate canceled.reload, :canceled?
+    end
+  end
+
   test "add_files counts the files together against the quota, and adds none when they don't fit" do
     pdf, photo = direct_uploaded_blob("study-guide.pdf"), direct_uploaded_blob("photo.png")
     use_home_storage(households(:home).storage_quota - pdf.byte_size - photo.byte_size + 1)
