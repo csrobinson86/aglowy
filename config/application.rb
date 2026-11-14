@@ -35,6 +35,11 @@ module Aglowy
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Limits for family studies, one place each (docs/design/family-studies.md, "Limits").
+    config.x.family_studies.max_file_size   = 25.megabytes
+    config.x.family_studies.file_types      = %w[ application/pdf image/png image/jpeg image/gif image/webp image/heic ]
+    config.x.family_studies.minimum_horizon = 3.months
   end
 end
 
