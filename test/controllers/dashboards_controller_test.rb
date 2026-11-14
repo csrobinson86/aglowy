@@ -58,6 +58,25 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a head's empty state offers Schedule a study first, then Add a member" do
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".blankslate a.Button--primary[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+    assert_select ".blankslate a:not(.Button--primary)[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
+  end
+
+  test "an adult's empty state offers Schedule a study; a child's offers nothing" do
+    sign_in identities(:spouse)
+    get household_root_path(household_id: households(:home))
+    assert_select ".blankslate a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+
+    sign_in child_identity
+    get household_root_path(household_id: households(:home))
+    assert_select ".blankslate a", count: 0
+  end
+
   test "a non-member gets 404" do
     sign_in identities(:outsider)
 

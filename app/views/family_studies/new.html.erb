@@ -1,0 +1,34 @@
+<% content_for :title, "Schedule a family study" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_family_studies_path) { "Family studies" } %>
+  <% breadcrumbs.with_item(href: new_household_family_study_path) { "New" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Schedule a family study" } %>
+  <% subhead.with_description { Current.household.name } %>
+<% end %>
+
+<div class="container-md ml-0" data-controller="repeat-field" data-repeat-field-url-value="<%= new_household_family_study_path %>">
+  <%= primer_form_with(model: @scheduling, url: household_family_studies_path) do |f| %>
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_body do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3)) { "Topic" } %>
+        <%= render FamilyStudies::ScheduleForm.new(f, section: :topic) %>
+      <% end %>
+    <% end %>
+
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_body do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3)) { "When" } %>
+        <%= render FamilyStudies::ScheduleForm.new(f, section: :when) %>
+        <%# The Repeat choices depend on the date, so the server re-renders this frame when it changes (scheduling rule 5). %>
+        <%= turbo_frame_tag :family_study_scheduling_repeat, class: "d-block mt-3", data: { repeat_field_target: "frame" } do %>
+          <%= render FamilyStudies::ScheduleForm.new(f, section: :repeat) %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= render FamilyStudies::ScheduleForm.new(f, section: :actions, cancel_path: household_family_studies_path) %>
+  <% end %>
+</div>
