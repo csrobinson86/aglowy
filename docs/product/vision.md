@@ -38,10 +38,10 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 
 | # | Epic | Status |
 | --- | --- | --- |
-| 1 | **USERS-01** Households, people and login | Stories filed |
-| 2 | **UI-01** App shell: sidebar, navigation, page patterns | Stories filed |
+| 1 | **USERS-01** Households, people and login | Done |
+| 2 | **UI-01** App shell: sidebar, navigation, page patterns | Done |
 | 3 | Invitations, child logins and account settings | Design done |
-| 4 | Family studies: scheduling, sessions, resources, guests | Design done |
+| 4 | **STUDIES-01** Family studies: scheduling, sessions, notes, resources (guests, "all future" edits and the AI helper follow) | Stories filed |
 | 5 | Meeting notes (Action Text, Lexxy) | Design done |
 | 6 | Goals: personal and family | Design done |
 | 7 | Notifications: in-app list and email | Design done |
