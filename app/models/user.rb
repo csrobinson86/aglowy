@@ -3,6 +3,8 @@ class User < ApplicationRecord
   has_many :memberships, dependent: :destroy
   has_many :households, through: :memberships
   has_many :meeting_notes, dependent: :destroy
+  # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
+  has_many :goals, dependent: :destroy
 
   normalizes :name, with: -> { it.squish }
 

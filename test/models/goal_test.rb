@@ -122,8 +122,9 @@ class GoalTest < ActiveSupport::TestCase
   end
 
   test "a person's goals are their personal goals, never the family goals they set" do
-    assert_empty users(:head).goals
+    assert_equal users(:spouse), goals(:gospels).set_by
     assert_equal [ goals(:spouse_bible_reading) ], users(:spouse).goals
+    assert_empty users(:head).goals
   end
 
   test "a household's goals are its family goals" do
@@ -179,6 +180,10 @@ class GoalTest < ActiveSupport::TestCase
 
   test "database: a goal without a set_by raises NotNullViolation" do
     assert_raises(ActiveRecord::NotNullViolation) { goals(:gospels).update_column(:set_by_id, nil) }
+  end
+
+  test "database: a set_by that isn't a user raises InvalidForeignKey" do
+    assert_raises(ActiveRecord::InvalidForeignKey) { goals(:gospels).update_column(:set_by_id, SecureRandom.uuid_v7) }
   end
 
   test "database: a second completion for the same goal raises RecordNotUnique" do
