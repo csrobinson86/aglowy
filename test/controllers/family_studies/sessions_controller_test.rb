@@ -159,7 +159,7 @@ class FamilyStudies::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Session updated.", flash[:notice]
     study_session.reload
     assert_equal "Ruth 2", study_session.topic
-    assert_equal Time.zone.local(new_day.year, new_day.month, new_day.day, 18, 30), study_session.scheduled_at
+    assert_equal ActiveSupport::TimeZone[households(:home).time_zone].local(new_day.year, new_day.month, new_day.day, 18, 30), study_session.scheduled_at
     assert study_session.detached_at
   end
 
