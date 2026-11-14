@@ -42,6 +42,3 @@
 
 # Allow env example files to be committed (overrides /.env* above)
 !/.env*.example
-
-# MaxMind geolocation database (downloaded separately, not committed)
-/db/maxmind/*.mmdb

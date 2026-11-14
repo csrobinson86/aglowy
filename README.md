@@ -95,10 +95,9 @@
 
   ## Per-Project Setup
 
-  Ahoy analytics is already installed. These gems are included but their generators haven't been run yet:
+  This gem is included but its generator hasn't been run yet:
 
   ```bash
-  bin/rails generate pay:install        # Billing — Pay 12.x (configure Stripe keys in .env)
   bin/rails generate ruby_llm:install   # AI chat — RubyLLM 2.x (OpenAI + Anthropic)
   ```
 
