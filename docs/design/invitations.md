@@ -74,7 +74,7 @@ Everything household-scoped is reached through `Current.household`; anything fro
 
 ### Accepting
 
-All at `/invitations/:token` (outside any household, focused layout): `InvitationAcceptancesController#show` renders the right case, `#create` joins (or signs up and joins), `#destroy` declines. The household-side `InvitationsController` above is a different controller under `/:household_id`. Frames `accept-*.png`, `invitation-invalid.png`, `phone-accept.png`.
+All at `/invitation?token=…` (outside any household, focused layout; the token is a query parameter, never a path segment, see Traps): `InvitationAcceptancesController#show` renders the right case, `#create` joins (or signs up and joins), `#destroy` declines. The household-side `InvitationsController` above is a different controller under `/:household_id`. Frames `accept-*.png`, `invitation-invalid.png`, `phone-accept.png`.
 
 | The visitor is | They see | What happens |
 | --- | --- | --- |
@@ -84,14 +84,14 @@ All at `/invitations/:token` (outside any household, focused layout): `Invitatio
 | Signed in with another email | A warning naming the invited address partly hidden (`d•••••@example.com`) and a Sign out button (frame `accept-wrong-email.png`) | Nothing. The invitation stays open |
 | Anyone, with an expired, cancelled, used or tampered token | "This invitation can't be used" (frame `invitation-invalid.png`) | Nothing. The page doesn't say which, or which household |
 
-Joining takes `household.lock!` and rechecks the invitation still exists inside the transaction, so a double click or a cancel at the same moment can't create two memberships or join from a cancelled invitation.
+Joining takes `household.lock!` and rechecks the invitation still exists inside the transaction, so a double click can't create two memberships. Cancelling (household side), declining and resending take the same `household.lock!` before they delete or change the invitation, so a cancel at the same moment as a join either lands first (the join finds nothing) or after (the person has joined and the cancel finds nothing).
 
 ## Child logins
 
 - **Give a login** (`GET/POST /:household_id/members/:member_id/login`, `Members::LoginsController`): for a child member with no Identity. Username field with the rules above, then "Create login". Creates an Identity with the username, no email, an unusable random password and `confirmed_at` set, and shows the password link (frames `child-login.png`, `child-login-link.png`). The form says Aglowy keeps only the child's name, username and password.
 - **New password link** (`POST /:household_id/members/:member_id/password_link`, `Members::PasswordLinksController`): for a child member whose login has no email. Shows the same link page.
 - **The link:** `identity.generate_token_for(:password_setup)`, `generates_token_for :password_setup, expires_in: 12.hours { encrypted_password.last(10) }`. Setting a password changes `encrypted_password`, so a link works once. The page shows it in a read-only field with "Copy link" and says to open it on the child's device and not share it outside the family. It's never emailed, logged or stored.
-- **Choosing a password** (`GET/PATCH /password_setup/:token`, `PasswordSetupsController`, focused layout, signed out allowed): "Hi Eli! Choose your password", the username shown, password and "Type it again", then signs them in (frame `child-password.png`). An expired or used link shows "Ask a parent to make a new link."
+- **Choosing a password** (`GET/PATCH /password_setup?token=…`, `PasswordSetupsController`, focused layout, signed out allowed): "Hi Eli! Choose your password", the username shown, password and "Type it again", then signs them in (frame `child-password.png`). An expired or used link shows "Ask a parent to make a new link."
 - Members page: each row says how the person signs in ("maria@example.com", "Signs in as eli.rivera", "No login"), with "Give a login" or "New password link" on child rows for heads and adults (frame `members.png`).
 
 ## Account settings
@@ -116,10 +116,10 @@ At `/:household_id/settings` (`Households::SettingsController`, household layout
 ## Traps
 
 - **Never trust an email from the form at acceptance.** The account's email is the invitation's, and a signed-in person's email is compared normalized.
-- **Tokens are bearer secrets.** Invitation and password-link tokens are never logged (`filter_parameters` includes `token`), never stored in the database, and the password link is shown only to the head or adult who made it.
+- **Tokens are bearer secrets.** Invitation and password-link tokens travel as a `token` query parameter, never in the URL path. `filter_parameters` already filters `token`, and Rails' `filtered_path` (which both the Rails log and Lograge's `path` use) filters query strings but **not** path segments, so a `/invitations/:token` route would write live tokens to the logs. A request test checks the logged line shows `token=[FILTERED]`. Tokens are never stored in the database, and the password link is shown only to the head or adult who made it.
 - **The invalid-invitation page says nothing about the household,** so a guessed or old link reveals nothing.
 - **Username-only logins have no email,** so any code that emails an identity (Devise mailers, future notifications) must skip them.
-- **Children and the "New household" item:** hide it and refuse it in `HouseholdPolicy#create?`, which has no membership outside a household, so the rule lives on the user: `User#can_start_household?` is true when the person has no memberships yet or has at least one active non-child seat.
+- **Children and the "New household" item:** hide it and refuse it in `HouseholdPolicy#create?`, which has no membership outside a household, so the rule lives on the user: `User#can_start_household?` is true when the person has no memberships at all, or has at least one non-child membership, active or not. So an adult who has left every household can start a new one, and someone who has only ever had child seats can't, even after leaving.
 - **Rejoining reactivates, never duplicates,** because of the unique (`household_id`, `user_id`) index on memberships.
 
 ## States each story checks
