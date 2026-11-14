@@ -17,4 +17,10 @@ class User < ApplicationRecord
   def start_meeting_note(kind:, week_of:)
     meeting_notes.create_or_find_by!(kind: kind, week_of: week_of, &:build_parts)
   end
+
+  # That week's Life and Ministry and Weekend notes, in that order. One not started yet is a new, unsaved note.
+  def meeting_notes_for_week(week_of)
+    started = meeting_notes.preloaded.where(week_of: week_of).index_by(&:kind)
+    MeetingNote.kinds.keys.map { |kind| started[kind] || MeetingNote.new(kind: kind, week_of: week_of) }
+  end
 end

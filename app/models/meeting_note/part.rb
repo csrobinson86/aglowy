@@ -10,6 +10,14 @@ class MeetingNote::Part < ApplicationRecord
   # Backed by a partial unique index on (meeting_note_id, key) where key <> 'living_part'.
   validates :key, uniqueness: { scope: :meeting_note_id }, unless: :repeats?
 
+  def label
+    meeting_note.outline.part(key).label
+  end
+
+  def filled?
+    title.present? || speaker.present? || notes.present?
+  end
+
   def repeats?
     meeting_note&.outline&.part(key)&.repeats? || false
   end

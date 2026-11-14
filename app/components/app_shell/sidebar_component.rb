@@ -7,6 +7,10 @@ class AppShell::SidebarComponent < ApplicationComponent
 
   delegate :household, :user, to: :membership
 
+  def meeting_notes_path
+    household_meeting_notes_path(household_id: household.id)
+  end
+
   def initialize(membership:, selected_item:, label:)
     @membership = membership
     @selected_item = selected_item

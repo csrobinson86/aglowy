@@ -13,6 +13,11 @@ class Membership < ApplicationRecord
     head? && active? && household.memberships.active.head.where.not(id: id).none?
   end
 
+  # This week's Monday, in the person's own time zone when they've set one, else the household's.
+  def this_week
+    Time.current.in_time_zone(user.time_zone.presence || household.time_zone).to_date.beginning_of_week(:monday)
+  end
+
   def deactivate
     without_losing_last_head(leaves_headship: true) { update(active: false) }
   end

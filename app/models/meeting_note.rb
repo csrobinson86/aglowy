@@ -14,6 +14,9 @@ class MeetingNote < ApplicationRecord
 
   validates :week_of, presence: true
 
+  scope :preloaded, -> { includes(:gems, parts: :rich_text_notes) }
+  scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
+
   def outline
     Outline.new(kind: kind, version: outline_version)
   end
@@ -21,6 +24,20 @@ class MeetingNote < ApplicationRecord
   # Builds every part the outline starts with, in order; a repeating part starts with one.
   def build_parts
     outline.parts.each.with_index(1) { |part, position| parts.build(key: part.key, position: position) }
+  end
+
+  # The parts the person has written something in. Gems are counted on their own.
+  def filled_parts
+    parts.select(&:filled?)
+  end
+
+  # Each outline section with its filled parts, leaving out sections with none.
+  def filled_sections
+    outline.sections.filter_map do |section|
+      keys = section.parts.map(&:key)
+      filled = filled_parts.select { keys.include?(it.key) }
+      [ section, filled ] if filled.any?
+    end
   end
 
   # The week's program on wol.jw.org, by ISO week: week 27 of 2026 is 29 June–5 July.

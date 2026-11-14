@@ -33,6 +33,15 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Menu'] a[aria-current='page']", text: "Members", count: 1
   end
 
+  test "Meeting notes is in the Mine group, with the note icon, and is the current item when selected_item is :meeting_notes" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :meeting_notes))
+
+    assert_selector "nav[aria-label='Main'] h2", text: "Mine"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/meeting_notes']", text: "Meeting notes"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-note"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
+  end
+
   test "shows the person's name and a Sign out button" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
 
