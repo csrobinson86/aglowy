@@ -36,20 +36,20 @@ module Aglowy
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    # Active Record encryption keys (encrypted session notes). Rails reads them from
-    # credentials (active_record_encryption.*); these environment variables win when set,
-    # for machines without the credentials key. Test fixes its own in config/environments/test.rb.
-    config.active_record.encryption.merge!({
-      primary_key: ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"],
-      deterministic_key: ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"],
-      key_derivation_salt: ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
-    }.compact_blank)
-
     # Action Text needs Active Storage, but nothing uploads yet: notes have attachments off.
     # Its public upload and blob routes stay undrawn until the file story adds guarded ones
     # (docs/design/family-studies.md, Files).
     config.active_storage.draw_routes = false
     config.active_storage.variant_processor = :disabled
+
+    # Lexxy widens Action Text's allowed tags for its media attachments. Notes have attachments
+    # off, so take the media tags back: nobody can post an <embed> or <video> that everyone in
+    # the household then loads. Ordered after Lexxy's, which sets the list after boot too.
+    initializer "aglowy.action_text_sanitizer", after: "lexxy.sanitization" do |app|
+      app.config.after_initialize do
+        ActionText::ContentHelper.allowed_tags -= %w[ embed video audio source ]
+      end
+    end
 
     # Limits for family studies, one place each (docs/design/family-studies.md, "Limits").
     config.x.family_studies.max_file_size   = 25.megabytes

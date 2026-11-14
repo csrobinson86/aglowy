@@ -25,14 +25,26 @@ class FamilyStudies::SessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "notes are shown through Action Text, sanitized" do
     study_session = family_study_sessions(:weekly_next)
-    study_session.update!(notes: %(<p>Read <strong>Ruth 1</strong></p><script>alert("hi")</script>))
+    study_session.update!(notes: %(<p>Read <strong>Ruth 1</strong></p><script>alert("hi")</script><embed src="https://example.com/x.html"><video src="https://example.com/v.mp4"></video>))
     sign_in identities(:spouse)
 
     get session_path(study_session)
 
     assert_select "main .lexxy-content strong", "Ruth 1"
     assert_select "main script", text: /alert/, count: 0
+    assert_select "main embed, main video", count: 0
     assert_select "main .blankslate", text: /No notes yet/, count: 0
+  end
+
+  test "a child reads the notes but gets no Edit notes button" do
+    study_session = family_study_sessions(:weekly_next)
+    study_session.update!(notes: "<p>Read Ruth 1</p>")
+    sign_in child_identity
+
+    get session_path(study_session)
+
+    assert_select "main .lexxy-content", text: "Read Ruth 1"
+    assert_select "a", text: "Edit notes", count: 0
   end
 
   test "a one-off session repeats Once and runs for the study's duration" do
