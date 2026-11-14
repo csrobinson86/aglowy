@@ -3,13 +3,13 @@ class ApplicationController < ActionController::Base
 
   allow_browser versions: :modern
 
-  before_action :set_current_user
+  before_action :set_current_identity
   after_action :verify_authorized, unless: :skip_authorization?
 
   private
 
-  def set_current_user
-    Current.user = current_user
+  def set_current_identity
+    Current.identity = current_identity
   end
 
   def skip_authorization?

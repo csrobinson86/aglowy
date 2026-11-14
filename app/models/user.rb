@@ -1,7 +1,7 @@
 class User < ApplicationRecord
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable,
-         :confirmable, :lockable
+  has_one :identity, dependent: :destroy
 
-  enum :role, { user: "user", admin: "admin" }, default: "user"
+  normalizes :name, with: -> { it.squish }
+
+  validates :name, presence: true
 end

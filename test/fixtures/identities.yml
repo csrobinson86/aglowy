@@ -1,0 +1,41 @@
+head:
+  user: head
+  email: head@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>
+
+spouse:
+  user: spouse
+  email: spouse@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>
+
+former:
+  user: former
+  email: former@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>
+
+outsider:
+  user: outsider
+  email: outsider@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>
+
+grandparent:
+  user: grandparent
+  email: grandparent@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>
+
+newcomer:
+  user: newcomer
+  email: newcomer@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+
+staff:
+  user: staff
+  email: staff@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>
+  staff: true
