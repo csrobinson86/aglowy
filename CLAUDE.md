@@ -194,6 +194,27 @@ households or roles. The non-negotiables:
 - The **living style guide** (`/design-system` route in development)
   showcases Primer components as used in this app.
 
+### Forms (Primer Forms framework)
+
+- Every form is a **Primer form class**, never hand-written form markup.
+  Reference: https://primer-lookbook.github.com/view-components/lookbook/pages/forms/introduction
+- Form classes live in `app/forms/`, mirroring `app/controllers/`, and inherit
+  from `ApplicationForm` (`class ApplicationForm < Primer::Forms::Base; end`).
+  Inputs and the submit button are declared in the `form do |f| ... end` DSL.
+- Render inside `primer_form_with`, Primer's `form_with`:
+  ```erb
+  <%= primer_form_with(model: @signup, url: signup_path) do |f| %>
+    <%= render SignupForm.new(f) %>
+  <% end %>
+  ```
+  It turns off Rails' default error markup; Primer shows each validation
+  message with its input, labels every field, and focuses the first invalid one.
+- Active Model objects (like `Signup`) work the same as Active Record models.
+- No custom Sass or layout work for forms. If Primer can't express something,
+  ask Casey before building it by hand.
+- Devise's generated views still use plain `form_for`. Convert them only in a
+  story that asks for it.
+
 ---
 
 ## Authentication (Devise)
@@ -373,6 +394,7 @@ These are explicitly forbidden in this codebase:
 | GraphQL | We use standard Rails controllers + Turbo |
 | Tailwind CSS | We use Primer + Sass |
 | Hand-rolled buttons/forms/banners | Use the Primer component |
+| Form markup by hand (`form_with` + `f.text_field`) | A Primer form class in `app/forms/`, rendered with `primer_form_with` |
 | Phlex | We use ViewComponent with sidecar ERB |
 | Redis (for jobs) | We use Solid Queue (DB-backed) |
 | Sidekiq | We use Solid Queue |
