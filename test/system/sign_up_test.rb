@@ -31,7 +31,7 @@ class SignUpTest < ApplicationSystemTestCase
     fill_in "Password", with: "password123"
     click_on "Log in"
 
-    assert_selector "h1", text: "The Robinson Family"
+    assert_title "Home · The Robinson Family · Aglowy"
     assert_accessible
     capture_screens("dashboard-new-household")
   end

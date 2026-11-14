@@ -1,3 +1,17 @@
-<% content_for :title, Current.household.name %>
+<% content_for :title, "Home" %>
 
-<%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { Current.household.name } %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Home" } %>
+  <% subhead.with_description { Current.household.name } %>
+<% end %>
+
+<%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
+  <% blankslate.with_visual_icon(icon: :home) %>
+  <% blankslate.with_heading(tag: :h2) { "Welcome to #{Current.household.name}" } %>
+  <% if policy(Membership).create? %>
+    <% blankslate.with_description { "Add the people in your household. Family studies, goals and notes will show up here as you add them." } %>
+    <% blankslate.with_primary_action(href: new_household_member_path) { "Add a member" } %>
+  <% else %>
+    <% blankslate.with_description { "Family studies, goals and notes will show up here." } %>
+  <% end %>
+<% end %>

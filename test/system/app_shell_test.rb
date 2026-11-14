@@ -24,7 +24,7 @@ class AppShellTest < ApplicationSystemTestCase
   end
 
   test "the page passes assert_accessible" do
-    assert_selector "h1", text: "The Head Family"
+    assert_selector "h1", text: "Home"
     assert_accessible
     capture_screens("household-home")
   end

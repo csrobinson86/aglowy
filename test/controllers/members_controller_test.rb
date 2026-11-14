@@ -13,6 +13,16 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "Frances Former"
   end
 
+  test "the member list and Add a member have household page titles" do
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+    assert_select "title", "Members · The Head Family · Aglowy"
+
+    get new_household_member_path(household_id: households(:home))
+    assert_select "title", "Add a member · The Head Family · Aglowy"
+  end
+
   test "a non-member gets 404 for the member list" do
     sign_in identities(:outsider)
 
