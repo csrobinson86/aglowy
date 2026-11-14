@@ -16,6 +16,9 @@
         <% if part.speaker.present? %>
           <p class="color-fg-muted mb-1">Speaker: <%= part.speaker %></p>
         <% end %>
+        <% if part.key == "spiritual_gems" %>
+          <%= render "meeting_notes/gems", gems: @meeting_note.gems %>
+        <% end %>
         <%# Action Text sanitizes the notes as it renders them; never html_safe. %>
         <%= part.notes if part.notes.present? %>
       <% end %>

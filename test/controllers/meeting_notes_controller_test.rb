@@ -174,8 +174,9 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main h2", text: "Treasures From God's Word"
     assert_select "main h2", text: "Living as Christians"
     assert_select "main h2 svg.octicon-dot-fill.color-fg-danger"
-    assert_select "main h3", count: 2
+    assert_select "main h3", count: 3
     assert_select "main h3", text: "Talk · [This week's talk title]"
+    assert_select "main h3", text: "Spiritual Gems"
     assert_select "main", text: /Jehovah promises to strengthen us/
     assert_select "main h3", text: "Congregation Bible Study"
     assert_not_includes response.body, "Bible Reading"
@@ -257,7 +258,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main input[type=text][value=?]", "[This week's talk title]"
     assert_select "main label", text: "Part title"
     assert_select "main label", text: "Notes for the whole section"
-    assert_select "main", text: /Spiritual gems can't be added here yet./
+    assert_select "main", text: /Each gem is a scripture and what you found in it/
 
     editors = css_select("main lexxy-editor").reject { it.ancestors("template").any? }
     assert_equal 5, editors.size
@@ -373,6 +374,161 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     filtered = filter.filter("meeting_note" => { "parts_attributes" => [ { "id" => "1", "title" => "Mine" } ] })
 
     assert_equal [ { "id" => "1", "title" => "[FILTERED]" } ], filtered.dig("meeting_note", "parts_attributes")
+  end
+
+  test "the read view lists the gems with their references in bold, in order" do
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_select "main ul li", count: 2
+    assert_select "main ul li svg.octicon-ruby", count: 2
+    assert_equal [ "Isaiah 41:10", "Philippians 4:6-7" ], css_select("main ul li strong").map(&:text)
+    assert_select "main ul li", text: /Jehovah doesn't just watch; he takes hold of my hand./
+  end
+
+  test "a note with only gems shows them under Treasures From God's Word" do
+    note = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    note.gems.create!(scripture: "Ps 23", insight: "He leads.", position: 1)
+    sign_in identities(:head)
+
+    get note_path(note)
+
+    assert_select "main h2", text: "Treasures From God's Word"
+    assert_select "main h3", text: "Spiritual Gems"
+    assert_select "main ul li strong", text: "Psalm 23"
+    assert_not_includes response.body, "Nothing written yet."
+  end
+
+  test "the edit page has a row for each gem, a template for a new one, and Add a gem" do
+    sign_in identities(:head)
+
+    get edit_note_path(meeting_notes(:head_midweek))
+
+    gems = css_select("main fieldset[data-gems-target=gem]").reject { it.ancestors("template").any? }
+    assert_equal 2, gems.size
+    assert_select "main input[type=text][value=?]", "Isaiah 41:10"
+    assert_select "main textarea", text: "Jehovah doesn't just watch; he takes hold of my hand."
+    assert_select "main label", text: "Scripture"
+    assert_select "main label", text: "What I found"
+    assert_select "main button[aria-label='Remove Isaiah 41:10']"
+    assert_select "main button[aria-label='Remove Phil 4:6, 7']"
+    assert_select "main template fieldset[data-gems-target=gem] input[name*='[gems_attributes][NEW_GEM][scripture]']"
+    assert_select "main template button[aria-label='Remove gem GEM_NUMBER']"
+    assert_select "main button", text: "Add a gem"
+  end
+
+  test "gems are created through the note, numbered after the others" do
+    sign_in identities(:head)
+
+    assert_difference -> { meeting_notes(:head_midweek).gems.count }, 2 do
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { gems_attributes: {
+        "1731900000000" => { scripture: "Isa 41:13", insight: "Don't be afraid.", position: "1" },
+        "1731900000001" => { scripture: "Ps 23", insight: "He leads." }
+      } } }
+    end
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    added = meeting_notes(:head_midweek).gems.last(2)
+    assert_equal [ [ 3, "Isa 41:13", 23, 41, 13, "Don't be afraid." ], [ 4, "Ps 23", 19, 23, nil, "He leads." ] ],
+                 added.map { [ it.position, it.scripture, it.book_number, it.chapter, it.verse_start, it.insight ] }
+  end
+
+  test "gems are updated and removed through the note" do
+    sign_in identities(:head)
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { gems_attributes: {
+      "0" => { id: meeting_note_gems(:head_strength).id, scripture: "Isaiah 41:10-13", insight: "He holds my hand." },
+      "1" => { id: meeting_note_gems(:head_anxiety).id, _destroy: "1" }
+    } } }
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    gem = meeting_note_gems(:head_strength).reload
+    assert_equal [ "Isaiah 41:10-13", 10, 13, "He holds my hand." ], [ gem.scripture, gem.verse_start, gem.verse_end, gem.insight ]
+    assert_not MeetingNote::Gem.exists?(meeting_note_gems(:head_anxiety).id)
+  end
+
+  test "a gem id from another note can't be changed or removed through this one" do
+    theirs = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    gem = theirs.gems.create!(scripture: "John 3:16", insight: "Theirs.", position: 1)
+
+    [ { id: gem.id, insight: "Overwritten" }, { id: gem.id, _destroy: "1" } ].each do |attributes|
+      sign_in identities(:head) # a 404 doesn't keep the session
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { gems_attributes: { "0" => attributes } } }
+
+      assert_response :not_found
+      assert_equal "Theirs.", gem.reload.insight
+    end
+  end
+
+  test "a bad reference shows its error on that field and keeps everything else typed" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { MeetingNote::Gem.count } do
+      patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: {
+        parts_attributes: { "0" => { id: meeting_note_parts(:head_talk).id, title: "Kept title" } },
+        gems_attributes: {
+          "0" => { id: meeting_note_gems(:head_strength).id, scripture: "Hezekiah 1:1", insight: "Kept insight" },
+          "1731900000000" => { scripture: "Ps 23", insight: "Kept new gem" }
+        }
+      } }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "main .FormControl-inlineValidation:not([hidden])", count: 1
+    assert_select "main .FormControl-inlineValidation:not([hidden])", text: "Use a reference like Isaiah 41:10."
+    assert_select "main input[type=text][value=?][aria-invalid=true]", "Hezekiah 1:1"
+    assert_select "main input[type=text][value=?]", "Kept title"
+    assert_select "main input[type=text][value=?]", "Ps 23"
+    assert_select "main textarea", text: "Kept insight"
+    assert_select "main textarea", text: "Kept new gem"
+    assert_equal "Isaiah 41:10", meeting_note_gems(:head_strength).reload.scripture
+    assert_equal "[This week's talk title]", meeting_note_parts(:head_talk).reload.title
+  end
+
+  test "a gem removed before a failed save stays removed on the page" do
+    sign_in identities(:head)
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { gems_attributes: {
+      "0" => { id: meeting_note_gems(:head_strength).id, scripture: "Hezekiah 1:1" },
+      "1" => { id: meeting_note_gems(:head_anxiety).id, _destroy: "1" }
+    } } }
+
+    assert_response :unprocessable_content
+    assert_select "main fieldset[hidden][data-gems-target=gem] input[type=hidden][name*='[_destroy]'][value=true]"
+    assert MeetingNote::Gem.exists?(meeting_note_gems(:head_anxiety).id)
+  end
+
+  test "a Living as Christians part removed before a failed save stays removed on the page" do
+    sign_in identities(:head)
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: {
+      parts_attributes: { "4" => { id: meeting_note_parts(:head_living_part).id, _destroy: "1" } },
+      gems_attributes: { "0" => { id: meeting_note_gems(:head_strength).id, scripture: "Hezekiah 1:1" } }
+    } }
+
+    assert_response :unprocessable_content
+    assert_select "main fieldset[hidden][data-living-parts-target=part] input[type=hidden][name*='[_destroy]'][value=true]"
+    assert MeetingNote::Part.exists?(meeting_note_parts(:head_living_part).id)
+  end
+
+  test "an insight keeps its line breaks on the read view" do
+    meeting_note_gems(:head_strength).update!(insight: "He holds my hand.\nHe holds me up.")
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_select "main ul li span span", text: /He holds my hand.\s*He holds me up./ do
+      assert_select "br", count: 1
+    end
+  end
+
+  test "gem insights are filtered from the logs" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter("meeting_note" => { "gems_attributes" => { "0" => { "scripture" => "Isaiah 41:10", "insight" => "Mine" } } })
+
+    assert_equal({ "scripture" => "Isaiah 41:10", "insight" => "[FILTERED]" }, filtered.dig("meeting_note", "gems_attributes", "0"))
   end
 
   test "a weekend note can't be edited yet" do

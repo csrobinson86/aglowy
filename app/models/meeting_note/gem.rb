@@ -18,6 +18,11 @@ class MeetingNote::Gem < ApplicationRecord
     self.verse_end = parsed&.verse_end
   end
 
+  # The reference written out in full, as the read view shows it: "Phil 4:6, 7" is "Philippians 4:6-7".
+  def reference
+    Scripture.new(book_number:, chapter:, verse_start:, verse_end:)
+  end
+
   private
     def scripture_is_a_reference
       errors.add(:scripture, "Use a reference like Isaiah 41:10.") unless book_number && chapter

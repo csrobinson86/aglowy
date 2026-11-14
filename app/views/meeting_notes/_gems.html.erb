@@ -1,0 +1,10 @@
+<%# locals: (gems:) %>
+<%# The read view's Spiritual Gems (frame shared-note-read-only.png): each reference written out in full, then the insight. %>
+<ul class="list-style-none">
+  <% gems.each do |gem| %>
+    <li class="d-flex flex-items-baseline mb-2 wb-break-word">
+      <%= render Primer::Beta::Octicon.new(:ruby, color: :done, mr: 2, flex_shrink: 0) %>
+      <span><strong><%= gem.reference %></strong><% if gem.insight.present? %> — <%= simple_format(gem.insight, {}, wrapper_tag: "span") %><% end %></span>
+    </li>
+  <% end %>
+</ul>

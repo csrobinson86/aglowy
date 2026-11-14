@@ -9,6 +9,7 @@ class MeetingNote < ApplicationRecord
 
   # Only Living as Christians parts can be removed (only_repeating_parts_removed); new ones come from revise!.
   accepts_nested_attributes_for :parts, allow_destroy: true
+  accepts_nested_attributes_for :gems, allow_destroy: true
 
   enum :kind, %w[ midweek weekend ].index_by(&:itself), validate: true
 
@@ -30,13 +31,13 @@ class MeetingNote < ApplicationRecord
     outline.parts.each.with_index(1) { |part, position| parts.build(key: part.key, position: position) }
   end
 
-  # Saves the edit form: titles and notes, with Living as Christians parts added and removed. A part
-  # added in the form is always a Living as Christians part, numbered after the others; its key and
-  # position never come from the form.
+  # Saves the edit form: titles and notes, with Living as Christians parts and gems added and removed.
+  # A part added in the form is always a Living as Christians part, numbered after the others; a new
+  # gem is numbered after the other gems. Keys and positions never come from the form.
   def revise!(attributes)
     assign_attributes(attributes)
-    last = parts.reject(&:new_record?).map(&:position).max.to_i
-    parts.select(&:new_record?).each.with_index(last + 1) { |part, position| part.assign_attributes(key: "living_part", position: position) }
+    number_new(parts) { |part, position| part.assign_attributes(key: "living_part", position: position) }
+    number_new(gems) { |gem, position| gem.position = position }
     save!
   end
 
@@ -47,10 +48,12 @@ class MeetingNote < ApplicationRecord
 
   # Each outline section with its filled parts in the outline's order, leaving out sections with none.
   # A part added later has the highest position, but still comes before the Congregation Bible Study.
+  # Spiritual Gems counts as filled when the note has gems.
   def filled_sections
+    shown = parts.select { it.filled? || (it.key == "spiritual_gems" && gems.any?) }
     outline.sections.filter_map do |section|
       keys = section.parts.map(&:key)
-      filled = filled_parts.select { keys.include?(it.key) }.sort_by { [ keys.index(it.key), it.position ] }
+      filled = shown.select { keys.include?(it.key) }.sort_by { [ keys.index(it.key), it.position ] }
       [ section, filled ] if filled.any?
     end
   end
@@ -66,6 +69,11 @@ class MeetingNote < ApplicationRecord
   end
 
   private
+    def number_new(records, &assign)
+      last = records.reject(&:new_record?).map(&:position).max.to_i
+      records.select(&:new_record?).each.with_index(last + 1, &assign)
+    end
+
     def only_repeating_parts_removed
       parts.select(&:marked_for_destruction?).reject(&:repeats?).each { errors.add(:parts, "can't lose #{it.label}") }
     end

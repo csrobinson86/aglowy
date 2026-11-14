@@ -1,0 +1,19 @@
+<%# locals: (form:, number:) %>
+<%# One Spiritual Gem on the edit page. number tells the gems apart for screen readers; in the <template>
+    it's a placeholder the gems controller fills in. A gem removed before a failed save stays hidden. %>
+<% gem = form.object %>
+<fieldset class="border rounded-2 color-bg-subtle p-3 mb-2" data-gems-target="gem" data-new-record="<%= gem.new_record? %>" <%= "hidden" if gem.marked_for_destruction? %>>
+  <legend class="sr-only">Gem <%= number %></legend>
+  <div class="d-flex flex-items-start">
+    <%# Stacked on a phone; side by side from medium width, the reference taking a third (frame life-and-ministry-note.png). %>
+    <div class="flex-1 min-width-0 d-flex flex-column flex-md-row">
+      <div class="col-md-4 mb-3 mb-md-0 mr-md-2"><%= render MeetingNotes::NoteForm.new(form, field: :scripture) %></div>
+      <div class="flex-1 min-width-0"><%= render MeetingNotes::NoteForm.new(form, field: :insight) %></div>
+    </div>
+    <%# show_tooltip: false keeps the aria-label on the button, which Primer's tooltip would replace.
+        The label names the reference, and the gems controller keeps it in step as the reference is typed. %>
+    <%= render(Primer::Beta::IconButton.new(icon: :x, scheme: :invisible, mt: 4, ml: 2, show_tooltip: false,
+                                            "aria-label": "Remove #{gem.scripture.presence || "gem #{number}"}",
+                                            data: { gems_target: "remove", fallback_label: "Remove gem #{number}", action: "gems#remove" })) %>
+  </div>
+</fieldset>
