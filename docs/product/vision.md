@@ -39,12 +39,13 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | # | Epic | Status |
 | --- | --- | --- |
 | 1 | **USERS-01** Households, people and login | Stories filed |
-| 2 | Invitations, child logins and account settings | Design done |
-| 3 | Family studies: scheduling, sessions, resources, guests | Design done |
-| 4 | Meeting notes (Action Text, Lexxy) | Design done |
-| 5 | Goals: personal and family | Design done |
-| 6 | Notifications: in-app list and email | Design done |
-| 7 | Production on AWS: EC2 + Docker Compose, SES, bounce handler | Stack decided |
+| 2 | **UI-01** App shell: sidebar, navigation, page patterns | Stories filed |
+| 3 | Invitations, child logins and account settings | Design done |
+| 4 | Family studies: scheduling, sessions, resources, guests | Design done |
+| 5 | Meeting notes (Action Text, Lexxy) | Design done |
+| 6 | Goals: personal and family | Design done |
+| 7 | Notifications: in-app list and email | Design done |
+| 8 | Production on AWS: EC2 + Docker Compose, SES, bounce handler | Stack decided |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 
