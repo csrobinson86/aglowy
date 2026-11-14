@@ -1,0 +1,9 @@
+<%# locals: (resource:) -%>
+<%# A resource's title, linked to its file or URL in a new tab that never gets this page as its opener. %>
+<% if resource.file? %>
+  <%# Only through Aglowy, which checks the policy first; never Active Storage's own URLs (gotcha 22). %>
+  <%= render(Primer::Beta::Link.new(href: household_resource_file_path(resource_id: resource), target: "_blank", rel: "noopener noreferrer", classes: "wb-break-word")) { resource.title } %>
+<% else %>
+  <%# Only http and https URLs get this far (gotcha 23). %>
+  <%= render(Primer::Beta::Link.new(href: resource.url, target: "_blank", rel: "noopener noreferrer", classes: "wb-break-word")) { resource.title } %>
+<% end %>

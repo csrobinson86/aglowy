@@ -226,6 +226,15 @@ class FamilyStudyTest < ActiveSupport::TestCase
     assert_equal "Every 2 months on the third Tuesday", FamilyStudy.new(frequency: :monthly, week_of_month: 3, **tuesday).repeat_description
   end
 
+  test "repeat_label names a weekly study's weekday in the plural, as Home shows it" do
+    tuesday = { starts_on: Date.new(2026, 11, 17), time_of_day: "19:00" }
+
+    assert_equal "Weekly on Tuesdays", FamilyStudy.new(frequency: :weekly, **tuesday).repeat_label
+    assert_equal "Every 2 weeks on Tuesdays", FamilyStudy.new(frequency: :weekly, interval: 2, **tuesday).repeat_label
+    assert_equal "Monthly on the third Tuesday", FamilyStudy.new(frequency: :monthly, week_of_month: 3, **tuesday).repeat_label
+    assert_equal "Once", FamilyStudy.new(frequency: :once, **tuesday).repeat_label
+  end
+
   test "time_of_day keeps its wall-clock value whatever the process time zone" do
     @household.update!(time_zone: "Central Time (US & Canada)")
     study = Time.use_zone("Tokyo") { @household.schedule_family_study(starts_on: "2026-11-17", time_of_day: "19:00") }
