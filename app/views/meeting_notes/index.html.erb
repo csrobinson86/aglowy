@@ -14,8 +14,9 @@
   <% end %>
 </div>
 
+<%= render "meeting_notes/tabs", selected: :mine, shared_count: @shared_count %>
+
 <%= render Primer::Beta::BorderBox.new do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "My notes" } } %>
   <% if @earlier.records.any? %>
     <% @earlier.records.each do |note| %>
       <% box.with_row(display: :flex, align_items: :center) do %>
@@ -33,7 +34,7 @@
     <% box.with_body do %>
       <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
         <% blankslate.with_visual_icon(icon: :note) %>
-        <% blankslate.with_heading(tag: :h3) { "No earlier notes" } %>
+        <% blankslate.with_heading(tag: :h2) { "No earlier notes" } %>
         <% blankslate.with_description { "Notes from earlier weeks will show here." } %>
       <% end %>
     <% end %>

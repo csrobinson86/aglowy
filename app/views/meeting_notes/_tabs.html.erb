@@ -1,0 +1,9 @@
+<%# locals: (selected:, shared_count:) %>
+<%# "My notes" and "Shared in <household>" are two pages, so the tabs are links (frame notes-list.png). %>
+<%= render(Primer::Alpha::UnderlineNav.new(label: "Meeting notes", mb: 3)) do |nav| %>
+  <% nav.with_tab(href: household_meeting_notes_path, selected: selected == :mine) { |tab| tab.with_text { "My notes" } } %>
+  <% nav.with_tab(href: household_shared_meeting_notes_path, selected: selected == :shared) do |tab| %>
+    <% tab.with_text { "Shared in #{Current.household.name}" } %>
+    <% tab.with_counter(count: shared_count) %>
+  <% end %>
+<% end %>

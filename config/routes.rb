@@ -50,6 +50,7 @@ Rails.application.routes.draw do
     resources :meeting_notes, only: %i[ index create show edit update ] do
       resource :sharing, only: %i[ create destroy ], module: :meeting_notes
     end
+    resources :shared_meeting_notes, only: :index
     resources :direct_uploads, only: :create
     resources :resources, only: [] do
       resource :file, only: :show, module: :resources

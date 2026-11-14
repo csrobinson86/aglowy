@@ -1,5 +1,7 @@
 # A person's own meeting notes. They're the same in every household the person belongs to, so they're
 # reached through Current.user, never Current.household or an id alone (docs/design/meeting-notes.md).
+# The one exception is reading: a note shared into this household is also found through
+# MeetingNote.shared_with(Current.household), read-only.
 class MeetingNotesController < ApplicationController
   include HouseholdScoped
 
@@ -9,6 +11,7 @@ class MeetingNotesController < ApplicationController
     authorize MeetingNote
     @week_of = Current.membership.this_week
     @this_week = Current.user.meeting_notes_for_week(@week_of)
+    @shared_count = MeetingNote.shared_with(Current.household).count
     @earlier = Page.new(Current.user.meeting_notes.includes(:sharings).where(week_of: ...@week_of).newest_first, number: params[:page])
   end
 
@@ -19,8 +22,10 @@ class MeetingNotesController < ApplicationController
     redirect_to household_meeting_note_path(id: Current.user.start_meeting_note(kind:, week_of:))
   end
 
+  # My own note first, else one shared into this household, else 404.
   def show
-    @meeting_note = Current.user.meeting_notes.preloaded.find(params[:id])
+    @meeting_note = Current.user.meeting_notes.preloaded.find_by(id: params[:id]) ||
+      MeetingNote.shared_with(Current.household).preloaded.find(params[:id])
     authorize @meeting_note
   end
 

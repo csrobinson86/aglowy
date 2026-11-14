@@ -111,7 +111,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     get household_meeting_notes_path(household_id: households(:home), page: "9" * 20)
 
     assert_response :success
-    assert_select "main h3", text: "No earlier notes"
+    assert_select "main h2", text: "No earlier notes"
     assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: Page::LAST - 1)}']", text: "Newer notes"
   end
 
@@ -120,8 +120,8 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     get household_meeting_notes_path(household_id: households(:home))
 
-    assert_select "main h2", text: "My notes"
-    assert_select "main h3", text: "No earlier notes"
+    assert_select "main nav[aria-label='Meeting notes'] a[aria-current='page']", text: "My notes"
+    assert_select "main h2", text: "No earlier notes"
   end
 
   test "starting a note twice redirects to the same one" do
@@ -715,6 +715,64 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "main .Box-row .Label", count: 1
     assert_select "main .Box-row", text: /Life and Ministry.*Shared/m
+  end
+
+  test "a member can read a shared note" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    meeting_notes(:head_midweek).share_with(households(:parents))
+    sign_in identities(:spouse)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_response :success
+    assert_select "main h1", /\ALife and Ministry\s+Shared by Hannah Head\z/
+    assert_select ".Subhead h1 .Label", "Shared by Hannah Head"
+    assert_select "main", text: /Hannah Head shared this note with The Head Family. You can read it but not change it./
+    assert_select "main h3", text: "Talk · [This week's talk title]"
+    assert_select "main li", text: /Isaiah 41:10 — Jehovah doesn't just watch/
+    assert_select "main", text: /Parts Hannah Head left empty aren't shown./
+    assert_select "main h3", text: "Bible Reading", count: 0
+    assert_select "main a[href='#{edit_note_path(meeting_notes(:head_midweek))}']", count: 0
+    assert_select "main form", count: 0
+    assert_select "main", text: /Edit notes|Share with household|Stop sharing|Save notes|The Grandparent Family/, count: 0
+  end
+
+  test "a member can't edit a shared note (404)" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    sign_in identities(:spouse)
+
+    get edit_note_path(meeting_notes(:head_midweek))
+    assert_response :not_found
+
+    sign_in identities(:spouse)
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: [ { id: meeting_note_parts(:head_talk).id, title: "Changed" } ] } }
+    assert_response :not_found
+    assert_equal "[This week's talk title]", meeting_note_parts(:head_talk).reload.title
+
+    sign_in identities(:spouse)
+    delete household_meeting_note_sharing_path(household_id: households(:home), meeting_note_id: meeting_notes(:head_midweek))
+    assert_response :not_found
+    assert meeting_notes(:head_midweek).shared_with?(households(:home))
+  end
+
+  test "a member can't read a shared note once the author leaves" do
+    theirs = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    theirs.share_with(households(:home))
+    assert memberships(:spouse_in_home).deactivate
+    sign_in identities(:head)
+
+    get note_path(theirs)
+
+    assert_response :not_found
+  end
+
+  test "a note shared with one household can't be read through another" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    sign_in identities(:grandparent)
+
+    get note_path(meeting_notes(:head_midweek), households(:parents))
+
+    assert_response :not_found
   end
 
   private

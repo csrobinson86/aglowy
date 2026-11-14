@@ -76,4 +76,39 @@ class MeetingNotePolicyTest < ActiveSupport::TestCase
 
     assert_not MeetingNotePolicy.new(memberships(:head_in_home), meeting_notes(:head_midweek)).share?
   end
+
+  test "any active member of a household the note is shared with can read it, whatever their role, but not change or share it" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+
+    %i[ spouse_in_home child_in_home ].each do |membership|
+      policy = MeetingNotePolicy.new(memberships(membership), meeting_notes(:head_midweek))
+
+      assert policy.show?, "expected #{membership} to read it"
+      assert_not policy.update? || policy.edit? || policy.destroy? || policy.share?, "expected #{membership} not to change it"
+    end
+  end
+
+  test "a head of the household it's shared with can read it" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+
+    assert MeetingNotePolicy.new(memberships(:head_in_home), note).show?
+  end
+
+  test "a shared note can't be read through another household, an inactive membership or a nil membership" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+
+    assert_not MeetingNotePolicy.new(memberships(:grandparent_in_parents), meeting_notes(:head_midweek)).show?
+    assert_not MeetingNotePolicy.new(memberships(:outsider_in_other), meeting_notes(:head_midweek)).show?
+    assert_not MeetingNotePolicy.new(memberships(:former_in_home), meeting_notes(:head_midweek)).show?
+    assert_not MeetingNotePolicy.new(nil, meeting_notes(:head_midweek)).show?
+  end
+
+  test "a shared note can't be read once its author is no longer active in the household" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+    memberships(:spouse_in_home).update_column(:active, false)
+
+    assert_not MeetingNotePolicy.new(memberships(:head_in_home), note).show?
+  end
 end

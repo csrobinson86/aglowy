@@ -21,8 +21,15 @@ class MeetingNote < ApplicationRecord
   validates :week_of, presence: true
   validate :only_repeating_parts_removed
 
-  scope :preloaded, -> { includes(:gems, :shared_households, parts: :rich_text_notes) }
+  scope :preloaded, -> { includes(:user, :gems, :shared_households, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
+
+  # The notes household members can read: shared there by an author who is still an active member there.
+  # Membership#deactivate deletes the sharings too; this join is the second guard, so a sharing row can
+  # never show while its author is inactive (docs/design/meeting-notes.md, "Leaving ends a share for good").
+  scope :shared_with, ->(household) do
+    joins(:sharings).where(meeting_note_sharings: { household_id: household }).where(user_id: household.memberships.active.select(:user_id))
+  end
 
   def outline
     Outline.new(kind: kind, version: outline_version)

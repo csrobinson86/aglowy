@@ -18,8 +18,14 @@ class Membership < ApplicationRecord
     Time.current.in_time_zone(user.time_zone.presence || household.time_zone).to_date.beginning_of_week(:monday)
   end
 
+  # Leaving ends the person's meeting-note shares here for good, so rejoining never brings them back
+  # (docs/design/meeting-notes.md, "Leaving ends a share for good").
   def deactivate
-    without_losing_last_head(leaves_headship: true) { update(active: false) }
+    without_losing_last_head(leaves_headship: true) do
+      update(active: false).tap do |deactivated|
+        user.stop_sharing_meeting_notes_with(household) if deactivated
+      end
+    end
   end
 
   def change_role(role)
