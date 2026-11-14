@@ -17,8 +17,14 @@ class MeetingNotePolicyTest < ActiveSupport::TestCase
     end
   end
 
-  test "a member of another household can't" do
+  test "a member of another household the author is in can't" do
     policy = MeetingNotePolicy.new(memberships(:grandparent_in_parents), meeting_notes(:head_midweek))
+
+    assert_not policy.show? || policy.update? || policy.destroy?
+  end
+
+  test "someone who shares no household with the author can't" do
+    policy = MeetingNotePolicy.new(memberships(:outsider_in_other), meeting_notes(:head_midweek))
 
     assert_not policy.show? || policy.update? || policy.destroy?
   end
