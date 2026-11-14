@@ -5,7 +5,7 @@
       Aglowy
     <% end %>
 
-    <%= render "shared/household_switcher", user:, direction: :se %>
+    <%= render AppShell::HouseholdSwitcherComponent.new(membership:) %>
   </header>
 
   <%= render(Primer::Beta::NavList.new(aria: { label: "Main" }, selected_item_id: selected_item)) do |list| %>

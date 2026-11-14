@@ -1,0 +1,24 @@
+<%= render(Primer::Alpha::ActionMenu.new(select_variant: :single, anchor_align: :start, display: :block,
+      data: { controller: "household-switcher", action: "turbo:before-cache@document->household-switcher#reset" })) do |menu| %>
+  <%# min-width-0 lets a long household name truncate instead of widening the sidebar. %>
+  <% menu.with_show_button(block: true, align_content: :start, label_wrap: true, classes: "min-width-0") do |button| %>
+    <% button.with_trailing_action_icon(icon: :"chevron-down") %>
+    <span class="d-block text-left">
+      <span class="Truncate"><span class="Truncate-text text-bold"><%= household.name %></span></span>
+      <span class="d-block f6 color-fg-muted"><%= membership.role.humanize %></span>
+    </span>
+  <% end %>
+
+  <% memberships.each do |other| %>
+    <% menu.with_item(label: other.household.name, href: household_root_path(household_id: other.household_id), active: current?(other), description_scheme: :inline) do |item| %>
+      <% item.with_description { other.role.humanize } %>
+    <% end %>
+  <% end %>
+
+  <% if show_new_household? %>
+    <% menu.with_divider %>
+    <% menu.with_item(label: "New household", href: new_household_path(household_id: nil)) do |item| %>
+      <% item.with_leading_visual_icon(icon: :plus) %>
+    <% end %>
+  <% end %>
+<% end %>

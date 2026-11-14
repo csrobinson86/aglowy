@@ -12,10 +12,54 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     assert_selector "h1", text: "The Head Family"
     assert_turbo_idle
 
-    find("summary", text: "Switch household").click
-    capture_screens("household-switcher")
+    open_household_switcher
     click_on "The Grandparent Family"
     assert_selector "h1", text: "The Grandparent Family"
+  end
+
+  test "switch households from the sidebar menu" do
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    open_household_switcher
+    within("action-menu") do
+      assert_selector "a[aria-checked='true']", text: "The Head Family"
+      click_on "The Grandparent Family"
+    end
+
+    assert_selector "h1", text: "The Grandparent Family"
+    assert_current_path household_root_path(household_id: households(:parents))
+    assert_selector "aside button", text: /The Grandparent Family\s*Adult/
+  end
+
+  test "going Back after switching still checks the household on the page" do
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    open_household_switcher
+    click_on "The Grandparent Family"
+    assert_selector "h1", text: "The Grandparent Family"
+    assert_turbo_idle
+
+    page.go_back
+    assert_selector "h1", text: "The Head Family"
+    assert_turbo_idle
+
+    open_household_switcher
+    assert_selector "action-menu a[aria-checked='true']", count: 1
+    assert_selector "action-menu a[aria-checked='true']", text: "The Head Family"
+  end
+
+  test "the open switcher passes assert_accessible" do
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    open_household_switcher
+    assert_accessible
+    capture_screens("switcher-open")
   end
 
   test "every page on the way passes assert_accessible" do
@@ -33,4 +77,10 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
       capture_screens(name)
     end
   end
+
+  private
+    def open_household_switcher
+      find("aside button[aria-haspopup='true']").click
+      assert_selector "action-menu [role='menu']", visible: true
+    end
 end
