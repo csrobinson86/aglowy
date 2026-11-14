@@ -23,7 +23,7 @@
         <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3)) { "When" } %>
         <%= render FamilyStudies::ScheduleForm.new(f, section: :when) %>
         <%# The Repeat choices depend on the date, so the server re-renders this frame when it changes (scheduling rule 5). %>
-        <%= turbo_frame_tag :family_study_scheduling_repeat, class: "d-block mt-3", data: { repeat_field_target: "frame" } do %>
+        <%= turbo_frame_tag :family_study_scheduling_repeat, class: "d-block mt-3", data: { repeat_field_target: "frame", action: "turbo:before-frame-render->repeat-field#keepRepeat" } do %>
           <%= render FamilyStudies::ScheduleForm.new(f, section: :repeat) %>
         <% end %>
       <% end %>

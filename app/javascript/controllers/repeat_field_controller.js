@@ -12,4 +12,15 @@ export default class extends Controller {
     url.searchParams.set("family_study_scheduling[repeat]", this.repeatTarget.value)
     this.frameTarget.src = url.toString()
   }
+
+  // The request carried the Repeat choice from when the date changed; keep one made since,
+  // if the new date still offers it.
+  keepRepeat({ detail: { newFrame } }) {
+    const choice = this.repeatTarget.value
+    const options = [ ...newFrame.querySelector("select").options ]
+
+    if (options.some(option => option.value === choice)) {
+      options.forEach(option => option.toggleAttribute("selected", option.value === choice))
+    }
+  }
 }

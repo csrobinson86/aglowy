@@ -44,4 +44,22 @@ class ScheduleStudyTest < ApplicationSystemTestCase
     assert_select "Repeat", with_options: [ "Weekly on #{last.strftime('%A')}", "Monthly on the fourth #{last.strftime('%A')}", "Monthly on the last #{last.strftime('%A')}" ]
     assert_accessible
   end
+
+  test "a Repeat choice made while the date reloads is kept" do
+    date = Date.current + 1
+    # Hold the Repeat frame's request until released, so the choice lands while it's in flight.
+    execute_script(<<~JS)
+      const fetch = window.fetch
+      window.fetch = (url, options) => String(url).includes("family_study_scheduling")
+        ? new Promise(resolve => { window.releaseRepeatFrame = () => resolve(fetch(url, options)) })
+        : fetch(url, options)
+    JS
+
+    fill_in "Date", with: date
+    assert_selector "turbo-frame#family_study_scheduling_repeat[busy]"
+    select "Daily", from: "Repeat"
+    execute_script("window.releaseRepeatFrame()")
+
+    assert_select "Repeat", with_options: [ "Weekly on #{date.strftime('%A')}" ], selected: "Daily"
+  end
 end
