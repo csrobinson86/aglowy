@@ -1,0 +1,9 @@
+<%= render Primer::Alpha::Layout.new(stacking_breakpoint: :md, gutter: :none, classes: "app-shell") do |layout| %>
+  <%# :start keeps navigation reachable on phones until the phone menu story switches it to :none. %>
+  <% layout.with_sidebar(width: :default, col_placement: :start, row_placement: :start, tag: :aside, bg: :subtle, border: :right) do %>
+    <%= render AppShell::SidebarComponent.new(membership:, selected_item:) %>
+  <% end %>
+  <% layout.with_main(tag: :main, width: :xl, p: [3, nil, 5]) do %>
+    <%= content %>
+  <% end %>
+<% end %>

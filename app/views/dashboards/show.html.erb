@@ -1,20 +1,18 @@
 <% content_for :title, Current.household.name %>
 
-<div class="container-md px-3 py-5">
-  <%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { Current.household.name } %>
+<%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { Current.household.name } %>
 
-  <%= render Primer::Beta::BorderBox.new do |box| %>
-    <% box.with_header(display: :flex, justify_content: :space_between, align_items: :center) do %>
-      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { "Members" } %>
-      <% if policy(Membership).create? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_path, size: :small)) { "Add a member" } %>
-      <% end %>
-    <% end %>
-    <% @memberships.each do |membership| %>
-      <% box.with_row(display: :flex, justify_content: :space_between, align_items: :center) do %>
-        <%= membership.user.name %>
-        <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary)) { membership.role.humanize } %>
-      <% end %>
+<%= render Primer::Beta::BorderBox.new do |box| %>
+  <% box.with_header(display: :flex, justify_content: :space_between, align_items: :center) do %>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { "Members" } %>
+    <% if policy(Membership).create? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_path, size: :small)) { "Add a member" } %>
     <% end %>
   <% end %>
-</div>
+  <% @memberships.each do |membership| %>
+    <% box.with_row(display: :flex, justify_content: :space_between, align_items: :center) do %>
+      <%= membership.user.name %>
+      <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary)) { membership.role.humanize } %>
+    <% end %>
+  <% end %>
+<% end %>

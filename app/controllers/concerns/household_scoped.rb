@@ -2,6 +2,7 @@ module HouseholdScoped
   extend ActiveSupport::Concern
 
   included do
+    layout "household"
     before_action :set_current_membership
   end
 

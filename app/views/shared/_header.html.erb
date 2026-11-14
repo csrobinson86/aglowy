@@ -4,20 +4,10 @@
   <%= render(Primer::Beta::Link.new(href: root_path(household_id: nil), scheme: :primary, font_weight: :bold)) { "Aglowy" } %>
 
   <nav aria-label="Account" class="d-flex flex-items-center gap-2">
-    <%# Native <details>: opens without waiting for custom-element JS after a Turbo visit. %>
-    <%= render(Primer::Alpha::Dropdown.new(with_caret: true)) do |dropdown| %>
-      <% dropdown.with_button(size: :small, aria_label_closed: "Switch household", aria_label_open: "Close household menu") { "Switch household" } %>
-      <% dropdown.with_menu(direction: :sw) do |menu| %>
-        <% Current.user.active_households.order(:name).each do |household| %>
-          <% menu.with_item(tag: :a, href: household_root_path(household_id: household)) { household.name } %>
-        <% end %>
-        <% menu.with_item(divider: true) %>
-        <% menu.with_item(tag: :a, href: new_household_path(household_id: nil)) { "Create a household" } %>
-      <% end %>
-    <% end %>
+    <%= render "shared/household_switcher", user: Current.user %>
 
     <%= primer_form_with(url: destroy_identity_session_path(household_id: nil), method: :delete) do |f| %>
-      <%= render Identities::SignOutForm.new(f) %>
+      <%= render Sessions::SignOutForm.new(f) %>
     <% end %>
   </nav>
 </header>

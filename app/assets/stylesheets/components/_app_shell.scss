@@ -1,0 +1,10 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// From md up the shell fills the window, so the sidebar footer sits at the
+// bottom. Below md the sidebar stacks above main and keeps its own height.
+.app-shell {
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    min-height: 100vh;
+  }
+}
