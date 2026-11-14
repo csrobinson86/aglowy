@@ -1,0 +1,17 @@
+<%# locals: (form:, number:) %>
+<%# One Living as Christians part on the edit page. number tells the parts apart for screen readers;
+    in the <template> it's a placeholder the living-parts controller fills in. %>
+<fieldset class="mb-3" data-living-parts-target="part" data-new-record="<%= form.object.new_record? %>">
+  <legend class="sr-only">Living as Christians part <%= number %></legend>
+  <div class="d-flex flex-items-start">
+    <div class="flex-1 min-width-0">
+      <%= render MeetingNotes::NoteForm.new(form, field: :living_part) %>
+      <div class="mt-3">
+        <%= render "meeting_notes/notes_field", form: form, hidden_label: "for Living as Christians part #{number}" %>
+      </div>
+    </div>
+    <%# show_tooltip: false keeps the aria-label on the button, which Primer's tooltip would replace. %>
+    <%= render(Primer::Beta::IconButton.new(icon: :x, scheme: :invisible, mt: 4, ml: 2, show_tooltip: false,
+                                            "aria-label": "Remove Living as Christians part #{number}", data: { action: "living-parts#remove" })) %>
+  </div>
+</fieldset>

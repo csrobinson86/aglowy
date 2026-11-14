@@ -1,0 +1,12 @@
+<%# locals: (section:) %>
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header do %>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, display: :flex, align_items: :center, classes: "text-uppercase")) do %>
+      <%= meeting_note_dot(section.dot) %>
+      <%= section.name %>
+    <% end %>
+  <% end %>
+  <% box.with_body do %>
+    <%= yield %>
+  <% end %>
+<% end %>

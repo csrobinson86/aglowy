@@ -90,6 +90,43 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert meeting_notes(:head_midweek).parts.new(key: "living_part", position: 7).valid?
   end
 
+  test "revise! saves titles and notes, and adds new parts as Living as Christians parts after the others" do
+    note = meeting_notes(:head_midweek)
+
+    note.revise!(parts_attributes: [
+      { id: meeting_note_parts(:head_talk).id, title: "Jehovah holds on to us" },
+      { title: "Second part" }, { title: "Third part" }
+    ])
+
+    assert_equal "Jehovah holds on to us", meeting_note_parts(:head_talk).reload.title
+    added = note.parts.reload.last(2)
+    assert_equal [ [ "living_part", 7, "Second part" ], [ "living_part", 8, "Third part" ] ], added.map { [ it.key, it.position, it.title ] }
+  end
+
+  test "revise! removes a Living as Christians part" do
+    meeting_notes(:head_midweek).revise!(parts_attributes: [ { id: meeting_note_parts(:head_living_part).id, _destroy: "1" } ])
+
+    assert_not MeetingNote::Part.exists?(meeting_note_parts(:head_living_part).id)
+  end
+
+  test "revise! refuses to remove a part that doesn't repeat" do
+    note = meeting_notes(:head_midweek)
+
+    error = assert_raises(ActiveRecord::RecordInvalid) do
+      note.revise!(parts_attributes: [ { id: meeting_note_parts(:head_bible_reading).id, _destroy: "1" } ])
+    end
+    assert_includes error.record.errors[:parts], "can't lose Bible Reading"
+    assert MeetingNote::Part.exists?(meeting_note_parts(:head_bible_reading).id)
+  end
+
+  test "filled sections keep the outline's order, so a part added later still comes before the Bible study" do
+    note = meeting_notes(:head_midweek)
+    note.revise!(parts_attributes: [ { title: "Second part" } ])
+
+    _section, parts = note.reload.filled_sections.last
+    assert_equal %w[ living_part congregation_bible_study ], parts.map(&:key)
+  end
+
   test "an unknown kind is a validation error, not an ArgumentError" do
     note = MeetingNote.new(user: users(:spouse), kind: "assembly", week_of: Date.new(2026, 11, 16))
 

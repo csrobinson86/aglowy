@@ -1,0 +1,62 @@
+<% content_for :title, "Edit #{meeting_note_title(@meeting_note)}" %>
+<% treasures, field_ministry, living = @meeting_note.outline.sections %>
+<% parts = @meeting_note.parts.group_by(&:key) %>
+<% living_parts = parts.fetch("living_part", []) %>
+
+<%= render "meeting_notes/header", meeting_note: @meeting_note %>
+
+<%# Each part goes through its own fields_for, so its index, and the ids of its inputs and its editor, are unique on the page. %>
+<%= primer_form_with(model: @meeting_note, url: household_meeting_note_path(id: @meeting_note), method: :patch) do |f| %>
+  <%= render layout: "meeting_notes/section", locals: { section: treasures } do %>
+    <%= f.fields_for :parts, parts.fetch("talk", []) do |part| %>
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mb: 2)) { "Talk" } %>
+      <%= render MeetingNotes::NoteForm.new(part, field: :title) %>
+      <div class="mt-3"><%= render "meeting_notes/notes_field", form: part, hidden_label: "for Talk" %></div>
+    <% end %>
+
+    <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mt: 4, mb: 2)) { "Spiritual Gems" } %>
+    <p class="color-fg-muted">Spiritual gems can't be added here yet.</p>
+
+    <%= f.fields_for :parts, parts.fetch("bible_reading", []) do |part| %>
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mt: 4, mb: 2)) { "Bible Reading" } %>
+      <%= render "meeting_notes/notes_field", form: part, hidden_label: "for Bible Reading", placeholder: "Anything from the reading you want to remember." %>
+    <% end %>
+  <% end %>
+
+  <%= render layout: "meeting_notes/section", locals: { section: field_ministry } do %>
+    <%= f.fields_for :parts, parts.fetch("field_ministry", []) do |part| %>
+      <%= render "meeting_notes/notes_field", form: part, label: "Notes for the whole section", placeholder: "Openings, questions or approaches you'd like to try." %>
+    <% end %>
+  <% end %>
+
+  <%= render layout: "meeting_notes/section", locals: { section: living } do %>
+    <div data-controller="living-parts" data-living-parts-next-number-value="<%= living_parts.size + 1 %>">
+      <div data-living-parts-target="list">
+        <% living_parts.each.with_index(1) do |living_part, number| %>
+          <%= f.fields_for :parts, living_part do |part| %>
+            <%= render "meeting_notes/living_part", form: part, number: number %>
+          <% end %>
+        <% end %>
+      </div>
+      <template data-living-parts-target="template">
+        <%= f.fields_for :parts, MeetingNote::Part.new, child_index: "NEW_PART" do |part| %>
+          <%= render "meeting_notes/living_part", form: part, number: "PART_NUMBER" %>
+        <% end %>
+      </template>
+      <%= render(Primer::Beta::Button.new(data: { living_parts_target: "add", action: "living-parts#add" })) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        Add another part
+      <% end %>
+    </div>
+
+    <%= f.fields_for :parts, parts.fetch("congregation_bible_study", []) do |part| %>
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mt: 4, mb: 2)) { "Congregation Bible Study" } %>
+      <%= render "meeting_notes/notes_field", form: part, hidden_label: "for Congregation Bible Study" %>
+    <% end %>
+  <% end %>
+
+  <div class="d-flex flex-items-center">
+    <%= render MeetingNotes::NoteForm.new(f, field: :actions) %>
+    <p class="color-fg-muted f6 mb-0 ml-3">Only you can see this note.</p>
+  </div>
+<% end %>
