@@ -40,7 +40,7 @@ class AccountRecoveryTest < ApplicationSystemTestCase
     visit new_identity_session_url
     fill_in "Email", with: "spouse@example.com"
     fill_in "Password", with: "a-brand-new-secret"
-    click_on "Log in"
+    click_on "Sign in"
     assert_title "Home · The Head Family · Aglowy"
   end
 

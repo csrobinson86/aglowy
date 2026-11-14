@@ -5,7 +5,7 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     visit new_identity_session_url
     fill_in "Email", with: identities(:head).email
     fill_in "Password", with: "password123"
-    click_on "Log in"
+    click_on "Sign in"
     assert_selector "h1", text: "Your households"
 
     within("main") { click_on "The Head Family" }

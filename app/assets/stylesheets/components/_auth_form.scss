@@ -1,0 +1,11 @@
+// The sign-in and sign-up columns (docs/design/app-shell.md, The root page
+// and signing in). Sign in is 340px wide, sign up 400px, as in the frames.
+.auth-form {
+  max-width: calc(var(--overlay-width-small) + var(--base-size-20));
+  margin-inline: auto;
+}
+
+.auth-form--wide {
+  max-width: calc(var(--overlay-width-small) + var(--base-size-80));
+}
+

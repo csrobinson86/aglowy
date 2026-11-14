@@ -1,12 +1,22 @@
-<% content_for :title, "Sign up" %>
+<% content_for :title, "Create your account" %>
 
-<%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { "Sign up" } %>
+<div class="auth-form auth-form--wide">
+  <%= render(Primer::Beta::Heading.new(tag: :h1, font_size: 2, font_weight: :normal, text_align: :center)) { "Create your account" } %>
+  <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, text_align: :center, mb: 4)) do %>
+    You'll be the head of your household. You can add family members afterwards.
+  <% end %>
 
-<%= primer_form_with(model: @signup, url: signup_path) do |f| %>
-  <%= render Signups::SignupForm.new(f) %>
-<% end %>
+  <%= render(Primer::Box.new(bg: :subtle, border: true, border_radius: 2, p: 3)) do %>
+    <%= primer_form_with(model: @signup, url: signup_path) do |f| %>
+      <%= render Signups::SignupForm.new(f) %>
+    <% end %>
+    <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, mt: 3, mb: 0)) do %>
+      We'll send you an email to confirm your address before you can sign in.
+    <% end %>
+  <% end %>
 
-<p class="mt-4">
-  Already have an account?
-  <%= render(Primer::Beta::Link.new(href: new_identity_session_path, underline: true)) { "Log in" } %>
-</p>
+  <%= render(Primer::Box.new(border: true, border_radius: 2, p: 3, mt: 3, text_align: :center)) do %>
+    Already have an account?
+    <%= render(Primer::Beta::Link.new(href: root_path, underline: true)) { "Sign in" } %>
+  <% end %>
+</div>

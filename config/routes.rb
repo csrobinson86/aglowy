@@ -11,8 +11,14 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  root "home#index"
+  # "/" sends a signed-in person where signing in would, and shows everyone
+  # else the sign-in page. The visitor's root keeps the name root_path.
+  authenticated :identity do
+    root to: "landings#show", as: :authenticated_root
+  end
+  devise_scope :identity do
+    root to: "devise/sessions#new"
+  end
 
   resource :signup, only: %i[ new create ]
   resources :households, only: %i[ index new create ]
