@@ -1,0 +1,24 @@
+<% content_for :title, "Family studies" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Family studies" } %>
+<% end %>
+
+<% if @sessions.any? %>
+  <%= render Primer::Beta::BorderBox.new do |box| %>
+    <% box.with_header { |header| header.with_title(tag: :h2) { "Coming up" } } %>
+    <% @sessions.each do |study_session| %>
+      <% box.with_row { render "family_study/sessions/session", study_session: } %>
+    <% end %>
+  <% end %>
+<% else %>
+  <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :book) %>
+    <% blankslate.with_heading(tag: :h2) { "No family studies yet" } %>
+    <% if policy(FamilyStudy).create? %>
+      <% blankslate.with_description { "Schedule your family's first study." } %>
+    <% else %>
+      <% blankslate.with_description { "When a parent schedules a family study, it will show up here." } %>
+    <% end %>
+  <% end %>
+<% end %>

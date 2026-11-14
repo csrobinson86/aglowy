@@ -29,3 +29,6 @@
 
 en:
   hello: "Hello world"
+  time:
+    formats:
+      session: "%a, %b %-d · %-l:%M %p"
