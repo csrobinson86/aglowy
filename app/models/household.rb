@@ -6,6 +6,7 @@ class Household < ApplicationRecord
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :family_studies, dependent: :destroy
+  has_many :family_study_sessions, through: :family_studies, source: :sessions, class_name: "FamilyStudy::Session"
 
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }

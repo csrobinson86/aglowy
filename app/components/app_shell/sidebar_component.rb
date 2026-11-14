@@ -21,6 +21,10 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_root_path(household_id: household.id)
   end
 
+  def family_studies_path
+    household_family_studies_path(household_id: household.id)
+  end
+
   def members_path
     household_members_path(household_id: household.id)
   end

@@ -5,8 +5,28 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_equal family_study_sessions(:weekly_next, :one_off_first, :weekly_later), FamilyStudy::Session.upcoming.to_a
   end
 
-  test "preloaded loads the study" do
-    assert FamilyStudy::Session.preloaded.first.association(:family_study).loaded?
+  test "ahead is from now, in order, cancelled sessions included" do
+    assert_equal family_study_sessions(:weekly_next, :one_off_first, :weekly_cancelled, :weekly_later), FamilyStudy::Session.ahead.to_a
+  end
+
+  test "preloaded loads the study and its household" do
+    session = FamilyStudy::Session.preloaded.first
+
+    assert session.association(:family_study).loaded?
+    assert session.family_study.association(:household).loaded?
+  end
+
+  test "canceled? when canceled_at is set" do
+    assert family_study_sessions(:weekly_cancelled).canceled?
+    assert_not family_study_sessions(:weekly_next).canceled?
+  end
+
+  test "local_scheduled_at is scheduled_at in the household's zone" do
+    households(:home).update!(time_zone: "Tokyo")
+    session = family_study_sessions(:weekly_next)
+
+    assert_equal "Tokyo", session.local_scheduled_at.time_zone.name
+    assert_equal session.scheduled_at, session.local_scheduled_at
   end
 
   test "a second session in the same slot is a validation error" do
