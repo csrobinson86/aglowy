@@ -98,7 +98,12 @@ Parts that don't repeat are unique per note (validated in the model; a partial u
 
 Sharing is a record, not a flag (CLAUDE.md, State as Records). Stopping deletes it.
 
-**Who can see a shared note:** active members of that household, and only while the author is still an active member there. Leaving or being removed ends sharing without a clean-up job, because visibility is computed: `MeetingNote.shared_with(household)` joins sharings to the author's active membership in that household.
+**Who can see a shared note:** active members of that household, and only while the author is still an active member there.
+
+**Leaving ends a share for good.** Memberships are deactivated, not deleted, so someone can rejoin later. If shares only depended on the author's membership being active, rejoining would quietly make every old share visible again, including anything the author wrote while away. So:
+
+1. `Membership#deactivate` also deletes the person's meeting-note sharings into that household, in the same transaction (an explicit step in the existing method, not a callback). After rejoining, a note is private again until the author shares it again.
+2. `MeetingNote.shared_with(household)` still joins sharings to the author's active membership there, as a second guard, so a sharing row can never show while the author is inactive.
 
 ## Who can do what
 
@@ -133,11 +138,12 @@ All under `/:household_id` in the app shell, with "Meeting notes" (`note` icon) 
 - The household in the URL isn't the note's owner. Always load notes through `Current.user.meeting_notes` (author) or `MeetingNote.shared_with(Current.household)` (shared), never by id alone.
 - Turbo Stream updates on a shared note must never be broadcast to household members while the author is editing; there are no live updates in NOTES-01.
 - A person in two households sees their notes in both, but each share belongs to one household.
+- Rejoining a household must not bring old shares back (see "Leaving ends a share for good").
 
 ## States each story checks
 
 - Kind: Life and Ministry, Weekend
 - Empty note, partly filled, full; zero, one and several gems; two Living as Christians parts
-- Private, shared, shared then the author left the household
+- Private, shared, shared then the author left the household, left and rejoined
 - Viewer: author, another adult, a child, a non-member (404)
 - Desktop and phone; light and dark
