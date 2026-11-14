@@ -9,6 +9,6 @@ CI.run do
   step "Security: Yarn vulnerability audit", "yarn audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
 
-  step "Tests: Rails", "bin/rails test"
-  step "Tests: System", "bin/rails test:system"
+  # One run, so SimpleCov judges the 100% gate on the whole suite.
+  step "Tests: All", "bin/rails test:all"
 end

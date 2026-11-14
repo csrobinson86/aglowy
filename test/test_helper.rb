@@ -1,7 +1,9 @@
 # SimpleCov must start before anything loads app code, or early files go uncounted.
 require "simplecov"
+# Judge the gate on a full `bin/rails test:all`; a partial run falls short of 100%.
 SimpleCov.start "rails" do
   enable_coverage :branch
+  minimum_coverage line: 100
 end
 
 ENV["RAILS_ENV"] ||= "test"

@@ -86,6 +86,7 @@
   ## Tests
 
   ```bash
+  bin/rails test:all          # The whole suite; enforces 100% line coverage
   bin/rails test              # Unit, integration, and component tests
   bin/rails test:system       # System tests with accessibility checks
   bin/ci                      # Full CI suite (lint, security, tests)
