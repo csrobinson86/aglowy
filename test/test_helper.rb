@@ -25,7 +25,12 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    # Add more helper methods to be used by all tests here...
+    # A file as the drop zone leaves it: a blob created with the browser's declared type, then uploaded.
+    def direct_uploaded_blob(name, filename: name)
+      file = file_fixture(name)
+      ActiveStorage::Blob.create_before_direct_upload!(filename: filename, byte_size: file.size, checksum: OpenSSL::Digest::MD5.base64digest(file.binread),
+                                                       content_type: Marcel::MimeType.for(name: filename)).tap { it.upload_without_unfurling(file.open) }
+    end
   end
 end
 

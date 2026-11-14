@@ -118,6 +118,29 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "uploaded files from the drop zone go on the first session" do
+    sign_in identities(:head)
+
+    post household_family_studies_path(household_id: households(:home)),
+         params: { family_study_scheduling: valid_params.merge(files: [ direct_uploaded_blob("study-guide.pdf").signed_id ]) }
+
+    resource = households(:home).family_study_resources.file.where.not(id: family_study_resources(:study_guide)).sole
+    assert_equal "study-guide.pdf", resource.title
+  end
+
+  test "a refused file re-renders the form with its error by the drop zone, keeping the good one" do
+    sign_in identities(:head)
+    pdf = direct_uploaded_blob("study-guide.pdf")
+
+    post household_family_studies_path(household_id: households(:home)),
+         params: { family_study_scheduling: valid_params.merge(files: [ pdf.signed_id, direct_uploaded_blob("program.exe", filename: "notes.pdf").signed_id ]) }
+
+    assert_response :unprocessable_content
+    assert_select ".FormControl-inlineValidation", text: /notes.pdf must be a PDF or an image/
+    assert_select "input[type=hidden][name='family_study_scheduling[files][]'][value='#{pdf.signed_id}']"
+    assert_select "li", text: /study-guide.pdf/
+  end
+
   test "a head and an adult see the form and the Schedule a study buttons" do
     households(:home).family_studies.destroy_all
 

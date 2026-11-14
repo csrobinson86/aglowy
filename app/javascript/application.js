@@ -12,3 +12,5 @@ import HouseholdSwitcherController from "../components/app_shell/household_switc
 application.register("household-switcher", HouseholdSwitcherController)
 import AppShellController from "../components/app_shell_component_controller"
 application.register("app-shell", AppShellController)
+import FileDropController from "../components/file_drop_component_controller"
+application.register("file-drop", FileDropController)

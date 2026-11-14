@@ -1,0 +1,4 @@
+study_guide:
+  name: file
+  record: study_guide (FamilyStudy::Resource)
+  blob: study_guide

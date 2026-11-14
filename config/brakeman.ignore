@@ -1,0 +1,28 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Redirect",
+      "warning_code": 18,
+      "fingerprint": "ce35d707a7a00c57510b30374bad72ca615fe035b6f61ecb20565765fcafcae4",
+      "check_name": "Redirect",
+      "message": "Possible unprotected redirect",
+      "file": "app/controllers/resources/files_controller.rb",
+      "line": 12,
+      "link": "https://brakemanscanner.org/docs/warning_types/redirect/",
+      "code": "redirect_to(Current.household.family_study_resources.file.find(params[:resource_id]).file.url, :allow_other_host => true)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Resources::FilesController",
+        "method": "show"
+      },
+      "user_input": "Current.household.family_study_resources.file.find(params[:resource_id]).file.url",
+      "confidence": "Weak",
+      "cwe_id": [
+        601
+      ],
+      "note": "The redirect goes to the storage service URL of a blob attached to a file resource found through Current.household and authorized by FamilyStudy::ResourcePolicy#show?. Nothing in the request chooses the host; allow_other_host is for production storage (R2) on its own host (gotcha 22, docs/design/family-studies.md, Files)."
+    }
+  ],
+  "brakeman_version": "8.1.0"
+}

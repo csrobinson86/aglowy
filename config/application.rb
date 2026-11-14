@@ -36,11 +36,15 @@ module Aglowy
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    # Action Text needs Active Storage, but nothing uploads yet: notes have attachments off.
-    # Its public upload and blob routes stay undrawn until the file story adds guarded ones
-    # (docs/design/family-studies.md, Files).
+    # Active Storage's own blob routes are signed, not authorized (gotcha 22), so they stay undrawn.
+    # config/routes.rb draws only the guarded direct upload and the Disk service's short-lived URLs;
+    # files are served through Resources::FilesController (docs/design/family-studies.md, Files).
     config.active_storage.draw_routes = false
     config.active_storage.variant_processor = :disabled
+    # No previews or thumbnails. Without previewers Lexxy adds no preview URL to a direct upload's
+    # response either, which would need the undrawn representation routes.
+    config.active_storage.previewers = []
+    config.active_storage.service_urls_expire_in = 5.minutes
 
     # Lexxy widens Action Text's allowed tags for its media attachments. Notes have attachments
     # off, so take the media tags back: nobody can post an <embed> or <video> that everyone in
