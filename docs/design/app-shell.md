@@ -145,7 +145,7 @@ System tests can save screenshots of a page at both viewports and in both themes
 | Decision | Choice |
 | --- | --- |
 | Personal content on the household home | Shown as drawn: a "Mine" column with my goals and recent meeting notes, once those features exist (the meeting notes and goals epics). Until then Home has no Mine column |
-| Who sees "New household" | Whoever `HouseholdPolicy#create?` allows. Whether children may create households is decided with child logins (the invitations and child logins epic); the menu follows the policy |
+| Who sees "New household" | Whoever `HouseholdPolicy#create?` allows. Children may not (decided 14 Nov, `docs/design/invitations.md`); the menu follows the policy |
 | Household home before family studies exist | Page header plus an empty state. A head sees "Add a member" as its action |
 | Phone navigation | A left-side `Primer::Alpha::Dialog` (0.53.5 supports `position: :left` and `position_narrow: :left`) |
 | Icons in the mockup | Hand-drawn stand-ins; the build uses the Octicons listed above |

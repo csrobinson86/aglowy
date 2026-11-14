@@ -40,7 +40,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | --- | --- | --- |
 | 1 | **USERS-01** Households, people and login | Done |
 | 2 | **UI-01** App shell: sidebar, navigation, page patterns | Done |
-| 3 | Invitations, child logins and account settings | Design done |
+| 3 | **INVITES-01** Invitations, child logins (username sign-in), account and household settings | Stories filed |
 | 4 | **STUDIES-01** Family studies: scheduling, sessions, notes, resources (guests, "all future" edits and the AI helper follow) | Stories filed |
 | 5 | **NOTES-01** Meeting notes: Life and Ministry, weekend, spiritual gems, sharing with the household | Stories filed |
 | 6 | **GOALS-01** Goals: family and personal milestone goals, steps, sharing (habit goals follow) | Stories filed |
