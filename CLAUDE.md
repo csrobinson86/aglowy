@@ -51,6 +51,9 @@ households or roles. The non-negotiables:
   `bin/rails test:all`, `bin/rubocop` and `bin/brakeman` are clean → run the
   `code-reviewer` subagent and fix its Blockers and Majors → open the PR with
   `Closes #N`.
+- **Removal-only stories** (taking out gems, files or config) get no new
+  tests. Check the acceptance criteria with a one-off search and
+  `bin/rails test:all`, and say in the PR that you verified by search.
 - **Reviews follow `REVIEW.md`.** Reviews advise; Casey merges. No agent
   approves or merges its own work.
 
@@ -116,7 +119,7 @@ households or roles. The non-negotiables:
     skip_after_action :verify_authorized
   end
   ```
-- **Madmin** is locked to staff identities via `authenticate_admin_user` in
+- **Madmin** is locked to staff identities via `authenticate_staff_identity` in
   `Madmin::ApplicationController`. Uses `main_app.root_path` for redirects
   (Madmin is a Rails engine with its own routing scope).
 
