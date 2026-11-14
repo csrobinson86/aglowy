@@ -17,8 +17,6 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     assert_selector "h1", text: "The Grandparent Family"
   end
 
-  # Checked on fresh visits: after a real sign-in, running axe leaves the
-  # page ignoring Selenium clicks, so the journey above runs without it.
   test "every page on the way passes assert_accessible" do
     sign_in identities(:head)
 

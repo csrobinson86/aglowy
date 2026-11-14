@@ -6,7 +6,13 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   include AccessibilityHelper
   include Devise::Test::IntegrationHelpers
 
-  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
+  # Fixture passwords are in breach lists, so after a real sign-in Chrome's
+  # password manager opens a leak warning that swallows every later click.
+  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ] do |options|
+    options.add_preference("credentials_enable_service", false)
+    options.add_preference("profile.password_manager_enabled", false)
+    options.add_preference("profile.password_manager_leak_detection", false)
+  end
 
   # The full suite runs in parallel workers, so pages can take longer than the 2s default.
   Capybara.default_max_wait_time = 5
