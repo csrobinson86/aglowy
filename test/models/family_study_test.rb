@@ -34,6 +34,15 @@ class FamilyStudyTest < ActiveSupport::TestCase
     end
   end
 
+  test "schedule says whether it saved" do
+    assert @household.family_studies.new(starts_on: "2026-11-17", time_of_day: "19:00").schedule
+    assert_equal false, @household.family_studies.new(starts_on: "2026-11-17", time_of_day: "19:00", frequency: "monthly").schedule
+  end
+
+  test "preloaded loads the household" do
+    assert FamilyStudy.preloaded.first.association(:household).loaded?
+  end
+
   test "the session's time is 7 pm local in the household's zone, stored as UTC" do
     @household.update!(time_zone: "Pacific Time (US & Canada)")
 
@@ -65,6 +74,115 @@ class FamilyStudyTest < ActiveSupport::TestCase
 
     assert_equal Time.utc(2026, 10, 28, 0), study.session_time_on(Date.new(2026, 10, 27))
     assert_equal Time.utc(2026, 11, 4, 1), study.session_time_on(Date.new(2026, 11, 3))
+  end
+
+  test "the horizon on 14 Nov 2026 is 31 Aug 2027" do
+    travel_to Date.new(2026, 11, 14) do
+      assert_equal Date.new(2027, 8, 31), FamilyStudy.horizon
+    end
+  end
+
+  test "the horizon on 1 Jul 2027 is 1 Oct 2027" do
+    travel_to Date.new(2027, 7, 1) do
+      assert_equal Date.new(2027, 10, 1), FamilyStudy.horizon
+    end
+  end
+
+  test "extending twice creates no duplicates" do
+    travel_to Date.new(2026, 11, 14) do
+      study = weekly_study_without_sessions
+
+      assert_difference -> { study.sessions.count }, 42 do
+        study.extend_sessions
+      end
+      assert_no_difference -> { study.sessions.count } do
+        study.extend_sessions
+      end
+    end
+  end
+
+  test "a moved session (scheduled_at changed) is not recreated" do
+    travel_to Date.new(2026, 11, 14) do
+      study = @household.schedule_family_study(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00")
+      session = study.sessions.find_by!(recurrence_at: study.session_time_on(Date.new(2026, 11, 21)))
+      session.update!(scheduled_at: study.session_time_on(Date.new(2026, 11, 22)), detached_at: Time.current)
+
+      assert_no_difference -> { study.sessions.count } do
+        study.extend_sessions
+      end
+      assert_not study.sessions.exists?(scheduled_at: session.recurrence_at)
+    end
+  end
+
+  test "a cancelled session is not recreated" do
+    travel_to Date.new(2026, 11, 14) do
+      study = @household.schedule_family_study(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00")
+      session = study.sessions.find_by!(recurrence_at: study.session_time_on(Date.new(2026, 11, 21)))
+      session.update!(canceled_at: Time.current)
+
+      assert_no_difference -> { study.sessions.count } do
+        study.extend_sessions
+      end
+      assert_equal [ session ], study.sessions.where(scheduled_at: session.scheduled_at).to_a
+      assert session.reload.canceled_at
+    end
+  end
+
+  test "a weekly study created today has sessions through the horizon" do
+    travel_to Date.new(2026, 11, 14) do
+      study = @household.schedule_family_study(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00", topic: "Ruth")
+
+      expected = Date.new(2026, 11, 14).step(Date.new(2027, 8, 31), 7).map { study.session_time_on(it) }
+      sessions = study.sessions.order(:recurrence_at)
+      assert_equal expected, sessions.pluck(:recurrence_at)
+      assert_equal expected, sessions.pluck(:scheduled_at)
+      assert_equal Date.new(2027, 8, 28), sessions.last.recurrence_at.to_date
+      assert_equal [ "Ruth" ], sessions.where.not(topic: nil).pluck(:topic)
+    end
+  end
+
+  test "ends_on stops it" do
+    travel_to Date.new(2026, 11, 14) do
+      study = @household.schedule_family_study(frequency: "weekly", starts_on: Date.current, ends_on: Date.new(2026, 12, 31), time_of_day: "19:00")
+
+      assert_equal %w[ 2026-11-14 2026-11-21 2026-11-28 2026-12-05 2026-12-12 2026-12-19 2026-12-26 ],
+        study.sessions.order(:recurrence_at).map { it.recurrence_at.to_date.iso8601 }
+    end
+  end
+
+  test "a one-off study is not extended" do
+    travel_to Date.new(2026, 11, 14) do
+      study = @household.schedule_family_study(starts_on: Date.current, time_of_day: "19:00")
+
+      assert_no_difference -> { study.sessions.count } do
+        study.extend_sessions
+      end
+    end
+  end
+
+  test "extended sessions get the default conductor, a UUIDv7 id and timestamps" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      study = weekly_study_without_sessions(default_conductor: users(:spouse))
+      study.extend_sessions
+
+      session = study.sessions.order(:recurrence_at).last
+      assert_equal users(:spouse), session.conductor
+      assert_nil session.topic
+      assert_equal "7", session.id[14]
+      assert_equal Time.current, session.created_at
+      assert_equal Time.current, session.updated_at
+    end
+  end
+
+  test "extending in the household's zone keeps 7 pm local across a DST change" do
+    @household.update!(time_zone: "Central Time (US & Canada)")
+
+    travel_to Date.new(2026, 10, 20) do
+      study = weekly_study_without_sessions(starts_on: Date.new(2026, 10, 27))
+      study.extend_sessions(through: Date.new(2026, 11, 3))
+
+      assert_equal [ Time.utc(2026, 10, 28, 0), Time.utc(2026, 11, 4, 1) ], study.sessions.order(:recurrence_at).pluck(:recurrence_at)
+    end
   end
 
   test "recurrence answers for the study's schedule" do
@@ -185,4 +303,9 @@ class FamilyStudyTest < ActiveSupport::TestCase
   test "database: a study with a missing default conductor raises InvalidForeignKey" do
     assert_raises(ActiveRecord::InvalidForeignKey) { family_studies(:one_off).update_column(:default_conductor_id, SecureRandom.uuid_v7) }
   end
+
+  private
+    def weekly_study_without_sessions(**attributes)
+      @household.family_studies.create!(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00", **attributes)
+    end
 end
