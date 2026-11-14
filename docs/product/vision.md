@@ -42,7 +42,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 2 | **UI-01** App shell: sidebar, navigation, page patterns | Done |
 | 3 | Invitations, child logins and account settings | Design done |
 | 4 | **STUDIES-01** Family studies: scheduling, sessions, notes, resources (guests, "all future" edits and the AI helper follow) | Stories filed |
-| 5 | Meeting notes (Action Text, Lexxy) | Design done |
+| 5 | **NOTES-01** Meeting notes: Life and Ministry, weekend, spiritual gems, sharing with the household | Stories filed |
 | 6 | Goals: personal and family | Design done |
 | 7 | Notifications: in-app list and email | Design done |
 | 8 | Production on AWS: EC2 + Docker Compose, SES, bounce handler | Stack decided |
