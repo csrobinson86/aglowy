@@ -25,4 +25,8 @@ class ApplicationPolicy
   def head?
     member? && membership.head?
   end
+
+  def head_or_adult?
+    member? && (membership.head? || membership.adult?)
+  end
 end
