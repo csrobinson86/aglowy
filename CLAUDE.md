@@ -381,6 +381,12 @@ end
 - All form inputs must have associated labels.
 - axe-core runs automatically in system tests via `assert_accessible` helper.
 - CI catches accessibility regressions on every push.
+- **Madmin pages are exempt from `assert_accessible`** (decided Nov 2026). They
+  are rendered by the Madmin gem's own layout and templates, which fail axe
+  (duplicate `<header>` banners, an empty actions `<th>`, a low-contrast link in
+  the show page's `<h1>`), and only staff see them. Don't override Madmin's
+  templates to pass axe. The exemption covers only gem-rendered Madmin views;
+  any page we render ourselves still needs `assert_accessible`.
 
 ---
 
