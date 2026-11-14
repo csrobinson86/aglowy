@@ -105,7 +105,7 @@ Kept here so USERS-01 doesn't paint them into a corner. Full column lists are in
 
 | Model | Owner | Purpose |
 | --- | --- | --- |
-| `MeetingNote` | User (`author_id`) | Notes from meetings; Action Text body, encrypted, Lexxy editor |
+| `MeetingNote` | User (`user_id`) | Notes from meetings, part by part on the meeting's outline; superseded by `docs/design/meeting-notes.md` |
 | `Goal` | User **or** Household (two nullable FKs + `num_nonnulls(user_id, household_id) = 1`) | Personal or family goals; `set_by_id` records who wrote it |
 | `FamilyStudy` | Household | The arrangement; one-off by default, can repeat daily/weekly/monthly |
 | `FamilyStudy::Session` | FamilyStudy | One occurrence; `recurrence_at` (slot) vs `scheduled_at` (actual); Action Text notes |
