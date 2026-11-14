@@ -32,7 +32,7 @@ GOALS-01 adds a `kind` column that only allows `milestone`, so the habit epic wi
 | Mark complete, reopen, archive, restore, delete | Personal goals for children without a login (gotcha 11) |
 | Schedule a step as a family study | |
 | My goals: personal milestone goals | |
-| Share a personal goal with one household | |
+| Share a personal goal with a household (one share per household, like meeting notes) | |
 
 ## Who can do what
 
@@ -119,7 +119,15 @@ Methods: `goal.complete(by:)`, `goal.reopen`, `goal.archive(by:)`, `goal.restore
 - An "Everyone" step, or a personal goal step: when it has a completion with no `user_id`.
 - A step for named people: when **every** assignee has their own completion. Until then it shows as partly done ("Eli done · waiting on Sofia") with a mixed checkbox, and each person has their own tick (frame `milestone-goal.png`, the parables step).
 
-A completion's `user_id` must be null on an "Everyone" step and must be an assignee on a named step (validated).
+A completion's `user_id` must be null on an "Everyone" step and must be an assignee on a named step (validated). The rules below keep that true for every stored completion, not just new ones.
+
+**Changing who a step is for** (`step.reassign(to:)`, one transaction, holding `household.lock!`): ticks that still fit stay, and ticks that no longer fit are deleted.
+
+- Everyone → named people: the "done together" tick is deleted; each named person starts unticked.
+- Named people → Everyone: the per-person ticks are deleted; the step starts unticked.
+- Removing someone from a named step deletes their tick; adding someone leaves the others' ticks alone.
+
+The edit form warns when ticks will be lost: "Changing who this is for clears 1 tick."
 
 ### Progress
 
@@ -142,7 +150,9 @@ The same rules as meeting notes (`docs/design/meeting-notes.md`, "Leaving ends a
 
 ### Leaving a household
 
-`Membership#deactivate` also deletes the person's step assignments on **steps not yet done** in that household's goals, in the same transaction (an explicit step in the method, not a callback). Otherwise a step naming only someone who left could never be finished. Their completions, and assignments on done steps, stay as history.
+`Membership#deactivate` also deletes the person's step assignments **and their ticks** on **steps not yet done** in that household's goals, in the same transaction and under the `household.lock!` it already takes (an explicit step in the method, not a callback). Otherwise a step naming only someone who left could never be finished. Assignments and ticks on done steps stay as history, so a stored tick always belongs to an assignee.
+
+Creating or changing assignments takes the same `household.lock!` and rechecks each assignee's active membership under it before inserting, so an assignment can't slip in just after a deactivation has cleared the others.
 
 ## Pages
 
