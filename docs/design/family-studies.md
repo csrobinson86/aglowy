@@ -117,7 +117,9 @@ All household-scoped, in the app shell (`docs/design/app-shell.md`). Primer comp
 | Session | `GET /:household_id/family_studies/:family_study_id/sessions/:id` | Subhead: topic (or "Family study") as `h1`, description: date, time range, repeat. Notes (Lexxy, editable by heads and adults; read-only for children). Resources list with add link / add files. Actions: "Edit this session", "Cancel this session". Breadcrumbs: Family studies / date |
 | Edit a session | `GET …/sessions/:id/edit` | Topic, Date, Starts. Says "Changes this session only." |
 | Cancel a session | `POST …/sessions/:id/cancellation` (`Sessions::CancellationsController#create`, `#destroy` to undo) | CRUD, not a custom action (CLAUDE.md, Routing) |
-| Resources | `POST/DELETE …/sessions/:session_id/resources` | Links and files added from the session page |
+| Resources | `POST/DELETE …/sessions/:session_id/resources` | Links added and resources removed from the session page |
+| Files | `POST …/sessions/:session_id/files` (`Sessions::FilesController#create`) | Files the drop zone uploaded become file resources |
+| Direct uploads | `POST /:household_id/direct_uploads` (`DirectUploadsController`, a subclass of Active Storage's) | Heads and adults only. Refuses a file over the limit or outside the allowlist before any bytes go up (gotcha 24) |
 | A file | `GET /:household_id/resources/:id/file` (`Resources::FilesController#show`) | Authorizes, then redirects to a short-lived service URL. Never render `rails_blob_path` or `url_for(attachment)` in a page (gotcha 22) |
 | Household home | `GET /:household_id` | Next family study box and "Coming up" (next 3), as in `docs/design/app-shell/desktop-light.png`. The Blankslate stays when there are no sessions |
 

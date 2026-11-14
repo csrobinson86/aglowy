@@ -7,7 +7,9 @@ class FamilyStudies::Sessions::FilesController < ApplicationController
   def create
     resources = @study_session.add_files(params.expect(files: []))
 
-    if (refused = resources.find { it.errors.any? })
+    if resources.empty?
+      redirect_to study_session_path, alert: "Those files couldn't be found. Upload them again."
+    elsif (refused = resources.find { it.errors.any? })
       redirect_to study_session_path, alert: "#{refused.title} wasn't added: it #{refused.errors[:file].to_sentence}."
     else
       redirect_to study_session_path, notice: "#{helpers.pluralize(resources.size, "file")} added."

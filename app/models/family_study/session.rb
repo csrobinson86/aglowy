@@ -17,10 +17,11 @@ class FamilyStudy::Session < ApplicationRecord
     canceled_at?
   end
 
-  # One file resource per uploaded file, titled with its name. If one is refused, none are added;
-  # the refused one carries its errors.
+  # One file resource per uploaded file (signed blob ids), titled with its name. An id that can't be
+  # found is dropped. If one file is refused, none are added; the refused one carries its errors.
   def add_files(files)
-    new_resources = files.map { resources.build(kind: :file, file: it) }
+    blobs = files.uniq.filter_map { ActiveStorage::Blob.find_signed(it) }
+    new_resources = blobs.map { resources.build(kind: :file, file: it) }
     transaction { new_resources.each(&:save!) } if new_resources.all?(&:valid?)
     new_resources
   end

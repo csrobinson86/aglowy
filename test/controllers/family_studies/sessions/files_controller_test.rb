@@ -28,6 +28,21 @@ class FamilyStudies::Sessions::FilesControllerTest < ActionDispatch::Integration
     assert_equal "notes.pdf wasn't added: it must be a PDF or an image (PNG, JPEG, GIF, WebP or HEIC).", flash[:alert]
   end
 
+  test "an id that can't be found adds nothing and says so; the same file twice is added once" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { FamilyStudy::Resource.count } do
+      post files_path, params: { files: [ "not-a-signed-id" ] }
+    end
+    assert_redirected_to session_path
+    assert_equal "Those files couldn't be found. Upload them again.", flash[:alert]
+
+    signed_id = direct_uploaded_blob("photo.png").signed_id
+    assert_difference -> { @study_session.resources.count }, 1 do
+      post files_path, params: { files: [ signed_id, signed_id, "not-a-signed-id" ] }
+    end
+  end
+
   test "a child is refused" do
     sign_in Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
 

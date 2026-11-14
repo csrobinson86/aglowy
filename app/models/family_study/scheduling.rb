@@ -44,7 +44,7 @@ class FamilyStudy::Scheduling
 
   # The files the drop zone uploaded, as signed blob ids. One that can't be found is dropped.
   def file_blobs
-    @file_blobs ||= files.filter_map { ActiveStorage::Blob.find_signed(it) }
+    @file_blobs ||= files.uniq.filter_map { ActiveStorage::Blob.find_signed(it) }
   end
 
   # The study, its first session with the topic, notes, links and files, then the later sessions (scheduling rule 1).

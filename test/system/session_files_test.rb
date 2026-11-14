@@ -20,7 +20,7 @@ class SessionFilesTest < ApplicationSystemTestCase
       assert_text "191 Bytes"
     end
     assert_accessible
-    capture_screens("session-files")
+    capture_screens("session-files", scroll_to: ".file-drop")
 
     file = window_opened_by { click_link "study-guide.pdf" }
     within_window(file) do
@@ -38,7 +38,7 @@ class SessionFilesTest < ApplicationSystemTestCase
       assert_text "Must be a PDF or an image (PNG, JPEG, GIF, WebP or HEIC)."
     end
     assert_accessible
-    capture_screens("session-files-refused")
+    capture_screens("session-files-refused", scroll_to: ".file-drop")
     click_on "Add files"
 
     assert_text "1 file added."
@@ -57,7 +57,7 @@ class SessionFilesTest < ApplicationSystemTestCase
 
     within(".file-drop") { assert_selector "progress[value='100']", visible: :all }
     assert_accessible
-    capture_screens("schedule-study-files")
+    capture_screens("schedule-study-files", scroll_to: ".file-drop")
     click_on "Schedule study"
 
     assert_text "Your family study is scheduled."

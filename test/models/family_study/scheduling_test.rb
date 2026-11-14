@@ -237,11 +237,12 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_equal [ pdf ], scheduling.file_blobs, "the refused file leaves the list; the good one stays"
   end
 
-  test "a file that can't be found is dropped" do
-    scheduling = new_scheduling(files: [ "not-a-signed-id" ])
+  test "a file that can't be found is dropped, and the same file twice is added once" do
+    signed_id = direct_uploaded_blob("photo.png").signed_id
+    scheduling = new_scheduling(files: [ "not-a-signed-id", signed_id, signed_id ])
 
     assert scheduling.save
-    assert_empty scheduling.study.sessions.sole.resources
+    assert_equal [ "photo.png" ], scheduling.study.sessions.sole.resources.map(&:title)
   end
 
   private

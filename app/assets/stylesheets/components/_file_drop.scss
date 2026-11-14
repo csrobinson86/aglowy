@@ -2,6 +2,7 @@
 // the upload icon, the prompt and the size limit. Its file input is visually hidden, so the box
 // shows the input's focus ring.
 .file-drop__zone {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -22,9 +23,17 @@
   outline-offset: var(--focus-outline-offset);
 }
 
+// The label stretches over the whole zone, so a tap anywhere in it opens the picker; the hint stays
+// out of the input's accessible name.
 .file-drop__label {
   font-weight: var(--base-text-weight-normal);
   cursor: pointer;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
 }
 
 .file-drop__choose {
