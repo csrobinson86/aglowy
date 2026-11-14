@@ -156,6 +156,8 @@ The same rules as meeting notes (`docs/design/meeting-notes.md`, "Leaving ends a
 
 **Unticking a step someone has left.** A done step can keep a departed member's assignment and tick as history. If it's later unticked on an open goal, `untick` also deletes the assignments and ticks of anyone no longer an active member, in the same locked transaction, so the step goes back to depending only on people who are still there.
 
+In both cases, a step left with nobody named becomes an "Everyone" step (no assignments means everyone), so an adult can finish it or give it to someone else. That's intended, not a gap.
+
 ## Pages
 
 All under `/:household_id` in the app shell (`docs/design/app-shell.md`). Primer components first; forms are Primer form classes. Sidebar: "Family goals" (`goal` octicon) in the **Household** group, "My goals" (`flag`) in **Mine**, each added in the story that builds its page.
