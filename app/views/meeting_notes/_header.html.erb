@@ -1,5 +1,7 @@
 <%# locals: (meeting_note:, edit_link: false) %>
+<%# A member reading a note shared with them sees who shared it, and no Edit or Share controls. %>
 <% title = meeting_note_title(meeting_note) %>
+<% author = policy(meeting_note).update? %>
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
   <% breadcrumbs.with_item(href: household_meeting_notes_path) { "Meeting notes" } %>
   <% breadcrumbs.with_item(href: household_meeting_note_path(id: meeting_note)) { meeting_note.display_week } %>
@@ -8,18 +10,27 @@
   <%# Wraps, so a long household name drops below the title and truncates instead of squeezing it. %>
   <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
     <span class="mr-2"><%= title %></span>
-    <%= render "meeting_notes/sharing_label", meeting_note: %>
-  <% end %>
-  <% subhead.with_actions(display: :flex) do %>
-    <% if edit_link %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_path(id: meeting_note), mr: 2)) do |button| %>
-        <% button.with_leading_visual_icon(icon: :pencil) %>
-        Edit notes
+    <% if author %>
+      <%= render "meeting_notes/sharing_label", meeting_note: %>
+    <% else %>
+      <%= render(Primer::Beta::Label.new(scheme: :accent, title: "Shared by #{meeting_note.user.name}", classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+        <%= render(Primer::Beta::Octicon.new(:people, size: :xsmall)) %>
+        Shared by <%= meeting_note.user.name %>
       <% end %>
     <% end %>
-    <div id="meeting-note-sharing">
-      <%= render "meeting_notes/sharing", meeting_note:, household: Current.household %>
-    </div>
+  <% end %>
+  <% if author %>
+    <% subhead.with_actions(display: :flex) do %>
+      <% if edit_link %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_path(id: meeting_note), mr: 2)) do |button| %>
+          <% button.with_leading_visual_icon(icon: :pencil) %>
+          Edit notes
+        <% end %>
+      <% end %>
+      <div id="meeting-note-sharing">
+        <%= render "meeting_notes/sharing", meeting_note:, household: Current.household %>
+      </div>
+    <% end %>
   <% end %>
   <% subhead.with_description do %>
     <%= meeting_note.display_week %> ·

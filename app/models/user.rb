@@ -18,6 +18,11 @@ class User < ApplicationRecord
     meeting_notes.create_or_find_by!(kind: kind, week_of: week_of, &:build_parts)
   end
 
+  # Membership#deactivate calls this inside its transaction, so the shares end with the membership.
+  def stop_sharing_meeting_notes_with(household)
+    MeetingNote::Sharing.where(household: household, meeting_note: meeting_notes).delete_all
+  end
+
   # That week's Life and Ministry and Weekend notes, in that order. One not started yet is a new, unsaved note.
   def meeting_notes_for_week(week_of)
     started = meeting_notes.preloaded.where(week_of: week_of).index_by(&:kind)

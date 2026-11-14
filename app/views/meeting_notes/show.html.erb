@@ -1,6 +1,13 @@
 <% content_for :title, meeting_note_title(@meeting_note) %>
 
 <%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: true %>
+<% reader = !policy(@meeting_note).update? %>
+
+<% if reader %>
+  <%= render(Primer::Alpha::Banner.new(icon: :lock, mb: 4)) do %>
+    <%= @meeting_note.user.name %> shared this note with <%= Current.household.name %>. You can read it but not change it.
+  <% end %>
+<% end %>
 
 <% sections = @meeting_note.filled_sections %>
 <% if sections.any? %>
@@ -28,4 +35,8 @@
     <% blankslate.with_visual_icon(icon: :note) %>
     <% blankslate.with_heading(tag: :h2) { "Nothing written yet." } %>
   <% end %>
+<% end %>
+
+<% if reader && sections.any? %>
+  <p class="f6 color-fg-muted">Parts <%= @meeting_note.user.name %> left empty aren't shown.</p>
 <% end %>

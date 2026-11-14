@@ -8,7 +8,7 @@ class WeekendNoteTest < ApplicationSystemTestCase
     travel_to Time.utc(2026, 11, 25, 12) # a week with no notes yet
     sign_in identities(:head)
     visit household_meeting_notes_url(household_id: households(:home))
-    within(".Box", text: /\AWeekend meeting/) { click_on "Start notes" }
+    within(".Box", text: /\AWeekend meeting.*Not started/m) { click_on "Start notes" }
 
     assert_selector "h1", text: "Weekend meeting"
     assert_text "Weekend of November 28–29, 2026"

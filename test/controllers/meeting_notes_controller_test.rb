@@ -120,7 +120,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     get household_meeting_notes_path(household_id: households(:home))
 
-    assert_select "main h2", text: "My notes"
+    assert_select "main nav[aria-label='Meeting notes'] a[aria-current='page']", text: "My notes"
     assert_select "main h3", text: "No earlier notes"
   end
 
