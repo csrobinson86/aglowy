@@ -5,8 +5,9 @@ and the page patterns inside them. Read this before touching a layout,
 navigation, or a page's header or empty state. Stories for this live under
 the **UI-01** epic.
 
-The approved mockup has eight frames: desktop light and dark, the switcher
-open, a child's view, an empty household, and phone home, menu and dark.
+The approved mockup has twelve frames: desktop light and dark, the switcher
+open, a child's view, an empty household, phone home, menu and dark, and the
+signed-out pages (sign in, create an account, sign in dark, phone sign in).
 Exported frames go in `docs/design/app-shell/` (one PNG per frame, named as
 below). When a story's screenshot and a frame disagree, the frame wins unless
 this document says otherwise.
@@ -21,17 +22,35 @@ this document says otherwise.
 | Phone · home | `phone-home.png` |
 | Phone · menu open | `phone-menu.png` |
 | Phone · dark | `phone-dark.png` |
+| Sign in (root page) | `sign-in.png` |
+| Create an account | `sign-up.png` |
+| Sign in · dark | `sign-in-dark.png` |
+| Phone · sign in | `phone-sign-in.png` |
 
 ## Two layouts
 
 | Layout | Used by | Shape |
 | --- | --- | --- |
 | `household` | Every controller that includes `HouseholdScoped` | The app shell: sidebar + main |
-| `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | One centred column with the Aglowy mark on top. No sidebar, because there is no household to navigate |
+| `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark at the top left, then one centred column. No sidebar, because there is no household to navigate |
 
 Both keep the `<body>` theming attributes from `CLAUDE.md`
 (`data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"`)
 and `lang` on `<html>`.
+
+## The root page and signing in
+
+- `/` is the sign-in page for visitors. A signed-in person who visits `/` goes where signing in would send them: their household, the chooser, or new household.
+- **Sign in** (frame `sign-in.png`):
+  - The heading "Sign in to Aglowy", with "To be aglow with the spirit" underneath.
+  - One box holding Email, Password (with "Forgot password?" beside its label), "Remember me" and a full-width primary "Sign in" button.
+  - Under the box: "New to Aglowy? Create an account", then a small "Didn't get the confirmation email?" link.
+- **Create an account** (frame `sign-up.png`):
+  - The heading "Create your account", with a line saying you'll be the head of your household.
+  - Your name, Email and Password; a divider; then Household name (with a hint) and Time zone.
+  - "Create account", with a note that a confirmation email comes first.
+  - Under the box: "Already have an account? Sign in".
+- Both are Primer form classes (`CLAUDE.md`, Forms) in the `focused` layout. The sign-in column is narrower than the sign-up column.
 
 ## Anatomy of the shell
 
