@@ -367,6 +367,14 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Kept", filtered["title"]
   end
 
+  test "part titles sent as an array are filtered from the logs too" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter("meeting_note" => { "parts_attributes" => [ { "id" => "1", "title" => "Mine" } ] })
+
+    assert_equal [ { "id" => "1", "title" => "[FILTERED]" } ], filtered.dig("meeting_note", "parts_attributes")
+  end
+
   test "a weekend note can't be edited yet" do
     sign_in identities(:head)
 
