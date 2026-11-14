@@ -1,8 +1,8 @@
-# frozen_string_literal: true
-
-class DeviseCreateUsers < ActiveRecord::Migration[8.1]
+class CreateIdentities < ActiveRecord::Migration[8.1]
   def change
-    create_table :users, id: :uuid do |t|
+    create_table :identities, id: :uuid do |t|
+      t.references :user, type: :uuid, null: false, foreign_key: true, index: { unique: true }
+
       ## Database authenticatable
       t.string :email,              null: false, default: ""
       t.string :encrypted_password, null: false, default: ""
@@ -25,15 +25,15 @@ class DeviseCreateUsers < ActiveRecord::Migration[8.1]
       t.string   :unlock_token
       t.datetime :locked_at
 
-      ## Role (Pundit authorization: user or admin)
-      t.string :role, null: false, default: "user"
+      ## Platform operators: Madmin and impersonation
+      t.boolean :staff, null: false, default: false
 
-      t.timestamps null: false
+      t.timestamps
     end
 
-    add_index :users, :email,                unique: true
-    add_index :users, :reset_password_token, unique: true
-    add_index :users, :confirmation_token,   unique: true
-    add_index :users, :unlock_token,         unique: true
+    add_index :identities, :email,                unique: true
+    add_index :identities, :reset_password_token, unique: true
+    add_index :identities, :confirmation_token,   unique: true
+    add_index :identities, :unlock_token,         unique: true
   end
 end

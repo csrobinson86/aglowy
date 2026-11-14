@@ -1,7 +1,7 @@
 <%# locals: () %>
-<% if session[:admin_user_id] %>
+<% if session[:staff_identity_id] && current_identity %>
   <div class="impersonation-banner">
-    Impersonating <%= current_user.email %> —
+    Impersonating <%= current_identity.email %> —
     <%= button_to "Stop", admin_impersonation_path, method: :delete %>
   </div>
 <% end %>

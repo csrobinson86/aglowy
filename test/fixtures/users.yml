@@ -1,13 +1,25 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-admin:
-  email: admin@example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  role: admin
-  confirmed_at: <%= Time.current %>
+head:
+  name: Hannah Head
 
-user:
-  email: user@example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  role: user
-  confirmed_at: <%= Time.current %>
+spouse:
+  name: Sam Spouse
+
+child:
+  name: Charlie Child
+
+former:
+  name: Frances Former
+
+outsider:
+  name: Olive Outsider
+
+grandparent:
+  name: Grace Grandparent
+
+newcomer:
+  name: Nate Newcomer
+
+staff:
+  name: Stella Staff
