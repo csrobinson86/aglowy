@@ -57,6 +57,11 @@ class FamilyStudy < ApplicationRecord
     end
   end
 
+  # How Home's label says it repeats: a weekly study meets "on Tuesdays"; the rest read as repeat_description.
+  def repeat_label
+    weekly? ? "#{every("week")} on #{weekday.pluralize}" : repeat_description
+  end
+
   def recurrence
     Recurrence.new(self)
   end

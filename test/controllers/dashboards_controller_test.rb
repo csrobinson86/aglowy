@@ -91,7 +91,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".blankslate", count: 0
     assert_select ".Box", text: /Next family study/ do
-      assert_select ".Box-header .Label", weekly.repeat_description
+      assert_select ".Box-header .Label", "Weekly on #{weekly.starts_on.strftime("%A")}s"
       assert_select "h3", "Topic not chosen yet"
       assert_select "a[href='#{session_path(family_study_sessions(:weekly_next))}']", "Open study"
     end

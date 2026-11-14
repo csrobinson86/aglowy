@@ -4,7 +4,7 @@
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
   <% box.with_header(display: :flex, align_items: :center) do |header| %>
     <% header.with_title(tag: :h2, flex: 1) { "Next family study" } %>
-    <%= render(Primer::Beta::Label.new) { study_session.family_study.repeat_description } %>
+    <%= render(Primer::Beta::Label.new) { study_session.family_study.repeat_label } %>
   <% end %>
   <% box.with_body do %>
     <p class="d-flex flex-items-center color-fg-muted mb-2">
