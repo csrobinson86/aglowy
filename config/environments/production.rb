@@ -21,7 +21,9 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Active Storage service: Cloudflare R2, set up in the deploy epic. Nothing uploads before then.
+  # Active Storage service: Cloudflare R2, set up in the deploy epic. Nothing uploads before then,
+  # but Action Text's rich text model raises at load without a service, so use local disk until R2.
+  config.active_storage.service = :local
   # config.active_storage.service = :cloudflare
 
   # Active Record encryption keys (session notes): `bin/rails db:encryption:init`, then add
