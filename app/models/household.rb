@@ -29,8 +29,13 @@ class Household < ApplicationRecord
   # The household's files share one quota; links don't count (docs/design/family-studies.md, Files).
   # One SUM over the blobs attached to its file resources, never loading them.
   def storage_used
-    attachments = ActiveStorage::Attachment.where(record_type: FamilyStudy::Resource.polymorphic_name, name: "file", record_id: family_study_resources.select(:id))
-    ActiveStorage::Blob.where(id: attachments.select(:blob_id)).sum(:byte_size)
+    stored_blobs.sum(:byte_size)
+  end
+
+  # What attaching the blobs would add: one the household already stores counts once, as storage_used counts it.
+  def storage_added_by(blobs)
+    stored_ids = stored_blobs.where(id: blobs.filter_map(&:id)).pluck(:id)
+    blobs.uniq.reject { it.id.in?(stored_ids) }.sum(&:byte_size)
   end
 
   def storage_quota
@@ -65,4 +70,10 @@ class Household < ApplicationRecord
   def schedule_family_study(topic: nil, notes: nil, links: [], files: [], **attributes)
     family_studies.build(attributes).tap { it.schedule(topic: topic, notes: notes, links: links, files: files) }
   end
+
+  private
+    def stored_blobs
+      attachments = ActiveStorage::Attachment.where(record_type: FamilyStudy::Resource.polymorphic_name, name: "file", record_id: family_study_resources.select(:id))
+      ActiveStorage::Blob.where(id: attachments.select(:blob_id))
+    end
 end

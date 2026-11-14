@@ -24,9 +24,10 @@ class FamilyStudy::Session < ApplicationRecord
     new_resources = blobs.map { resources.build(kind: :file, file: it) }
 
     if new_resources.all?(&:valid?)
-      transaction do
+      # A savepoint of its own, so the rollback undoes the batch even inside a caller's transaction.
+      transaction(requires_new: true) do
         # Saved one at a time behind a lock on the household, so each file is judged against the
-        # quota with the ones before it, and two of these at once can't both take the last of it.
+        # quota with the ones before it, and two uploads at once can't both take the last of it.
         family_study.household.lock!
         raise ActiveRecord::Rollback unless new_resources.all?(&:save)
       end

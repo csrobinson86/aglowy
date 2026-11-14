@@ -153,6 +153,13 @@ class FamilyStudy::ResourceTest < ActiveSupport::TestCase
     assert photo.update(title: "Photo")
   end
 
+  test "a file the household already stores isn't counted again when another resource uses it" do
+    photo = @session.add_files([ direct_uploaded_blob("photo.png").signed_id ]).sole
+    use_home_storage(households(:home).storage_quota - photo.file.byte_size)
+
+    assert @session.resources.new(kind: :file, file: photo.file.blob).valid?
+  end
+
   test "a file resource needs a file and no url" do
     resource = @session.resources.new(kind: :file)
 

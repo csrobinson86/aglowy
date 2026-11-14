@@ -109,4 +109,13 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_empty resources.first.errors
     assert_equal [ "Your household has used its 2 GB of file storage. Remove some files to add more." ], resources.last.errors[:base]
   end
+
+  test "add_files adds none when they don't fit, even inside a transaction of the caller's" do
+    pdf, photo = direct_uploaded_blob("study-guide.pdf"), direct_uploaded_blob("photo.png")
+    use_home_storage(households(:home).storage_quota - pdf.byte_size - photo.byte_size + 1)
+
+    assert_no_difference("FamilyStudy::Resource.count") do
+      FamilyStudy::Session.transaction { family_study_sessions(:weekly_next).add_files([ pdf.signed_id, photo.signed_id ]) }
+    end
+  end
 end

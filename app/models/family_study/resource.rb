@@ -73,6 +73,6 @@ class FamilyStudy::Resource < ApplicationRecord
     # A sentence of its own, so it goes on the resource rather than after "File".
     def file_fits_household_storage
       household = session.family_study.household
-      errors.add(:base, household.storage_full_message) unless household.fits_in_storage?(file.byte_size)
+      errors.add(:base, household.storage_full_message) unless household.fits_in_storage?(household.storage_added_by([ file.blob ]))
     end
 end
