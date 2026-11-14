@@ -1,20 +1,20 @@
 <header class="container-lg px-3 py-5">
-  <%= render Primer::Beta::Heading.new(tag: :h1) { "Aglowy Design System" } %>
-  <%= render Primer::Beta::Text.new(tag: :p, color: :muted) do %>
+  <%= render(Primer::Beta::Heading.new(tag: :h1)) { "Aglowy Design System" } %>
+  <%= render(Primer::Beta::Text.new(tag: :p, color: :muted)) do %>
     Built on Primer ViewComponents.
-    <%= render Primer::Beta::Link.new(href: "https://primer.style/product/components/") { "Component reference" } %>
+    <%= render(Primer::Beta::Link.new(href: "https://primer.style/product/components/")) { "Component reference" } %>
   <% end %>
 </header>
 
 <main class="container-lg px-3 pb-6">
-  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+  <%= render(Primer::Beta::Subhead.new(mb: 4)) do |subhead| %>
     <% subhead.with_heading(tag: :h2) { "Buttons" } %>
   <% end %>
   <div class="d-flex flex-wrap gap-2 mb-6">
-    <%= render Primer::Beta::Button.new(scheme: :primary) { "Primary" } %>
-    <%= render Primer::Beta::Button.new { "Default" } %>
-    <%= render Primer::Beta::Button.new(scheme: :danger) { "Danger" } %>
-    <%= render Primer::Beta::Button.new(scheme: :invisible) { "Invisible" } %>
+    <%= render(Primer::Beta::Button.new(scheme: :primary)) { "Primary" } %>
+    <%= render(Primer::Beta::Button.new) { "Default" } %>
+    <%= render(Primer::Beta::Button.new(scheme: :danger)) { "Danger" } %>
+    <%= render(Primer::Beta::Button.new(scheme: :invisible)) { "Invisible" } %>
     <%= render Primer::Beta::Button.new do |button| %>
       <% button.with_leading_visual_icon(icon: :heart) %>
       With icon
@@ -22,26 +22,26 @@
     <%= render Primer::Beta::IconButton.new(icon: :gear, "aria-label": "Settings") %>
   </div>
 
-  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+  <%= render(Primer::Beta::Subhead.new(mb: 4)) do |subhead| %>
     <% subhead.with_heading(tag: :h2) { "Labels & counters" } %>
   <% end %>
   <div class="d-flex flex-wrap flex-items-center gap-2 mb-6">
     <% %i[default primary accent success attention danger severe done].each do |scheme| %>
-      <%= render Primer::Beta::Label.new(scheme: scheme) { scheme.to_s.humanize } %>
+      <%= render(Primer::Beta::Label.new(scheme: scheme)) { scheme.to_s.humanize } %>
     <% end %>
     <%= render Primer::Beta::Counter.new(count: 25) %>
   </div>
 
-  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+  <%= render(Primer::Beta::Subhead.new(mb: 4)) do |subhead| %>
     <% subhead.with_heading(tag: :h2) { "Banners" } %>
   <% end %>
   <div class="d-flex flex-column gap-2 mb-6">
     <% %i[default success warning danger].each do |scheme| %>
-      <%= render Primer::Alpha::Banner.new(scheme: scheme) { "This is a #{scheme} banner." } %>
+      <%= render(Primer::Alpha::Banner.new(scheme: scheme)) { "This is a #{scheme} banner." } %>
     <% end %>
   </div>
 
-  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+  <%= render(Primer::Beta::Subhead.new(mb: 4)) do |subhead| %>
     <% subhead.with_heading(tag: :h2) { "Form controls" } %>
   <% end %>
   <div class="d-flex flex-column gap-3 mb-6 col-12 col-md-6">
@@ -50,19 +50,19 @@
     <%= render Primer::Alpha::ToggleSwitch.new(aria: { label: "Notifications" }) %>
   </div>
 
-  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+  <%= render(Primer::Beta::Subhead.new(mb: 4)) do |subhead| %>
     <% subhead.with_heading(tag: :h2) { "Border box" } %>
   <% end %>
-  <%= render Primer::Beta::BorderBox.new(mb: 6) do |box| %>
+  <%= render(Primer::Beta::BorderBox.new(mb: 6)) do |box| %>
     <% box.with_header { "Header" } %>
     <% box.with_row { "First row" } %>
     <% box.with_row { "Second row" } %>
   <% end %>
 
-  <%= render Primer::Beta::Subhead.new(mb: 4) do |subhead| %>
+  <%= render(Primer::Beta::Subhead.new(mb: 4)) do |subhead| %>
     <% subhead.with_heading(tag: :h2) { "Blankslate" } %>
   <% end %>
-  <%= render Primer::Beta::Blankslate.new(border: true) do |slate| %>
+  <%= render(Primer::Beta::Blankslate.new(border: true)) do |slate| %>
     <% slate.with_visual_icon(icon: :inbox) %>
     <% slate.with_heading(tag: :h3) { "Nothing here yet" } %>
     <% slate.with_description { "Empty states use Blankslate." } %>
