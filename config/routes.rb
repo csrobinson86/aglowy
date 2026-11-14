@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "home#index"
 
+  resource :signup, only: %i[ new create ]
   resources :households, only: %i[ index new create ]
 
   namespace :admin do
