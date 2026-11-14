@@ -1,5 +1,6 @@
 class FamilyStudy < ApplicationRecord
   WEEKS_OF_MONTH = [ 1, 2, 3, 4, 5, -1 ].freeze
+  ORDINALS = %w[ first second third fourth fifth ].freeze
 
   belongs_to :household
   belongs_to :default_conductor, class_name: "User", optional: true
@@ -43,6 +44,16 @@ class FamilyStudy < ApplicationRecord
     sessions.insert_all(new_session_rows(through: through), unique_by: %i[ family_study_id recurrence_at ])
   end
 
+  # How the session page says it repeats: "Once", "Weekly on Tuesday", "Monthly on the last Tuesday".
+  def repeat_description
+    case frequency
+    when "once"    then "Once"
+    when "daily"   then every("day")
+    when "weekly"  then "#{every("week")} on #{weekday}"
+    when "monthly" then "#{every("month")} on the #{week_of_month == -1 ? "last" : ORDINALS[week_of_month - 1]} #{weekday}"
+    end
+  end
+
   def recurrence
     Recurrence.new(self)
   end
@@ -66,6 +77,15 @@ class FamilyStudy < ApplicationRecord
   end
 
   private
+    # "Weekly", or "Every 2 weeks" when the interval is more than one.
+    def every(unit)
+      interval == 1 ? frequency.capitalize : "Every #{interval} #{unit.pluralize}"
+    end
+
+    def weekday
+      starts_on.strftime("%A")
+    end
+
     # insert_all skips callbacks, so the UUIDv7 id is set here; timestamps too, so they follow the app's clock.
     def new_session_rows(through:)
       times = recurrence.dates(from: Date.current, through: through).map { session_time_on(it) }

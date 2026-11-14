@@ -4,8 +4,6 @@ class FamilyStudy::Scheduling
   include ActiveModel::Model
   include ActiveModel::Attributes
 
-  ORDINALS = %w[ first second third fourth fifth ].freeze
-
   attr_reader :household, :study
 
   attribute :topic, :string
@@ -30,7 +28,7 @@ class FamilyStudy::Scheduling
       next unless starts_on
 
       choices << [ "Weekly on #{weekday}", "weekly" ]
-      choices << [ "Monthly on the #{ORDINALS[week_of_month - 1]} #{weekday}", "monthly" ]
+      choices << [ "Monthly on the #{FamilyStudy::ORDINALS[week_of_month - 1]} #{weekday}", "monthly" ]
       choices << [ "Monthly on the last #{weekday}", "monthly_last" ] if calendar.last_week_of_month?(starts_on)
     end
   end
