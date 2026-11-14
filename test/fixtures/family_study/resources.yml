@@ -1,0 +1,13 @@
+proverbs:
+  session: one_off_first
+  kind: link
+  url: https://www.jw.org/en/library/bible/study-bible/books/proverbs/3/
+  title: www.jw.org/en/library/bible/study-bible/books/proverbs/3
+  position: 1
+
+draw_close:
+  session: one_off_first
+  kind: link
+  url: https://wol.jw.org/en/wol/d/r1/lp-e/1102003601
+  title: wol.jw.org/en/wol/d/r1/lp-e/1102003601
+  position: 2

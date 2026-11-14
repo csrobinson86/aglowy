@@ -168,6 +168,40 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 11, 15), FamilyStudy::Scheduling.new(household: @household).starts_on
   end
 
+  test "the links go on the first session only, in the order added" do
+    scheduling = new_scheduling(repeat: "weekly", link_urls: [ "https://www.jw.org/en/", "https://wol.jw.org/en/" ], link_url: "")
+    assert scheduling.save
+
+    first, *later = scheduling.study.sessions.order(:scheduled_at)
+    assert_equal [ "https://www.jw.org/en/", "https://wol.jw.org/en/" ], first.resources.map(&:url)
+    assert later.none? { it.resources.any? }
+  end
+
+  test "a link still in the field is added too" do
+    scheduling = new_scheduling(link_url: "https://www.jw.org/en/")
+    assert scheduling.save
+
+    assert_equal [ "https://www.jw.org/en/" ], scheduling.study.sessions.sole.resources.map(&:url)
+  end
+
+  test "a link that isn't http or https is an error on the field" do
+    scheduling = new_scheduling(link_urls: [ "https://www.jw.org/en/" ], link_url: "javascript:alert(1)")
+
+    assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Resource.count" ] do
+      assert_not scheduling.save
+    end
+    assert_equal [ "must be a web address starting with http:// or https://" ], scheduling.errors[:link_url]
+  end
+
+  test "a list link the server refuses goes back into the field, so it can be fixed" do
+    scheduling = new_scheduling(link_urls: [ "https://www.jw.org/en/", "http://www.jw.org:port/" ], link_url: "")
+
+    assert_not scheduling.save
+    assert_equal [ "https://www.jw.org/en/" ], scheduling.link_urls
+    assert_equal "http://www.jw.org:port/", scheduling.link_url
+    assert_not_empty scheduling.errors[:link_url]
+  end
+
   private
     def new_scheduling(**attributes)
       FamilyStudy::Scheduling.new(household: @household, topic: "Proverbs 3", starts_on: "2026-11-17",

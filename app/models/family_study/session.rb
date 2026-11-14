@@ -1,6 +1,7 @@
 class FamilyStudy::Session < ApplicationRecord
   belongs_to :family_study
   belongs_to :conductor, class_name: "User", optional: true
+  has_many :resources, -> { order(:position) }, dependent: :destroy
 
   has_rich_text :notes, encrypted: true
 

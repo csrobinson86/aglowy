@@ -36,3 +36,11 @@ en:
       session_breadcrumb: "%b %-d, %Y"
       clock: "%-l:%M"
       clock_with_meridiem: "%-l:%M %p"
+  activerecord:
+    attributes:
+      family_study/resource:
+        url: "Link"
+  activemodel:
+    attributes:
+      family_study/scheduling:
+        link_url: "Link"

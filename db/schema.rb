@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_154212) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -72,6 +72,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_154212) do
     t.check_constraint "frequency::text <> 'monthly'::text OR week_of_month IS NOT NULL", name: "family_studies_monthly_week_of_month_check"
     t.check_constraint "frequency::text = ANY (ARRAY['once'::character varying, 'daily'::character varying, 'weekly'::character varying, 'monthly'::character varying]::text[])", name: "family_studies_frequency_check"
     t.check_constraint "week_of_month = ANY (ARRAY[1, 2, 3, 4, 5, '-1'::integer])", name: "family_studies_week_of_month_check"
+  end
+
+  create_table "family_study_resources", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "session_id", null: false
+    t.string "kind", null: false
+    t.string "url"
+    t.string "title", null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["session_id"], name: "index_family_study_resources_on_session_id"
+    t.check_constraint "kind::text <> 'link'::text OR url IS NOT NULL AND url::text ~* '^https?://'::text", name: "family_study_resources_url_check"
+    t.check_constraint "kind::text = ANY (ARRAY['link'::character varying, 'file'::character varying]::text[])", name: "family_study_resources_kind_check"
   end
 
   create_table "family_study_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -144,6 +157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_154212) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"
+  add_foreign_key "family_study_resources", "family_study_sessions", column: "session_id"
   add_foreign_key "family_study_sessions", "family_studies"
   add_foreign_key "family_study_sessions", "users", column: "conductor_id"
   add_foreign_key "identities", "users"

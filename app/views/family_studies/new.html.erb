@@ -30,6 +30,21 @@
     <% end %>
 
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_body(data: { controller: "resource-links" }) do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3)) { "Resources" } %>
+        <%= tag.p "No resources yet. Add links from jw.org or wol.jw.org.", class: "color-fg-muted mb-3", hidden: @scheduling.link_urls.any?, data: { resource_links_target: "blank" } %>
+        <%# Saved on the first session (scheduling rule 1). %>
+        <ul id="schedule-links" class="list-style-none" data-resource-links-target="list">
+          <% @scheduling.link_urls.each do |url| %>
+            <%= render "family_studies/link", url: url %>
+          <% end %>
+        </ul>
+        <template data-resource-links-target="template"><%= render "family_studies/link", url: "" %></template>
+        <%= render FamilyStudies::ScheduleForm.new(f, section: :resources) %>
+      <% end %>
+    <% end %>
+
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
       <% box.with_body do %>
         <%= render "family_studies/sessions/notes/field", form: f, heading: true %>
       <% end %>
