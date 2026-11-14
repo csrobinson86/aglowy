@@ -36,7 +36,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
       get household_members_path(household_id: households(:home))
 
       assert_response :success
-      assert_select "a", text: "Add a member", count: 0
+      assert_select "a", { text: "Add a member", count: 0 }, "expected #{identity.email} not to see Add a member"
     end
   end
 
