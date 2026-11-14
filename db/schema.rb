@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_200100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -133,6 +133,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_200100) do
     t.index ["user_id"], name: "index_identities_on_user_id", unique: true
   end
 
+  create_table "meeting_note_gems", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_note_id", null: false
+    t.string "scripture", null: false
+    t.integer "book_number", limit: 2, null: false
+    t.integer "chapter", limit: 2, null: false
+    t.integer "verse_start", limit: 2
+    t.integer "verse_end", limit: 2
+    t.text "insight"
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meeting_note_id"], name: "index_meeting_note_gems_on_meeting_note_id"
+    t.check_constraint "book_number >= 1 AND book_number <= 66", name: "meeting_note_gems_book_number_check"
+    t.check_constraint "chapter > 0", name: "meeting_note_gems_chapter_check"
+    t.check_constraint "verse_start IS NULL AND verse_end IS NULL OR verse_start IS NOT NULL AND verse_end IS NOT NULL AND verse_start > 0 AND verse_end >= verse_start", name: "meeting_note_gems_verses_check"
+  end
+
   create_table "meeting_note_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "meeting_note_id", null: false
     t.string "key", null: false
@@ -185,6 +202,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_200100) do
   add_foreign_key "family_study_sessions", "family_studies"
   add_foreign_key "family_study_sessions", "users", column: "conductor_id"
   add_foreign_key "identities", "users"
+  add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
   add_foreign_key "memberships", "households"

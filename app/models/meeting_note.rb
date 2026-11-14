@@ -5,6 +5,7 @@ class MeetingNote < ApplicationRecord
 
   belongs_to :user
   has_many :parts, -> { order(:position) }, dependent: :destroy
+  has_many :gems, -> { order(:position) }, dependent: :delete_all
 
   enum :kind, %w[ midweek weekend ].index_by(&:itself), validate: true
 

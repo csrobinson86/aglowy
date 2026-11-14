@@ -104,8 +104,8 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_includes note.errors[:week_of], "can't be blank"
   end
 
-  test "destroying the author destroys their notes, parts and part notes" do
-    assert_difference -> { MeetingNote.count } => -2, -> { MeetingNote::Part.count } => -8, -> { ActionText::RichText.count } => -2 do
+  test "destroying the author destroys their notes, parts, part notes and gems" do
+    assert_difference -> { MeetingNote.count } => -2, -> { MeetingNote::Part.count } => -8, -> { ActionText::RichText.count } => -2, -> { MeetingNote::Gem.count } => -2 do
       users(:head).destroy!
     end
   end

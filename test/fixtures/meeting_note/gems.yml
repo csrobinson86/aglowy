@@ -1,0 +1,21 @@
+# Insights are encrypted; encrypt_fixtures encrypts them on load. The reference columns are set
+# here because fixtures skip the scripture= writer that fills them in the app.
+head_strength:
+  meeting_note: head_midweek
+  scripture: "Isaiah 41:10"
+  book_number: 23
+  chapter: 41
+  verse_start: 10
+  verse_end: 10
+  insight: "Jehovah doesn't just watch; he takes hold of my hand."
+  position: 1
+
+head_anxiety:
+  meeting_note: head_midweek
+  scripture: "Phil 4:6, 7"
+  book_number: 50
+  chapter: 4
+  verse_start: 6
+  verse_end: 7
+  insight: "Prayer first, then the peace of God guards the heart."
+  position: 2
