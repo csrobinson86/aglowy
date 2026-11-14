@@ -7,15 +7,14 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_identity_session_path
   end
 
-  test "a member sees the household name and its active members, not the former member" do
+  test "a member sees the household name, and the member list has moved to Members" do
     sign_in identities(:spouse)
 
     get household_root_path(household_id: households(:home))
 
     assert_response :success
     assert_select "h1", "The Head Family"
-    assert_select "main", text: /Hannah Head.*Head.*Sam Spouse.*Adult.*Charlie Child.*Child/m
-    assert_not_includes response.body, "Frances Former"
+    assert_select "main", text: /Sam Spouse/, count: 0
     assert_select "header a[href='#{new_household_path}']"
   end
 

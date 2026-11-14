@@ -15,11 +15,12 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Home"
   end
 
-  test "Home is not current on another section's page" do
+  test "Members follows Home and is the current item when selected_item is :members" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :members))
 
-    assert_selector "nav[aria-label='Main'] a", text: "Home"
-    assert_no_selector "a[aria-current='page']"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(1) a", text: "Home"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(2) a[aria-current='page']", text: "Members"
+    assert_selector "a[aria-current='page']", count: 1
   end
 
   test "shows the person's name and a Sign out button" do

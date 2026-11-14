@@ -3,7 +3,7 @@ require "application_system_test_case"
 class AddMemberTest < ApplicationSystemTestCase
   test "a head adds a child and sees them in the member list" do
     sign_in identities(:head)
-    visit household_root_url(household_id: households(:home))
+    visit household_members_url(household_id: households(:home))
 
     click_on "Add a member"
     assert_selector "h1", text: "Add a member"
@@ -17,15 +17,15 @@ class AddMemberTest < ApplicationSystemTestCase
     assert_text "Baby Head was added to the household."
     within("main") { assert_text(/Baby Head\s*Child/) }
     assert_accessible
-    capture_screens("dashboard-member-added")
+    capture_screens("members-member-added")
   end
 
   test "an adult doesn't see the link to add a member" do
     sign_in identities(:spouse)
-    visit household_root_url(household_id: households(:home))
+    visit household_members_url(household_id: households(:home))
 
-    assert_selector "h1", text: "The Head Family"
+    assert_selector "h1", text: "Members"
     assert_no_link "Add a member"
-    capture_screens("dashboard-adult")
+    capture_screens("members-adult")
   end
 end
