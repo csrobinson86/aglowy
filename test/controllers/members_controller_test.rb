@@ -45,6 +45,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
+    assert_select ".FormControl-inlineValidation", text: /can't be blank/
     assert_select "option[value='adult'][selected]"
   end
 
