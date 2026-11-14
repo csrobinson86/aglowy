@@ -1,9 +1,7 @@
 <% content_for :title, "New household" %>
 
-<div class="container-sm px-3 py-5">
-  <%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { "New household" } %>
+<%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { "New household" } %>
 
-  <%= primer_form_with(model: @household, url: households_path) do |f| %>
-    <%= render Households::HouseholdForm.new(f) %>
-  <% end %>
-</div>
+<%= primer_form_with(model: @household, url: households_path) do |f| %>
+  <%= render Households::HouseholdForm.new(f) %>
+<% end %>

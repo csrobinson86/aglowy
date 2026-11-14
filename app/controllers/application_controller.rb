@@ -3,6 +3,8 @@ class ApplicationController < ActionController::Base
 
   allow_browser versions: :modern
 
+  layout :layout_for_request
+
   before_action :authenticate_identity!, unless: :devise_controller?
   before_action :set_current_identity
   after_action :verify_authorized, unless: :skip_authorization?
@@ -34,6 +36,12 @@ class ApplicationController < ActionController::Base
 
   def not_authorized
     redirect_to (Current.household ? household_root_path : root_path), alert: "You can't do that in this household.", status: :see_other
+  end
+
+  # Devise's pages have no household (docs/design/app-shell.md, Two layouts).
+  # Rails' layout takes no if:, so a method picks it.
+  def layout_for_request
+    devise_controller? ? "focused" : "application"
   end
 
   def skip_authorization?

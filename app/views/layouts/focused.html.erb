@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%= render "layouts/head" %>
+  </head>
+
+  <body data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+    <%# Pages outside a household: the Aglowy mark, then one centred column (docs/design/app-shell.md). %>
+    <header class="px-3 py-3">
+      <%= render(Primer::Beta::Link.new(href: root_path, scheme: :primary, font_weight: :bold, font_size: 3, display: :inline_flex, align_items: :center, classes: "no-underline")) do %>
+        <%= render Primer::Beta::Octicon.new(:sun, color: :attention, size: :medium, mr: 2) %>
+        Aglowy
+      <% end %>
+    </header>
+
+    <main class="container-sm px-3 py-5">
+      <%= render "shared/flash" %>
+      <%= render "shared/impersonation_banner" %>
+      <%= yield %>
+    </main>
+  </body>
+</html>
