@@ -4,14 +4,14 @@ class FocusedLayoutTest < ApplicationSystemTestCase
   test "sign in passes assert_accessible" do
     visit new_identity_session_url
 
-    assert_focused_page "Log in"
+    assert_focused_page "Sign in to Aglowy"
     capture_screens("focused-sign-in")
   end
 
   test "sign up passes assert_accessible" do
     visit new_signup_url
 
-    assert_focused_page "Sign up"
+    assert_focused_page "Create your account"
   end
 
   test "the chooser passes assert_accessible" do
