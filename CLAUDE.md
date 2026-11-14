@@ -228,6 +228,11 @@ households or roles. The non-negotiables:
   ask Casey before building it by hand.
 - Devise's generated views still use plain `form_for`. Convert them only in a
   story that asks for it.
+- **Two approved exceptions** (decided Nov 2026, `docs/design/family-studies.md`):
+  the file drop zone (Active Storage direct upload, Stimulus, BEM Sass from
+  primitives) and the Lexxy notes editor (`rich_text_area`). Primer has neither.
+  Both keep a real labelled input inside the Primer form; nothing else is
+  hand-built.
 
 ---
 
