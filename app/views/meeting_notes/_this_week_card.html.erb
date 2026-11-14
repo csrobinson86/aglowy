@@ -1,0 +1,17 @@
+<%# locals: (note:) %>
+<%= render(Primer::Beta::BorderBox.new(height: :full)) do |box| %>
+  <% box.with_body do %>
+    <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, display: :flex, align_items: :center)) do %>
+      <%= meeting_note_dot(MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)) %>
+      <%= meeting_note_title(note) %>
+    <% end %>
+    <p class="color-fg-muted mt-1 mb-3"><%= note.display_week %> · <%= meeting_note_summary(note) %></p>
+    <% if note.persisted? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_note_path(id: note))) { "Open notes" } %>
+    <% else %>
+      <%= primer_form_with(scope: :meeting_note, url: household_meeting_notes_path) do |f| %>
+        <%= render MeetingNotes::StartForm.new(f, meeting_note: note) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

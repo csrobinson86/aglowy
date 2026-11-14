@@ -1,6 +1,22 @@
 require "test_helper"
 
 class MeetingNotePolicyTest < ActiveSupport::TestCase
+  test "any active member can list and start their own notes, whatever their role" do
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      policy = MeetingNotePolicy.new(memberships(membership), MeetingNote)
+
+      assert policy.index? && policy.create?, "expected #{membership} to be let in"
+    end
+  end
+
+  test "an inactive or nil membership can't list or start notes" do
+    [ memberships(:former_in_home), nil ].each do |membership|
+      policy = MeetingNotePolicy.new(membership, MeetingNote)
+
+      assert_not policy.index? || policy.create?
+    end
+  end
+
   test "the author can show, update and destroy" do
     [ memberships(:head_in_home), memberships(:head_in_parents) ].each do |membership|
       policy = MeetingNotePolicy.new(membership, meeting_notes(:head_midweek))
