@@ -5,6 +5,10 @@ class MembershipTest < ActiveSupport::TestCase
     assert Membership.new.adult?
   end
 
+  test "by_household_name orders by the household's name" do
+    assert_equal [ households(:parents), households(:home) ], users(:head).memberships.by_household_name.map(&:household)
+  end
+
   test "an unknown role is a validation error, not an ArgumentError" do
     membership = Membership.new(household: households(:home), user: users(:newcomer), role: "admin")
 

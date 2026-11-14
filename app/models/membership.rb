@@ -7,6 +7,7 @@ class Membership < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :preloaded, -> { includes(:user) }
   scope :by_role, -> { in_order_of(:role, roles.keys).order(:created_at) }
+  scope :by_household_name, -> { includes(:household).order("households.name") }
 
   def sole_head?
     head? && active? && household.memberships.active.head.where.not(id: id).none?
