@@ -1,7 +1,6 @@
 <% content_for :title, meeting_note_title(@meeting_note) %>
 
-<%# Weekend notes get their edit page in their own story. %>
-<%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: @meeting_note.midweek? %>
+<%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: true %>
 
 <% sections = @meeting_note.filled_sections %>
 <% if sections.any? %>

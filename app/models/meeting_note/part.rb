@@ -9,6 +9,7 @@ class MeetingNote::Part < ApplicationRecord
   validates :key, inclusion: { in: ->(part) { part.meeting_note&.outline&.parts.to_a.map(&:key) } }
   # Backed by a partial unique index on (meeting_note_id, key) where key <> 'living_part'.
   validates :key, uniqueness: { scope: :meeting_note_id }, unless: :repeats?
+  validate :speaker_only_where_the_outline_has_one
 
   def label
     meeting_note.outline.part(key).label
@@ -21,4 +22,10 @@ class MeetingNote::Part < ApplicationRecord
   def repeats?
     meeting_note&.outline&.part(key)&.repeats? || false
   end
+
+  private
+    # Only the Public Talk names a speaker (docs/design/meeting-notes.md, MeetingNote::Part).
+    def speaker_only_where_the_outline_has_one
+      errors.add(:speaker, "isn't asked for in this part") if speaker.present? && !meeting_note&.outline&.part(key)&.field(:speaker)
+    end
 end

@@ -1,0 +1,8 @@
+// A meeting note's notes editor (Lexxy). The Public Talk's is taller than Lexxy's default eight lines
+// (frame weekend-note.png), since it takes notes through a whole talk. Lexxy sizes the editor in lines
+// from --lexxy-editor-rows.
+.meeting-note-editor {
+  &--tall {
+    --lexxy-editor-rows: 12lh;
+  }
+}

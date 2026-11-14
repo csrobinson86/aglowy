@@ -1,9 +1,10 @@
-<%# locals: (form:, label: "Notes", hidden_label: nil, placeholder: nil) %>
+<%# locals: (form:, label: "Notes", hidden_label: nil, placeholder: nil, tall: false) %>
 <%# The approved hand-built form piece (CLAUDE.md, Forms): Primer's FormControl markup around Lexxy,
     which reads its accessible name from the label. Several editors share the page, so each gets
-    its id from the part's fields_for index, and hidden_label tells their labels apart for screen readers. %>
+    its id from the part's fields_for index, and hidden_label tells their labels apart for screen readers.
+    tall is for notes taken through a whole talk. A class replaces Lexxy's own lexxy-content, so it's kept. %>
 <div class="FormControl width-full FormControl--fullWidth">
   <%= form.label :notes, class: "FormControl-label" do %><%= label %><% if hidden_label %><span class="sr-only"> <%= hidden_label %></span><% end %><% end %>
-  <%= form.rich_text_area :notes, attachments: false, placeholder: placeholder,
+  <%= form.rich_text_area :notes, attachments: false, placeholder: placeholder, class: class_names("lexxy-content", "meeting-note-editor meeting-note-editor--tall": tall),
         data: { direct_upload_url: "", blob_url_template: "" } %>
 </div>
