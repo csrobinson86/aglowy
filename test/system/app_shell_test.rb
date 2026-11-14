@@ -15,6 +15,12 @@ class AppShellTest < ApplicationSystemTestCase
     assert_text "Hannah Head"
   end
 
+  test "at desktop size the phone top bar is hidden and can't take focus" do
+    assert_selector "aside nav[aria-label='Main']"
+    assert_no_selector "header button"
+    assert_no_selector "nav[aria-label='Menu']"
+  end
+
   test "Sign out from the sidebar signs them out" do
     click_on "Sign out"
 

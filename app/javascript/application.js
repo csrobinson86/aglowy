@@ -7,3 +7,5 @@ import "./controllers"
 import { application } from "./controllers/application"
 import HouseholdSwitcherController from "../components/app_shell/household_switcher_component_controller"
 application.register("household-switcher", HouseholdSwitcherController)
+import AppShellController from "../components/app_shell_component_controller"
+application.register("app-shell", AppShellController)

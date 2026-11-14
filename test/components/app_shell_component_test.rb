@@ -20,7 +20,8 @@ class AppShellComponentTest < ViewComponent::TestCase
 
     assert_selector "nav[aria-label='Main'] li:nth-of-type(1) a", text: "Home"
     assert_selector "nav[aria-label='Main'] li:nth-of-type(2) a[aria-current='page']", text: "Members"
-    assert_selector "a[aria-current='page']", count: 1
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
+    assert_selector "nav[aria-label='Menu'] a[aria-current='page']", text: "Members", count: 1
   end
 
   test "shows the person's name and a Sign out button" do
@@ -28,6 +29,29 @@ class AppShellComponentTest < ViewComponent::TestCase
 
     assert_text "Hannah Head"
     assert_selector "form[action='/identities/sign_out'] button", text: "Sign out"
+  end
+
+  test "the sidebar is hidden below md, where the phone menu takes over" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
+
+    assert_selector ".Layout.Layout--sidebarPosition-flowRow-none"
+  end
+
+  test "the phone menu dialog holds the sidebar navigation labelled Menu" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
+
+    assert_selector "header button[data-show-dialog-id='#{AppShellComponent::MENU_ID}'] + tool-tip[data-type='label']", text: "Open menu", visible: :all
+    assert_selector "dialog##{AppShellComponent::MENU_ID}", visible: :all
+    assert_selector "dialog nav[aria-label='Menu'] a[aria-current='page']", text: "Home", visible: :all
+    assert_selector "dialog nav[aria-label='Menu'] a", text: "Members", visible: :all
+  end
+
+  test "each household switcher has its own menu id" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
+
+    ids = page.all("action-menu button[aria-haspopup='true']", visible: :all).map { it[:id] }
+    assert_equal 3, ids.size
+    assert_equal ids.uniq, ids
   end
 
   test "the previews render" do

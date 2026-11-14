@@ -1,14 +1,16 @@
 # frozen_string_literal: true
 
 # The sidebar's household switcher (docs/design/app-shell.md, Anatomy of the shell).
-# Previews pass unsaved memberships; pages use the person's active ones.
+# Previews pass unsaved memberships; pages use the person's active ones. A page
+# can hold several switchers (sidebar, phone top bar, phone menu), each with its own menu_id.
 class AppShell::HouseholdSwitcherComponent < ApplicationComponent
-  attr_reader :membership, :memberships
+  attr_reader :membership, :memberships, :menu_id
 
   delegate :household, to: :membership
 
-  def initialize(membership:, memberships: membership.user.memberships.active.by_household_name)
+  def initialize(membership:, menu_id: "household-switcher", memberships: membership.user.memberships.active.by_household_name)
     @membership = membership
+    @menu_id = menu_id
     @memberships = memberships
   end
 

@@ -2,9 +2,34 @@
 @use "@primer/css/support/variables/layout" as primer;
 
 // From md up the shell fills the window, so the sidebar footer sits at the
-// bottom. Below md the sidebar stacks above main and keeps its own height.
+// bottom. Below md the sidebar is hidden and the top bar takes its place.
 .app-shell {
   @media (min-width: map.get(primer.$breakpoints, md)) {
     min-height: 100vh;
+  }
+}
+
+// The phone top bar: 56px, the menu button then the household switcher.
+.app-shell__top-bar {
+  min-height: calc(var(--base-size-48) + var(--base-size-8));
+}
+
+// The phone menu's sidebar fills the panel, so its footer sits at the bottom.
+.app-shell__menu scrollable-region {
+  display: flex;
+  flex: auto;
+  flex-direction: column;
+}
+
+// Touch targets are 44px on a touch screen; with a mouse
+// --control-minTarget-auto is small enough to change nothing.
+.app-shell__top-bar,
+.app-shell__menu {
+  :is(a, button) {
+    min-height: var(--control-minTarget-auto);
+  }
+
+  :is(.Button--iconOnly, .close-button) {
+    min-width: var(--control-minTarget-auto);
   }
 }
