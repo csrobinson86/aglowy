@@ -14,6 +14,12 @@ class FamilyStudyTest < ActiveSupport::TestCase
     assert_equal @study.first_session_at, session.scheduled_at
   end
 
+  test "the first session gets the study's default conductor" do
+    study = @household.schedule_family_study(starts_on: "2026-11-17", time_of_day: "19:00", default_conductor: users(:spouse))
+
+    assert_equal users(:spouse), study.sessions.sole.reload.conductor
+  end
+
   test "the topic is optional" do
     study = @household.schedule_family_study(starts_on: "2026-11-17", time_of_day: "19:00")
 
@@ -116,11 +122,35 @@ class FamilyStudyTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::CheckViolation) { family_studies(:one_off).update_column(:week_of_month, 6) }
   end
 
+  test "database: a study without a household_id raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_studies(:one_off).update_column(:household_id, nil) }
+  end
+
+  test "database: a study without a frequency raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_studies(:one_off).update_column(:frequency, nil) }
+  end
+
+  test "database: a study without a interval raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_studies(:one_off).update_column(:interval, nil) }
+  end
+
+  test "database: a study without a starts_on raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_studies(:one_off).update_column(:starts_on, nil) }
+  end
+
   test "database: a study without a time_of_day raises NotNullViolation" do
     assert_raises(ActiveRecord::NotNullViolation) { family_studies(:one_off).update_column(:time_of_day, nil) }
   end
 
+  test "database: a study without a duration_minutes raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_studies(:one_off).update_column(:duration_minutes, nil) }
+  end
+
   test "database: a study for a missing household raises InvalidForeignKey" do
     assert_raises(ActiveRecord::InvalidForeignKey) { family_studies(:one_off).update_column(:household_id, SecureRandom.uuid_v7) }
+  end
+
+  test "database: a study with a missing default conductor raises InvalidForeignKey" do
+    assert_raises(ActiveRecord::InvalidForeignKey) { family_studies(:one_off).update_column(:default_conductor_id, SecureRandom.uuid_v7) }
   end
 end

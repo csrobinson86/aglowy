@@ -18,7 +18,7 @@ class FamilyStudy < ApplicationRecord
   # Creates the study and its first session together (scheduling rule 1).
   def schedule(topic: nil)
     transaction do
-      save && sessions.create!(recurrence_at: first_session_at, scheduled_at: first_session_at, topic: topic)
+      save && sessions.create!(recurrence_at: first_session_at, scheduled_at: first_session_at, topic: topic, conductor: default_conductor)
     end
   end
 

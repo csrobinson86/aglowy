@@ -33,11 +33,23 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     end
   end
 
+  test "database: a session without a family_study_id raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_study_sessions(:weekly_next).update_column(:family_study_id, nil) }
+  end
+
+  test "database: a session without a recurrence_at raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { family_study_sessions(:weekly_next).update_column(:recurrence_at, nil) }
+  end
+
   test "database: a session without a scheduled_at raises NotNullViolation" do
     assert_raises(ActiveRecord::NotNullViolation) { family_study_sessions(:weekly_next).update_column(:scheduled_at, nil) }
   end
 
   test "database: a session for a missing study raises InvalidForeignKey" do
     assert_raises(ActiveRecord::InvalidForeignKey) { family_study_sessions(:weekly_next).update_column(:family_study_id, SecureRandom.uuid_v7) }
+  end
+
+  test "database: a session with a missing conductor raises InvalidForeignKey" do
+    assert_raises(ActiveRecord::InvalidForeignKey) { family_study_sessions(:weekly_next).update_column(:conductor_id, SecureRandom.uuid_v7) }
   end
 end
