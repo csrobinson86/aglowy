@@ -26,4 +26,19 @@ module MeetingNotesHelper
     counts << "#{pluralize(note.filled_parts.size, "part")} with notes" if note.filled_parts.any?
     counts.join(", ").presence || "Nothing written yet"
   end
+
+  # "Private", or who can read it: "Shared with The Rivera household" (frames life-and-ministry-note.png, share-dialog.png).
+  # Every household it's shared with, not just this one, so a note never reads "Private" while others can read it.
+  def meeting_note_sharing_label(note)
+    note.shared_households.any? ? "Shared with #{note.shared_households.map(&:name).to_sentence}" : "Private"
+  end
+
+  # The hint beside "Save notes".
+  def meeting_note_save_hint(note)
+    if note.shared_households.any?
+      "Members of #{note.shared_households.map(&:name).to_sentence} can read this note."
+    else
+      "Only you can see this note."
+    end
+  end
 end

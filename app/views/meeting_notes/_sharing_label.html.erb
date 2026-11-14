@@ -1,0 +1,7 @@
+<%# locals: (meeting_note:) %>
+<%# "Private" or "Shared with <household>" in the note's heading; replaced in place when the author shares or stops. %>
+<% label = meeting_note_sharing_label(meeting_note) %>
+<%= render(Primer::Beta::Label.new(id: "meeting-note-sharing-label", title: label, classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+  <%= render(Primer::Beta::Octicon.new(meeting_note.shared_households.any? ? :people : :lock, size: :xsmall)) %>
+  <%= label %>
+<% end %>

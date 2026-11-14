@@ -9,7 +9,7 @@ class MeetingNotesController < ApplicationController
     authorize MeetingNote
     @week_of = Current.membership.this_week
     @this_week = Current.user.meeting_notes_for_week(@week_of)
-    @earlier = Page.new(Current.user.meeting_notes.where(week_of: ...@week_of).newest_first, number: params[:page])
+    @earlier = Page.new(Current.user.meeting_notes.includes(:sharings).where(week_of: ...@week_of).newest_first, number: params[:page])
   end
 
   # Finds the note for that meeting and week, or starts it, so a second click lands on the same note.
