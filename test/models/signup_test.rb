@@ -28,6 +28,23 @@ class SignupTest < ActiveSupport::TestCase
     assert_includes signup.errors[:email], "has already been taken"
   end
 
+  # Two sign-ups racing for one email both pass Devise's uniqueness check in
+  # Ruby; the unique index stops the second (docs/design/users.md, gotcha 3).
+  test "a sign-up that loses the race for an email gets the email error, not an exception" do
+    signup = Signup.new(valid_attributes.merge(email: identities(:head).email))
+    uniqueness = Identity.validators_on(:email).grep(ActiveRecord::Validations::UniquenessValidator).sole
+
+    uniqueness.define_singleton_method(:validate) { |_record| }
+
+    assert_no_difference FOUR_ROWS do
+      assert_not signup.save
+    end
+
+    assert_includes signup.errors[:email], "has already been taken"
+  ensure
+    uniqueness.singleton_class.remove_method(:validate)
+  end
+
   test "a missing household name is invalid and creates nothing" do
     signup = Signup.new(valid_attributes.merge(household_name: ""))
 

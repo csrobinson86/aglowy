@@ -26,5 +26,11 @@ class Signup
   rescue ActiveRecord::RecordInvalid => invalid
     errors.merge!(invalid.record.errors)
     false
+  rescue ActiveRecord::RecordNotUnique => conflict
+    # Another sign-up took the email between Devise's check and our insert (gotcha 3).
+    raise unless conflict.message.include?("index_identities_on_email")
+
+    errors.add(:email, :taken)
+    false
   end
 end
