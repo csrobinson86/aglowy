@@ -42,3 +42,5 @@
 
 # Allow env example files to be committed (overrides /.env* above)
 !/.env*.example
+# SimpleCov report (written by every test run)
+/coverage/

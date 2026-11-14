@@ -79,4 +79,5 @@ group :test do
   gem "selenium-webdriver"
   gem "axe-core-capybara"
   gem "axe-core-api"
+  gem "simplecov", require: false   # Coverage report in coverage/ on every test run
 end
