@@ -2,7 +2,7 @@
 <%# The approved hand-built form piece (CLAUDE.md, Forms): Primer has no rich-text input, so this is
     Primer's FormControl markup around Lexxy, which reads its accessible name from the label.
     With heading: true the label is the section's h2, as on the Schedule a study frame.
-    Attachments are off, and Active Storage's routes aren't drawn, until the file story. %>
+    Attachments are off: files are resources, uploaded through the drop zone. %>
 <div class="FormControl width-full FormControl--fullWidth">
   <% if heading %>
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { form.label(:notes, "Notes") } %>

@@ -14,10 +14,11 @@ class FamilyStudy::Scheduling
   attribute :repeat, :string, default: "once"
   attribute :link_urls, default: -> { [] }
   attribute :link_url, :string
+  attribute :files, default: -> { [] }
 
   validates :starts_on, :starts_at, :ends_at, presence: true
   validates :repeat, inclusion: { in: ->(scheduling) { scheduling.repeat_choices.map(&:last) } }
-  validate :starts_on_not_in_the_past, :ends_after_starts, :links_are_web_links
+  validate :starts_on_not_in_the_past, :ends_after_starts, :links_are_web_links, :files_are_allowed
 
   def initialize(household:, **attributes)
     @household = household
@@ -41,11 +42,16 @@ class FamilyStudy::Scheduling
     [ *link_urls, link_url ].compact_blank
   end
 
-  # The study, its first session with the topic, notes and links, then the later sessions (scheduling rule 1).
+  # The files the drop zone uploaded, as signed blob ids. One that can't be found is dropped.
+  def file_blobs
+    @file_blobs ||= files.filter_map { ActiveStorage::Blob.find_signed(it) }
+  end
+
+  # The study, its first session with the topic, notes, links and files, then the later sessions (scheduling rule 1).
   def save
     return false unless valid?
 
-    @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, **study_attributes)
+    @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, files: file_blobs, **study_attributes)
     study.persisted?
   end
 
@@ -96,6 +102,17 @@ class FamilyStudy::Scheduling
       errors.add(:link_url, FamilyStudy::Resource::NOT_A_WEB_LINK)
       self.link_urls = links - refused
       self.link_url = refused.join(" ")
+    end
+
+    # Judged on the bytes, as the resource will judge them once attached. A refused file leaves the
+    # list, so the form keeps only the good ones; the error goes by the drop zone.
+    def files_are_allowed
+      @file_blobs = file_blobs.select do |blob|
+        blob.identify_without_saving
+        problem = FamilyStudy::Resource::FileCheck.new(content_type: blob.content_type, byte_size: blob.byte_size).problem
+        errors.add(:files, "#{blob.filename} #{problem}") if problem
+        problem.nil?
+      end
     end
 
     # Both times are on the same day, so an end after midnight looks like one before the start.

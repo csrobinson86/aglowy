@@ -20,6 +20,14 @@ Rails.application.routes.draw do
     root to: "devise/sessions#new"
   end
 
+  # The Disk service's signed URLs, which expire after five minutes: direct uploads PUT to one, and
+  # Resources::FilesController redirects to one after its policy check. Production storage comes with
+  # the deploy epic. Active Storage's other routes stay undrawn (config/application.rb).
+  scope ActiveStorage.routes_prefix do
+    get "/disk/:encoded_key/*filename" => "active_storage/disk#show", as: :rails_disk_service
+    put "/disk/:encoded_token" => "active_storage/disk#update", as: :update_rails_disk_service
+  end
+
   resource :signup, only: %i[ new create ]
   resources :households, only: %i[ index new create ]
 
@@ -35,7 +43,12 @@ Rails.application.routes.draw do
       resources :sessions, only: :show, module: :family_studies do
         resource :notes, only: %i[ edit update ], module: :sessions
         resources :resources, only: %i[ create destroy ], module: :sessions
+        resources :files, only: :create, module: :sessions
       end
+    end
+    resources :direct_uploads, only: :create
+    resources :resources, only: [] do
+      resource :file, only: :show, module: :resources
     end
   end
 

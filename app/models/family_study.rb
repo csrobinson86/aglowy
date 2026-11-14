@@ -28,14 +28,15 @@ class FamilyStudy < ApplicationRecord
     [ end_of_service_year, today + Rails.configuration.x.family_studies.minimum_horizon ].max
   end
 
-  # Creates the study and its first session (with any links) together, then a repeating study's later ones (scheduling rule 1).
-  def schedule(topic: nil, notes: nil, links: [])
+  # Creates the study and its first session (with any links and files) together, then a repeating study's later ones (scheduling rule 1).
+  def schedule(topic: nil, notes: nil, links: [], files: [])
     transaction do
       next false unless save
 
       # Assigning nil notes would still store an empty rich text, so notes go in only when given.
       first_session = sessions.create!(recurrence_at: first_session_at, scheduled_at: first_session_at, topic: topic, conductor: default_conductor, **{ notes: notes }.compact)
       links.each { first_session.resources.create!(url: it) }
+      files.each { first_session.resources.create!(kind: :file, file: it) }
       extend_sessions unless once?
       true
     end

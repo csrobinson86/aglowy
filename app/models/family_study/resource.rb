@@ -3,17 +3,22 @@ class FamilyStudy::Resource < ApplicationRecord
 
   belongs_to :session, class_name: "FamilyStudy::Session"
 
-  # Files arrive in the next story; the database check already allows them.
-  enum :kind, %w[ link ].index_by(&:itself), default: :link, validate: true
+  enum :kind, %w[ link file ].index_by(&:itself), default: :link, validate: true
+
+  # Served only through Resources::FilesController, never by Active Storage's own URLs (gotcha 22).
+  has_one_attached :file
 
   # Links copied from jw.org in other languages carry characters URI won't parse; encode them as a browser does.
   normalizes :url, with: -> { it.strip.gsub(/[^\x21-\x7E]|["<>\\^`{|}]/) { |char| char.bytes.map { format("%%%02X", it) }.join } }
 
   before_validation :default_title_from_url, if: :link?
+  before_validation :default_title_from_file, if: :file?
   before_create :place_last
 
   validates :title, presence: true
   validate :url_is_a_web_link, if: :link?
+  # In the model: the attachment lives in Active Storage's tables, where a check constraint can't see it.
+  validate :file_is_allowed, if: :file?
 
   # Gotcha 23: judged on the parsed scheme, never by matching the start of the string.
   def web_link?
@@ -41,11 +46,25 @@ class FamilyStudy::Resource < ApplicationRecord
       URI.decode_uri_component(parsed_url.path).then { it.valid_encoding? && !it.match?(/[[:cntrl:]]/) ? it : parsed_url.path }
     end
 
+    def default_title_from_file
+      self.title = file.filename.to_s if title.blank? && file.attached?
+    end
+
     def place_last
       self.position ||= (session.resources.maximum(:position) || 0) + 1
     end
 
     def url_is_a_web_link
       errors.add(:url, NOT_A_WEB_LINK) unless web_link?
+    end
+
+    # The type is the one Active Storage identified from the file's bytes when it was attached.
+    def file_is_allowed
+      if file.attached?
+        problem = FileCheck.new(content_type: file.content_type, byte_size: file.byte_size).problem
+        errors.add(:file, problem) if problem
+      else
+        errors.add(:file, :blank)
+      end
     end
 end

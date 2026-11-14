@@ -15,8 +15,8 @@ class FamilyStudies::Sessions::ResourcesController < ApplicationController
 
   # Through the session, so another session's or household's resource is a 404.
   def destroy
-    @study_session.resources.find(params[:id]).destroy!
-    redirect_to study_session_path, notice: "Link removed."
+    resource = @study_session.resources.find(params[:id]).tap(&:destroy!)
+    redirect_to study_session_path, notice: "#{resource.kind.capitalize} removed."
   end
 
   private

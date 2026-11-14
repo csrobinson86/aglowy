@@ -11,3 +11,9 @@ draw_close:
   url: https://wol.jw.org/en/wol/d/r1/lp-e/1102003601
   title: wol.jw.org/en/wol/d/r1/lp-e/1102003601
   position: 2
+
+study_guide:
+  session: weekly_past
+  kind: file
+  title: study-guide.pdf
+  position: 1

@@ -1,0 +1,66 @@
+// The drop zone (FileDropComponent), drawn as on the Schedule a study frame: a dashed box with
+// the upload icon, the prompt and the size limit. Its file input is visually hidden, so the box
+// shows the input's focus ring.
+.file-drop__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--base-size-8);
+  padding: var(--base-size-24) var(--base-size-16);
+  text-align: center;
+  border: var(--borderWidth-thin) dashed var(--borderColor-emphasis);
+  border-radius: var(--borderRadius-medium);
+}
+
+.file-drop--active .file-drop__zone {
+  background-color: var(--bgColor-accent-muted);
+  border-color: var(--borderColor-accent-emphasis);
+}
+
+.file-drop__input:focus-visible + .file-drop__zone {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+
+.file-drop__label {
+  font-weight: var(--base-text-weight-normal);
+  cursor: pointer;
+}
+
+.file-drop__choose {
+  color: var(--fgColor-accent);
+}
+
+.file-drop__hint {
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+}
+
+.file-drop__files {
+  list-style: none;
+}
+
+.file-drop__file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-8);
+  margin-top: var(--base-size-8);
+}
+
+.file-drop__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.file-drop__progress {
+  flex: 1;
+  min-width: var(--base-size-64);
+  accent-color: var(--bgColor-accent-emphasis);
+}
+
+.file-drop__error {
+  flex-basis: 100%;
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-danger);
+}

@@ -30,6 +30,6 @@ class FamilyStudiesController < ApplicationController
   end
 
   def scheduling_params
-    params.expect(family_study_scheduling: [ :topic, :starts_on, :starts_at, :ends_at, :repeat, :notes, :link_url, link_urls: [] ])
+    params.expect(family_study_scheduling: [ :topic, :starts_on, :starts_at, :ends_at, :repeat, :notes, :link_url, link_urls: [], files: [] ])
   end
 end

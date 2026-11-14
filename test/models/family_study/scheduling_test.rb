@@ -217,6 +217,33 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_equal "javascript:alert(1)", scheduling.link_url
   end
 
+  test "uploaded files go on the first session, titled with their names" do
+    scheduling = new_scheduling(repeat: "weekly", files: [ direct_uploaded_blob("study-guide.pdf").signed_id, direct_uploaded_blob("photo.png").signed_id ])
+    assert scheduling.save
+
+    first, *later = scheduling.study.sessions.order(:scheduled_at)
+    assert_equal [ "study-guide.pdf", "photo.png" ], first.resources.file.map(&:title)
+    assert later.none? { it.resources.any? }
+  end
+
+  test "a file whose bytes aren't allowed is an error, and nothing is scheduled" do
+    pdf = direct_uploaded_blob("study-guide.pdf")
+    scheduling = new_scheduling(files: [ pdf.signed_id, direct_uploaded_blob("program.exe", filename: "notes.pdf").signed_id ])
+
+    assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Resource.count" ] do
+      assert_not scheduling.save
+    end
+    assert_equal [ "notes.pdf must be a PDF or an image (PNG, JPEG, GIF, WebP or HEIC)" ], scheduling.errors[:files]
+    assert_equal [ pdf ], scheduling.file_blobs, "the refused file leaves the list; the good one stays"
+  end
+
+  test "a file that can't be found is dropped" do
+    scheduling = new_scheduling(files: [ "not-a-signed-id" ])
+
+    assert scheduling.save
+    assert_empty scheduling.study.sessions.sole.resources
+  end
+
   private
     def new_scheduling(**attributes)
       FamilyStudy::Scheduling.new(household: @household, topic: "Proverbs 3", starts_on: "2026-11-17",

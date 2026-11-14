@@ -92,6 +92,62 @@ class FamilyStudy::ResourceTest < ActiveSupport::TestCase
     end
   end
 
+  test "a 26 MB file is refused" do
+    resource = file_resource("study-guide.pdf")
+    # A stubbed size: the fixture stays tiny.
+    resource.file.blob.byte_size = 26.megabytes
+
+    assert_not resource.valid?
+    assert_equal [ "must be 25 MB or smaller" ], resource.errors[:file]
+  end
+
+  test "a .exe is refused" do
+    resource = file_resource("program.exe")
+
+    assert_not resource.valid?
+    assert_equal [ "must be a PDF or an image (PNG, JPEG, GIF, WebP or HEIC)" ], resource.errors[:file]
+  end
+
+  test "a .exe named .pdf is refused, judged on its bytes" do
+    resource = @session.resources.new(kind: :file, file: { io: file_fixture("program.exe").open, filename: "notes.pdf", content_type: "application/pdf" })
+
+    assert_not resource.valid?
+    assert_not_empty resource.errors[:file]
+  end
+
+  test "a PDF and a PNG are accepted, titled with their file names" do
+    pdf = file_resource("study-guide.pdf")
+    png = file_resource("photo.png")
+
+    assert pdf.valid?
+    assert png.valid?
+    assert_equal "study-guide.pdf", pdf.title
+    assert_equal "photo.png", png.title
+  end
+
+  test "exactly 25 MB is accepted" do
+    resource = file_resource("study-guide.pdf")
+    resource.file.blob.byte_size = 25.megabytes
+
+    assert resource.valid?
+  end
+
+  test "a file resource needs a file and no url" do
+    resource = @session.resources.new(kind: :file)
+
+    assert_not resource.valid?
+    assert_equal [ "can't be blank" ], resource.errors[:file]
+    assert_empty resource.errors[:url]
+  end
+
+  test "a file resource is placed last and saved with its file" do
+    resource = file_resource("study-guide.pdf")
+    resource.save!
+
+    assert_equal 1, resource.position
+    assert_equal "application/pdf", resource.reload.file.content_type
+  end
+
   test "database: a kind other than link or file raises CheckViolation" do
     session = family_study_sessions(:one_off_first)
 
@@ -119,4 +175,9 @@ class FamilyStudy::ResourceTest < ActiveSupport::TestCase
   test "database: a resource for a missing session raises InvalidForeignKey" do
     assert_raises(ActiveRecord::InvalidForeignKey) { family_study_resources(:proverbs).update_column(:session_id, SecureRandom.uuid_v7) }
   end
+
+  private
+    def file_resource(name)
+      @session.resources.new(kind: :file, file: { io: file_fixture(name).open, filename: name })
+    end
 end

@@ -17,6 +17,14 @@ class FamilyStudy::Session < ApplicationRecord
     canceled_at?
   end
 
+  # One file resource per uploaded file, titled with its name. If one is refused, none are added;
+  # the refused one carries its errors.
+  def add_files(files)
+    new_resources = files.map { resources.build(kind: :file, file: it) }
+    transaction { new_resources.each(&:save!) } if new_resources.all?(&:valid?)
+    new_resources
+  end
+
   # Shown in the household's zone, never the server's or the browser's (gotcha 14).
   def local_scheduled_at
     scheduled_at.in_time_zone(family_study.household.time_zone)

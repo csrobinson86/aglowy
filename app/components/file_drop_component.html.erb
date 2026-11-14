@@ -1,0 +1,44 @@
+<%= tag.div class: "file-drop", data: {
+      controller: "file-drop",
+      file_drop_url_value: direct_upload_url, file_drop_name_value: name, file_drop_submit_when_uploaded_value: submit_label.present?,
+      action: "dragover->file-drop#dragOver dragleave->file-drop#dragLeave drop->file-drop#drop"
+    } do %>
+  <input type="file" id="<%= input_id %>" class="file-drop__input sr-only" multiple accept="<%= accept %>"
+         aria-describedby="<%= described_by %>" data-file-drop-target="input" data-action="change->file-drop#choose">
+  <div class="file-drop__zone">
+    <%= render(Primer::Beta::Octicon.new(icon: :upload, color: :muted)) %>
+    <label for="<%= input_id %>" class="file-drop__label">
+      Drag your own PDFs or images here, or <span class="file-drop__choose">choose files</span>
+    </label>
+    <span id="<%= input_id %>_hint" class="file-drop__hint">Up to <%= max_size %> each</span>
+  </div>
+  <% if error %>
+    <div id="<%= error_id %>" class="FormControl-inlineValidation mt-2">
+      <%= render(Primer::Beta::Octicon.new(icon: :"alert-fill", size: :xsmall)) %>
+      <span><%= error %></span>
+    </div>
+  <% end %>
+
+  <ul class="file-drop__files" aria-live="polite" data-file-drop-target="list">
+    <% blobs.each do |blob| %>
+      <li class="file-drop__file">
+        <%= render(Primer::Beta::Octicon.new(icon: :file, color: :muted, flex_shrink: 0)) %>
+        <span class="file-drop__name"><%= blob.filename %></span>
+        <span class="color-fg-muted text-small"><%= helpers.number_to_human_size(blob.byte_size) %></span>
+        <input type="hidden" name="<%= name %>" value="<%= blob.signed_id %>">
+      </li>
+    <% end %>
+  </ul>
+  <template data-file-drop-target="template">
+    <li class="file-drop__file">
+      <%= render(Primer::Beta::Octicon.new(icon: :file, color: :muted, flex_shrink: 0)) %>
+      <span class="file-drop__name" data-file-drop-part="name"></span>
+      <progress class="file-drop__progress" max="100" value="0" data-file-drop-part="progress"></progress>
+      <span class="file-drop__error" data-file-drop-part="error" hidden></span>
+    </li>
+  </template>
+
+  <% if submit_label %>
+    <%= render(Primer::Beta::Button.new(type: :submit, mt: 2, hidden: true, data: { file_drop_target: "submit" })) { submit_label } %>
+  <% end %>
+<% end %>
