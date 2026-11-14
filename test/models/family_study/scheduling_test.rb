@@ -245,6 +245,30 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_equal [ "photo.png" ], scheduling.study.sessions.sole.resources.map(&:title)
   end
 
+  test "files that together would take the household over its quota are an error, and nothing is scheduled" do
+    pdf, photo = direct_uploaded_blob("study-guide.pdf"), direct_uploaded_blob("photo.png")
+    use_home_storage(@household.storage_quota - pdf.byte_size - photo.byte_size + 1)
+    scheduling = new_scheduling(files: [ pdf.signed_id, photo.signed_id ])
+
+    assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Resource.count" ] do
+      assert_not scheduling.save
+    end
+    assert_equal [ "Your household has used its 2 GB of file storage. Remove some files to add more." ], scheduling.errors[:files]
+  end
+
+  test "a file the household already stores isn't counted again" do
+    photo = family_study_sessions(:weekly_next).add_files([ direct_uploaded_blob("photo.png").signed_id ]).sole
+    use_home_storage(@household.storage_quota - photo.file.byte_size)
+
+    assert new_scheduling(files: [ photo.file.blob.signed_id ]).save
+  end
+
+  test "the files are judged against the quota behind a lock on the household" do
+    scheduling = new_scheduling(files: [ direct_uploaded_blob("photo.png").signed_id ])
+
+    assert_queries_match(/FROM "households" WHERE .* FOR UPDATE/) { assert scheduling.save }
+  end
+
   private
     def new_scheduling(**attributes)
       FamilyStudy::Scheduling.new(household: @household, topic: "Proverbs 3", starts_on: "2026-11-17",

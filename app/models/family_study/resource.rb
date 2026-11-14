@@ -19,6 +19,8 @@ class FamilyStudy::Resource < ApplicationRecord
   validate :url_is_a_web_link, if: :link?
   # In the model: the attachment lives in Active Storage's tables, where a check constraint can't see it.
   validate :file_is_allowed, if: :file?
+  # Only when the file is added: a saved file already counts towards what the household uses.
+  validate :file_fits_household_storage, on: :create, if: -> { file? && file.attached? }
 
   # Gotcha 23: judged on the parsed scheme, never by matching the start of the string.
   def web_link?
@@ -66,5 +68,11 @@ class FamilyStudy::Resource < ApplicationRecord
       else
         errors.add(:file, :blank)
       end
+    end
+
+    # A sentence of its own, so it goes on the resource rather than after "File".
+    def file_fits_household_storage
+      household = session.family_study.household
+      errors.add(:base, household.storage_full_message) unless household.fits_in_storage?(household.storage_added_by([ file.blob ]))
     end
 end

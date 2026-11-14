@@ -31,6 +31,12 @@ module ActiveSupport
       ActiveStorage::Blob.create_before_direct_upload!(filename: filename, byte_size: file.size, checksum: OpenSSL::Digest::MD5.base64digest(file.binread),
                                                        content_type: Marcel::MimeType.for(name: filename)).tap { it.upload_without_unfurling(file.open) }
     end
+
+    # The home household's only file is the study_guide fixture, so its stored size is all the household uses.
+    # Only the size column changes: never write gigabytes to disk.
+    def use_home_storage(bytes)
+      active_storage_blobs(:study_guide).update_column(:byte_size, bytes)
+    end
   end
 end
 

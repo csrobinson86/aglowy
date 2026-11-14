@@ -10,7 +10,7 @@ class FamilyStudies::Sessions::FilesController < ApplicationController
     if resources.empty?
       redirect_to study_session_path, alert: "Those files couldn't be found. Upload them again."
     elsif (refused = resources.find { it.errors.any? })
-      redirect_to study_session_path, alert: "#{refused.title} wasn't added: it #{refused.errors[:file].to_sentence}."
+      redirect_to study_session_path, alert: refused.errors[:base].first || "#{refused.title} wasn't added: it #{refused.errors[:file].to_sentence}."
     else
       redirect_to study_session_path, notice: "#{helpers.pluralize(resources.size, "file")} added."
     end

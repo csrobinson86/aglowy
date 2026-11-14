@@ -1,0 +1,7 @@
+<%# locals: (household:) %>
+<%# For heads and adults, who can add files, from 80% of the quota (docs/design/family-studies.md, Files). %>
+<% if policy(FamilyStudy::Resource).create? && household.storage_nearly_full? %>
+  <%= render Primer::Alpha::Banner.new(scheme: :warning, mb: 3) do %>
+    Your household has used <%= household.storage_percent_used %>% of its <%= household.storage_quota_in_words %> of file storage.
+  <% end %>
+<% end %>

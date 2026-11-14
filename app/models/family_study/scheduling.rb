@@ -48,11 +48,16 @@ class FamilyStudy::Scheduling
   end
 
   # The study, its first session with the topic, notes, links and files, then the later sessions (scheduling rule 1).
+  # Validated behind the lock on the household that Session#add_files takes, so the quota the files
+  # were judged against still holds when they're attached.
   def save
-    return false unless valid?
+    household.transaction do
+      household.lock!
+      next false unless valid?
 
-    @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, files: file_blobs, **study_attributes)
-    study.persisted?
+      @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, files: file_blobs, **study_attributes)
+      study.persisted?
+    end
   end
 
   private
@@ -113,6 +118,7 @@ class FamilyStudy::Scheduling
         errors.add(:files, "#{blob.filename} #{problem}") if problem
         problem.nil?
       end
+      errors.add(:files, household.storage_full_message) if file_blobs.any? && !household.fits_in_storage?(household.storage_added_by(file_blobs))
     end
 
     # Both times are on the same day, so an end after midnight looks like one before the start.
