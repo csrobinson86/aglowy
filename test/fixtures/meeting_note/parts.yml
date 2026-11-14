@@ -1,0 +1,42 @@
+head_talk:
+  meeting_note: head_midweek
+  key: talk
+  title: "[This week's talk title]"
+  position: 1
+
+head_spiritual_gems:
+  meeting_note: head_midweek
+  key: spiritual_gems
+  position: 2
+
+head_bible_reading:
+  meeting_note: head_midweek
+  key: bible_reading
+  position: 3
+
+head_field_ministry:
+  meeting_note: head_midweek
+  key: field_ministry
+  position: 4
+
+head_living_part:
+  meeting_note: head_midweek
+  key: living_part
+  position: 5
+
+head_congregation_bible_study:
+  meeting_note: head_midweek
+  key: congregation_bible_study
+  position: 6
+
+head_public_talk:
+  meeting_note: head_weekend
+  key: public_talk
+  title: "[The public talk's title]"
+  speaker: Daniel Okafor
+  position: 1
+
+head_watchtower_study:
+  meeting_note: head_weekend
+  key: watchtower_study
+  position: 2

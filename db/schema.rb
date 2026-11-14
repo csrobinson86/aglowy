@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_200100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -133,6 +133,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_170000) do
     t.index ["user_id"], name: "index_identities_on_user_id", unique: true
   end
 
+  create_table "meeting_note_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_note_id", null: false
+    t.string "key", null: false
+    t.string "title"
+    t.string "speaker"
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meeting_note_id", "key"], name: "index_meeting_note_parts_on_note_and_key_once", unique: true, where: "((key)::text <> 'living_part'::text)"
+    t.index ["meeting_note_id"], name: "index_meeting_note_parts_on_meeting_note_id"
+  end
+
+  create_table "meeting_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "kind", null: false
+    t.date "week_of", null: false
+    t.integer "outline_version", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "kind", "week_of"], name: "index_meeting_notes_on_user_id_and_kind_and_week_of", unique: true
+    t.check_constraint "EXTRACT(isodow FROM week_of) = 1::numeric", name: "meeting_notes_week_of_monday_check"
+    t.check_constraint "kind::text = ANY (ARRAY['midweek'::character varying, 'weekend'::character varying]::text[])", name: "meeting_notes_kind_check"
+  end
+
   create_table "memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "household_id", null: false
     t.uuid "user_id", null: false
@@ -161,6 +185,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_170000) do
   add_foreign_key "family_study_sessions", "family_studies"
   add_foreign_key "family_study_sessions", "users", column: "conductor_id"
   add_foreign_key "identities", "users"
+  add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
+  add_foreign_key "meeting_notes", "users"
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
 end

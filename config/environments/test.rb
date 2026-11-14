@@ -49,6 +49,8 @@ Rails.application.configure do
   config.active_record.encryption.primary_key = "test-primary-key-not-a-secret"
   config.active_record.encryption.deterministic_key = "test-deterministic-key-not-a-secret"
   config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-not-a-secret"
+  # Fixtures for encrypted columns (meeting note titles, rich text bodies) are stored encrypted, as the app would.
+  config.active_record.encryption.encrypt_fixtures = true
 
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
