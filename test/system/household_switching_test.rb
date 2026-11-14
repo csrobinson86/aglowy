@@ -9,12 +9,12 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Your households"
 
     within("main") { click_on "The Head Family" }
-    assert_selector "h1", text: "The Head Family"
+    assert_title "Home · The Head Family · Aglowy"
     assert_turbo_idle
 
     open_household_switcher
     click_on "The Grandparent Family"
-    assert_selector "h1", text: "The Grandparent Family"
+    assert_title "Home · The Grandparent Family · Aglowy"
   end
 
   test "switch households from the sidebar menu" do
@@ -28,7 +28,7 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
       click_on "The Grandparent Family"
     end
 
-    assert_selector "h1", text: "The Grandparent Family"
+    assert_title "Home · The Grandparent Family · Aglowy"
     assert_current_path household_root_path(household_id: households(:parents))
     assert_selector "aside button", text: /The Grandparent Family\s*Adult/
   end
@@ -40,11 +40,11 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
 
     open_household_switcher
     click_on "The Grandparent Family"
-    assert_selector "h1", text: "The Grandparent Family"
+    assert_title "Home · The Grandparent Family · Aglowy"
     assert_turbo_idle
 
     page.go_back
-    assert_selector "h1", text: "The Head Family"
+    assert_title "Home · The Head Family · Aglowy"
     assert_turbo_idle
 
     open_household_switcher
