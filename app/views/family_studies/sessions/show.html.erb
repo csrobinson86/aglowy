@@ -17,6 +17,8 @@
   <% end %>
 <% end %>
 
+<%= render "family_studies/storage_warning", household: Current.household %>
+
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
   <% box.with_header(display: :flex, align_items: :center) do |header| %>
     <% header.with_title(tag: :h2, flex: 1) { "Notes" } %>

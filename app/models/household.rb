@@ -26,6 +26,42 @@ class Household < ApplicationRecord
     end
   end
 
+  # The household's files share one quota; links don't count (docs/design/family-studies.md, Files).
+  # One SUM over the blobs attached to its file resources, never loading them.
+  def storage_used
+    attachments = ActiveStorage::Attachment.where(record_type: FamilyStudy::Resource.polymorphic_name, name: "file", record_id: family_study_resources.select(:id))
+    ActiveStorage::Blob.where(id: attachments.select(:blob_id)).sum(:byte_size)
+  end
+
+  def storage_quota
+    Rails.configuration.x.storage.household_quota
+  end
+
+  def storage_nearly_full?
+    storage_used >= storage_quota * Rails.configuration.x.storage.warning_ratio
+  end
+
+  def storage_full?
+    storage_used >= storage_quota
+  end
+
+  def fits_in_storage?(byte_size)
+    storage_used + byte_size <= storage_quota
+  end
+
+  # Rounded down, so the warning never says 100% while there's still room.
+  def storage_percent_used
+    storage_used * 100 / storage_quota
+  end
+
+  def storage_quota_in_words
+    ActiveSupport::NumberHelper.number_to_human_size(storage_quota)
+  end
+
+  def storage_full_message
+    "Your household has used its #{storage_quota_in_words} of file storage. Remove some files to add more."
+  end
+
   def schedule_family_study(topic: nil, notes: nil, links: [], files: [], **attributes)
     family_studies.build(attributes).tap { it.schedule(topic: topic, notes: notes, links: links, files: files) }
   end

@@ -59,6 +59,8 @@ module Aglowy
     config.x.family_studies.max_file_size   = 25.megabytes
     config.x.family_studies.file_types      = %w[ application/pdf image/png image/jpeg image/gif image/webp image/heic ]
     config.x.family_studies.minimum_horizon = 3.months
+    config.x.storage.household_quota        = 2.gigabytes
+    config.x.storage.warning_ratio          = 0.8
   end
 end
 

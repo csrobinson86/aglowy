@@ -22,7 +22,15 @@ class FamilyStudy::Session < ApplicationRecord
   def add_files(files)
     blobs = files.uniq.filter_map { ActiveStorage::Blob.find_signed(it) }
     new_resources = blobs.map { resources.build(kind: :file, file: it) }
-    transaction { new_resources.each(&:save!) } if new_resources.all?(&:valid?)
+
+    if new_resources.all?(&:valid?)
+      transaction do
+        # Saved one at a time behind a lock on the household, so each file is judged against the
+        # quota with the ones before it, and two of these at once can't both take the last of it.
+        family_study.household.lock!
+        raise ActiveRecord::Rollback unless new_resources.all?(&:save)
+      end
+    end
     new_resources
   end
 

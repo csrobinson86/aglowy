@@ -53,6 +53,53 @@ class HouseholdTest < ActiveSupport::TestCase
     end
   end
 
+  test "storage_used sums only this household's files, in one query" do
+    photo = direct_uploaded_blob("photo.png")
+    family_study_sessions(:weekly_next).add_files([ photo.signed_id ])
+    households(:other).schedule_family_study(starts_on: Date.current, time_of_day: "19:00", files: [ direct_uploaded_blob("study-guide.pdf") ])
+    use_home_storage(1.gigabyte)
+
+    household = households(:home)
+
+    assert_queries_count(1) { assert_equal 1.gigabyte + photo.byte_size, household.storage_used }
+    assert_equal file_fixture("study-guide.pdf").size, households(:other).storage_used
+  end
+
+  test "links count zero" do
+    households(:parents).schedule_family_study(starts_on: Date.current, time_of_day: "19:00", links: [ "https://www.jw.org/en/" ])
+
+    assert_equal 0, households(:parents).storage_used
+  end
+
+  test "the quota is 2 GB" do
+    assert_equal 2.gigabytes, households(:home).storage_quota
+  end
+
+  test "storage is nearly full from 80% of the quota" do
+    household = households(:home)
+
+    use_home_storage((household.storage_quota * 0.8).ceil - 1)
+    assert_not household.storage_nearly_full?
+
+    use_home_storage((household.storage_quota * 0.8).ceil)
+    assert household.storage_nearly_full?
+    assert_not household.storage_full?
+    assert_equal 80, household.storage_percent_used
+  end
+
+  test "storage is full at 100% of the quota" do
+    household = households(:home)
+
+    use_home_storage(household.storage_quota - 1)
+    assert_not household.storage_full?
+    assert household.fits_in_storage?(1)
+    assert_not household.fits_in_storage?(2)
+
+    use_home_storage(household.storage_quota)
+    assert household.storage_full?
+    assert_equal 100, household.storage_percent_used
+  end
+
   test "database: a household without a name raises NotNullViolation" do
     assert_raises ActiveRecord::NotNullViolation do
       Household.insert!({ name: nil })

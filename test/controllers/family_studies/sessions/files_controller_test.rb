@@ -43,6 +43,36 @@ class FamilyStudies::Sessions::FilesControllerTest < ActionDispatch::Integration
     end
   end
 
+  test "files that would take the household over its quota are refused with the quota message" do
+    sign_in identities(:head)
+    use_home_storage(households(:home).storage_quota)
+
+    assert_no_difference -> { FamilyStudy::Resource.count } do
+      post files_path, params: { files: [ direct_uploaded_blob("photo.png").signed_id ] }
+    end
+
+    assert_redirected_to session_path
+    assert_equal "Your household has used its 2 GB of file storage. Remove some files to add more.", flash[:alert]
+  end
+
+  test "an adult sees the storage warning from 80% on the session page and the schedule form" do
+    sign_in identities(:spouse)
+    use_home_storage((households(:home).storage_quota * 0.85).ceil)
+
+    get session_path
+    assert_select ".Banner--warning", text: "Your household has used 85% of its 2 GB of file storage."
+    get new_household_family_study_path(household_id: households(:home))
+    assert_select ".Banner--warning", text: "Your household has used 85% of its 2 GB of file storage."
+  end
+
+  test "under 80% there's no storage warning" do
+    sign_in identities(:head)
+    use_home_storage((households(:home).storage_quota * 0.79).ceil)
+
+    get session_path
+    assert_select ".Banner", count: 0
+  end
+
   test "a child is refused" do
     sign_in Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
 

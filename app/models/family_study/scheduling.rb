@@ -113,6 +113,7 @@ class FamilyStudy::Scheduling
         errors.add(:files, "#{blob.filename} #{problem}") if problem
         problem.nil?
       end
+      errors.add(:files, household.storage_full_message) if file_blobs.any? && !household.fits_in_storage?(file_blobs.sum(&:byte_size))
     end
 
     # Both times are on the same day, so an end after midnight looks like one before the start.

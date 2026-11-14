@@ -132,6 +132,27 @@ class FamilyStudy::ResourceTest < ActiveSupport::TestCase
     assert resource.valid?
   end
 
+  test "a file that would take the household over its quota is refused" do
+    use_home_storage(households(:home).storage_quota - file_fixture("photo.png").size + 1)
+    resource = file_resource("photo.png")
+
+    assert_not resource.valid?
+    assert_equal [ "Your household has used its 2 GB of file storage. Remove some files to add more." ], resource.errors[:base]
+  end
+
+  test "a file that fills the quota exactly is accepted" do
+    use_home_storage(households(:home).storage_quota - file_fixture("photo.png").size)
+
+    assert file_resource("photo.png").save
+  end
+
+  test "a saved file isn't counted twice when its resource is saved again" do
+    photo = @session.add_files([ direct_uploaded_blob("photo.png").signed_id ]).sole
+    use_home_storage(households(:home).storage_quota - photo.file.byte_size)
+
+    assert photo.update(title: "Photo")
+  end
+
   test "a file resource needs a file and no url" do
     resource = @session.resources.new(kind: :file)
 

@@ -99,4 +99,14 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
   test "database: a session with a missing conductor raises InvalidForeignKey" do
     assert_raises(ActiveRecord::InvalidForeignKey) { family_study_sessions(:weekly_next).update_column(:conductor_id, SecureRandom.uuid_v7) }
   end
+
+  test "add_files counts the files together against the quota, and adds none when they don't fit" do
+    pdf, photo = direct_uploaded_blob("study-guide.pdf"), direct_uploaded_blob("photo.png")
+    use_home_storage(households(:home).storage_quota - pdf.byte_size - photo.byte_size + 1)
+
+    resources = assert_no_difference("FamilyStudy::Resource.count") { family_study_sessions(:weekly_next).add_files([ pdf.signed_id, photo.signed_id ]) }
+
+    assert_empty resources.first.errors
+    assert_equal [ "Your household has used its 2 GB of file storage. Remove some files to add more." ], resources.last.errors[:base]
+  end
 end

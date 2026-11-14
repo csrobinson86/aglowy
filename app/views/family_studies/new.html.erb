@@ -10,6 +10,7 @@
 <% end %>
 
 <div class="container-md ml-0" data-controller="repeat-field" data-repeat-field-url-value="<%= new_household_family_study_path %>">
+  <%= render "family_studies/storage_warning", household: Current.household %>
   <%= primer_form_with(model: @scheduling, url: household_family_studies_path) do |f| %>
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
       <% box.with_body do %>

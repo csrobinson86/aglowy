@@ -43,6 +43,27 @@ class DirectUploadsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Must be a PDF or an image (PNG, JPEG, GIF, WebP or HEIC).", response.parsed_body["error"]
   end
 
+  test "a blob that would take the household over its quota is refused before upload" do
+    sign_in identities(:spouse)
+    use_home_storage(households(:home).storage_quota - file_fixture("study-guide.pdf").size + 1)
+
+    assert_no_difference "ActiveStorage::Blob.count" do
+      post direct_uploads_path, params: blob_params("study-guide.pdf", "application/pdf"), as: :json
+    end
+
+    assert_response :unprocessable_content
+    assert_equal "Your household has used its 2 GB of file storage. Remove some files to add more.", response.parsed_body["error"]
+  end
+
+  test "a blob that fills the quota exactly is accepted" do
+    sign_in identities(:head)
+    use_home_storage(households(:home).storage_quota - file_fixture("study-guide.pdf").size)
+
+    post direct_uploads_path, params: blob_params("study-guide.pdf", "application/pdf"), as: :json
+
+    assert_response :success
+  end
+
   test "a signed-out request is refused" do
     assert_no_difference "ActiveStorage::Blob.count" do
       post direct_uploads_path, params: blob_params("study-guide.pdf", "application/pdf"), as: :json
