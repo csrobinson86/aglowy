@@ -22,8 +22,25 @@ class FamilyStudy < ApplicationRecord
     end
   end
 
-  # Built in the household's zone, then stored as UTC; never arithmetic on a UTC time (gotcha 14).
+  def recurrence
+    Recurrence.new(self)
+  end
+
   def first_session_at
-    ActiveSupport::TimeZone[household.time_zone].local(starts_on.year, starts_on.month, starts_on.day, time_of_day.hour, time_of_day.min)
+    session_time_on(starts_on)
+  end
+
+  # Built in the household's zone, then stored as UTC; never arithmetic on a UTC time (gotcha 14).
+  def session_time_on(date)
+    ActiveSupport::TimeZone[household.time_zone].local(date.year, date.month, date.day, time_of_day.hour, time_of_day.min)
+  end
+
+  # Counted from the month, not Date#cweek: 17 November 2026 is the third Tuesday (scheduling rule 5).
+  def week_of_month_for(date)
+    (date.day - 1) / 7 + 1
+  end
+
+  def last_week_of_month?(date)
+    date.next_day(7).month != date.month
   end
 end

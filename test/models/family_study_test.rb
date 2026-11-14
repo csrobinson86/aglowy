@@ -58,6 +58,38 @@ class FamilyStudyTest < ActiveSupport::TestCase
     end
   end
 
+  test "session_time_on keeps 7 pm local across a DST change" do
+    # DST ends in America/Chicago on Sunday 1 November 2026, so 7 pm moves from 00:00Z to 01:00Z.
+    @household.update!(time_zone: "Central Time (US & Canada)")
+    study = family_studies(:weekly)
+
+    assert_equal Time.utc(2026, 10, 28, 0), study.session_time_on(Date.new(2026, 10, 27))
+    assert_equal Time.utc(2026, 11, 4, 1), study.session_time_on(Date.new(2026, 11, 3))
+  end
+
+  test "recurrence answers for the study's schedule" do
+    assert_equal [ family_studies(:weekly).starts_on + 7 ],
+      family_studies(:weekly).recurrence.dates(from: 1.day.ago.to_date, through: 1.day.from_now.to_date)
+  end
+
+  test "week_of_month_for counts weeks from the start of the month" do
+    study = FamilyStudy.new
+
+    assert_equal 1, study.week_of_month_for(Date.new(2026, 12, 1))
+    assert_equal 3, study.week_of_month_for(Date.new(2026, 11, 17))
+    assert_equal 4, study.week_of_month_for(Date.new(2026, 11, 28))
+    assert_equal 5, study.week_of_month_for(Date.new(2026, 12, 29))
+  end
+
+  test "last_week_of_month? is true only for the last such weekday of its month" do
+    study = FamilyStudy.new
+
+    assert study.last_week_of_month?(Date.new(2026, 11, 24))
+    assert study.last_week_of_month?(Date.new(2026, 12, 29))
+    assert_not study.last_week_of_month?(Date.new(2026, 11, 17))
+    assert_not study.last_week_of_month?(Date.new(2026, 12, 24))
+  end
+
   test "time_of_day keeps its wall-clock value whatever the process time zone" do
     @household.update!(time_zone: "Central Time (US & Canada)")
     study = Time.use_zone("Tokyo") { @household.schedule_family_study(starts_on: "2026-11-17", time_of_day: "19:00") }
