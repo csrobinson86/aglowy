@@ -248,6 +248,7 @@ households or roles. The non-negotiables:
   ```bash
   bin/rails generate devise:views
   ```
+- **Planned (INVITES-01, not built yet): sign-in takes an email or a username** (decided Nov 2026, `docs/design/invitations.md`). Once story #104 lands, a child's login can be a username with no email and Devise's `authentication_keys` becomes `[:login]`; from then on, never assume an Identity has an email. Until then, Identity still requires an email.
 - Identity model:
   ```ruby
   class Identity < ApplicationRecord
