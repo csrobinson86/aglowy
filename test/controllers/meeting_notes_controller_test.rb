@@ -395,6 +395,16 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ { "id" => "1", "title" => "[FILTERED]" } ], filtered.dig("meeting_note", "parts_attributes")
   end
 
+  test "part titles and speakers in a query string are filtered from the logged path, other titles aren't" do
+    sign_in identities(:head)
+    path = edit_note_path(meeting_notes(:head_weekend))
+
+    get "#{path}?meeting_note[parts_attributes][0][speaker]=Samuel&meeting_note%5Bparts_attributes%5D%5B%5D%5Btitle%5D=Refuge&title=Kept"
+
+    assert_equal "#{path}?meeting_note[parts_attributes][0][speaker]=[FILTERED]&meeting_note%5Bparts_attributes%5D%5B%5D%5Btitle%5D=[FILTERED]&title=Kept",
+      request.filtered_path
+  end
+
   test "the read view lists the gems with their references in bold, in order" do
     sign_in identities(:head)
 
