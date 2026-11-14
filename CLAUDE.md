@@ -194,6 +194,17 @@ households or roles. The non-negotiables:
 - The **living style guide** (`/design-system` route in development)
   showcases Primer components as used in this app.
 
+### App Shell and Page Patterns
+
+- Read `docs/design/app-shell.md` before touching a layout, the sidebar,
+  navigation, a page header or an empty state.
+- Household pages use the `household` layout (sidebar + main, via
+  `AppShellComponent`); pages outside a household use the `focused` layout.
+- A navigation item appears only once its page exists.
+- Look at your work: save desktop and phone screenshots from the system test
+  and compare them with the mockup frames in `docs/design/app-shell/` before
+  opening the PR.
+
 ### Forms (Primer Forms framework)
 
 - Every form is a **Primer form class**, never hand-written form markup.

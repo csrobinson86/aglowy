@@ -75,7 +75,16 @@ Treat each as a Blocker unless clearly harmless.
 
 - Landmarks (`<main>`, `<nav>`, …), labelled inputs, `alt` on images, `lang` on `<html>`.
 
-## 7. Privacy
+## 7. UI (`docs/design/app-shell.md`)
+
+- Household pages render in the `household` layout (the app shell); pages outside a household use the `focused` layout.
+- A Primer component is used wherever one exists: navigation, menus, dialogs, page headers, empty states, flashes, banners, buttons. Custom Sass only for what Primer lacks, in BEM, built from primitives.
+- Navigation lists only pages that exist, and the right item is selected (`aria-current="page"`).
+- Every state the story names is shown, in a ViewComponent preview or a system test screenshot. The PR attaches desktop and phone screenshots (light, plus dark when colours change), and they match the mockup frames in `docs/design/app-shell/`.
+- At phone width nothing scrolls sideways, touch targets are at least 44px, and long names truncate instead of breaking the layout.
+- Hiding a link or button is never the only check: the controller behind it authorizes.
+
+## 8. Privacy
 
 - No analytics or tracking code, gems or scripts.
 - Children's records hold only what the story requires.
