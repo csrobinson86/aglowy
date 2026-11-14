@@ -122,6 +122,18 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_nil session.reload.detached_at
   end
 
+  test "a topic-only edit in the repeated fall-back hour keeps the session where it is" do
+    households(:home).update!(time_zone: "Eastern Time (US & Canada)")
+    session = family_study_sessions(:weekly_next)
+    session.update!(scheduled_at: Time.utc(2027, 11, 7, 6, 30)) # The second 01:30, in EST
+
+    assert FamilyStudy::Session::Edit.new(session, topic: "Ruth 3").save
+
+    session.reload
+    assert_equal Time.utc(2027, 11, 7, 6, 30), session.scheduled_at
+    assert_nil session.detached_at
+  end
+
   test "a topic-only edit doesn't detach" do
     session = family_study_sessions(:weekly_next)
     scheduled_at = session.scheduled_at
