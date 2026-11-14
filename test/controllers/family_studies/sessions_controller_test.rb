@@ -20,6 +20,19 @@ class FamilyStudies::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main h2", text: "Resources"
     assert_select "main .blankslate", text: /No notes yet/
     assert_select "main .blankslate", text: /No resources yet/
+    assert_select "a[href='#{edit_household_family_study_session_notes_path(household_id: households(:home), family_study_id: study_session.family_study, session_id: study_session)}']", text: "Edit notes"
+  end
+
+  test "notes are shown through Action Text, sanitized" do
+    study_session = family_study_sessions(:weekly_next)
+    study_session.update!(notes: %(<p>Read <strong>Ruth 1</strong></p><script>alert("hi")</script>))
+    sign_in identities(:spouse)
+
+    get session_path(study_session)
+
+    assert_select "main .lexxy-content strong", "Ruth 1"
+    assert_select "main script", text: /alert/, count: 0
+    assert_select "main .blankslate", text: /No notes yet/, count: 0
   end
 
   test "a one-off session repeats Once and runs for the study's duration" do
@@ -39,6 +52,7 @@ class FamilyStudies::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "title", "Family study · The Head Family · Aglowy"
     assert_select "h1", "Family study"
     assert_select ".Subhead .Label", text: "Cancelled"
+    assert_select "a", text: "Edit notes", count: 0
   end
 
   test "a session from another household's study is 404, even with a real study id from this household in the URL" do

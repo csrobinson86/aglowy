@@ -32,7 +32,9 @@ Rails.application.routes.draw do
     get "/", to: "dashboards#show", as: :root
     resources :members, only: %i[ index new create ]
     resources :family_studies, only: %i[ index new create ] do
-      resources :sessions, only: :show, module: :family_studies
+      resources :sessions, only: :show, module: :family_studies do
+        resource :notes, only: %i[ edit update ], module: :sessions
+      end
     end
   end
 

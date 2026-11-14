@@ -143,6 +143,21 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_nil scheduling.study.sessions.sole.topic
   end
 
+  test "the notes go on the first session only" do
+    scheduling = new_scheduling(repeat: "weekly", notes: "<p>Questions about trusting Jehovah</p>")
+    assert scheduling.save
+
+    first, *later = scheduling.study.sessions.order(:scheduled_at)
+    assert_equal "Questions about trusting Jehovah", first.notes.to_plain_text
+    assert later.none? { it.notes.present? }
+  end
+
+  test "blank notes store no rich text" do
+    assert_no_difference -> { ActionText::RichText.count } do
+      assert new_scheduling(notes: "").save
+    end
+  end
+
   test "Does not repeat is the default" do
     assert_equal "once", FamilyStudy::Scheduling.new(household: @household).repeat
   end

@@ -16,6 +16,8 @@
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.png">
 
+<%# Lexxy's stylesheet from its gem, so Propshaft resolves the files it @imports (Sass would leave them as 404s). %>
+<%= stylesheet_link_tag "lexxy", "data-turbo-track": "reload" %>
 <%# Includes all stylesheet files in app/assets/stylesheets %>
 <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
 <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>

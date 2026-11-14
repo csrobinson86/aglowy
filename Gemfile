@@ -33,6 +33,10 @@ gem "view_component"
 # @primer/view-components npm package. In maintenance mode since Feb 2026.
 gem "primer_view_components", "0.53.5"
 
+# Lexxy, the rich-text editor for Action Text (session notes). Pinned exactly,
+# in lockstep with the @37signals/lexxy npm package.
+gem "lexxy", "1.0.4"
+
 # ─── Background Jobs & Infrastructure ────────────────────────────────────────
 # Rails 8 defaults. All DB-backed, no Redis required.
 gem "solid_queue"                 # Background jobs

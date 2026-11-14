@@ -45,6 +45,14 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
 
+  # Fixed Active Record encryption keys, so tests and CI need no credentials. Not secrets.
+  config.active_record.encryption.primary_key = "test-primary-key-not-a-secret"
+  config.active_record.encryption.deterministic_key = "test-deterministic-key-not-a-secret"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-not-a-secret"
+
+  # Store uploaded files on the local file system in a temporary directory.
+  config.active_storage.service = :test
+
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
 end

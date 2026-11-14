@@ -1,6 +1,9 @@
 // Entry point for the build script in your package.json
 import "@hotwired/turbo-rails"
 import "@primer/view-components"
+// Lexxy, the Action Text editor for session notes. It uploads through Active Storage.
+import "@37signals/lexxy"
+import "@rails/activestorage"
 import "./controllers"
 
 // Component sidecar controllers live beside their component in app/components.

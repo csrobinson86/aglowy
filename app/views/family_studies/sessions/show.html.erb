@@ -17,17 +17,31 @@
   <% end %>
 <% end %>
 
-<%# Placeholders that the notes and resources stories fill in. %>
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "Notes" } } %>
+  <% box.with_header(display: :flex, align_items: :center) do |header| %>
+    <% header.with_title(tag: :h2, flex: 1) { "Notes" } %>
+    <% if policy(@study_session).update? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_family_study_session_notes_path(family_study_id: @family_study, session_id: @study_session), size: :small)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :pencil) %>
+        Edit notes
+      <% end %>
+    <% end %>
+  <% end %>
   <% box.with_body do %>
-    <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
-      <% blankslate.with_visual_icon(icon: :note) %>
-      <% blankslate.with_heading(tag: :h3) { "No notes yet" } %>
-      <% blankslate.with_description { "Notes from this study will show here." } %>
+    <% if @study_session.notes.present? %>
+      <%# Action Text sanitizes the notes as it renders them; never html_safe. %>
+      <%= @study_session.notes %>
+    <% else %>
+      <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :note) %>
+        <% blankslate.with_heading(tag: :h3) { "No notes yet" } %>
+        <% blankslate.with_description { "Notes from this study will show here." } %>
+      <% end %>
     <% end %>
   <% end %>
 <% end %>
+
+<%# A placeholder that the resources story fills in. %>
 
 <%= render(Primer::Beta::BorderBox.new) do |box| %>
   <% box.with_header { |header| header.with_title(tag: :h2) { "Resources" } } %>

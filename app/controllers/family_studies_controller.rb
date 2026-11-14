@@ -30,6 +30,6 @@ class FamilyStudiesController < ApplicationController
   end
 
   def scheduling_params
-    params.expect(family_study_scheduling: %i[ topic starts_on starts_at ends_at repeat ])
+    params.expect(family_study_scheduling: %i[ topic starts_on starts_at ends_at repeat notes ])
   end
 end

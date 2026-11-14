@@ -29,6 +29,12 @@
       <% end %>
     <% end %>
 
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_body do %>
+        <%= render "family_studies/sessions/notes/field", form: f, heading: true %>
+      <% end %>
+    <% end %>
+
     <%= render FamilyStudies::ScheduleForm.new(f, section: :actions, cancel_path: household_family_studies_path) %>
   <% end %>
 </div>

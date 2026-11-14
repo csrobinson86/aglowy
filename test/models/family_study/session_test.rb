@@ -37,6 +37,25 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_equal session.scheduled_at + 45.minutes, session.local_ends_at
   end
 
+  test "notes are stored encrypted" do
+    session = family_study_sessions(:weekly_next)
+    session.update!(notes: "<p>Ask everyone about Ruth's loyalty</p>")
+
+    raw = ActionText::RichText.connection.select_value(
+      ActionText::RichText.where(record: session, name: "notes").select(:body).to_sql
+    )
+
+    assert_not_includes raw, "Ruth's loyalty"
+    assert_includes session.reload.notes.to_plain_text, "Ask everyone about Ruth's loyalty"
+  end
+
+  test "notes get a UUIDv7 id, like every other record" do
+    session = family_study_sessions(:weekly_next)
+    session.update!(notes: "<p>Ruth 1</p>")
+
+    assert_equal "7", session.notes.id[14]
+  end
+
   test "a second session in the same slot is a validation error" do
     taken = family_study_sessions(:weekly_next)
     session = taken.family_study.sessions.new(recurrence_at: taken.recurrence_at, scheduled_at: 1.year.from_now)
