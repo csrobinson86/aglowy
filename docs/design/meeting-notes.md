@@ -102,8 +102,9 @@ Sharing is a record, not a flag (CLAUDE.md, State as Records). Stopping deletes 
 
 **Leaving ends a share for good.** Memberships are deactivated, not deleted, so someone can rejoin later. If shares only depended on the author's membership being active, rejoining would quietly make every old share visible again, including anything the author wrote while away. So:
 
-1. `Membership#deactivate` also deletes the person's meeting-note sharings into that household, in the same transaction (an explicit step in the existing method, not a callback). After rejoining, a note is private again until the author shares it again.
+1. `Membership#deactivate` also deletes the person's meeting-note sharings into that household, in the same transaction (an explicit step in the existing method, not a callback). After rejoining, a note stays private until the author shares it once more.
 2. `MeetingNote.shared_with(household)` still joins sharings to the author's active membership there, as a second guard, so a sharing row can never show while the author is inactive.
+3. `note.share_with(household)` takes the same lock as deactivation (`household.lock!` inside a transaction) and rechecks the author's active membership there before inserting, so a share can't slip in just after a deactivation deletes the others.
 
 ## Who can do what
 
