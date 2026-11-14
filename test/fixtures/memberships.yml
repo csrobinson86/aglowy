@@ -1,0 +1,35 @@
+head_in_home:
+  household: home
+  user: head
+  role: head
+
+head_in_parents:
+  household: parents
+  user: head
+  role: adult
+
+spouse_in_home:
+  household: home
+  user: spouse
+  role: adult
+
+child_in_home:
+  household: home
+  user: child
+  role: child
+
+former_in_home:
+  household: home
+  user: former
+  role: adult
+  active: false
+
+outsider_in_other:
+  household: other
+  user: outsider
+  role: head
+
+grandparent_in_parents:
+  household: parents
+  user: grandparent
+  role: head
