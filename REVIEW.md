@@ -68,7 +68,7 @@ Treat each as a Blocker unless clearly harmless.
 
 - `bin/rails test:all` passes. Coverage stays at 100% lines; no new SimpleCov filters or `# :nocov:` without Casey's written approval in the PR.
 - Tests go through public interfaces (model, policy, request/integration, component, system).
-- Every new page has a system test calling `assert_accessible`.
+- Every new page has a system test calling `assert_accessible`. Exception: Madmin's gem-rendered pages (`CLAUDE.md`, Accessibility). Don't flag a missing check on them, and don't ask for Madmin's templates to be overridden to pass axe.
 - Policy changes have a test for each role (head, adult, child, nil membership).
 
 ## 6. Accessibility
