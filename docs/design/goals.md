@@ -152,7 +152,14 @@ The same rules as meeting notes (`docs/design/meeting-notes.md`, "Leaving ends a
 
 `Membership#deactivate` also deletes the person's step assignments **and their ticks** on **steps not yet done** in that household's goals, in the same transaction and under the `household.lock!` it already takes (an explicit step in the method, not a callback). Otherwise a step naming only someone who left could never be finished. Assignments and ticks on done steps stay as history, so a stored tick always belongs to an assignee.
 
-**One lock for every write.** Creating or changing assignments (`reassign`), ticking and unticking (`tick`, `untick`) and the deactivation cleanup all take the same `household.lock!` first and recheck under it before writing: an assignee's active membership, and for a tick, that the person is still named on the step (or that it's still an "Everyone" step). So an assignment can't slip in just after a deactivation, and a tick can't land for someone a reassignment has just removed. Personal goals have no household, so their writes lock the goal row instead (`goal.lock!`).
+**One lock for every write.** Creating or changing assignments (`reassign`), ticking and unticking (`tick`, `untick`), completing, reopening, archiving and restoring the goal, and the deactivation cleanup all take the same `household.lock!` first, then recheck under it before writing:
+
+- `reassign`: each new assignee is an active member.
+- `tick`: the goal is still open, and the person whose part it is is still named on the step (or it's still an "Everyone" step) and still an active member.
+- `untick`: the goal is still open. Nothing is checked about the person whose tick is removed, so an adult can always remove a departed member's tick.
+- Lifecycle writes: the goal's current state (completing an already completed goal stays a no-op).
+
+The acting person's own permission is the policy's job, before any of this. So an assignment can't slip in just after a deactivation, a tick can't land on a goal that was just archived, and a tick can't land for someone a reassignment has just removed. Personal goals have no household, so all their writes, lifecycle ones included, lock the goal row instead (`goal.lock!`).
 
 **Unticking a step someone has left.** A done step can keep a departed member's assignment and tick as history. If it's later unticked on an open goal, `untick` also deletes the assignments and ticks of anyone no longer an active member, in the same locked transaction, so the step goes back to depending only on people who are still there.
 
