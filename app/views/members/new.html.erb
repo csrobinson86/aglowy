@@ -1,0 +1,9 @@
+<% content_for :title, "Add a member" %>
+
+<div class="container-sm px-3 py-5">
+  <%= render(Primer::Beta::Heading.new(tag: :h1, mb: 4)) { "Add a member" } %>
+
+  <%= primer_form_with(model: @member, scope: :member, url: household_members_path) do |f| %>
+    <%= render Members::MemberForm.new(f, role: @role) %>
+  <% end %>
+</div>
