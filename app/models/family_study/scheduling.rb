@@ -88,13 +88,13 @@ class FamilyStudy::Scheduling
     end
 
     # Shown on the "Add a link" field. A refused link from the list goes back into the field,
-    # since the list has no way to edit or remove one.
+    # since the list has no way to edit or remove one; a valid link in the field moves to the list.
     def links_are_web_links
       refused = links.reject { FamilyStudy::Resource.new(url: it).web_link? }
       return if refused.empty?
 
       errors.add(:link_url, FamilyStudy::Resource::NOT_A_WEB_LINK)
-      self.link_urls -= refused
+      self.link_urls = links - refused
       self.link_url = refused.join(" ")
     end
 

@@ -39,6 +39,12 @@ class FamilyStudy::ResourceTest < ActiveSupport::TestCase
     assert_equal "wol.jw.org/es/wol/d/r4/lp-s/año|1", resource.title
   end
 
+  test "a path that doesn't decode to valid UTF-8 keeps its escapes in the title" do
+    resource = @session.resources.create!(url: "https://example.com/%FF")
+
+    assert_equal "example.com/%FF", resource.title
+  end
+
   test "the URL is stripped of surrounding spaces" do
     assert_equal "https://www.jw.org/en/", @session.resources.new(url: "  https://www.jw.org/en/ ").url
   end

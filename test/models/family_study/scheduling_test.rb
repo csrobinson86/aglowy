@@ -202,6 +202,14 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_not_empty scheduling.errors[:link_url]
   end
 
+  test "a valid link in the field moves to the list when a list link is refused" do
+    scheduling = new_scheduling(link_urls: [ "javascript:alert(1)" ], link_url: "https://www.jw.org/en/")
+
+    assert_not scheduling.save
+    assert_equal [ "https://www.jw.org/en/" ], scheduling.link_urls
+    assert_equal "javascript:alert(1)", scheduling.link_url
+  end
+
   private
     def new_scheduling(**attributes)
       FamilyStudy::Scheduling.new(household: @household, topic: "Proverbs 3", starts_on: "2026-11-17",

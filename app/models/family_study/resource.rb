@@ -33,7 +33,12 @@ class FamilyStudy::Resource < ApplicationRecord
 
     # "www.jw.org/en/library/bible", without the query or a trailing slash, and readable ("año", not "a%C3%B1o").
     def default_title_from_url
-      self.title = "#{host}#{URI.decode_uri_component(parsed_url.path).chomp("/")}" if title.blank? && web_link?
+      self.title = "#{host}#{readable_path.chomp("/")}" if title.blank? && web_link?
+    end
+
+    # Escapes that don't decode to valid UTF-8 ("%FF") stay escaped.
+    def readable_path
+      URI.decode_uri_component(parsed_url.path).then { it.valid_encoding? ? it : parsed_url.path }
     end
 
     def place_last
