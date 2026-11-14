@@ -152,7 +152,9 @@ The same rules as meeting notes (`docs/design/meeting-notes.md`, "Leaving ends a
 
 `Membership#deactivate` also deletes the person's step assignments **and their ticks** on **steps not yet done** in that household's goals, in the same transaction and under the `household.lock!` it already takes (an explicit step in the method, not a callback). Otherwise a step naming only someone who left could never be finished. Assignments and ticks on done steps stay as history, so a stored tick always belongs to an assignee.
 
-Creating or changing assignments takes the same `household.lock!` and rechecks each assignee's active membership under it before inserting, so an assignment can't slip in just after a deactivation has cleared the others.
+**One lock for every write.** Creating or changing assignments (`reassign`), ticking and unticking (`tick`, `untick`) and the deactivation cleanup all take the same `household.lock!` first and recheck under it before writing: an assignee's active membership, and for a tick, that the person is still named on the step (or that it's still an "Everyone" step). So an assignment can't slip in just after a deactivation, and a tick can't land for someone a reassignment has just removed. Personal goals have no household, so their writes lock the goal row instead (`goal.lock!`).
+
+**Unticking a step someone has left.** A done step can keep a departed member's assignment and tick as history. If it's later unticked on an open goal, `untick` also deletes the assignments and ticks of anyone no longer an active member, in the same locked transaction, so the step goes back to depending only on people who are still there.
 
 ## Pages
 
