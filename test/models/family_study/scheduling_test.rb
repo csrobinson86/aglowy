@@ -184,6 +184,13 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_equal [ "https://www.jw.org/en/" ], scheduling.study.sessions.sole.resources.map(&:url)
   end
 
+  test "a link whose path escapes a NUL byte is saved" do
+    scheduling = new_scheduling(link_url: "https://example.com/%00")
+    assert scheduling.save
+
+    assert_equal [ "example.com/%00" ], scheduling.study.sessions.sole.resources.map(&:title)
+  end
+
   test "a link that isn't http or https is an error on the field" do
     scheduling = new_scheduling(link_urls: [ "https://www.jw.org/en/" ], link_url: "javascript:alert(1)")
 

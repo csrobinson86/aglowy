@@ -45,6 +45,11 @@ class FamilyStudy::ResourceTest < ActiveSupport::TestCase
     assert_equal "example.com/%FF", resource.title
   end
 
+  test "a path that decodes to a control character keeps its escapes in the title" do
+    assert_equal "example.com/a%00b", @session.resources.create!(url: "https://example.com/a%00b").title
+    assert_equal "example.com/a%0Ab", @session.resources.create!(url: "https://example.com/a%0Ab").title
+  end
+
   test "the URL is stripped of surrounding spaces" do
     assert_equal "https://www.jw.org/en/", @session.resources.new(url: "  https://www.jw.org/en/ ").url
   end

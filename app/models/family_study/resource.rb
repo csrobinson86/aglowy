@@ -36,9 +36,9 @@ class FamilyStudy::Resource < ApplicationRecord
       self.title = "#{host}#{readable_path.chomp("/")}" if title.blank? && web_link?
     end
 
-    # Escapes that don't decode to valid UTF-8 ("%FF") stay escaped.
+    # Escapes that don't decode to valid UTF-8 ("%FF") or decode to control characters ("%00", "%0A") stay escaped.
     def readable_path
-      URI.decode_uri_component(parsed_url.path).then { it.valid_encoding? ? it : parsed_url.path }
+      URI.decode_uri_component(parsed_url.path).then { it.valid_encoding? && !it.match?(/[[:cntrl:]]/) ? it : parsed_url.path }
     end
 
     def place_last
