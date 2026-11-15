@@ -114,6 +114,28 @@ class IdentityTest < ActiveSupport::TestCase
     assert identity.unlock_strategy_enabled?(:time)
   end
 
+  test "a reset link sent to the old email stops working once a new email is confirmed" do
+    identity = identities(:spouse)
+    token = identity.send_reset_password_instructions
+
+    identity.update!(email: "spouse.new@example.com")
+    identity.confirm
+
+    reset = Identity.reset_password_by_token(reset_password_token: token, password: "newpassword123", password_confirmation: "newpassword123")
+    assert_includes reset.errors[:reset_password_token], "is invalid"
+  end
+
+  test "a reset link stops working once the username changes" do
+    identity = identities(:spouse)
+    identity.update!(username: "spouse.rivera")
+    token = identity.send_reset_password_instructions
+
+    identity.update!(username: "spouse.r")
+
+    reset = Identity.reset_password_by_token(reset_password_token: token, password: "newpassword123", password_confirmation: "newpassword123")
+    assert_includes reset.errors[:reset_password_token], "is invalid"
+  end
+
   test "database: a duplicate email raises RecordNotUnique" do
     assert_raises ActiveRecord::RecordNotUnique do
       Identity.insert!({ user_id: users(:child).id, email: identities(:head).email, encrypted_password: "x" })

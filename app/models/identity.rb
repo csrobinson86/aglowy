@@ -40,4 +40,10 @@ class Identity < ApplicationRecord
     def confirmation_required?
       email.present? && super
     end
+
+    # Devise drops reset links when an authentication key changes, but our key is
+    # the virtual login, so watch the columns it reads.
+    def clear_reset_password_token?
+      super || will_save_change_to_email? || will_save_change_to_username?
+    end
 end
