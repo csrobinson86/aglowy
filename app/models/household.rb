@@ -12,6 +12,7 @@ class Household < ApplicationRecord
   has_many :goals, dependent: :destroy
   has_many :invitations, dependent: :delete_all
   has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
+  has_one :meeting_helper, dependent: :delete
 
   MEETING_KINDS = %w[ midweek weekend ].freeze
   MEETING_TIME_ATTRIBUTES = %i[ midweek_meeting_wday midweek_meeting_time weekend_meeting_wday weekend_meeting_time ].freeze
@@ -131,6 +132,21 @@ class Household < ApplicationRecord
   # True for the whole of the meeting's day, including after it ends.
   def meeting_day?(now = Time.current)
     current_or_next_meeting(now)&.starts_at&.to_date == now.in_time_zone(time_zone).to_date
+  end
+
+  # create_or_find_by! on the unique index: a second person turning it on finds the first one's row, and keeps who did.
+  def enable_meeting_helper(by:)
+    Household::MeetingHelper.create_with(enabled_by: by).create_or_find_by!(household: self).tap { reset_meeting_helper }
+  end
+
+  # Only the switch: the children's marks and drawings are their own and stay (docs/design/meeting-helper.md, Trap 7).
+  def disable_meeting_helper
+    Household::MeetingHelper.where(household: self).delete_all
+    reset_meeting_helper
+  end
+
+  def meeting_helper?
+    meeting_helper.present?
   end
 
   def schedule_family_study(topic: nil, notes: nil, links: [], files: [], **attributes)

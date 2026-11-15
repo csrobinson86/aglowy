@@ -425,6 +425,43 @@ class HouseholdTest < ActiveSupport::TestCase
     travel_to(chicago(11, 20, 12)) { assert_not household.meeting_day? }
   end
 
+  test "meeting_helper? is false by default" do
+    assert_not households(:home).meeting_helper?
+  end
+
+  test "enable_meeting_helper records who turned it on" do
+    household = households(:home)
+
+    household.enable_meeting_helper(by: users(:spouse))
+
+    assert household.meeting_helper?
+    assert_equal users(:spouse), household.reload.meeting_helper.enabled_by
+  end
+
+  test "enabling twice keeps one row, and the first person who turned it on" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    households(:home).enable_meeting_helper(by: users(:spouse))
+
+    assert_equal 1, Household::MeetingHelper.where(household: households(:home)).count
+    assert_equal users(:head), households(:home).reload.meeting_helper.enabled_by
+  end
+
+  test "disable_meeting_helper removes it" do
+    household = households(:home)
+    household.enable_meeting_helper(by: users(:head))
+
+    household.disable_meeting_helper
+
+    assert_not household.meeting_helper?
+    assert_not Household::MeetingHelper.exists?(household: household)
+  end
+
+  test "destroying the household deletes its meeting helper" do
+    households(:other).enable_meeting_helper(by: users(:outsider))
+
+    assert_difference("Household::MeetingHelper.count", -1) { households(:other).destroy }
+  end
+
   test "database: a midweek meeting day outside 0 to 6 raises CheckViolation" do
     assert_raises ActiveRecord::CheckViolation do
       households(:home).update_columns(midweek_meeting_wday: 7, midweek_meeting_time: "19:00", weekend_meeting_wday: 0, weekend_meeting_time: "10:00")

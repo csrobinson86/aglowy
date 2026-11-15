@@ -55,6 +55,8 @@ Rails.application.routes.draw do
     resource :settings, only: %i[ edit update ], controller: "households/settings", path_names: { edit: "" }
     # The settings page's Meetings section, for heads and adults (docs/design/meeting-helper.md, Pages).
     resource :meeting_times, only: :update, controller: "households/meeting_times"
+    # The settings page's Children section: the meeting helper's switch, for heads and adults.
+    resource :meeting_helper, only: :update, controller: "households/meeting_helpers"
     # Changing a role and removing a member are on household settings, heads only (docs/design/invitations.md).
     resources :members, only: %i[ index new create destroy ] do
       resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }

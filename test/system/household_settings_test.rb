@@ -38,7 +38,7 @@ class HouseholdSettingsTest < ApplicationSystemTestCase
     fill_in "Weekend starts at", with: Time.zone.parse("10:00")
     assert_accessible
     capture_screens("household-settings-adult")
-    click_on "Save"
+    within("#meetings") { click_on "Save" }
 
     assert_text "Meeting times saved."
     assert_select "Midweek day", selected: "Friday"
@@ -46,5 +46,26 @@ class HouseholdSettingsTest < ApplicationSystemTestCase
     assert_select "Weekend day", selected: "Sunday"
     assert_field "Weekend starts at", with: "10:00"
     assert_accessible
+  end
+
+  test "an adult turns the helper on and sees who turned it on" do
+    sign_in identities(:spouse)
+    visit edit_household_settings_url(household_id: households(:home))
+
+    check "Meeting helper for children"
+    within("#children") { click_on "Save" }
+
+    assert_text "Meeting helper turned on."
+    assert_checked_field "Meeting helper for children"
+    assert_text "Turned on by Sam Spouse on #{Time.current.strftime("%B %-d")}."
+    assert_accessible
+    capture_screens("household-settings-meeting-helper", scroll_to: "#children")
+
+    uncheck "Meeting helper for children"
+    within("#children") { click_on "Save" }
+
+    assert_text "Meeting helper turned off."
+    assert_no_checked_field "Meeting helper for children"
+    assert_no_text "Turned on by"
   end
 end

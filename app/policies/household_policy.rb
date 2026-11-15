@@ -15,12 +15,13 @@ class HouseholdPolicy < ApplicationPolicy
     head? && membership.household_id == record.id
   end
 
-  # Heads and adults open Household settings; adults see only its Meetings section (docs/design/meeting-helper.md, Trap 10).
+  # Heads and adults open Household settings; adults see only its Meetings and Children sections
+  # (docs/design/meeting-helper.md, Trap 10).
   def edit?
     head_or_adult? && membership.household_id == record.id
   end
 
-  # Setting the meeting times: heads and adults of this household.
+  # Setting the meeting times and turning the meeting helper on or off: heads and adults of this household.
   def manage_meetings?
     head_or_adult? && membership.household_id == record.id
   end
