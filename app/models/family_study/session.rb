@@ -20,11 +20,17 @@ class FamilyStudy::Session < ApplicationRecord
   # Moves this session only, to a date and time in the household's zone, and detaches it from the
   # schedule (scheduling rule 7). recurrence_at stays, so the generator never brings the slot back (gotcha 21).
   # Unchanged local fields keep the instant: rebuilding a repeated fall-back hour would pick the first one.
+  # Behind the household's lock, then reread, so the zone and the time it starts from are the ones a time zone change
+  # left, and the change can't overwrite this move (Household#update_settings).
   def reschedule(on:, at:)
-    local = local_scheduled_at
-    return if [ local.to_date, local.hour, local.min ] == [ on, at.hour, at.min ]
+    transaction do
+      family_study.household.lock!
+      lock!
+      local = local_scheduled_at
+      next if [ local.to_date, local.hour, local.min ] == [ on, at.hour, at.min ]
 
-    update!(scheduled_at: household_zone.local(on.year, on.month, on.day, at.hour, at.min), detached_at: Time.current)
+      update!(scheduled_at: household_zone.local(on.year, on.month, on.day, at.hour, at.min), detached_at: Time.current)
+    end
   end
 
   # Skips this session only; the row stays, so the generator never recreates it (scheduling rule 6).

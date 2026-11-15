@@ -1,0 +1,14 @@
+<% content_for :title, "Household settings" %>
+
+<%= render(Primer::Beta::Subhead.new) do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Household settings" } %>
+<% end %>
+
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Household" } } %>
+  <% box.with_body do %>
+    <%= primer_form_with(model: @household, url: household_settings_path, method: :patch) do |f| %>
+      <%= render Households::SettingsForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>

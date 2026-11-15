@@ -114,6 +114,17 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     end
   end
 
+  # The edit form was loaded before a head changed the zone; the move must use the zone and time the change left.
+  test "rescheduling a session loaded before a time zone change uses the new zone" do
+    session = family_study_sessions(:weekly_next)
+    session.local_scheduled_at
+
+    households(:home).change_time_zone("Tokyo")
+    session.reschedule(on: Date.new(2027, 3, 14), at: Time.zone.parse("18:30"))
+
+    assert_equal Time.utc(2027, 3, 14, 9, 30), session.reload.scheduled_at
+  end
+
   test "rescheduling to the time it already has doesn't detach" do
     session = family_study_sessions(:weekly_next)
 

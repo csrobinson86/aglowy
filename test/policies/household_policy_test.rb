@@ -48,4 +48,24 @@ class HouseholdPolicyTest < ActiveSupport::TestCase
   test "show? no for a membership in another household" do
     assert_not HouseholdPolicy.new(memberships(:outsider_in_other), households(:home)).show?
   end
+
+  test "update? and edit? yes for a head of the household" do
+    policy = HouseholdPolicy.new(memberships(:head_in_home), households(:home))
+
+    assert policy.update?
+    assert policy.edit?
+  end
+
+  test "update? no for an adult or a child" do
+    %i[ spouse_in_home child_in_home ].each do |membership|
+      assert_not HouseholdPolicy.new(memberships(membership), households(:home)).update?, "expected #{membership} not to edit settings"
+    end
+  end
+
+  test "update? no for a nil membership, an inactive one, or a head of another household" do
+    assert_not HouseholdPolicy.new(nil, households(:home)).update?
+    memberships(:head_in_home).update_column(:active, false)
+    assert_not HouseholdPolicy.new(memberships(:head_in_home), households(:home)).update?
+    assert_not HouseholdPolicy.new(memberships(:outsider_in_other), households(:home)).update?
+  end
 end

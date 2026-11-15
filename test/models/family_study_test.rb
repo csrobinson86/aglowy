@@ -114,6 +114,21 @@ class FamilyStudyTest < ActiveSupport::TestCase
     end
   end
 
+  # The daily job loads each study with its household; a time zone change after that must not leave it building slots
+  # in the old zone, or every session ahead would be duplicated.
+  test "extending builds slots in the household's zone as it is when they're inserted" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      @household.update!(time_zone: "Central Time (US & Canada)")
+      study = @household.schedule_family_study(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00")
+      loaded_before_the_change = FamilyStudy.preloaded.find(study.id)
+      @household.change_time_zone("Eastern Time (US & Canada)")
+
+      assert_no_difference -> { study.sessions.count } do
+        loaded_before_the_change.extend_sessions
+      end
+    end
+  end
+
   test "a cancelled session is not recreated" do
     travel_to Date.new(2026, 11, 14) do
       study = @household.schedule_family_study(frequency: "weekly", starts_on: Date.current, time_of_day: "19:00")

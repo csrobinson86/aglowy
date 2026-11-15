@@ -43,8 +43,12 @@ class FamilyStudy < ApplicationRecord
   end
 
   # Safe to run twice: insert_all skips slots that already have a session, even a moved or cancelled one (gotchas 15 and 21).
+  # Behind the household's lock, which re-reads its zone, so a time zone change can't land between building the slots
+  # and inserting them (Household#update_settings).
   def extend_sessions(through: FamilyStudy.horizon)
-    sessions.insert_all(new_session_rows(through: through), unique_by: %i[ family_study_id recurrence_at ])
+    household.with_lock do
+      sessions.insert_all(new_session_rows(through: through), unique_by: %i[ family_study_id recurrence_at ])
+    end
   end
 
   # How the session page says it repeats: "Once", "Weekly on Tuesday", "Monthly on the last Tuesday".
@@ -70,9 +74,10 @@ class FamilyStudy < ApplicationRecord
     session_time_on(starts_on)
   end
 
-  # Built in the household's zone, then stored as UTC; never arithmetic on a UTC time (gotcha 14).
-  def session_time_on(date)
-    ActiveSupport::TimeZone[household.time_zone].local(date.year, date.month, date.day, time_of_day.hour, time_of_day.min)
+  # Built in the household's zone, then stored as UTC; never arithmetic on a UTC time (gotcha 14). A zone change
+  # passes the new zone, so a moved slot is built exactly as the generator will build it.
+  def session_time_on(date, zone: ActiveSupport::TimeZone[household.time_zone])
+    zone.local(date.year, date.month, date.day, time_of_day.hour, time_of_day.min)
   end
 
   # Counted from the month, not Date#cweek: 17 November 2026 is the third Tuesday (scheduling rule 5).
