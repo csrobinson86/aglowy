@@ -21,8 +21,8 @@
     <% button.with_leading_visual_icon(icon: :"arrow-left") %>
     Back
   <% end %>
-  <%# Finish goes Home until the summary arrives (#148). %>
-  <%= render Primer::Beta::Button.new(tag: :a, href: next_step ? household_meeting_note_step_path(id: next_step.key) : household_root_path, size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-helper__button--next") do |button| %>
+  <%# Finish on the last step goes to the end screen. %>
+  <%= render Primer::Beta::Button.new(tag: :a, href: next_step ? household_meeting_note_step_path(id: next_step.key) : household_meeting_note_summary_path(meeting_note_id: @meeting_note), size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-helper__button--next") do |button| %>
     <% button.with_trailing_visual_icon(icon: :"arrow-right") %>
     <%= next_step ? "Next" : "Finish" %>
   <% end %>

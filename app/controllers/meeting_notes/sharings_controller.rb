@@ -7,7 +7,12 @@ class MeetingNotes::SharingsController < ApplicationController
 
   def create
     @meeting_note.share_with(Current.household)
-    respond_with_sharing notice: "Shared with #{Current.household.name}."
+
+    if params[:return_to] == summary_path
+      redirect_to summary_path, status: :see_other
+    else
+      respond_with_sharing notice: "Shared with #{Current.household.name}."
+    end
   end
 
   def destroy
@@ -37,5 +42,11 @@ class MeetingNotes::SharingsController < ApplicationController
 
   def meeting_note_path
     household_meeting_note_path(id: @meeting_note)
+  end
+
+  # "Show my family" on the meeting helper's end screen comes back to it, whatever format Turbo asked for. Only this
+  # note's summary path is accepted as return_to, never a URL from params, so it can't be an open redirect.
+  def summary_path
+    household_meeting_note_summary_path(meeting_note_id: @meeting_note)
   end
 end
