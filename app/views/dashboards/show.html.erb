@@ -2,9 +2,9 @@
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Home" } %>
-  <% subhead.with_description { Current.household.name } %>
-  <%# Once there are sessions the empty state's Schedule action moves to the header, as in the app shell frames. %>
-  <% if @next_session && policy(FamilyStudy).create? %>
+  <% subhead.with_description { "#{Current.household.name} · #{Current.household.today.strftime("%A, %B %-d")}" } %>
+  <%# On the Welcome empty state the Schedule action is the Blankslate's; everywhere else it's in the header, as in the app shell frames. %>
+  <% if !@welcome && policy(FamilyStudy).create? %>
     <% subhead.with_actions do %>
       <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_family_study_path, scheme: :primary)) do |button| %>
         <% button.with_leading_visual_icon(icon: :plus) %>
@@ -14,21 +14,7 @@
   <% end %>
 <% end %>
 
-<% if @next_session %>
-  <%= render "dashboards/next_session", study_session: @next_session %>
-
-  <% if @coming_up.any? %>
-    <%= render Primer::Beta::BorderBox.new do |box| %>
-      <% box.with_header { |header| header.with_title(tag: :h2) { "Coming up" } } %>
-      <% @coming_up.each do |study_session| %>
-        <% box.with_row { render "family_study/sessions/session", study_session: } %>
-      <% end %>
-      <% box.with_footer do %>
-        <%= render(Primer::Beta::Link.new(href: household_family_studies_path)) { "All family studies" } %>
-      <% end %>
-    <% end %>
-  <% end %>
-<% else %>
+<% if @welcome %>
   <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :home) %>
     <% blankslate.with_heading(tag: :h2) { "Welcome to #{Current.household.name}" } %>
@@ -43,6 +29,37 @@
         <% button.with_leading_visual_icon(icon: :plus) %>
         Schedule a study
       <% end %>
+    <% end %>
+  <% end %>
+<% else %>
+  <%# Family studies on the left, then family goals and the person's own content; stacked in that order below lg (frame desktop-light.png). %>
+  <%= render Primer::Alpha::Layout.new(stacking_breakpoint: :lg, first_in_source: :main, classes: "household-home") do |layout| %>
+    <% layout.with_main do %>
+      <% if @next_session %>
+        <%= render "dashboards/next_session", study_session: @next_session %>
+      <% else %>
+        <%= render Primer::Beta::BorderBox.new(mb: 4) do |box| %>
+          <% box.with_header { |header| header.with_title(tag: :h2) { "Next family study" } } %>
+          <% box.with_body(color: :muted) { "No family study scheduled." } %>
+        <% end %>
+      <% end %>
+
+      <% if @coming_up.any? %>
+        <%= render Primer::Beta::BorderBox.new do |box| %>
+          <% box.with_header { |header| header.with_title(tag: :h2) { "Coming up" } } %>
+          <% @coming_up.each do |study_session| %>
+            <% box.with_row { render "family_study/sessions/session", study_session: } %>
+          <% end %>
+          <% box.with_footer do %>
+            <%= render(Primer::Beta::Link.new(href: household_family_studies_path)) { "All family studies" } %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "household-home__aside") do %>
+      <%= render "dashboards/family_goals", goals: @family_goals %>
+      <%= render "dashboards/mine", goals: @my_goals, meeting_notes: @meeting_notes %>
     <% end %>
   <% end %>
 <% end %>

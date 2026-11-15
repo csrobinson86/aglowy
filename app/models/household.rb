@@ -30,6 +30,11 @@ class Household < ApplicationRecord
     end
   end
 
+  # Today where the household lives. Date.current is the app's zone, which can be a day ahead or behind.
+  def today
+    Time.current.in_time_zone(time_zone).to_date
+  end
+
   # The household's files share one quota; links don't count (docs/design/family-studies.md, Files).
   # One SUM over the blobs attached to its file resources, never loading them.
   def storage_used

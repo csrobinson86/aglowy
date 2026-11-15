@@ -309,7 +309,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
       assert_select ".Box-row", count: 2
       assert_select ".Box-row:nth-of-type(1) a[href='#{household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_weekend))}']", "Weekend meeting"
       assert_select ".Box-row:nth-of-type(1) .color-fg-muted", "Weekend of November 21–22, 2026"
-      assert_select ".Box-row:nth-of-type(2) a[href='#{household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_midweek))}']", "Midweek meeting"
+      assert_select ".Box-row:nth-of-type(2) a[href='#{household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_midweek))}']", "Life and Ministry"
       assert_select "a[href*='#{older.id}']", count: 0
       assert_select ".Box-footer a[href='#{household_meeting_notes_path(household_id: households(:home))}']", "All meeting notes"
     end
@@ -394,7 +394,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     end
 
     def add_goals(owner, count, set_by: users(:spouse))
-      count.times.map { owner.goals.create!(title: "Goal #{it}", target_on: 1.month.from_now.to_date + it, set_by:) }
+      count.times.map { owner.goals.create!(title: "Goal #{it}", target_on: Date.new(2027, 6, 1) + it, set_by:) }
     end
 
     def goal_path(goal)
@@ -403,7 +403,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
 
     def queries_during_get
       count = 0
-      counter = ->(*, payload) { count += 1 unless payload[:name].in?(%w[ SCHEMA TRANSACTION ]) || payload[:cached] }
+      counter = ->(*, payload) { count += 1 unless payload[:name].in?(%w[ SCHEMA TRANSACTION ]) }
       ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { get household_root_path(household_id: households(:home)) }
       count
     end

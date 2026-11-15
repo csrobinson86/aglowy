@@ -1,0 +1,35 @@
+<%# locals: (goals:, meeting_notes:) -%>
+<%# Personal content follows the person, so these come from Current.user, never the household (docs/design/users.md). %>
+<%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 6, color: :muted, mb: 2)) { "Mine · follows you to every household" } %>
+
+<%= render Primer::Beta::BorderBox.new(mb: 3) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "My goals" } } %>
+  <% goals.each do |goal| %>
+    <% box.with_row do %>
+      <%= render(Primer::Beta::Link.new(href: household_goal_path(id: goal), scheme: :primary, classes: "wb-break-word")) { goal.title } %>
+    <% end %>
+  <% end %>
+  <% if goals.empty? %>
+    <% box.with_row(color: :muted) { "No goals yet." } %>
+  <% end %>
+  <% box.with_footer do %>
+    <%= render(Primer::Beta::Link.new(href: household_my_goals_path)) { "All my goals" } %>
+  <% end %>
+<% end %>
+
+<%# The app doesn't know which day a congregation meets, so a note shows its week. %>
+<%= render Primer::Beta::BorderBox.new do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "Recent meeting notes" } } %>
+  <% meeting_notes.each do |note| %>
+    <% box.with_row(display: :flex, justify_content: :space_between, align_items: :baseline) do %>
+      <%= render(Primer::Beta::Link.new(href: household_meeting_note_path(id: note), scheme: :primary, mr: 3, flex_shrink: 0)) { meeting_note_title(note) } %>
+      <span class="color-fg-muted text-right"><%= note.display_week %></span>
+    <% end %>
+  <% end %>
+  <% if meeting_notes.empty? %>
+    <% box.with_row(color: :muted) { "No meeting notes yet." } %>
+  <% end %>
+  <% box.with_footer do %>
+    <%= render(Primer::Beta::Link.new(href: household_meeting_notes_path)) { "All meeting notes" } %>
+  <% end %>
+<% end %>
