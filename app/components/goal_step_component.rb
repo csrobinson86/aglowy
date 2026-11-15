@@ -43,12 +43,15 @@ class GoalStepComponent < ApplicationComponent
     user_id.in?(@tickable)
   end
 
-  # Ticking posts the part (no user_id for done together); unticking deletes its tick.
+  # Ticking posts the part (no user_id for done together); unticking deletes its tick. The answer is a Turbo Stream;
+  # a refusal redirects, and _top lets it replace the page rather than look for this step's frame there.
   def tick_form_options(user_id)
+    options = { data: { turbo_frame: "_top" } }
+
     if (tick = step.tick_for(user_id))
-      { url: household_goal_step_completion_path(household_id: goal.household_id, goal_id: goal, step_id: step, id: tick), method: :delete }
+      options.merge(url: household_goal_step_completion_path(household_id: goal.household_id, goal_id: goal, step_id: step, id: tick), method: :delete)
     else
-      { url: household_goal_step_completions_path(household_id: goal.household_id, goal_id: goal, step_id: step, user_id: user_id), method: :post }
+      options.merge(url: household_goal_step_completions_path(household_id: goal.household_id, goal_id: goal, step_id: step, user_id: user_id), method: :post)
     end
   end
 

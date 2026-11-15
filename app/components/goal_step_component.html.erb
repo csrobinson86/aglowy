@@ -18,7 +18,7 @@
               <% done = step.done_for?(person) %>
               <% toggle = render(Primer::Beta::Button.new(type: :submit, disabled: !tickable?(person.id), aria: { pressed: done.to_s }, mr: 2, mb: 1,
                                                           classes: [ "goal-step__part", { "goal-step__part--done": done } ])) do |button| %>
-                <% button.with_leading_visual_icon(icon: done ? :"check-circle-fill" : :circle) %>
+                <% button.with_leading_visual_icon(icon: done ? :"check-circle-fill" : :circle, color: (:success if done)) %>
                 <%= done ? "#{person.name} done" : person.name %>
               <% end %>
               <%= tickable?(person.id) ? primer_form_with(**tick_form_options(person.id)) { toggle } : toggle %>

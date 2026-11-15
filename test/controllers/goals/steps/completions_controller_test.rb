@@ -102,6 +102,18 @@ class Goals::Steps::CompletionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "a tick from a stale page redraws the step as it is now" do
+    sign_in identities(:spouse)
+
+    # The page still showed the parables step as an Everyone step, so its checkbox posts done together.
+    assert_no_difference "Goal::Step::Completion.count" do
+      post completions_path(goal_steps(:parables)), params: { user_id: "" }, as: :turbo_stream
+    end
+    assert_response :unprocessable_content
+    assert_select "turbo-stream[action=replace][target=#{dom_id(goal_steps(:parables))}]"
+    assert_select "turbo-stream[action=replace][target=goal-progress]"
+  end
+
   test "a person who isn't named on the step is 404" do
     sign_in identities(:spouse)
 

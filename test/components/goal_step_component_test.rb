@@ -90,7 +90,7 @@ class GoalStepComponentTest < ViewComponent::TestCase
     render_inline(GoalStepComponent.new(step:, tickable: [ nil ]))
 
     assert_selector "form[method=post][action='#{completions_path(step)}'] input[type=checkbox]:not([disabled]):not([checked])"
-    assert_selector "input[data-action='change->goal-step#tick']"
+    assert_selector "form[data-turbo-frame=_top] input[data-action='change->goal-step#tick']"
     assert_selector "label.sr-only", text: "Mark Read Luke together done"
   end
 

@@ -5,6 +5,12 @@ class Goals::Steps::CompletionsController < ApplicationController
 
   before_action :set_step
 
+  # Ticking and unticking recheck the step under the goal's lock. A page that went stale (the goal was finished,
+  # or the step's people changed) gets the step and the progress box as they are now.
+  rescue_from ActiveRecord::RecordInvalid do
+    render_changes status: :unprocessable_content
+  end
+
   # The person is found among the step's people, so anyone else is a 404. Whether this person may tick
   # their part is the policy's question.
   def create
@@ -29,9 +35,9 @@ class Goals::Steps::CompletionsController < ApplicationController
     @step = Goal.reachable_from(Current.membership).find(params[:goal_id]).steps.find(params[:step_id])
   end
 
-  def render_changes
+  def render_changes(status: :ok)
     @goal = Goal.reachable_from(Current.membership).preloaded.find(@step.goal_id)
     @step = @goal.steps.find { it.id == @step.id }
-    render :changes
+    render :changes, status: status
   end
 end
