@@ -17,6 +17,13 @@ class User < ApplicationRecord
     name.split.first
   end
 
+  # A child's username-only login (docs/design/invitations.md, Child logins). Its random password is never shown,
+  # so nobody can sign in until the child chooses one through a password link. Identity.new, not build_identity,
+  # which would replace a login the person already has; the unique index on identities.user_id keeps it to one.
+  def give_login(username:)
+    Identity.new(user: self, username: username, password: SecureRandom.base58(32), confirmed_at: Time.current).tap(&:save)
+  end
+
   def active_households
     households.merge(Membership.active)
   end

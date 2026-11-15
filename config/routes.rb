@@ -32,6 +32,9 @@ Rails.application.routes.draw do
   # /invitation?token=…: the token is a query parameter, never a path segment, so filtered_path keeps it out of
   # the Rails log and Lograge (docs/design/invitations.md, Traps). Destroy is declining.
   resource :invitation_acceptance, path: "invitation", only: %i[ show create destroy ]
+  # /password_setup?token=…, where a child chooses a password from the link a head or adult made
+  # (docs/design/invitations.md, Child logins). A query parameter for the same reason as the invitation's token.
+  resource :password_setup, only: %i[ edit update ], path_names: { edit: "" }
   resources :households, only: %i[ index new create ]
 
   namespace :admin do
@@ -41,7 +44,10 @@ Rails.application.routes.draw do
   scope "/:household_id", as: :household,
         constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
     get "/", to: "dashboards#show", as: :root
-    resources :members, only: %i[ index new create ]
+    resources :members, only: %i[ index new create ] do
+      resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }
+      resource :password_link, only: :create, module: :members
+    end
     resources :invitations, only: %i[ new create update destroy ]
     resources :family_studies, only: %i[ index new create ] do
       resources :sessions, only: %i[ show edit update ], module: :family_studies do

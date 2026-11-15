@@ -22,6 +22,24 @@ class UserTest < ActiveSupport::TestCase
     assert_empty users(:former).active_households
   end
 
+  test "give_login makes a confirmed username-only login whose password nobody knows" do
+    identity = users(:sofia).give_login(username: "Sofia.Rivera")
+
+    assert identity.persisted?
+    assert_equal "sofia.rivera", identity.username
+    assert_nil identity.email
+    assert identity.confirmed?
+    assert identity.encrypted_password.present?
+    assert_not identity.valid_password?("")
+  end
+
+  test "give_login with a taken username returns the unsaved login with the error" do
+    identity = users(:sofia).give_login(username: "eli.rivera")
+
+    assert_not identity.persisted?
+    assert_includes identity.errors[:username], "has already been taken"
+  end
+
   test "database: a user without a name raises NotNullViolation" do
     assert_raises ActiveRecord::NotNullViolation do
       User.insert!({ name: nil })

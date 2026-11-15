@@ -7,3 +7,12 @@
   <% end %>
 </div>
 <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary, ml: 2)) { membership.role.humanize } %>
+<% if policy(membership).give_login? %>
+  <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_login_path(member_id: membership), ml: 2,
+                                      aria: { label: "Give a login to #{membership.user.name}" })) { "Give a login" } %>
+<% elsif policy(membership).new_password_link? %>
+  <%# Without Turbo, like Give a login: the link page is rendered, not redirected to. %>
+  <%= primer_form_with(url: household_member_password_link_path(member_id: membership), class: "ml-2", data: { turbo: false }) do |f| %>
+    <%= render Members::PasswordLinkForm.new(f, name: membership.user.name) %>
+  <% end %>
+<% end %>

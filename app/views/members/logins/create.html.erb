@@ -1,0 +1,5 @@
+<% content_for :title, "Give #{@member.user.first_name} a login" %>
+
+<%= render "members/login_header", member: @member %>
+<%= render "members/password_link", member: @member, identity: @identity,
+           message: "#{@member.user.first_name}'s login is ready. The username is " %>

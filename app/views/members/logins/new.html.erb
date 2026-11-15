@@ -1,0 +1,21 @@
+<% content_for :title, "Give #{@member.user.first_name} a login" %>
+
+<%= render "members/login_header", member: @member %>
+
+<div class="container-md ml-0">
+  <%= render(Primer::Beta::Text.new(tag: :p)) do %>
+    <%= @member.user.first_name %> will sign in with a username and a password of their own. No email address needed.
+  <% end %>
+
+  <%# Without Turbo: the link page is rendered, not redirected to, so the link stays out of URLs and flashes. %>
+  <%= primer_form_with(model: @identity, url: household_member_login_path(member_id: @member), data: { turbo: false }) do |f| %>
+    <%= render Members::LoginForm.new(f, section: :fields) %>
+    <%= render(Primer::Beta::BorderBox.new(bg: :subtle, color: :muted, my: 4)) do |box| %>
+      <% box.with_body do %>
+        Next you'll get a one-time link to open on <%= @member.user.first_name %>'s device, where they choose a password.
+        Aglowy keeps only <%= @member.user.first_name %>'s name, username and password: no email or birthday.
+      <% end %>
+    <% end %>
+    <%= render Members::LoginForm.new(f, section: :actions, cancel_path: household_members_path) %>
+  <% end %>
+</div>

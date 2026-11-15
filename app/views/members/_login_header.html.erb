@@ -1,0 +1,9 @@
+<%# locals: (member:, title: "Give #{member.user.first_name} a login") %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_members_path) { "Members" } %>
+  <%# There's no page per member, and these pages answer a POST, so the name points back to the list too. %>
+  <% breadcrumbs.with_item(href: household_members_path) { member.user.first_name } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { title } %>
+<% end %>
