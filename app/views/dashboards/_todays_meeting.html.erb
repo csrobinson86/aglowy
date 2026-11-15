@@ -1,0 +1,23 @@
+<%# locals: (meeting:, meeting_helper:) -%>
+<%# Only on a meeting day (frames adult-home-meeting.png, child-home.png). The button goes through Today's meeting's
+    create, which checks the meeting itself, so hiding the card is never the authorization. %>
+<%= render(Primer::Box.new(border: true, border_radius: 2, bg: :subtle, p: 4, mb: 4, display: :flex, direction: [ :column, nil, :row ], align_items: [ nil, nil, :center ], classes: "todays-meeting-card")) do %>
+  <div class="d-flex flex-items-start flex-auto">
+    <span class="todays-meeting-card__icon mr-3 flex-shrink-0">
+      <%= render(Primer::Beta::Octicon.new(icon: :sun, size: :medium, color: :attention)) %>
+    </span>
+    <div class="flex-auto min-width-0">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3)) { "Today's meeting" } %>
+      <p class="text-bold mb-1"><%= meeting.title %> · <%= meeting.starts_at.strftime("%-l:%M %p") %></p>
+      <% if meeting_helper %>
+        <p class="color-fg-muted mb-0">Listen for things and draw what you see, one part at a time.</p>
+      <% else %>
+        <p class="color-fg-muted mb-0">Take notes as you go. They stay yours in every household.</p>
+      <% end %>
+    </div>
+  </div>
+  <%# The forms DSL takes size: as the field's size and drops it, so the large button is Primer's own modifier class. %>
+  <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path, class: "flex-shrink-0 mt-3 mt-md-0 ml-md-3") do |f| %>
+    <%= render TodaysMeetings::StartForm.new(f, kind: meeting.kind, week_of: meeting.week_of, label: meeting_helper ? "Start" : "Open my notes", scheme: :primary, block: true, classes: "Button--large width-md-auto") %>
+  <% end %>
+<% end %>

@@ -1,0 +1,11 @@
+// Home's "Today's meeting" card: the sun in an attention-coloured circle
+// (docs/design/meeting-helper/adult-home-meeting.png). Primer has no icon-in-a-circle.
+.todays-meeting-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-48);
+  height: var(--base-size-48);
+  border-radius: var(--borderRadius-full);
+  background-color: var(--bgColor-attention-muted);
+}

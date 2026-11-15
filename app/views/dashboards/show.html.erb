@@ -14,6 +14,10 @@
   <% end %>
 <% end %>
 
+<% if @todays_meeting %>
+  <%= render "dashboards/todays_meeting", meeting: @todays_meeting, meeting_helper: meeting_helper? %>
+<% end %>
+
 <% if @welcome %>
   <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :home) %>
