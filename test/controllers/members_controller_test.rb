@@ -221,6 +221,63 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "a head removes an adult: inactive, their shares here gone, their open steps released" do
+    note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+    sign_in identities(:head)
+
+    assert_no_difference -> { Membership.count } do
+      delete household_member_path(household_id: households(:home), id: memberships(:spouse_in_home))
+    end
+
+    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_equal "Sam Spouse was removed from the household.", flash[:notice]
+    assert_not memberships(:spouse_in_home).reload.active?
+    assert_empty note.reload.shared_households
+    assert_empty goal_steps(:share_learned).reload.assignees
+  end
+
+  test "a head removes themselves while another head stays and goes to their households" do
+    memberships(:spouse_in_home).update!(role: :head)
+    sign_in identities(:head)
+
+    delete household_member_path(household_id: households(:home), id: memberships(:head_in_home))
+
+    assert_redirected_to households_path
+    assert_equal "You left the The Head Family.", flash[:notice]
+    assert_not memberships(:head_in_home).reload.active?
+  end
+
+  test "the last head can't remove themselves, and the row says why" do
+    sign_in identities(:head)
+
+    delete household_member_path(household_id: households(:home), id: memberships(:head_in_home)), as: :turbo_stream
+
+    assert_response :unprocessable_content
+    assert_select "turbo-stream[action=replace][target=?]", ActionView::RecordIdentifier.dom_id(memberships(:head_in_home))
+    assert_select ".FormControl-inlineValidation", text: /A household needs at least one active head/
+    assert memberships(:head_in_home).reload.active?
+  end
+
+  test "an adult is refused removing a member" do
+    sign_in identities(:spouse)
+
+    delete household_member_path(household_id: households(:home), id: memberships(:child_in_home))
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_equal "You can't do that in this household.", flash[:alert]
+    assert memberships(:child_in_home).reload.active?
+  end
+
+  test "removing a member of another household is 404" do
+    sign_in identities(:head)
+
+    delete household_member_path(household_id: households(:home), id: memberships(:outsider_in_other))
+
+    assert_response :not_found
+    assert memberships(:outsider_in_other).reload.active?
+  end
+
   private
     # Charlie Child has no login in the fixtures (a young child needs none), so give them one here.
     def child_identity

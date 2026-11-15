@@ -88,6 +88,32 @@ class MembershipPolicyTest < ActiveSupport::TestCase
     assert_not MembershipPolicy.new(memberships(:head_in_home), memberships(:spouse_in_home).reload).new_password_link?
   end
 
+  # Household settings' Members and roles (docs/design/invitations.md, Who can do what).
+  test "update? and destroy? yes for a head, on any member of their household, themselves too" do
+    %i[ spouse_in_home eli_in_home head_in_home ].each do |member|
+      policy = MembershipPolicy.new(memberships(:head_in_home), memberships(member))
+
+      assert policy.update?, "expected the head to change #{member}'s role"
+      assert policy.destroy?, "expected the head to remove #{member}"
+    end
+  end
+
+  test "update? and destroy? no for an adult, a child, an inactive member or a nil membership" do
+    [ memberships(:spouse_in_home), memberships(:eli_in_home), memberships(:former_in_home), nil ].each do |membership|
+      policy = MembershipPolicy.new(membership, memberships(:child_in_home))
+
+      assert_not policy.update?, "expected #{membership&.user&.name.inspect} not to change roles"
+      assert_not policy.destroy?, "expected #{membership&.user&.name.inspect} not to remove members"
+    end
+  end
+
+  test "update? and destroy? no on a member of another household" do
+    policy = MembershipPolicy.new(memberships(:head_in_home), memberships(:outsider_in_other))
+
+    assert_not policy.update?
+    assert_not policy.destroy?
+  end
+
   # Leaving is in account settings, outside any household, so the membership is nil there (docs/design/invitations.md).
   test "leave? yes for a head or an adult leaving their own seat" do
     { head: :head_in_home, spouse: :spouse_in_home }.each do |identity, membership|

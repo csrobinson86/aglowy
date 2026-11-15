@@ -1,0 +1,31 @@
+<%# locals: (member:, focused: false) %>
+<%# A row of Members and roles (frame household-settings.png). The role saves as soon as it changes; Remove asks first
+    in a Primer Dialog. A refusal (the last head) comes back as this row by Turbo Stream, with the reason under the
+    role, and focused puts the keyboard back on the role select. %>
+<% name = member.user.name %>
+<% dialog_id = "remove-member-#{member.id}" %>
+<%= tag.div id: dom_id(member), class: "d-flex flex-items-center p-3" do %>
+  <span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-2 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= name.first %></span>
+  <span class="Truncate flex-auto mr-2"><span class="Truncate-text"><%= name %></span></span>
+  <%= primer_form_with(model: member, url: household_member_role_path(member_id: member), method: :patch, namespace: dom_id(member),
+                       class: "min-width-0", data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
+    <%= render Members::RoleForm.new(f, name:, autofocus: focused, validation_message: member.errors[:base].first) %>
+  <% end %>
+  <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: "Remove #{name} from the #{member.household.name}?")) do |dialog| %>
+    <% dialog.with_show_button(scheme: :danger, size: :small, ml: 2, flex_shrink: 0, "aria-label": "Remove #{name}") { "Remove" } %>
+    <% dialog.with_body do %>
+      <p>Removing someone works like them leaving.</p>
+      <ul class="pl-4 mb-0 color-fg-muted">
+        <li>Notes and goals they shared here become private again, and stay private if they rejoin.</li>
+        <li>Steps given to them that aren't done go back to the family.</li>
+        <li>Their own notes and goals stay with them.</li>
+      </ul>
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dialog_id })) { "Cancel" } %>
+      <%= primer_form_with(url: household_member_path(member), method: :delete) do |f| %>
+        <%= render Members::RemoveForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

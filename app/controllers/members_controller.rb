@@ -1,7 +1,7 @@
 class MembersController < ApplicationController
   include HouseholdScoped
 
-  before_action { authorize Membership }
+  before_action(except: :destroy) { authorize Membership }
 
   def index
     @memberships = Current.household.memberships.active.preloaded.by_role
@@ -19,6 +19,22 @@ class MembersController < ApplicationController
   rescue ActiveRecord::RecordInvalid => invalid
     @member, @role = invalid.record, member_params[:role]
     render :new, status: :unprocessable_content
+  end
+
+  # Removing someone, from household settings, works like them leaving (Membership#deactivate). A head may remove
+  # themselves unless they're the last head; the refusal comes back on their row.
+  def destroy
+    # Through Current.household, so another household's member is a 404.
+    authorize @member = Current.household.memberships.active.preloaded.find(params[:id])
+
+    if !@member.deactivate
+      render turbo_stream: turbo_stream.replace(@member, partial: "households/settings/member", locals: { member: @member, focused: true }),
+             status: :unprocessable_content
+    elsif @member == Current.membership
+      redirect_to households_path(household_id: nil), notice: "You left the #{Current.household.name}.", status: :see_other
+    else
+      redirect_to edit_household_settings_path, notice: "#{@member.user.name} was removed from the household.", status: :see_other
+    end
   end
 
   private
