@@ -1,7 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
-// A goal's step (GoalStepComponent). Shows the edit form in place of the row, and says how many ticks a change
-// of people would clear before it's saved (docs/design/goals.md, "Changing who a step is for").
+// A goal's step (GoalStepComponent). Ticks the step when its checkbox changes, shows the edit form in place of
+// the row, and says how many ticks a change of people would clear before it's saved (docs/design/goals.md,
+// "Changing who a step is for").
 export default class extends Controller {
   static targets = [ "view", "form", "checkbox", "editButton", "warning" ]
   static values = { mixed: Boolean, ticks: Array }
@@ -9,6 +10,26 @@ export default class extends Controller {
   // Only script can make a checkbox indeterminate.
   checkboxTargetConnected(checkbox) {
     checkbox.indeterminate = this.mixedValue
+  }
+
+  // A checkbox's own form ticks or unticks the step; the Turbo Stream answer redraws the row.
+  // A request that fails without one (the network dropped) puts the checkbox back as it was.
+  // One tick at a time: a change while one is on its way is undone, because a second submission would cancel the
+  // first, and the first's turbo:submit-end would then put the checkbox back to the wrong state. Disabling the
+  // checkbox instead would take focus off it.
+  tick({ target: checkbox }) {
+    if (this.ticking) {
+      checkbox.checked = !checkbox.checked
+      return
+    }
+
+    this.ticking = true
+    const was = !checkbox.checked
+    checkbox.form.addEventListener("turbo:submit-end", ({ detail }) => {
+      this.ticking = false
+      if (!detail.success) checkbox.checked = was
+    }, { once: true })
+    checkbox.form.requestSubmit()
   }
 
   edit() {

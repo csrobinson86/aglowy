@@ -3,3 +3,18 @@
   color: var(--fgColor-muted);
   text-decoration: line-through;
 }
+
+// A child's own steps, the ones they can tick (frame milestone-goal-child.png).
+.goal-step--yours {
+  background-color: var(--bgColor-accent-muted);
+}
+
+// Each named person's toggle on a step for two or more people: a pill, green once their part is done.
+.goal-step__part {
+  border-radius: var(--borderRadius-full);
+}
+
+.goal-step__part--done {
+  background-color: var(--bgColor-success-muted);
+  border-color: var(--borderColor-success-emphasis);
+}

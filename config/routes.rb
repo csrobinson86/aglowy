@@ -52,7 +52,9 @@ Rails.application.routes.draw do
     end
     resources :shared_meeting_notes, only: :index
     resources :goals, only: %i[ index new create show edit update ] do
-      resources :steps, only: %i[ create update destroy ], module: :goals
+      resources :steps, only: %i[ create update destroy ], module: :goals do
+        resources :completions, only: %i[ create destroy ], module: :steps
+      end
     end
     resources :direct_uploads, only: :create
     resources :resources, only: [] do
