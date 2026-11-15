@@ -51,7 +51,9 @@ Rails.application.routes.draw do
       resource :sharing, only: %i[ create destroy ], module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
-    resources :goals, only: %i[ index new create show edit update ] do
+    resources :goals, only: %i[ index new create show edit update destroy ] do
+      resource :completion, only: %i[ create destroy ], module: :goals
+      resource :archival, only: %i[ create destroy ], module: :goals
       resources :steps, only: %i[ create update destroy ], module: :goals do
         resources :completions, only: %i[ create destroy ], module: :steps
       end

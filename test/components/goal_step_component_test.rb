@@ -138,6 +138,21 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_selector "form", count: 1
   end
 
+  test "a finished goal's steps have no checkbox or toggles, only what's done" do
+    goals(:gospels).complete(by: users(:spouse))
+
+    render_inline(GoalStepComponent.new(step: preloaded(:read_matthew)))
+    assert_no_selector "input[type=checkbox]"
+    assert_selector "svg.octicon-check-circle-fill.color-fg-success[role=img][aria-label=Done]"
+    assert_text "Everyone · Done together · Dec 12"
+
+    render_inline(GoalStepComponent.new(step: preloaded(:parables)))
+    assert_no_selector "input[type=checkbox]"
+    assert_no_selector "button"
+    assert_selector "svg.octicon-circle.color-fg-muted[role=img][aria-label='Not done']"
+    assert_text "Eli Child done · waiting on Sofia Child"
+  end
+
   private
     def completions_path(step)
       "/#{households(:home).id}/goals/#{goals(:gospels).id}/steps/#{step.id}/completions"

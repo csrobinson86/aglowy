@@ -1,0 +1,18 @@
+<%# locals: (goal:) %>
+<%# A completed or archived goal says so, and whoever may change it can reopen or restore it (docs/design/goals.md, Pages). %>
+<%= render(Primer::Alpha::Banner.new(icon: goal.archived? ? :archive : :check, mb: 3)) do |banner| %>
+  <% if policy(goal).update? %>
+    <% banner.with_action_content do %>
+      <% if goal.archived? %>
+        <%= primer_form_with(url: household_goal_archival_path(goal_id: goal), method: :delete) do |f| %>
+          <%= render Goals::LifecycleForm.new(f, label: "Restore") %>
+        <% end %>
+      <% else %>
+        <%= primer_form_with(url: household_goal_completion_path(goal_id: goal), method: :delete) do |f| %>
+          <%= render Goals::LifecycleForm.new(f, label: "Reopen goal") %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <%= goal_finished_text(goal) %>
+<% end %>

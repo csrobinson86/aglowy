@@ -298,7 +298,134 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ users(:eli).id ], step.completions.map(&:user_id)
   end
 
+  test "an adult deletes a goal and its steps go with it" do
+    sign_in identities(:spouse)
+    goal = goals(:gospels)
+    step_ids = goal.steps.ids
+
+    assert_difference -> { Goal.count } => -1, -> { Goal::Step.count } => -step_ids.size do
+      delete goal_path(goal)
+    end
+
+    assert_redirected_to household_goals_path(household_id: households(:home))
+    assert_equal "Goal deleted.", flash[:notice]
+    assert_not Goal.exists?(goal.id)
+    assert_empty Goal::Step.where(id: step_ids)
+    assert_empty Goal::Step::Completion.where(step_id: step_ids)
+    assert_empty Goal::Step::Assignment.where(step_id: step_ids)
+  end
+
+  test "a child is refused deleting a goal" do
+    sign_in child_identity
+
+    assert_no_difference "Goal.count" do
+      delete goal_path(goals(:gospels))
+    end
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_equal "You can't do that in this household.", flash[:alert]
+  end
+
+  test "deleting a goal from another household is 404" do
+    sign_in identities(:spouse)
+
+    assert_no_difference "Goal.count" do
+      delete household_goal_path(household_id: households(:home), id: goals(:outsiders_reading))
+    end
+
+    assert_response :not_found
+  end
+
+  test "heads and adults get the goal menu and the delete dialog; a child gets neither" do
+    sign_in identities(:spouse)
+    get goal_path(goals(:gospels))
+    assert_select "action-menu button[aria-label='Goal actions']"
+    assert_select "action-menu form[action='#{completion_path(goals(:gospels))}']", text: /Mark goal complete/
+    assert_select "action-menu form[action='#{archival_path(goals(:gospels))}']", text: /Archive/
+    assert_select "action-menu [data-show-dialog-id='delete-goal']", text: /Delete goal…/
+    assert_select "dialog#delete-goal", text: /Delete this goal\?.*Its steps and progress are deleted too. Archive it instead to keep it for looking back./m
+    assert_select "dialog#delete-goal form[action='#{goal_path(goals(:gospels))}'] input[name=_method][value=delete]"
+    assert_select "dialog#delete-goal button", text: "Cancel"
+
+    sign_in child_identity
+    get goal_path(goals(:gospels))
+    assert_select "button[aria-label='Goal actions']", count: 0
+    assert_select "dialog#delete-goal", count: 0
+  end
+
+  test "a personal goal's owner gets Edit but no goal menu yet" do
+    sign_in identities(:spouse)
+    get household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))
+    assert_select "a[href='#{edit_household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))}']", "Edit"
+    assert_select "button[aria-label='Goal actions']", count: 0
+    assert_select "dialog#delete-goal", count: 0
+  end
+
+  test "the Every step is done Banner has the Mark goal complete button" do
+    sign_in identities(:spouse)
+    goal = households(:home).goals.create!(title: "Read Jonah", target_on: Date.new(2027, 1, 31), set_by: users(:spouse))
+    goal.add_step(title: "Read Jonah 1").tick(for: nil, by: users(:spouse))
+
+    get goal_path(goal)
+
+    assert_select ".Banner", text: /Every step is done. Mark the goal complete\?/ do
+      assert_select "form[action='#{completion_path(goal)}'] button", "Mark goal complete"
+    end
+  end
+
+  test "a completed goal shows who completed it, Reopen, and no ticking or step editing" do
+    travel_to Time.utc(2026, 11, 14, 12)
+    sign_in identities(:spouse)
+    goal = goals(:proverbs)
+    goal.steps.create!(title: "Read Proverbs 1", position: 1) # a finished goal takes no new steps through add_step
+
+    get goal_path(goal)
+
+    assert_select ".Banner", text: /Completed on October 30 by Sam Spouse\./ do
+      assert_select "form[action='#{completion_path(goal)}'] input[name=_method][value=delete]"
+      assert_select "button", "Reopen goal"
+    end
+    assert_select "action-menu form[action='#{completion_path(goal)}']", text: /Reopen goal/
+    assert_select "action-menu form[action='#{archival_path(goal)}']", text: /Archive/
+    assert_no_ticking_or_step_editing(goal)
+  end
+
+  test "an archived goal shows who archived it, Restore, and no ticking or step editing" do
+    travel_to Time.utc(2026, 11, 14, 12)
+    sign_in identities(:spouse)
+    goal = goals(:proverbs)
+    goal.archive(by: users(:head))
+    goal.archival.update_column(:created_at, Time.utc(2026, 8, 30, 18))
+    goal.steps.create!(title: "Read Proverbs 1", position: 1) # a finished goal takes no new steps through add_step
+
+    get goal_path(goal)
+
+    assert_select ".Banner", text: /Completed on October 30 by Sam Spouse\. Archived on August 30 by Hannah Head\./ do
+      assert_select "form[action='#{archival_path(goal)}'] input[name=_method][value=delete]"
+      assert_select "button", "Restore"
+    end
+    assert_select "action-menu form[action='#{archival_path(goal)}']", text: /Restore/
+    assert_select "action-menu form[action='#{completion_path(goal)}']", count: 0
+    assert_no_ticking_or_step_editing(goal)
+  end
+
   private
+    def completion_path(goal)
+      household_goal_completion_path(household_id: goal.household, goal_id: goal)
+    end
+
+    def archival_path(goal)
+      household_goal_archival_path(household_id: goal.household, goal_id: goal)
+    end
+
+    def assert_no_ticking_or_step_editing(goal)
+      assert_select "#goal-steps .Box-row", count: 1
+      assert_select "#goal-steps input[type=checkbox]", count: 0
+      assert_select "#goal-steps form", count: 0
+      assert_select "button[aria-label^='Edit step']", count: 0
+      assert_select "form[action='#{household_goal_steps_path(household_id: goal.household, goal_id: goal)}']", count: 0
+    end
+
     def valid_params
       { title: "Read Acts together", body: "To see how the early Christians preached.", target_on: "2027-06-30" }
     end

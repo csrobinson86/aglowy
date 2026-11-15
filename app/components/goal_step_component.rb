@@ -33,6 +33,11 @@ class GoalStepComponent < ApplicationComponent
     @highlighted
   end
 
+  # A completed or archived goal takes no ticks, so its steps show only what's done, without controls.
+  def open_goal?
+    goal.open?
+  end
+
   # Two or more people, each ticking their own part.
   def several?
     step.parts.many?

@@ -2,9 +2,16 @@
 <%# "3 of 7 steps done", what's left, the bar, and each person's count (docs/design/goals.md, Progress). %>
 <% progress = goal.progress %>
 <div id="goal-progress">
-  <%# Nothing completes on its own: whoever may finish the goal is asked. The button arrives with marking a goal complete. %>
+  <%# Nothing completes on its own: whoever may finish the goal is asked. %>
   <% if progress.all_done? && goal.open? && policy(goal).update? %>
-    <%= render(Primer::Alpha::Banner.new(scheme: :success, mb: 3)) { "Every step is done. Mark the goal complete?" } %>
+    <%= render(Primer::Alpha::Banner.new(scheme: :success, mb: 3)) do |banner| %>
+      <% banner.with_action_content do %>
+        <%= primer_form_with(url: household_goal_completion_path(goal_id: goal)) do |f| %>
+          <%= render Goals::LifecycleForm.new(f, label: "Mark goal complete", scheme: :primary) %>
+        <% end %>
+      <% end %>
+      Every step is done. Mark the goal complete?
+    <% end %>
   <% end %>
   <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
     <% box.with_body do %>

@@ -55,6 +55,14 @@ class GoalsController < ApplicationController
     render :edit, status: :conflict
   end
 
+  # Steps, assignments, ticks, the completion and the archival go with it (cascading foreign keys).
+  def destroy
+    @goal = reachable_goals.find(params[:id])
+    authorize @goal
+    @goal.delete_for_good
+    redirect_to household_goals_path, notice: "Goal deleted."
+  end
+
   private
 
   # Through the membership, so another household's goal, or someone else's personal goal, is a 404.
