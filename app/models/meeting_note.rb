@@ -8,6 +8,7 @@ class MeetingNote < ApplicationRecord
   belongs_to :user
   has_many :parts, -> { order(:position) }, dependent: :destroy
   has_many :gems, -> { order(:position) }, dependent: :delete_all
+  has_many :marks, dependent: :delete_all
 
   # Only Living as Christians parts can be removed (only_repeating_parts_removed); new ones come from revise!.
   accepts_nested_attributes_for :parts, allow_destroy: true
@@ -31,6 +32,23 @@ class MeetingNote < ApplicationRecord
   # The meeting helper's steps for this note's kind (docs/design/meeting-helper.md).
   def helper_steps
     HelperSteps.for(kind)
+  end
+
+  # "I heard it!" on a step, by its key. create_or_find_by! leans on the unique index, so a double tap
+  # finds the first mark instead of raising.
+  def mark(step)
+    marks.create_or_find_by!(step: step)
+  end
+
+  # Resets the marks, so marked? doesn't answer from ones loaded before.
+  def unmark(step)
+    marks.where(step: step).delete_all
+    marks.reset
+  end
+
+  # Reads the loaded marks, so the step dots ask once for the whole note.
+  def marked?(step)
+    marks.any? { it.step == step }
   end
 
   # Builds every part the outline starts with, in order; a repeating part starts with one.

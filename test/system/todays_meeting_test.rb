@@ -100,5 +100,33 @@ class TodaysMeetingTest < ApplicationSystemTestCase
     assert_text "Song and prayer"
   end
 
+  test "a child marks a step, sees Heard it, goes Next and Back, and it's still marked" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    sign_in identities(:eli)
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: note, id: "talk")
+
+    assert_selector "h1", text: "Listen for someone from the Bible."
+    assert_accessible
+    capture_screens("helper-step-unmarked", viewports: TABLET)
+    click_on "I heard it!"
+
+    assert_selector "button[aria-pressed=true]", text: "Heard it"
+    assert_accessible
+    capture_screens("helper-step-marked", viewports: TABLET)
+    click_on "Next"
+
+    assert_selector "h1", text: "Listen for something kind Jehovah did."
+    assert_button "I heard it!"
+    click_on "Back"
+
+    assert_selector "h1", text: "Listen for someone from the Bible."
+    assert_selector "button[aria-pressed=true]", text: "✓ Heard it"
+    click_on "Heard it"
+
+    assert_button "I heard it!"
+    assert_not note.reload.marked?("talk")
+  end
+
   TABLET = { tablet: [ 1180, 820 ] }
 end

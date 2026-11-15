@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -257,6 +257,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_110000) do
     t.check_constraint "verse_start IS NULL AND verse_end IS NULL OR verse_start IS NOT NULL AND verse_end IS NOT NULL AND verse_start > 0 AND verse_end >= verse_start", name: "meeting_note_gems_verses_check"
   end
 
+  create_table "meeting_note_marks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_note_id", null: false
+    t.string "step", null: false
+    t.datetime "created_at", null: false
+    t.index ["meeting_note_id", "step"], name: "index_meeting_note_marks_on_meeting_note_id_and_step", unique: true
+  end
+
   create_table "meeting_note_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "meeting_note_id", null: false
     t.string "key", null: false
@@ -338,6 +345,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_110000) do
   add_foreign_key "invitations", "households", on_delete: :cascade
   add_foreign_key "invitations", "users", column: "invited_by_id"
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
+  add_foreign_key "meeting_note_marks", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade

@@ -42,16 +42,22 @@
   gap: var(--base-size-16);
 }
 
+// A ring until its step is marked, then filled.
 .meeting-helper__dot {
   width: var(--base-size-12);
   height: var(--base-size-12);
+  border: var(--borderWidth-thick) solid var(--fgColor-muted);
   border-radius: var(--borderRadius-full);
+}
+
+.meeting-helper__dot--marked {
   background-color: var(--fgColor-muted);
 }
 
 .meeting-helper__dot--current {
   width: var(--base-size-20);
   height: var(--base-size-20);
+  border-color: var(--fgColor-accent);
   background-color: var(--fgColor-accent);
   box-shadow: 0 0 0 var(--base-size-4) var(--bgColor-accent-muted);
 }
@@ -152,6 +158,28 @@
 
 .meeting-helper__button--step {
   min-height: calc(var(--base-size-64) + var(--base-size-8));
+}
+
+// The step's icon inside the mark button, at the button's text size.
+.meeting-helper__button-icon {
+  display: inline-flex;
+  margin-inline-end: var(--base-size-12);
+
+  svg {
+    width: var(--base-size-32);
+    height: var(--base-size-32);
+  }
+}
+
+// "✓ Heard it": Primer has no success button, so the default button takes the success colours, also under
+// Primer's hover rule, which a tap leaves behind on a tablet.
+.meeting-helper__button--marked.Button {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive) {
+    border-color: var(--borderColor-success-emphasis);
+    color: var(--fgColor-success);
+    background-color: var(--bgColor-success-muted);
+  }
 }
 
 // Chained, to outrank Primer's own .Button--secondary colours.

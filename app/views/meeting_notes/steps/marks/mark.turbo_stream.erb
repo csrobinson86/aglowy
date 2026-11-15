@@ -1,0 +1,2 @@
+<%# The pressed button is swapped for its other state, with focus back on it. %>
+<%= turbo_stream.replace dom_id(@meeting_note, :mark), partial: "meeting_notes/steps/mark", locals: { meeting_note: @meeting_note, step: @step, focused: true } %>
