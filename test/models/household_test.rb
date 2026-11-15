@@ -100,6 +100,151 @@ class HouseholdTest < ActiveSupport::TestCase
     assert_equal 100, household.storage_percent_used
   end
 
+  # Gotcha 14 and docs/design/invitations.md, Household settings. Rails names America/Chicago "Central Time (US & Canada)"
+  # and America/New_York "Eastern Time (US & Canada)".
+  test "a weekly 7:00 PM study in Chicago is still at 7:00 PM local after switching to New York" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Central Time (US & Canada)")
+      study = household.schedule_family_study(frequency: "weekly", starts_on: Date.new(2026, 11, 17), time_of_day: "19:00")
+
+      assert household.change_time_zone("Eastern Time (US & Canada)")
+
+      assert_equal "Eastern Time (US & Canada)", household.reload.time_zone
+      sessions = study.sessions.order(:recurrence_at)
+      assert_equal Time.utc(2026, 11, 18, 0), sessions.first.scheduled_at
+      assert_equal Time.utc(2026, 11, 18, 0), sessions.first.recurrence_at
+      sessions.each do |session|
+        assert_equal [ "19:00", "Tuesday" ], session.scheduled_at.in_time_zone("America/New_York").strftime("%H:%M %A").split
+        assert_equal session.scheduled_at, session.recurrence_at
+      end
+    end
+  end
+
+  test "a past session doesn't move" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Central Time (US & Canada)")
+      study = household.schedule_family_study(frequency: "weekly", starts_on: Date.new(2026, 11, 10), time_of_day: "19:00")
+      past = study.sessions.find_by!(recurrence_at: Time.utc(2026, 11, 11, 1))
+
+      household.change_time_zone("Eastern Time (US & Canada)")
+
+      assert_equal Time.utc(2026, 11, 11, 1), past.reload.scheduled_at
+      assert_equal Time.utc(2026, 11, 11, 1), past.recurrence_at
+      assert_equal Time.utc(2026, 11, 18, 0), study.sessions.find_by!(recurrence_at: Time.utc(2026, 11, 18, 0)).scheduled_at
+    end
+  end
+
+  test "running the generator after the change creates no duplicates" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Central Time (US & Canada)")
+      study = household.schedule_family_study(frequency: "weekly", starts_on: Date.new(2026, 11, 17), time_of_day: "19:00")
+      moved = study.sessions.find_by!(recurrence_at: Time.utc(2026, 11, 25, 1))
+      moved.reschedule(on: Date.new(2026, 11, 26), at: Time.zone.parse("18:00"))
+
+      household.change_time_zone("Eastern Time (US & Canada)")
+
+      assert_no_difference -> { study.sessions.count } do
+        study.reload.extend_sessions
+      end
+      assert_equal Time.utc(2026, 11, 26, 23), moved.reload.scheduled_at
+      assert_equal Time.utc(2026, 11, 25, 0), moved.recurrence_at
+    end
+  end
+
+  # Moved before today from a slot still ahead: the session stays put, but its slot follows the zone, or the generator
+  # would bring the slot back (gotcha 21).
+  test "a session moved into the past keeps its time but its slot ahead follows the new zone" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Central Time (US & Canada)")
+      study = household.schedule_family_study(frequency: "weekly", starts_on: Date.new(2026, 11, 17), time_of_day: "19:00")
+      moved = study.sessions.find_by!(recurrence_at: Time.utc(2026, 11, 18, 1))
+      moved.update!(scheduled_at: Time.utc(2026, 11, 13, 1), detached_at: Time.current)
+
+      household.change_time_zone("Eastern Time (US & Canada)")
+
+      assert_equal Time.utc(2026, 11, 13, 1), moved.reload.scheduled_at
+      assert_equal Time.utc(2026, 11, 18, 0), moved.recurrence_at
+      assert_no_difference -> { study.sessions.count } do
+        study.reload.extend_sessions
+      end
+    end
+  end
+
+  # The generator starts from today, so the slot of a session already over today must follow the zone too. In Tokyo,
+  # 7:00 AM on 15 November is 22:00 UTC on the 14th; after the move to Chicago, the next run builds 7:00 AM on the 15th
+  # in Chicago, which must find its slot taken.
+  test "a session already over today keeps its time and isn't built again after a move west" do
+    household = households(:parents)
+    household.update!(time_zone: "Tokyo")
+    study = travel_to(Time.utc(2026, 11, 14, 12)) { household.schedule_family_study(frequency: "daily", starts_on: Date.new(2026, 11, 15), time_of_day: "07:00") }
+    over = study.sessions.find_by!(recurrence_at: Time.utc(2026, 11, 14, 22))
+
+    travel_to(Time.utc(2026, 11, 14, 23)) { household.change_time_zone("Central Time (US & Canada)") }
+
+    assert_equal Time.utc(2026, 11, 14, 22), over.reload.scheduled_at
+    assert_equal Time.utc(2026, 11, 15, 13), over.recurrence_at
+    travel_to Time.utc(2026, 11, 15, 3) do
+      assert_no_difference -> { study.sessions.count } do
+        study.reload.extend_sessions
+      end
+    end
+  end
+
+  # DST ends in London on 25 October 2026 and in Chicago on 1 November, so in between the two are five hours apart, not
+  # six: shifting every session by one offset would put one side an hour out.
+  test "a session in the week of a DST change keeps its local time" do
+    travel_to Time.utc(2026, 10, 20, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Central Time (US & Canada)")
+      study = household.schedule_family_study(frequency: "weekly", starts_on: Date.new(2026, 10, 28), time_of_day: "19:00")
+      in_the_dst_week = study.sessions.find_by!(recurrence_at: Time.utc(2026, 10, 29, 0))
+      after_it = study.sessions.find_by!(recurrence_at: Time.utc(2026, 11, 5, 1))
+
+      household.change_time_zone("London")
+
+      assert_equal Time.utc(2026, 10, 28, 19), in_the_dst_week.reload.scheduled_at
+      assert_equal Time.utc(2026, 10, 28, 19), in_the_dst_week.recurrence_at
+      assert_equal Time.utc(2026, 11, 4, 19), after_it.reload.scheduled_at
+      assert_equal Time.utc(2026, 11, 4, 19), after_it.recurrence_at
+    end
+  end
+
+  test "another household's sessions don't move" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      other = households(:other).schedule_family_study(starts_on: Date.new(2026, 11, 17), time_of_day: "19:00").sessions.sole
+
+      households(:parents).change_time_zone("Eastern Time (US & Canada)")
+
+      assert_equal Time.utc(2026, 11, 17, 19), other.reload.scheduled_at
+    end
+  end
+
+  test "update_settings renames the household" do
+    household = households(:home)
+
+    assert household.update_settings(name: "The Riveras", time_zone: household.time_zone)
+    assert_equal "The Riveras", household.reload.name
+  end
+
+  test "update_settings with a blank name or an unknown zone saves nothing and moves nothing" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      household = households(:parents)
+      session = household.schedule_family_study(starts_on: Date.new(2026, 11, 17), time_of_day: "19:00").sessions.sole
+
+      assert_not household.update_settings(name: " ", time_zone: "Eastern Time (US & Canada)")
+      assert_includes household.errors[:name], "can't be blank"
+      assert_not household.reload.change_time_zone("Atlantis")
+      assert_includes household.errors[:time_zone], "is not included in the list"
+
+      assert_equal [ "The Grandparent Family", "UTC" ], [ household.reload.name, household.time_zone ]
+      assert_equal Time.utc(2026, 11, 17, 19), session.reload.scheduled_at
+    end
+  end
+
   test "database: a household without a name raises NotNullViolation" do
     assert_raises ActiveRecord::NotNullViolation do
       Household.insert!({ name: nil })

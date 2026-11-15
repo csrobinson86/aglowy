@@ -9,4 +9,9 @@ class HouseholdPolicy < ApplicationPolicy
   def show?
     member? && membership.household_id == record.id
   end
+
+  # Household settings: heads of this household only (docs/design/invitations.md, Who can do what).
+  def update?
+    head? && membership.household_id == record.id
+  end
 end

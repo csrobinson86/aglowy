@@ -51,6 +51,8 @@ Rails.application.routes.draw do
   scope "/:household_id", as: :household,
         constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
     get "/", to: "dashboards#show", as: :root
+    # Household settings at /:household_id/settings, heads only (docs/design/invitations.md, Household settings).
+    resource :settings, only: %i[ edit update ], controller: "households/settings", path_names: { edit: "" }
     resources :members, only: %i[ index new create ] do
       resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }
       resource :password_link, only: :create, module: :members

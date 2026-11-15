@@ -43,8 +43,12 @@ class FamilyStudy < ApplicationRecord
   end
 
   # Safe to run twice: insert_all skips slots that already have a session, even a moved or cancelled one (gotchas 15 and 21).
+  # Behind the household's lock, which re-reads its zone, so a time zone change can't land between building the slots
+  # and inserting them (Household#update_settings).
   def extend_sessions(through: FamilyStudy.horizon)
-    sessions.insert_all(new_session_rows(through: through), unique_by: %i[ family_study_id recurrence_at ])
+    household.with_lock do
+      sessions.insert_all(new_session_rows(through: through), unique_by: %i[ family_study_id recurrence_at ])
+    end
   end
 
   # How the session page says it repeats: "Once", "Weekly on Tuesday", "Monthly on the last Tuesday".
