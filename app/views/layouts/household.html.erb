@@ -6,8 +6,9 @@
   </head>
 
   <body data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
-    <%# AppShellComponent renders the page's one <main>. %>
-    <%= render AppShellComponent.new(membership: Current.membership, selected_item: controller_path.split("/").first.to_sym) do %>
+    <%# AppShellComponent renders the page's one <main>. A page can name its own item with content_for :nav_item,
+        as a personal goal's page does for My goals. %>
+    <%= render AppShellComponent.new(membership: Current.membership, selected_item: (content_for(:nav_item).presence || controller_path.split("/").first).to_sym) do %>
       <%= render "shared/flash" %>
       <%= render "shared/impersonation_banner" %>
       <%= yield %>

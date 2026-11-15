@@ -4,12 +4,14 @@
 # with steps (frames goals-list.png, goals-list-archived.png). Pass a goal from Goal.preloaded, so a list
 # asks no query per goal.
 class GoalRowComponent < ApplicationComponent
-  attr_reader :goal
+  attr_reader :goal, :household
 
   delegate :progress, to: :goal
 
-  def initialize(goal:)
+  # household: the one whose pages the list is in. A personal goal has none of its own, so My goals passes it.
+  def initialize(goal:, household: goal.household)
     @goal = goal
+    @household = household
   end
 
   def date_text
@@ -52,9 +54,9 @@ class GoalRowComponent < ApplicationComponent
       [ "Next: #{step.title}", names, due ].compact.join(" · ")
     end
 
-    # "Oct 30", with the year when it isn't this year, in the household's time zone.
+    # "Oct 30", with the year when it isn't this year, in the goal's time zone.
     def short_date(time)
-      zone = goal.household.time_zone
+      zone = goal.time_zone
       date = time.in_time_zone(zone).to_date
       date.strftime(date.year == Time.current.in_time_zone(zone).year ? "%b %-d" : "%b %-d, %Y")
     end

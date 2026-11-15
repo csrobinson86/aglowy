@@ -54,6 +54,18 @@ class GoalPolicyTest < ActiveSupport::TestCase
     assert GoalPolicy.new(memberships(:spouse_in_home), users(:spouse).goals.new).create?
   end
 
+  test "personal goal: a child with a login owns theirs, and an owner reaches theirs from any of their households" do
+    eli_goal = users(:eli).goals.create!(title: "Read my story book", target_on: Date.new(2027, 2, 28), set_by: users(:eli))
+    head_goal = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+
+    [ [ :eli_in_home, eli_goal ], [ :head_in_home, head_goal ], [ :head_in_parents, head_goal ] ].each do |membership, goal|
+      policy = GoalPolicy.new(memberships(membership), goal)
+
+      assert policy.show? && policy.update? && policy.destroy?, "expected #{membership} to run their own goal"
+    end
+    assert GoalPolicy.new(memberships(:eli_in_home), users(:eli).goals.new).create?
+  end
+
   test "personal goal: another member of the same household can't show, whatever their role" do
     %i[ head_in_home child_in_home ].each do |membership|
       policy = GoalPolicy.new(memberships(membership), goals(:spouse_bible_reading))

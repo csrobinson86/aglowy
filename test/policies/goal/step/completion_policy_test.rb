@@ -41,10 +41,46 @@ class Goal::Step::CompletionPolicyTest < ActiveSupport::TestCase
     end
   end
 
-  test "nobody ticks a personal goal's steps yet" do
+  test "personal goal: the owner ticks done together, from any household, whatever their role" do
+    spouse_step = goals(:spouse_bible_reading).add_step(title: "Read Genesis")
+    head_step = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head)).add_step(title: "Psalm 1")
+    eli_step = users(:eli).goals.create!(title: "Read my story book", target_on: Date.new(2027, 2, 28), set_by: users(:eli)).add_step(title: "Story 1")
+
+    assert allowed?(:spouse_in_home, spouse_step.new_tick(nil))
+    assert allowed?(:head_in_home, head_step.new_tick(nil))
+    assert allowed?(:head_in_parents, head_step.new_tick(nil))
+    assert allowed?(:eli_in_home, eli_step.new_tick(nil)), "a child runs their own goals"
+    assert allowed?(:spouse_in_home, spouse_step.tick(for: nil, by: users(:spouse))), "the owner unticks"
+  end
+
+  test "personal goal: never a part for a person" do
     step = goals(:spouse_bible_reading).add_step(title: "Read Genesis")
 
-    assert_not Goal::Step::CompletionPolicy.new(memberships(:spouse_in_home), step.new_tick(nil)).create?
+    assert_not allowed?(:spouse_in_home, step.new_tick(users(:spouse).id))
+  end
+
+  test "personal goal: nobody else, whatever their role, an inactive owner, or a nil membership" do
+    step = goals(:spouse_bible_reading).add_step(title: "Read Genesis")
+
+    %i[ head_in_home child_in_home eli_in_home outsider_in_other ].each do |membership|
+      assert_not allowed?(membership, step.new_tick(nil)), "expected #{membership} to be refused"
+    end
+    assert_not Goal::Step::CompletionPolicy.new(nil, step.new_tick(nil)).create?
+
+    memberships(:spouse_in_home).update_column(:active, false)
+    assert_not allowed?(:spouse_in_home, step.new_tick(nil))
+  end
+
+  test "personal goal: nobody ticks once it's completed or archived" do
+    goal = goals(:spouse_bible_reading)
+    step = goal.add_step(title: "Read Genesis")
+
+    goal.complete(by: users(:spouse))
+    assert_not allowed?(:spouse_in_home, step.new_tick(nil))
+
+    goal.reopen
+    goal.archive(by: users(:spouse))
+    assert_not allowed?(:spouse_in_home, step.new_tick(nil))
   end
 
   private

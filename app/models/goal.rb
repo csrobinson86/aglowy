@@ -22,7 +22,7 @@ class Goal < ApplicationRecord
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
-  scope :preloaded, -> { includes(completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions, { family_study: :first_session } ], household: { active_memberships: :user }) }
+  scope :preloaded, -> { includes(:user, completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions, { family_study: :first_session } ], household: { active_memberships: :user }) }
 
   # The goals a person can open from this household: its family goals and their own personal goals.
   # Goals shared into the household join this scope with sharing (docs/design/goals.md, "Loading a goal").
@@ -43,6 +43,12 @@ class Goal < ApplicationRecord
 
   def personal?
     user_id.present?
+  end
+
+  # Dates on a family goal read in its household's time zone. A personal goal is the same in every household,
+  # so its dates read in its owner's, or the app's when they haven't chosen one.
+  def time_zone
+    family? ? household.time_zone : user.time_zone || Time.zone.name
   end
 
   def completed?

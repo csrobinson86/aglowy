@@ -50,6 +50,15 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
+  test "My goals follows Meeting notes in the Mine group, with the flag icon, and is the current item when selected_item is :personal_goals" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :personal_goals))
+
+    assert_equal [ "Meeting notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(2)
+    assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/my_goals']", text: "My goals"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-flag"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
+  end
+
   test "shows the person's name, linking to their account settings, and a Sign out button" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
 

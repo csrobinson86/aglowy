@@ -1,9 +1,10 @@
 # Rendered in two sections, so the new goal page can put its note about steps between the fields and the buttons
 # (frame new-goal.png, without the kind picker, which arrives with habits). Editing carries the goal's lock_version.
 class Goals::GoalForm < ApplicationForm
-  # section: :fields or :actions. Only :actions needs cancel_path.
-  def initialize(section:, cancel_path: nil, submit_label: "Create goal")
+  # section: :fields or :actions. Only :actions needs cancel_path. personal: a goal only its owner sees.
+  def initialize(section:, cancel_path: nil, submit_label: "Create goal", personal: false)
     @section = section
+    @personal = personal
     @cancel_path = cancel_path
     @submit_label = submit_label
   end
@@ -13,7 +14,7 @@ class Goals::GoalForm < ApplicationForm
     when :fields
       f.text_field(name: :title, label: "Title", required: true, full_width: true)
       f.text_area(name: :body, label: "Why this goal? (optional)", full_width: true,
-                  caption: "Shown at the top of the goal so everyone remembers the reason.")
+                  caption: @personal ? "Shown at the top of the goal to remind you why." : "Shown at the top of the goal so everyone remembers the reason.")
       f.text_field(name: :target_on, label: "Target date", type: :date, required: true, full_width: false)
       f.hidden(name: :lock_version) if @builder.object.persisted?
     when :actions

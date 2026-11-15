@@ -1,7 +1,8 @@
 <% content_for :title, "Edit goal" %>
+<% goal_nav_item(@goal) %>
 
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
-  <% breadcrumbs.with_item(href: household_goals_path) { "Family goals" } %>
+  <% breadcrumbs.with_item(href: goal_list_path(@goal)) { goal_list_name(@goal) } %>
   <% breadcrumbs.with_item(href: household_goal_path(id: @goal)) { @goal.title_in_database } %>
   <% breadcrumbs.with_item(href: edit_household_goal_path(id: @goal)) { "Edit" } %>
 <% end %>
@@ -15,7 +16,7 @@
 
 <div class="container-md ml-0">
   <%= primer_form_with(model: @goal, url: household_goal_path(id: @goal)) do |f| %>
-    <%= render Goals::GoalForm.new(f, section: :fields) %>
+    <%= render Goals::GoalForm.new(f, section: :fields, personal: @goal.personal?) %>
     <div class="mt-4">
       <%= render Goals::GoalForm.new(f, section: :actions, cancel_path: household_goal_path(id: @goal), submit_label: "Save") %>
     </div>

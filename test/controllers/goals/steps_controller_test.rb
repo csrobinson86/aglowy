@@ -151,6 +151,44 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, step.lock_version
   end
 
+  test "posting assignees on a personal goal's step is invalid" do
+    goal = goals(:spouse_bible_reading)
+    step = goal.add_step(title: "Read Genesis")
+    sign_in identities(:spouse)
+
+    assert_no_difference -> { Goal::Step.count } => 0, -> { Goal::Step::Assignment.count } => 0 do
+      post household_goal_steps_path(household_id: households(:home), goal_id: goal),
+           params: { goal_step: { title: "Read Exodus with Sam", assignee_ids: [ users(:spouse).id ] } }, as: :turbo_stream
+    end
+    assert_response :unprocessable_content
+    assert_select "turbo-stream[action=replace][target=new-goal-step]"
+
+    patch household_goal_step_path(household_id: households(:home), goal_id: goal, id: step),
+          params: { goal_step: { title: "Read Genesis", assignee_ids: [ users(:spouse).id ], lock_version: 0 } }, as: :turbo_stream
+    assert_response :unprocessable_content
+    assert step.reload.everyone?
+    assert_equal 0, step.lock_version
+  end
+
+  test "the owner adds, edits and removes a personal goal's steps" do
+    goal = goals(:spouse_bible_reading)
+    sign_in identities(:spouse)
+
+    post household_goal_steps_path(household_id: households(:home), goal_id: goal), params: { goal_step: { title: "Read Genesis", due_on: "2026-12-31" } }, as: :turbo_stream
+    assert_response :success
+    step = goal.steps.sole
+    assert_equal [ "Read Genesis", Date.new(2026, 12, 31) ], [ step.title, step.due_on ]
+
+    patch household_goal_step_path(household_id: households(:home), goal_id: goal, id: step),
+          params: { goal_step: { title: "Read Genesis and Exodus", due_on: "", lock_version: 0 } }, as: :turbo_stream
+    assert_response :success
+    assert_equal [ "Read Genesis and Exodus", nil ], [ step.reload.title, step.due_on ]
+
+    delete household_goal_step_path(household_id: households(:home), goal_id: goal, id: step), as: :turbo_stream
+    assert_response :success
+    assert_empty goal.steps.reload
+  end
+
   test "a step on another household's goal is 404" do
     sign_in identities(:spouse)
     post household_goal_steps_path(household_id: households(:home), goal_id: goals(:outsiders_reading)), params: { goal_step: { title: "Mine" } }, as: :turbo_stream

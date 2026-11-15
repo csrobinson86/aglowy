@@ -60,7 +60,7 @@ class GoalsController < ApplicationController
     @goal = reachable_goals.find(params[:id])
     authorize @goal
     @goal.delete_for_good
-    redirect_to household_goals_path, notice: "Goal deleted."
+    redirect_to helpers.goal_list_path(@goal), notice: "Goal deleted."
   end
 
   private

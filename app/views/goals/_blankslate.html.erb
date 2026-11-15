@@ -1,14 +1,20 @@
-<%# locals: (status:, can_create:) %>
+<%# locals: (status:, can_create:, mine: false) %>
 <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
-  <% blankslate.with_visual_icon(icon: :goal) %>
+  <% blankslate.with_visual_icon(icon: mine ? :flag : :goal) %>
   <% case status %>
   <% when "active" %>
-    <% blankslate.with_heading(tag: :h2) { "No family goals yet" } %>
-    <% if can_create %>
-      <% blankslate.with_description { "Set a goal the whole household can work toward, then break it into steps." } %>
-      <% blankslate.with_primary_action(href: new_household_goal_path) { "New goal" } %>
+    <% if mine %>
+      <% blankslate.with_heading(tag: :h2) { "No goals of your own yet" } %>
+      <% blankslate.with_description { "Set a goal just for you and break it into steps. Only you can see it." } %>
+      <% blankslate.with_primary_action(href: new_household_my_goal_path) { "New goal" } %>
     <% else %>
-      <% blankslate.with_description { "When a parent sets a family goal, it will show up here." } %>
+      <% blankslate.with_heading(tag: :h2) { "No family goals yet" } %>
+      <% if can_create %>
+        <% blankslate.with_description { "Set a goal the whole household can work toward, then break it into steps." } %>
+        <% blankslate.with_primary_action(href: new_household_goal_path) { "New goal" } %>
+      <% else %>
+        <% blankslate.with_description { "When a parent sets a family goal, it will show up here." } %>
+      <% end %>
     <% end %>
   <% when "completed" %>
     <% blankslate.with_heading(tag: :h2) { "Nothing completed yet" } %>
