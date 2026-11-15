@@ -34,11 +34,12 @@ export default class extends Controller {
 
   // Production storage is another host; asking for it with CORS keeps the canvas exportable. If the saved picture
   // can't load, All done keeps it rather than saving over it without it. Start over replaces this.loading, so a
-  // picture that arrives after it stays off the paper.
+  // picture that arrives after it stays off the paper, and abandons the wait, so an All done waiting on it goes on.
   load() {
     const picture = new Image()
     picture.crossOrigin = "anonymous"
     const loading = this.loading = new Promise(resolve => {
+      this.abandon = () => resolve(false)
       picture.onload = () => resolve(true)
       picture.onerror = () => resolve(false)
     })
@@ -93,6 +94,7 @@ export default class extends Controller {
 
   clear() {
     this.loading = Promise.resolve()
+    this.abandon?.()
     this.keepSaved = false
     this.strokes = []
     this.picture = null
