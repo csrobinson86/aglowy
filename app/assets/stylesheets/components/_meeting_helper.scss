@@ -189,7 +189,10 @@
   background-color: var(--bgColor-muted);
 }
 
+// Static, so its ::after (and Primer's coarse-pointer ::before) reach past Primer's position: relative .Button
+// to the card.
 .meeting-helper__choice-button {
+  position: static;
   height: auto;
   min-height: var(--base-size-64);
   font-size: var(--text-title-size-large);

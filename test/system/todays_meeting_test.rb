@@ -50,8 +50,8 @@ class TodaysMeetingTest < ApplicationSystemTestCase
     capture_screens("helper-start", viewports: TABLET)
     click_on "Start"
 
-    note = users(:eli).meeting_notes.find_by!(kind: "weekend", week_of: Date.new(2026, 11, 16))
     assert_selector "h1", text: "Sing along with everyone."
+    note = users(:eli).meeting_notes.find_by!(kind: "weekend", week_of: Date.new(2026, 11, 16))
     assert_current_path household_meeting_note_step_path(household_id: households(:home), meeting_note_id: note, id: "opening_song")
     click_on "Next"
 
@@ -82,6 +82,19 @@ class TodaysMeetingTest < ApplicationSystemTestCase
     assert_accessible
     capture_screens("helper-pick", viewports: TABLET)
     click_on "Midweek meeting"
+
+    assert_selector "h1", text: "Sing along with everyone."
+    assert_text "Song and prayer"
+  end
+
+  test "a child with the helper taps anywhere on a meeting's card to start it" do
+    travel_to Time.utc(2026, 11, 25, 12)
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:eli)
+    visit household_todays_meeting_url(household_id: households(:home))
+
+    card = find(".meeting-helper__choice", text: "Weekend meeting")
+    card.click(x: 8 - card.rect.width / 2, y: 8 - card.rect.height / 2) # its top-left corner, in the padding
 
     assert_selector "h1", text: "Sing along with everyone."
     assert_text "Song and prayer"
