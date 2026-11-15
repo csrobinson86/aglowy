@@ -1,0 +1,5 @@
+<%# locals: (invitation_signup:) -%>
+<%= render(Primer::Beta::Heading.new(tag: :h1, font_size: 2, font_weight: :normal, text_align: :center)) { "Join the #{invitation_signup.household.name}" } %>
+<%= render(Primer::Beta::Text.new(tag: :p, color: :muted, text_align: :center, mb: 4)) do %>
+  <%= invitation_signup.invited_by.name %> invited you to join as <%= invitation_signup.role == "head" ? "a head" : "an adult" %>.
+<% end %>

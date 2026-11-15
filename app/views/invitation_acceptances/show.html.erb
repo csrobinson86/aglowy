@@ -1,0 +1,19 @@
+<% content_for :title, "Join the #{@invitation_signup.household.name}" %>
+
+<div class="auth-form auth-form--wide">
+  <%= render "heading", invitation_signup: @invitation_signup %>
+
+  <%= render(Primer::Box.new(bg: :subtle, border: true, border_radius: 2, p: 3)) do %>
+    <%= primer_form_with(model: @invitation_signup, url: invitation_acceptance_path(token: @invitation_signup.token)) do |f| %>
+      <%= render InvitationSignups::InvitationSignupForm.new(f) %>
+    <% end %>
+    <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, mt: 3, mb: 0)) do %>
+      This invitation works until <%= l(@invitation_signup.expires_on, format: "%B %-d") %>.
+    <% end %>
+  <% end %>
+
+  <%= render(Primer::Box.new(border: true, border_radius: 2, p: 3, mt: 3, text_align: :center)) do %>
+    Already have an Aglowy account?
+    <%= render(Primer::Beta::Link.new(href: new_identity_session_path, underline: true)) { "Sign in to accept" } %>
+  <% end %>
+</div>

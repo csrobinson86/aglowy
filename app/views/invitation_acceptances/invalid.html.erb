@@ -1,0 +1,9 @@
+<% content_for :title, "This invitation can't be used" %>
+
+<%# Says nothing about why, or which household (docs/design/invitations.md, Traps). %>
+<%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+  <% blankslate.with_visual_icon(icon: :mail) %>
+  <% blankslate.with_heading(tag: :h1) { "This invitation can't be used" } %>
+  <% blankslate.with_description { "It may have expired, been cancelled, or been used already. Ask whoever invited you to send a new one." } %>
+  <% blankslate.with_secondary_action(href: new_identity_session_path) { "Go to sign in" } %>
+<% end %>

@@ -1,0 +1,12 @@
+<% content_for :title, "Join the #{@invitation_signup.household.name}" %>
+
+<div class="auth-form auth-form--wide">
+  <%= render "heading", invitation_signup: @invitation_signup %>
+
+  <%= render(Primer::Box.new(bg: :subtle, border: true, border_radius: 2, p: 3, text_align: :center)) do %>
+    <%= render(Primer::Beta::Text.new(tag: :p)) do %>
+      <%= @invitation_signup.email %> already has an Aglowy account. Sign in to accept, and you'll come back here.
+    <% end %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_identity_session_path, scheme: :primary, block: true)) { "Sign in to accept" } %>
+  <% end %>
+</div>
