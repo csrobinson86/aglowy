@@ -353,6 +353,14 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_select "dialog#delete-goal", count: 0
   end
 
+  test "a personal goal's owner gets Edit but no goal menu yet" do
+    sign_in identities(:spouse)
+    get household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))
+    assert_select "a[href='#{edit_household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))}']", "Edit"
+    assert_select "button[aria-label='Goal actions']", count: 0
+    assert_select "dialog#delete-goal", count: 0
+  end
+
   test "the Every step is done Banner has the Mark goal complete button" do
     sign_in identities(:spouse)
     goal = households(:home).goals.create!(title: "Read Jonah", target_on: Date.new(2027, 1, 31), set_by: users(:spouse))

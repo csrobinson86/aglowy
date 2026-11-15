@@ -227,6 +227,15 @@ class GoalTest < ActiveSupport::TestCase
     assert goal.steps.all? { it.association(:assignments).loaded? && it.association(:completions).loaded? }
   end
 
+  test "delete_for_good wins over an edit saved since the goal was loaded" do
+    goal = Goal.find(goals(:gospels).id)
+    Goal.find(goal.id).update!(title: "Read the Gospels")
+
+    goal.delete_for_good
+
+    assert_not Goal.exists?(goal.id)
+  end
+
   test "database: deleting a goal deletes its steps, assignments and completions" do
     goal = goals(:gospels)
     step_ids = goal.steps.ids

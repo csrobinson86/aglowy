@@ -87,6 +87,13 @@ class Goal < ApplicationRecord
     under_lock { self.archival = nil if archived? }
   end
 
+  # Deleting is deliberate, so it wins over an edit saved since the goal was loaded: the row lock rereads
+  # lock_version, so destroy! can't raise StaleObjectError, and an edit saved at the same moment waits for it.
+  # A goal someone else just deleted is RecordNotFound, a 404.
+  def delete_for_good
+    with_lock { destroy! }
+  end
+
   # New steps go last. The assignees are checked as active members behind the lock, like Step#reassign.
   def add_step(title:, due_on: nil, assignees: [])
     under_lock do

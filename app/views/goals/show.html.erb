@@ -14,7 +14,10 @@
   <% if policy(@goal).edit? %>
     <% subhead.with_actions(display: :flex) do %>
       <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal), mr: 2)) { "Edit" } %>
-      <%= render "goals/menu", goal: @goal %>
+      <%# Personal goals get the menu in the My goals story (#94, Out of scope); their Archive would land on the household's tab. %>
+      <% if @goal.family? %>
+        <%= render "goals/menu", goal: @goal %>
+      <% end %>
     <% end %>
   <% end %>
   <% subhead.with_description do %>

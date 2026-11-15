@@ -59,7 +59,7 @@ class GoalsController < ApplicationController
   def destroy
     @goal = reachable_goals.find(params[:id])
     authorize @goal
-    @goal.destroy!
+    @goal.delete_for_good
     redirect_to household_goals_path, notice: "Goal deleted."
   end
 

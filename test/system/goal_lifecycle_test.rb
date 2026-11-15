@@ -90,6 +90,7 @@ class GoalLifecycleTest < ApplicationSystemTestCase
 
   private
     def open_goal_menu
+      assert_turbo_idle
       find("button[aria-label='Goal actions']").click
       assert_selector "#goal-menu-list[role=menu]"
     end
