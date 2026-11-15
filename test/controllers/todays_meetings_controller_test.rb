@@ -147,7 +147,102 @@ class TodaysMeetingsControllerTest < ActionDispatch::IntegrationTest
     assert_empty users(:spouse).meeting_notes
   end
 
+  test "a child with the helper and times set: create redirects to opening_song of the right meeting" do
+    set_meeting_times
+    turn_on_helper
+    sign_in identities(:eli)
+
+    post household_todays_meeting_path(household_id: households(:home)), params: { meeting_note: { kind: "midweek", week_of: "2026-11-16" } }
+
+    note = users(:eli).meeting_notes.find_by!(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    assert_redirected_to household_meeting_note_step_path(household_id: households(:home), meeting_note_id: note, id: "opening_song")
+  end
+
+  test "a child with the helper and an existing note: show redirects to its first step" do
+    set_meeting_times
+    turn_on_helper
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    sign_in identities(:eli)
+
+    get household_todays_meeting_path(household_id: households(:home))
+
+    assert_redirected_to household_meeting_note_step_path(household_id: households(:home), meeting_note_id: note, id: "opening_song")
+  end
+
+  test "a child with the helper and times set, no note yet: show says hi and offers Start in the helper layout" do
+    set_meeting_times
+    turn_on_helper
+    sign_in identities(:eli)
+
+    assert_no_difference -> { MeetingNote.count } do
+      get household_todays_meeting_path(household_id: households(:home))
+    end
+
+    assert_response :success
+    assert_select "body[data-color-mode=dark]"
+    assert_select "nav[aria-label='Main']", count: 0
+    assert_select "header a[href='#{household_root_path(household_id: households(:home))}'][aria-label='Back to Aglowy']"
+    assert_select "main h1", "Hi, Eli!"
+    assert_select "main", text: /Midweek meeting · Thursday 7:00 PM/
+    assert_select "main form[action='#{household_todays_meeting_path(household_id: households(:home))}']", count: 1 do
+      assert_select "input[name='meeting_note[kind]'][value=midweek]"
+      assert_select "button", "Start"
+    end
+  end
+
+  test "a child with the helper and no times: show renders the picker in the helper layout" do
+    turn_on_helper
+    sign_in identities(:eli)
+
+    get household_todays_meeting_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select "title", "Today's meeting · The Head Family · Aglowy"
+    assert_select "html[lang=en] body[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
+    assert_select "nav[aria-label='Main']", count: 0
+    assert_select "main h1", "Hi, Eli!"
+    assert_select "main", text: /Which meeting is it\?/
+    { "midweek" => [ "Midweek meeting", "8 parts" ], "weekend" => [ "Weekend meeting", "4 parts" ] }.each do |kind, (label, parts)|
+      assert_select "main form:has(input[name='meeting_note[kind]'][value=#{kind}])" do
+        assert_select "input[name='meeting_note[week_of]'][value='2026-11-16']"
+        assert_select "button", label
+      end
+      assert_select "main", text: /#{parts}/
+    end
+    assert_select "main .meeting-helper__icon svg[aria-hidden=true]", count: 2
+    assert_select "main a", text: "Set your meeting times", count: 0
+  end
+
+  test "a child with the helper off still gets the edit page" do
+    set_meeting_times
+    sign_in identities(:eli)
+
+    get household_todays_meeting_path(household_id: households(:home))
+    assert_select "body[data-color-mode=auto]"
+    assert_select "main button", "Start my notes"
+
+    post household_todays_meeting_path(household_id: households(:home)), params: { meeting_note: { kind: "midweek", week_of: "2026-11-16" } }
+    assert_redirected_to edit_household_meeting_note_path(household_id: households(:home), id: users(:eli).meeting_notes.sole)
+
+    get household_todays_meeting_path(household_id: households(:home))
+    assert_redirected_to edit_household_meeting_note_path(household_id: households(:home), id: users(:eli).meeting_notes.sole)
+  end
+
+  test "a head with the helper on still gets their meeting note" do
+    set_meeting_times
+    turn_on_helper
+    sign_in identities(:head)
+
+    get household_todays_meeting_path(household_id: households(:home))
+
+    assert_redirected_to edit_household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_midweek))
+  end
+
   private
+    def turn_on_helper
+      households(:home).enable_meeting_helper(by: users(:head))
+    end
+
     # Midweek on Thursday at 7:00 PM, weekend on Sunday at 10:00 AM.
     def set_meeting_times
       households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")

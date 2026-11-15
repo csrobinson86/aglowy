@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%= render "layouts/head", title: safe_join([ "Today's meeting", Current.household.name, "Aglowy" ], " · ") %>
+  </head>
+
+  <%# Full screen for a child with the meeting helper, and always dark: a bright screen glows in a meeting hall
+      (docs/design/meeting-helper.md, The meeting_helper layout). A page fills :helper_progress with its step dots
+      and :helper_meeting with the meeting's name. %>
+  <body class="meeting-helper" data-color-mode="dark" data-light-theme="light" data-dark-theme="dark">
+    <header class="meeting-helper__header">
+      <%= render Primer::Beta::IconButton.new(icon: :home, tag: :a, href: household_root_path, size: :large, show_tooltip: false, "aria-label": "Back to Aglowy", classes: "meeting-helper__home") %>
+      <div class="meeting-helper__progress">
+        <%= content_for(:helper_progress).presence || tag.p("Today's meeting", class: "meeting-helper__title") %>
+      </div>
+      <p class="meeting-helper__meeting"><%= content_for(:helper_meeting) %></p>
+    </header>
+
+    <main class="meeting-helper__main">
+      <%= render "shared/flash" %>
+      <%= render "shared/impersonation_banner" %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

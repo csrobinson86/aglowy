@@ -1,0 +1,205 @@
+// The meeting helper's full-screen pages for children (docs/design/meeting-helper.md, The meeting_helper layout).
+// Large touch targets from base-size primitives, on Primer's dark theme. Nothing moves: no transitions or
+// animations of our own (Trap 11).
+.meeting-helper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.meeting-helper__header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--base-size-16);
+  padding: var(--base-size-12) var(--base-size-24);
+  border-bottom: var(--borderWidth-thin) solid var(--borderColor-default);
+}
+
+// At least 44px to touch, like Primer's coarse-pointer targets. Chained, to outrank Primer's
+// .Button--iconOnly.Button--large width.
+.meeting-helper__home.Button--iconOnly {
+  justify-self: start;
+  width: var(--base-size-48);
+  height: var(--base-size-48);
+}
+
+.meeting-helper__title {
+  margin: 0;
+  font-size: var(--text-title-size-small);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+.meeting-helper__meeting {
+  justify-self: end;
+  margin: 0;
+  color: var(--fgColor-muted);
+}
+
+.meeting-helper__dots {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-16);
+}
+
+.meeting-helper__dot {
+  width: var(--base-size-12);
+  height: var(--base-size-12);
+  border-radius: var(--borderRadius-full);
+  background-color: var(--fgColor-muted);
+}
+
+.meeting-helper__dot--current {
+  width: var(--base-size-20);
+  height: var(--base-size-20);
+  background-color: var(--fgColor-accent);
+  box-shadow: 0 0 0 var(--base-size-4) var(--bgColor-accent-muted);
+}
+
+.meeting-helper__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: var(--base-size-24);
+}
+
+.meeting-helper__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--base-size-24);
+  text-align: center;
+}
+
+.meeting-helper__heading {
+  margin: 0;
+  font-size: calc(var(--base-size-44) + var(--base-size-2));
+  font-weight: var(--base-text-weight-semibold);
+  line-height: var(--text-display-lineHeight);
+}
+
+.meeting-helper__lead,
+.meeting-helper__part {
+  margin: 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-title-size-medium);
+}
+
+.meeting-helper__part {
+  display: flex;
+  align-items: center;
+}
+
+// An icon in its tone's circle; the SVG takes the circle's text colour.
+.meeting-helper__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-112);
+  height: var(--base-size-112);
+  border-radius: var(--borderRadius-full);
+
+  svg {
+    width: var(--base-size-48);
+    height: var(--base-size-48);
+  }
+}
+
+.meeting-helper__icon--large {
+  width: calc(var(--base-size-128) + var(--base-size-40));
+  height: calc(var(--base-size-128) + var(--base-size-40));
+
+  svg {
+    width: var(--base-size-64);
+    height: var(--base-size-64);
+  }
+}
+
+.meeting-helper__icon--accent {
+  color: var(--fgColor-accent);
+  background-color: var(--bgColor-accent-muted);
+}
+
+.meeting-helper__icon--muted {
+  color: var(--fgColor-muted);
+  background-color: var(--bgColor-neutral-muted);
+}
+
+.meeting-helper__icon--attention {
+  color: var(--fgColor-attention);
+  background-color: var(--bgColor-attention-muted);
+}
+
+.meeting-helper__icon--danger {
+  color: var(--fgColor-danger);
+  background-color: var(--bgColor-danger-muted);
+}
+
+// Primer Buttons at the helper's sizes: Start at least 96px tall, Back and Next at least 72px.
+.meeting-helper__button {
+  height: auto;
+  padding-inline: var(--base-size-32);
+  font-size: var(--text-title-size-medium);
+}
+
+.meeting-helper__button--big {
+  min-height: var(--base-size-96);
+  padding-inline: var(--base-size-64);
+  font-size: var(--text-title-size-large);
+}
+
+.meeting-helper__button--step {
+  min-height: calc(var(--base-size-64) + var(--base-size-8));
+}
+
+// Chained, to outrank Primer's own .Button--secondary colours.
+.meeting-helper__button.meeting-helper__button--next {
+  border-color: var(--borderColor-accent-emphasis);
+  background-color: var(--bgColor-accent-muted);
+}
+
+.meeting-helper__steps {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--base-size-16);
+}
+
+.meeting-helper__choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--base-size-32);
+  width: 100%;
+  max-width: var(--breakpoint-medium);
+}
+
+// The whole card is the button: its ::after covers the card.
+.meeting-helper__choice {
+  position: relative;
+  display: flex;
+  flex: 1 1 var(--breakpoint-xsmall);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--base-size-8);
+  padding: var(--base-size-32);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  background-color: var(--bgColor-muted);
+}
+
+// Static, so its ::after (and Primer's coarse-pointer ::before) reach past Primer's position: relative .Button
+// to the card.
+.meeting-helper__choice-button {
+  position: static;
+  height: auto;
+  min-height: var(--base-size-64);
+  font-size: var(--text-title-size-large);
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
+}
