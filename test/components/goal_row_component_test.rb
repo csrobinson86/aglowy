@@ -81,6 +81,30 @@ class GoalRowComponentTest < ViewComponent::TestCase
     assert_text "Every step is done"
   end
 
+  test "a personal goal links into the household it's shown in, with no people" do
+    goal = goals(:spouse_bible_reading)
+    goal.add_step(title: "Read Genesis")
+    goal.complete(by: users(:spouse))
+
+    render_inline(GoalRowComponent.new(goal: preloaded(:spouse_bible_reading), household: households(:home)))
+
+    assert_selector "h2 a[href='/#{households(:home).id}/goals/#{goal.id}']", text: "Read the whole Bible in a year"
+    assert_text "Completed Nov 14"
+    assert_text "0 of 1 step"
+    assert_no_selector ".avatar"
+    assert_no_selector ".sr-only"
+  end
+
+  test "a personal goal's dates are in its owner's time zone" do
+    travel_to Time.utc(2026, 11, 15, 2)
+    users(:spouse).update!(time_zone: "Pacific Time (US & Canada)")
+    goals(:spouse_bible_reading).complete(by: users(:spouse))
+
+    render_inline(GoalRowComponent.new(goal: preloaded(:spouse_bible_reading), household: households(:home)))
+
+    assert_text "Completed Nov 14"
+  end
+
   private
     def preloaded(name)
       Goal.preloaded.find(goals(name).id)

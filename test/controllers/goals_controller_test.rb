@@ -217,10 +217,85 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Read Acts together", goals(:outsiders_reading).reload.title
   end
 
-  test "someone else's personal goal is 404, even for a head of the same household" do
+  test "another member of the same household gets 404 on someone's personal goal" do
+    goal = goals(:spouse_bible_reading)
+    step = goal.add_step(title: "Read Genesis")
+
+    [ identities(:head), identities(:eli) ].each do |identity|
+      sign_in identity
+      get household_goal_path(household_id: households(:home), id: goal)
+      assert_response :not_found
+
+      sign_in identity # a 404 doesn't keep the session
+      get edit_household_goal_path(household_id: households(:home), id: goal)
+      assert_response :not_found
+
+      sign_in identity
+      patch household_goal_path(household_id: households(:home), id: goal), params: { goal: { title: "Mine now", lock_version: 0 } }
+      assert_response :not_found
+
+      sign_in identity
+      post household_goal_archival_path(household_id: households(:home), goal_id: goal)
+      assert_response :not_found
+
+      sign_in identity
+      post household_goal_step_completions_path(household_id: households(:home), goal_id: goal, step_id: step), as: :turbo_stream
+      assert_response :not_found
+
+      sign_in identity
+      delete household_goal_path(household_id: households(:home), id: goal)
+      assert_response :not_found
+    end
+
+    assert_equal "Read the whole Bible in a year", goal.reload.title
+    assert goal.open?
+    assert_not step.reload.done?
+  end
+
+  test "the owner sees it from either of their households" do
+    goal = users(:head).goals.create!(title: "Read the Psalms", body: "To pray better.", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+    goal.add_step(title: "Read Psalms 1 to 50", due_on: Date.new(2026, 12, 31))
     sign_in identities(:head)
-    get household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))
-    assert_response :not_found
+
+    [ households(:home), households(:parents) ].each do |household|
+      get household_goal_path(household_id: household, id: goal)
+
+      assert_response :success
+      assert_select "title", "Read the Psalms · #{household.name} · Aglowy"
+      assert_select "nav[aria-label='Breadcrumb'] a[href='#{household_my_goals_path(household_id: household)}']", "My goals"
+      assert_select "nav[aria-label='Main'] a[aria-current='page']", "My goals"
+      assert_select "h1 .Label", "Milestone"
+      assert_select "h1 .Label", "Private"
+      assert_text_on_page "Target February 28, 2027"
+      assert_not_includes response.body, "Set by"
+      assert_text_on_page "To pray better."
+      assert_select "#goal-progress", text: /0 of 1 step done/
+      assert_select "#goal-progress li", count: 0
+      assert_select "#goal-steps .Box-row", text: /Read Psalms 1 to 50\s*Due Dec 31/
+      assert_select "#goal-steps .avatar", count: 0
+      assert_select "#goal-steps form[action='#{household_goal_step_completions_path(household_id: household, goal_id: goal, step_id: goal.steps.sole)}']"
+      assert_select "#goal-steps input[name='goal_step[assignee_ids][]']", count: 0
+      assert_select "a", { text: "Schedule as a family study", count: 0 }
+      assert_select "action-menu form[action='#{household_goal_completion_path(household_id: household, goal_id: goal)}']", text: /Mark goal complete/
+      assert_select "dialog#delete-goal form[action='#{household_goal_path(household_id: household, id: goal)}']"
+
+      get edit_household_goal_path(household_id: household, id: goal)
+      assert_select "nav[aria-label='Breadcrumb'] a[href='#{household_my_goals_path(household_id: household)}']", "My goals"
+      assert_select "nav[aria-label='Main'] a[aria-current='page']", "My goals"
+    end
+  end
+
+  test "archiving or deleting a personal goal goes back to My goals" do
+    goal = goals(:spouse_bible_reading)
+    sign_in identities(:spouse)
+
+    post household_goal_archival_path(household_id: households(:home), goal_id: goal)
+    assert_redirected_to household_my_goals_path(household_id: households(:home), status: "archived")
+    assert goal.reload.archived?
+
+    delete household_goal_path(household_id: households(:home), id: goal)
+    assert_redirected_to household_my_goals_path(household_id: households(:home))
+    assert_not Goal.exists?(goal.id)
   end
 
   test "a child can't edit: 404 on edit, refused on update" do
@@ -349,14 +424,6 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
     sign_in child_identity
     get goal_path(goals(:gospels))
-    assert_select "button[aria-label='Goal actions']", count: 0
-    assert_select "dialog#delete-goal", count: 0
-  end
-
-  test "a personal goal's owner gets Edit but no goal menu yet" do
-    sign_in identities(:spouse)
-    get household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))
-    assert_select "a[href='#{edit_household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))}']", "Edit"
     assert_select "button[aria-label='Goal actions']", count: 0
     assert_select "dialog#delete-goal", count: 0
   end

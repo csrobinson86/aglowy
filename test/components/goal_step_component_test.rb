@@ -198,6 +198,29 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_no_link "Schedule as a family study"
   end
 
+  test "a personal goal's step names no one and ticks done together in the household it's shown in" do
+    goal = goals(:spouse_bible_reading)
+    goal.add_step(title: "Read Genesis", due_on: Date.new(2026, 12, 31))
+
+    render_inline(GoalStepComponent.new(step: Goal.preloaded.find(goal.id).steps.sole, household: households(:home), tickable: [ nil ]))
+
+    assert_selector "form[action='/#{households(:home).id}/goals/#{goal.id}/steps/#{goal.steps.sole.id}/completions'] input[type=checkbox]:not([disabled])"
+    assert_selector ".goal-step__meta", exact_text: "Due Dec 31"
+    assert_no_selector ".avatar"
+    assert_no_selector ".sr-only", text: "With"
+  end
+
+  test "a personal goal's done step says when" do
+    travel_to Time.utc(2026, 11, 14, 12)
+    goal = goals(:spouse_bible_reading)
+    goal.add_step(title: "Read Genesis", due_on: Date.new(2026, 12, 31)).tick(for: nil, by: users(:spouse))
+
+    render_inline(GoalStepComponent.new(step: Goal.preloaded.find(goal.id).steps.sole, household: households(:home), tickable: [ nil ]))
+
+    assert_selector "input[type=checkbox][checked]"
+    assert_selector ".goal-step__meta", exact_text: "Done · Nov 14"
+  end
+
   private
     def completions_path(step)
       "/#{households(:home).id}/goals/#{goals(:gospels).id}/steps/#{step.id}/completions"

@@ -72,6 +72,8 @@ Rails.application.routes.draw do
       resource :sharing, only: %i[ create destroy ], module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
+    # The signed-in person's own goals; each opens at /goals/:id like a family goal (docs/design/goals.md, Pages).
+    resources :my_goals, only: %i[ index new create ], controller: "personal_goals"
     resources :goals, only: %i[ index new create show edit update destroy ] do
       resource :completion, only: %i[ create destroy ], module: :goals
       resource :archival, only: %i[ create destroy ], module: :goals

@@ -8,18 +8,20 @@
 class GoalStepComponent < ApplicationComponent
   renders_one :edit_form
 
-  attr_reader :step
+  attr_reader :step, :household
 
   delegate :done?, :everyone?, to: :step
 
+  # household: the one whose pages the step is shown in. A personal goal has none of its own, so its page passes it.
   # editing: show the edit form instead of the row, as when a save comes back with an error.
   # tickable: the parts the viewer may tick (Goal::Step#parts the policy allows), so the rest are disabled.
   # highlighted: the step is the viewer's own, for someone who may tick only their own (frame milestone-goal-child.png).
   # schedulable: the viewer may schedule the step as a family study (heads and adults, frame milestone-goal.png).
   # focused: whose toggle was just pressed. Turbo disables a pressed button while it submits, which drops its focus,
   # and focuses an autofocus element in the Turbo Stream that answers, so the redrawn toggle gets it back.
-  def initialize(step:, editing: false, tickable: [], highlighted: false, schedulable: false, focused: nil)
+  def initialize(step:, household: step.goal.household, editing: false, tickable: [], highlighted: false, schedulable: false, focused: nil)
     @step = step
+    @household = household
     @editing = editing
     @tickable = tickable
     @highlighted = highlighted
@@ -89,9 +91,9 @@ class GoalStepComponent < ApplicationComponent
     options = { data: { turbo_frame: "_top" } }
 
     if (tick = step.tick_for(user_id))
-      options.merge(url: household_goal_step_completion_path(household_id: goal.household_id, goal_id: goal, step_id: step, id: tick), method: :delete)
+      options.merge(url: household_goal_step_completion_path(household_id: household.id, goal_id: goal, step_id: step, id: tick), method: :delete)
     else
-      options.merge(url: household_goal_step_completions_path(household_id: goal.household_id, goal_id: goal, step_id: step, user_id: user_id), method: :post)
+      options.merge(url: household_goal_step_completions_path(household_id: household.id, goal_id: goal, step_id: step, user_id: user_id), method: :post)
     end
   end
 
@@ -106,8 +108,9 @@ class GoalStepComponent < ApplicationComponent
   end
 
   # "Everyone · Due Feb 15", "Eli · Done by Eli · Jan 18", "Eli and Sofia · Eli done · waiting on Sofia · Due Feb 28".
+  # A personal goal's steps are only ever the owner's, so they say no one: "Due Feb 15", "Done · Jan 18".
   def meta_text
-    [ everyone? ? "Everyone" : names(people), *status, ("Due #{step.due_on.strftime("%b %-d")}" if step.due_on && !done?) ].compact.join(" · ")
+    [ (for_text if goal.family?), *status, ("Due #{step.due_on.strftime("%b %-d")}" if step.due_on && !done?) ].compact.join(" · ")
   end
 
   # Whose part is ticked: a user id, or "" for done together. The edit form counts the ticks a change of people clears.
@@ -120,12 +123,26 @@ class GoalStepComponent < ApplicationComponent
       step.goal
     end
 
+    def for_text
+      everyone? ? "Everyone" : names(people)
+    end
+
     def status
       if done?
-        [ everyone? ? "Done together" : "Done by #{names(people)}", short_date(step.completions.map(&:created_at).max) ]
+        [ done_text, short_date(step.completions.map(&:created_at).max) ]
       elsif mixed?
         ticked, waiting = people.partition { step.done_for?(it) }
         [ "#{names(ticked)} done", "waiting on #{names(waiting)}" ]
+      end
+    end
+
+    def done_text
+      if goal.personal?
+        "Done"
+      elsif everyone?
+        "Done together"
+      else
+        "Done by #{names(people)}"
       end
     end
 
@@ -133,8 +150,8 @@ class GoalStepComponent < ApplicationComponent
       users.map(&:name).to_sentence
     end
 
-    # "Dec 12", in the household's time zone.
+    # "Dec 12", in the goal's time zone.
     def short_date(time)
-      time.in_time_zone(step.goal.household&.time_zone || Time.zone).strftime("%b %-d")
+      time.in_time_zone(goal.time_zone).strftime("%b %-d")
     end
 end

@@ -1,5 +1,5 @@
 <div class="d-flex flex-wrap flex-items-center mb-2">
-  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2, classes: "min-width-0 wb-break-word")) { link_to goal.title, household_goal_path(household_id: goal.household_id, id: goal) } %>
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2, classes: "min-width-0 wb-break-word")) { link_to goal.title, household_goal_path(household_id: household.id, id: goal) } %>
   <%= render(Primer::Beta::Label.new(mr: 2)) { "Milestone" } %>
   <span class="color-fg-muted f6 ml-auto"><%= date_text %></span>
 </div>

@@ -1,0 +1,21 @@
+<% content_for :title, "My goals" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "My goals" } %>
+  <% subhead.with_description { "Goals of your own, private to you, in every household you belong to." } %>
+  <% subhead.with_actions do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_my_goal_path, scheme: :primary)) { "New goal" } %>
+  <% end %>
+<% end %>
+
+<%= render "goals/tabs", status: @status, counts: @counts, mine: true %>
+
+<% if @goals.present? %>
+  <%= render Primer::Beta::BorderBox.new do |box| %>
+    <% @goals.each do |goal| %>
+      <% box.with_row { render GoalRowComponent.new(goal:, household: Current.household) } %>
+    <% end %>
+  <% end %>
+<% else %>
+  <%= render "goals/blankslate", status: @status, can_create: true, mine: true %>
+<% end %>

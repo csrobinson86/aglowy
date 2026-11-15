@@ -1,0 +1,22 @@
+<% content_for :title, "New goal" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_my_goals_path) { "My goals" } %>
+  <% breadcrumbs.with_item(href: new_household_my_goal_path) { "New" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "New goal" } %>
+  <% subhead.with_description { "Private to you. It goes with you to every household you belong to." } %>
+<% end %>
+
+<div class="container-md ml-0">
+  <%= primer_form_with(model: @goal, url: household_my_goals_path) do |f| %>
+    <%= render Goals::GoalForm.new(f, section: :fields, personal: true) %>
+    <%= render(Primer::Beta::BorderBox.new(bg: :subtle, color: :muted, my: 4)) do |box| %>
+      <% box.with_body do %>
+        You'll add the steps next, on the goal's page, and tick them off as you go.
+      <% end %>
+    <% end %>
+    <%= render Goals::GoalForm.new(f, section: :actions, cancel_path: household_my_goals_path) %>
+  <% end %>
+</div>

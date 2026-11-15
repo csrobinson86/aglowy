@@ -1,7 +1,8 @@
 <% content_for :title, @goal.title %>
+<% goal_nav_item(@goal) %>
 
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
-  <% breadcrumbs.with_item(href: household_goals_path) { "Family goals" } %>
+  <% breadcrumbs.with_item(href: goal_list_path(@goal)) { goal_list_name(@goal) } %>
   <% breadcrumbs.with_item(href: household_goal_path(id: @goal)) { @goal.title } %>
 <% end %>
 
@@ -9,19 +10,23 @@
   <%# Wraps, so the Milestone Label drops below a long title instead of squeezing it (frame phone-goal.png). %>
   <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
     <span class="mr-2 wb-break-word min-width-0"><%= @goal.title %></span>
-    <%= render(Primer::Beta::Label.new) { "Milestone" } %>
+    <%= render(Primer::Beta::Label.new(mr: 2)) { "Milestone" } %>
+    <%# Sharing with a household comes next (#97); until then a personal goal is always private. %>
+    <% if @goal.personal? %>
+      <%= render(Primer::Beta::Label.new(scheme: :secondary)) do %>
+        <%= render(Primer::Beta::Octicon.new(:lock, mr: 1)) %>Private
+      <% end %>
+    <% end %>
   <% end %>
   <% if policy(@goal).edit? %>
     <% subhead.with_actions(display: :flex) do %>
       <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal), mr: 2)) { "Edit" } %>
-      <%# Personal goals get the menu in the My goals story (#94, Out of scope); their Archive would land on the household's tab. %>
-      <% if @goal.family? %>
-        <%= render "goals/menu", goal: @goal %>
-      <% end %>
+      <%= render "goals/menu", goal: @goal %>
     <% end %>
   <% end %>
   <% subhead.with_description do %>
-    Target <%= @goal.target_on.strftime("%B %-d, %Y") %> · Set by <%= @goal.set_by.name %>
+    <%# A personal goal is always set by its owner, so it doesn't say so. %>
+    <%= [ "Target #{@goal.target_on.strftime("%B %-d, %Y")}", ("Set by #{@goal.set_by.name}" if @goal.family?) ].compact.join(" · ") %>
   <% end %>
 <% end %>
 <% if @goal.body.present? %>

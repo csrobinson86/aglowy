@@ -37,6 +37,10 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_goals_path(household_id: household.id)
   end
 
+  def my_goals_path
+    household_my_goals_path(household_id: household.id)
+  end
+
   # Heads only; the settings controller authorizes too (docs/design/app-shell.md, Navigation rules).
   def show_household_settings?
     membership.head?
