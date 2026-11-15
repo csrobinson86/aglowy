@@ -10,6 +10,7 @@ class Household < ApplicationRecord
   has_many :family_study_sessions, through: :family_studies, source: :sessions, class_name: "FamilyStudy::Session"
   has_many :family_study_resources, through: :family_study_sessions, source: :resources, class_name: "FamilyStudy::Resource"
   has_many :goals, dependent: :destroy
+  has_many :invitations, dependent: :delete_all
   has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
 
   validates :name, presence: true

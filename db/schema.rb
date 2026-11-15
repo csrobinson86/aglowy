@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_000300) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_000400) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -203,6 +203,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_000300) do
     t.check_constraint "username::text ~ '^[a-z0-9][a-z0-9.-]{2,29}$'::text", name: "identities_username_format_check"
   end
 
+  create_table "invitations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.string "email", null: false
+    t.string "role", default: "adult", null: false
+    t.uuid "invited_by_id", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id", "email"], name: "index_invitations_on_household_id_and_email", unique: true
+    t.index ["invited_by_id"], name: "index_invitations_on_invited_by_id"
+    t.check_constraint "role::text = ANY (ARRAY['adult'::character varying, 'head'::character varying]::text[])", name: "invitations_role_check"
+  end
+
   create_table "meeting_note_gems", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "meeting_note_id", null: false
     t.string "scripture", null: false
@@ -294,6 +307,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_000300) do
   add_foreign_key "goals", "users", column: "set_by_id"
   add_foreign_key "goals", "users", on_delete: :cascade
   add_foreign_key "identities", "users"
+  add_foreign_key "invitations", "households", on_delete: :cascade
+  add_foreign_key "invitations", "users", column: "invited_by_id"
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade

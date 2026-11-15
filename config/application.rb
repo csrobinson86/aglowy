@@ -61,6 +61,9 @@ module Aglowy
     config.x.family_studies.minimum_horizon = 3.months
     config.x.storage.household_quota        = 2.gigabytes
     config.x.storage.warning_ratio          = 0.8
+
+    # Every email's sender, Devise's included (config/initializers/devise.rb).
+    config.x.mail_from = ENV.fetch("MAIL_FROM", "Aglowy <hello@localhost>")
   end
 end
 

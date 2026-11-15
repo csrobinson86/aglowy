@@ -1,0 +1,8 @@
+Hi,
+
+<%= @invitation.invited_by.name %> invited you to join the <%= @invitation.household.name %> on Aglowy, where your family plans family studies and works on goals together.
+
+Accept the invitation:
+<%= @accept_url %>
+
+The link works until <%= l(@deadline, format: "%B %-d") %>, and only for <%= @invitation.email %>. If you weren't expecting this, you can ignore it.
