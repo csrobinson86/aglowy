@@ -108,6 +108,8 @@ Leaving runs the existing `Membership#deactivate`, including the steps other epi
 
 ## Household settings (heads)
 
+> Since KIDS-01, adults also open this page, to see only its Children section (the meeting helper switch). Everything below stays heads-only. See `docs/design/meeting-helper.md`.
+
 At `/:household_id/settings` (`Households::SettingsController`, household layout, frame `household-settings.png`). "Household settings" in the sidebar footer, heads only (`docs/design/app-shell.md`).
 
 - **Name and time zone.** Changing the time zone keeps every future family study session at the same local wall-clock time in the new zone: in one transaction holding `household.lock!`, recompute `scheduled_at` and `recurrence_at` of sessions after now from their local time in the old zone (gotcha 14). Past sessions don't move. The hint says so: "Changing it keeps each study at the same local time."
