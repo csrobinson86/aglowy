@@ -146,7 +146,7 @@ Each opening of the picker is a **session**. The extension creates it and owns i
 ### The selection to restore
 
 - **From the toolbar:** save the selection (`$getSelection().clone()`) when the picker opens.
-- **From `+`:** the update listener that reads the query also saves a clone of the selection **on every update while the session is open**. So the saved selection is always the caret at the end of the query as it now stands ("+ps 37:8-9|"), never where the `+` was typed.
+- **From `+`:** on **every update while the session is open**, the update listener re-reads the text from the `+` to the caret into the session's query and saves a clone of the selection. So the saved selection is always the caret at the end of the query as it now stands ("+ps 37:8-9|"), never where the `+` was typed.
 - On a phone, tapping a grid button takes focus from the editor and the keyboard closes. That doesn't matter, because the saved selection is restored before inserting.
 
 ```js
