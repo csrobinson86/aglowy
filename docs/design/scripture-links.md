@@ -126,16 +126,31 @@ The sanitizer keeps `action-text-attachment` (Action Text's default) and still d
     - an update listener that watches for `+` at the start of a word and then reads the text from the `+` to the caret (the query)
     - `KEY_ENTER_COMMAND`, `KEY_ESCAPE_COMMAND` and the arrow keys at `COMMAND_PRIORITY_CRITICAL`, but only while the picker is open
   - This is the same pattern Lexxy's own prompt uses (`lexxy.esm.js`, the prompt's `registerCommand(KEY_ENTER_COMMAND, …, COMMAND_PRIORITY_CRITICAL)`).
-  - It opens and fills the picker by dispatching `scripture-picker:open` with the query, and listens for `scripture-picker:insert` with `{ sgid, html }`.
+  - It opens and fills the picker by dispatching `scripture-picker:open` with `{ session, query }`, and listens for `scripture-picker:insert` with `{ session, sgid, html }`.
 - **The sgid** comes from the server: `GET /scriptures/:id` (`ScripturesController#show`, `:id` like "19:37:8-9") returns `{ sgid, html, text }` as JSON. It needs a signed-in identity but no household. A Bible reference isn't anyone's record, so the controller skips `verify_authorized` and says why in a comment. Calling the server keeps signing on the server. The picker asks when Insert is pressed and disables Insert while it waits.
 
 ### Inserting
 
 The extension inserts the way Lexxy's prompts do:
 
+### Sessions
+
+Each opening of the picker is a **session**. The extension creates it and owns it.
+- A session records an id (a counter), its target editor, the selection to restore, and the query (empty from the toolbar).
+- Only one session is open at a time. Opening a new session, in any editor, ends the old one.
+- Close, Cancel, Esc, a click outside, or the editor being removed (`dispose()`) end the session.
+- The picker's fetch of `GET /scriptures/:id` carries the session id and uses an `AbortController`, aborted when the session ends.
+- **Aborting is only an optimisation.** The insert handler applies a response only when its session id is the open session and its editor is that session's editor. Anything else is dropped, even if the request finished.
+
+### The selection to restore
+
+- **From the toolbar:** save the selection (`$getSelection().clone()`) when the picker opens.
+- **From `+`:** the update listener that reads the query also saves a clone of the selection **on every update while the session is open**. So the saved selection is always the caret at the end of the query as it now stands ("+ps 37:8-9|"), never where the `+` was typed.
+- On a phone, tapping a grid button takes focus from the editor and the keyboard closes. That doesn't matter, because the saved selection is restored before inserting.
+
 ```js
 editor.update(() => {
-  $setSelection(savedSelection)            // the caret from when the picker opened
+  $setSelection(session.selection)         // the caret at the end of the query, or where the toolbar opened it
   const node = new CustomActionTextAttachmentNode({ sgid, contentType: "application/vnd.actiontext.scripture", innerHtml: html })
   if (query) editorElement.contents.replaceTextBackUntil(query, [ node, $createTextNode(" ") ])
   else editorElement.contents.insertAtCursor(node, $createTextNode(" "))
@@ -143,7 +158,7 @@ editor.update(() => {
 ```
 
 - `CustomActionTextAttachmentNode` comes from `@37signals/lexxy`. `$setSelection` and `$createTextNode` come from its `Lexical` export.
-- Save the selection (`$getSelection().clone()`) when the picker opens. On a phone, tapping a grid button takes focus from the editor, and the keyboard closes.
+- `replaceTextBackUntil(query, …)` works backwards from the restored caret, so the whole typed query ("+ps 37:8-9") is replaced.
 - After inserting, focus goes back to the editor, with the caret after the space.
 
 ### Layout
@@ -183,7 +198,8 @@ Styles live in `app/assets/stylesheets/components/_scripture_picker.scss`, BEM (
 
 1. **`attachments: false` blocks scripture links.** Lexxy's `permitsAttachmentContentType` returns false for everything when attachments are off. Use `permitted-attachment-types` instead, and keep uploads off with the `no-uploads` controller and the model validation.
 2. **Lexxy is pinned at 1.0.4, and the extension API is experimental.** Upgrade Lexxy only in its own story, and run `test/system/scripture_links_test.rb` first. If `CustomActionTextAttachmentNode`, `contents.replaceTextBackUntil` or `contents.insertAtCursor` change, fix the extension in that story.
-3. **Keep the caret.** Save the Lexical selection when the picker opens and restore it inside the `editor.update` that inserts, or the link lands at the start of the note on a phone.
+3. **Keep the caret.** Restore the session's selection inside the `editor.update` that inserts, or the link lands at the start of the note on a phone. From `+`, the selection must be the end of the current query, refreshed on every update, never the moment the `+` was typed.
+9. **A late response never inserts.** The insert handler checks the session id and the editor, and drops anything from an ended or superseded session (see Sessions).
 4. **The server signs.** The browser never builds an sgid. `ScripturesController#show` parses the id with `Bible::Reference.find` and 404s on anything invalid.
 5. **Strict linking on save.** Only book, chapter and verse ("Matt 24:14"). Never inside code, links or existing attachments, and never a chapter alone. Test the false positives: "Job 5", "Acts of kindness", "John 3" and "1 John".
 6. **Abbreviations collide.** No abbreviation in `config/bible.yml` may belong to two books. A test loads the file and checks.
@@ -199,7 +215,8 @@ Styles live in `app/assets/stylesheets/components/_scripture_picker.scss`, BEM (
   - two verses (a range)
   - a whole chapter (Insert with no verse chosen)
   - Back and Close
-- **The picker on desktop:** all three columns; "+ps 37:8-9" with the match row; Enter inserts; Esc leaves the text.
+- **The picker on desktop:** all three columns; "+ps 37:8-9" with the match row; Enter inserts and replaces the whole query; Esc leaves the text.
+- **Sessions:** close the picker while its lookup is slow, open it in another editor, and the late response inserts nothing anywhere.
 - **The toolbar button** opens the picker with no query.
 - **Saving:**
   - "matt 24:14" becomes "Matthew 24:14"
