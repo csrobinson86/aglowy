@@ -9,5 +9,13 @@ class DashboardsController < ApplicationController
     @my_goals = Current.user.goals.active.limit(3).load
     @meeting_notes = Current.user.meeting_notes.newest_first.limit(2).load
     @welcome = [ @next_session, @family_goals, @my_goals, @meeting_notes ].all?(&:blank?)
+    @todays_meeting = Current.household.current_or_next_meeting if Current.household.meeting_day?
   end
+
+  private
+    # Start for a child with the helper, Open my notes for everyone else (docs/design/meeting-helper.md, Pages).
+    def meeting_helper?
+      MeetingHelperPolicy.new(pundit_user, Current.household).show?
+    end
+    helper_method :meeting_helper?
 end

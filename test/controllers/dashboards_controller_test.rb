@@ -341,6 +341,80 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_equal few, queries_during_get
   end
 
+  # Thursday 19 November 2026 at 6:00 PM UTC, an hour before the midweek meeting; the home household is in UTC.
+  test "on a meeting day an adult sees the Today's meeting card with Open my notes" do
+    set_meeting_times
+    sign_in identities(:spouse)
+
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".todays-meeting-card" do
+      assert_select ".todays-meeting-card__icon svg.octicon-sun"
+      assert_select "h2", "Today's meeting"
+      assert_select ".text-bold", "Midweek meeting · 7:00 PM"
+      assert_select "p", "Take notes as you go. They stay yours in every household."
+      assert_todays_meeting_button "Open my notes"
+    end
+    assert_select ".todays-meeting-card + .Layout"
+  end
+
+  test "on a meeting day a child with the helper sees Start" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:eli)
+
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".todays-meeting-card" do
+      assert_select "p", "Listen for things and draw what you see, one part at a time."
+      assert_todays_meeting_button "Start"
+    end
+    assert_select "main", text: /Take notes as you go/, count: 0
+  end
+
+  test "on a meeting day a child with the helper off sees Open my notes" do
+    set_meeting_times
+    sign_in identities(:eli)
+
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".todays-meeting-card" do
+      assert_select "p", "Take notes as you go. They stay yours in every household."
+      assert_todays_meeting_button "Open my notes"
+    end
+  end
+
+  test "on a meeting day the card shows above the Welcome empty state too" do
+    with_nothing_to_show
+    set_meeting_times
+    sign_in identities(:head)
+
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".todays-meeting-card + .Box .blankslate h2", "Welcome to The Head Family"
+  end
+
+  test "the day before a meeting there's no Today's meeting card" do
+    set_meeting_times
+    sign_in identities(:spouse)
+
+    travel_to(Time.utc(2026, 11, 18, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_response :success
+    assert_select ".todays-meeting-card", count: 0
+    assert_select "main h2", text: "Today's meeting", count: 0
+  end
+
+  test "with no meeting times there's no Today's meeting card" do
+    sign_in identities(:spouse)
+
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_response :success
+    assert_select ".todays-meeting-card", count: 0
+    assert_select "main h2", text: "Today's meeting", count: 0
+  end
+
   test "a non-member gets 404" do
     sign_in identities(:outsider)
 
@@ -366,6 +440,19 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+    # Midweek on Thursday at 7:00 PM, weekend on Sunday at 10:00 AM.
+    def set_meeting_times
+      households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    end
+
+    def assert_todays_meeting_button(label)
+      assert_select "form[action='#{household_todays_meeting_path(household_id: households(:home))}'][method=post]", count: 1 do
+        assert_select "input[type=hidden][name='meeting_note[kind]'][value=midweek]"
+        assert_select "input[type=hidden][name='meeting_note[week_of]'][value='2026-11-16']"
+        assert_select "button.Button--primary.Button--large", label
+      end
+    end
+
     def assert_two_columns
       assert_response :success
       assert_select ".blankslate", count: 0

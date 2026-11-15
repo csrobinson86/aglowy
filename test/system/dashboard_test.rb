@@ -86,7 +86,48 @@ class DashboardTest < ApplicationSystemTestCase
     capture_screens("home-full-child")
   end
 
+  test "on a meeting day an adult taps Open my notes on Home and lands on the note's edit page" do
+    travel_to Time.utc(2026, 11, 19, 18) # Thursday, an hour before the midweek meeting
+    set_meeting_times
+    with_goals_and_notes(users(:spouse))
+    sign_in identities(:spouse)
+    visit household_root_url(household_id: households(:home))
+
+    assert_selector "h2", text: "Today's meeting"
+    assert_text "Midweek meeting · 7:00 PM"
+    assert_accessible
+    capture_screens("home-meeting-day")
+    click_on "Open my notes"
+
+    assert_selector "h1", text: "Life and Ministry"
+    note = users(:spouse).meeting_notes.find_by!(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    assert_current_path edit_household_meeting_note_path(household_id: households(:home), id: note)
+  end
+
+  test "on a meeting day a child with the helper taps Start on Home and lands on the first step" do
+    travel_to Time.utc(2026, 11, 19, 18)
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:eli)
+    visit household_root_url(household_id: households(:home))
+
+    assert_selector "h2", text: "Today's meeting"
+    assert_text "Listen for things and draw what you see, one part at a time."
+    assert_accessible
+    capture_screens("home-meeting-day-child")
+    click_on "Start"
+
+    assert_selector "h1", text: "Sing along with everyone."
+    note = users(:eli).meeting_notes.find_by!(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    assert_current_path household_meeting_note_step_path(household_id: households(:home), meeting_note_id: note, id: "opening_song")
+  end
+
   private
+    # Midweek on Thursday at 7:00 PM, weekend on Sunday at 10:00 AM.
+    def set_meeting_times
+      households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    end
+
     def with_nothing_to_show
       households(:home).family_studies.destroy_all
       Goal.destroy_all
