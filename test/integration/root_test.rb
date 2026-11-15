@@ -7,7 +7,7 @@ class RootTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h1", "Sign in to Aglowy"
     assert_select "form[action=?]", identity_session_path do
-      assert_select "input[name='identity[email]'][autocomplete='email'][autofocus]"
+      assert_select "input[name='identity[login]'][autocomplete='username'][autofocus]"
       assert_select "input[name='identity[password]'][type='password'][autocomplete='current-password']"
       assert_select "input[name='identity[remember_me]'][type='checkbox']"
       assert_select "button[type='submit']", "Sign in"
@@ -42,11 +42,11 @@ class RootTest < ActionDispatch::IntegrationTest
   end
 
   test "a wrong password shows Devise's generic alert and doesn't echo the password back" do
-    post identity_session_path, params: { identity: { email: identities(:head).email, password: "wrong-password" } }
+    post identity_session_path, params: { identity: { login: identities(:head).email, password: "wrong-password" } }
 
     assert_response :unprocessable_content
-    assert_select ".flash", /Invalid email or password\./
-    assert_select "input[name='identity[email]'][value=?]", identities(:head).email
+    assert_select ".flash", /Invalid email or username or password\./
+    assert_select "input[name='identity[login]'][value=?]", identities(:head).email
     assert_select "input[name='identity[password]']:not([value])"
   end
 end

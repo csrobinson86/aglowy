@@ -39,18 +39,25 @@ class IdentitySessionsTest < ActionDispatch::IntegrationTest
     assert_equal "You have to confirm your email address before continuing.", flash[:alert]
   end
 
-  test "a locked identity can't" do
+  test "a child signs in with a username" do
+    sign_in_with identities(:eli)
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+  end
+
+  # Paranoid mode: saying "locked" would confirm the account exists.
+  test "a locked identity can't, and is told only that the details are invalid" do
     identities(:spouse).lock_access!(send_instructions: false)
 
     sign_in_with identities(:spouse)
 
     assert_response :unprocessable_entity
-    assert_includes response.body, "Your account is locked."
+    assert_includes response.body, "Invalid email or username or password."
   end
 
   private
 
   def sign_in_with(identity)
-    post identity_session_path, params: { identity: { email: identity.email, password: "password123" } }
+    post identity_session_path, params: { identity: { login: identity.login, password: "password123" } }
   end
 end

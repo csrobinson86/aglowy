@@ -39,6 +39,8 @@ en:
       clock_with_meridiem: "%-l:%M %p"
   activerecord:
     attributes:
+      identity:
+        login: "Email or username"
       family_study/resource:
         url: "Link"
   activemodel:

@@ -28,7 +28,7 @@ class SignUpTest < ApplicationSystemTestCase
 
     assert_text "Your email address has been successfully confirmed."
     assert_accessible
-    fill_in "Email", with: "rosa@example.com"
+    fill_in "Email or username", with: "rosa@example.com"
     fill_in "Password", with: "password123"
     click_on "Sign in"
 

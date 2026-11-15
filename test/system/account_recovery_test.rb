@@ -12,7 +12,7 @@ class AccountRecoveryTest < ApplicationSystemTestCase
     capture_screens("forgot-password")
     request_password_reset_for "spouse@example.com"
 
-    assert_text "You will receive an email with instructions on how to reset your password in a few minutes."
+    assert_text "If your email address exists in our database, you will receive a password recovery link at your email address in a few minutes."
     assert_accessible
     capture_screens("forgot-password-sent")
   end
@@ -20,7 +20,7 @@ class AccountRecoveryTest < ApplicationSystemTestCase
   test "requesting a reset email, opening its link and setting a new password lets the person sign in with it" do
     visit new_identity_password_url
     request_password_reset_for "spouse@example.com"
-    assert_text "You will receive an email with instructions on how to reset your password in a few minutes."
+    assert_text "If your email address exists in our database, you will receive a password recovery link at your email address in a few minutes."
     visit_link_in_email_to "spouse@example.com"
 
     assert_selector "main h1", text: "Change your password"
@@ -38,7 +38,7 @@ class AccountRecoveryTest < ApplicationSystemTestCase
 
     assert_text "Signed out successfully."
     visit new_identity_session_url
-    fill_in "Email", with: "spouse@example.com"
+    fill_in "Email or username", with: "spouse@example.com"
     fill_in "Password", with: "a-brand-new-secret"
     click_on "Sign in"
     assert_title "Home · The Head Family · Aglowy"
@@ -53,7 +53,7 @@ class AccountRecoveryTest < ApplicationSystemTestCase
     fill_in "Email", with: "newcomer@example.com"
     click_on "Resend confirmation instructions"
 
-    assert_text "You will receive an email with instructions for how to confirm your email address in a few minutes."
+    assert_text "If your email address exists in our database, you will receive an email with instructions for how to confirm your email address in a few minutes."
     assert_accessible
     capture_screens("resend-confirmation-sent")
     assert_equal "Confirmation instructions", last_email_to("newcomer@example.com").subject
@@ -69,7 +69,7 @@ class AccountRecoveryTest < ApplicationSystemTestCase
     fill_in "Email", with: "spouse@example.com"
     click_on "Resend unlock instructions"
 
-    assert_text "You will receive an email with instructions for how to unlock your account in a few minutes."
+    assert_text "If your account exists, you will receive an email with instructions for how to unlock it in a few minutes."
     assert_accessible
     capture_screens("resend-unlock-sent")
     assert_equal "Unlock instructions", last_email_to("spouse@example.com").subject

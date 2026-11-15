@@ -3,6 +3,7 @@ class IdentityResource < Madmin::Resource
   # Attributes
   attribute :id, form: false
   attribute :email
+  attribute :username, form: false
   attribute :staff, form: false
   attribute :confirmed_at, form: false
   attribute :confirmation_sent_at, form: false
@@ -23,5 +24,5 @@ class IdentityResource < Madmin::Resource
     button_to "Impersonate", main_app.admin_impersonation_path(identity_id: record.id), method: :post, data: { turbo: false }
   end
 
-  def self.display_name(record) = record.email
+  def self.display_name(record) = record.login
 end

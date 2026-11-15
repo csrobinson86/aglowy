@@ -39,3 +39,10 @@ staff:
   encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
   confirmed_at: <%= Time.current %>
   staff: true
+
+# A child's username-only login (docs/design/invitations.md).
+eli:
+  user: eli
+  username: eli.rivera
+  encrypted_password: <%= Devise::Encryptor.digest(Identity, "password123") %>
+  confirmed_at: <%= Time.current %>

@@ -1,9 +1,19 @@
 require "application_system_test_case"
 
 class SignInTest < ApplicationSystemTestCase
-  test "sign in from / and land in the household" do
+  test "sign in with an email from / and land in the household" do
     visit root_url
-    fill_in "Email", with: identities(:spouse).email
+    fill_in "Email or username", with: identities(:spouse).email
+    fill_in "Password", with: "password123"
+    click_on "Sign in"
+
+    assert_title "Home · The Head Family · Aglowy"
+    assert_current_path household_root_path(household_id: households(:home))
+  end
+
+  test "a child signs in with a username, in any case" do
+    visit root_url
+    fill_in "Email or username", with: "ELI.Rivera"
     fill_in "Password", with: "password123"
     click_on "Sign in"
 
@@ -13,12 +23,13 @@ class SignInTest < ApplicationSystemTestCase
 
   test "a wrong password shows Devise's alert on the sign-in page" do
     visit root_url
-    fill_in "Email", with: identities(:spouse).email
+    fill_in "Email or username", with: identities(:spouse).email
     fill_in "Password", with: "wrong-password"
     click_on "Sign in"
 
-    assert_text "Invalid email or password."
+    assert_text "Invalid email or username or password."
     assert_selector "h1", text: "Sign in to Aglowy"
+    assert_field "Email or username", with: identities(:spouse).email
     assert_accessible
   end
 
@@ -37,6 +48,7 @@ class SignInTest < ApplicationSystemTestCase
     visit root_url
 
     assert_selector "h1", text: "Sign in to Aglowy"
+    assert_selector "input[type=text][name='identity[login]'][autocomplete=username][autocapitalize=none]"
     assert_accessible
     capture_screens("sign-in")
   end

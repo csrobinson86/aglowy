@@ -89,7 +89,7 @@ class TickGoalStepsTest < ApplicationSystemTestCase
 
   test "Eli ticks his part of the parables step and can't tick Sofia's" do
     goal_step_completions(:parables_eli).destroy!
-    sign_in Identity.create!(user: users(:eli), email: "eli@example.com", password: "password123", confirmed_at: Time.current)
+    sign_in identities(:eli)
     visit household_goal_url(household_id: households(:home), id: goals(:gospels))
 
     assert_text "You can tick the steps that are yours"

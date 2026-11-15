@@ -3,7 +3,7 @@ require "application_system_test_case"
 class HouseholdSwitchingTest < ApplicationSystemTestCase
   test "the two-household person lands on the chooser, opens one, switches to the other" do
     visit new_identity_session_url
-    fill_in "Email", with: identities(:head).email
+    fill_in "Email or username", with: identities(:head).email
     fill_in "Password", with: "password123"
     click_on "Sign in"
     assert_selector "h1", text: "Your households"
