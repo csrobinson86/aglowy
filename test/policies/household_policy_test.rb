@@ -23,7 +23,7 @@ class HouseholdPolicyTest < ActiveSupport::TestCase
   end
 
   test "create? is true for heads and adults and false for children, whatever the membership" do
-    [ nil, memberships(:head_in_home), memberships(:child_in_home) ].each do |membership|
+    [ nil, memberships(:head_in_home), memberships(:spouse_in_home), memberships(:child_in_home) ].each do |membership|
       assert HouseholdPolicy.new(membership, users(:head)).create?
       assert HouseholdPolicy.new(membership, users(:spouse)).create?
       assert_not HouseholdPolicy.new(membership, users(:eli)).create?
