@@ -5,6 +5,11 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "Ann Lee", User.new(name: "  Ann   Lee ").name
   end
 
+  test "first_name is the first word of the name" do
+    assert_equal "Hannah", users(:head).first_name
+    assert_equal "Cher", User.new(name: "Cher").first_name
+  end
+
   test "requires a name" do
     user = User.new(name: " ")
 

@@ -14,7 +14,7 @@ class FlashMessagesTest < ActionDispatch::IntegrationTest
   end
 
   test "an alert renders the danger scheme" do
-    sign_in identities(:spouse)
+    sign_in identities(:eli)
 
     post household_members_path(household_id: households(:home)), params: { member: { name: "Baby Head", role: "child" } }
     follow_redirect!

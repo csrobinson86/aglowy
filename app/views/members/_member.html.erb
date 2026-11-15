@@ -1,0 +1,9 @@
+<%# locals: (membership:, show_sign_in:) %>
+<span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-3 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= membership.user.name.first %></span>
+<div class="flex-1 min-width-0">
+  <div class="text-bold css-truncate css-truncate-overflow"><%= membership.user.name %></div>
+  <% if show_sign_in %>
+    <div class="color-fg-muted text-small css-truncate css-truncate-overflow"><%= how_they_sign_in(membership.user) %></div>
+  <% end %>
+</div>
+<%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary, ml: 2)) { membership.role.humanize } %>

@@ -12,6 +12,11 @@ class User < ApplicationRecord
 
   validates :name, presence: true
 
+  # "Invited by Daniel" (frame members.png).
+  def first_name
+    name.split.first
+  end
+
   def active_households
     households.merge(Membership.active)
   end

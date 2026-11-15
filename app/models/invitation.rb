@@ -7,12 +7,16 @@ class Invitation < ApplicationRecord
   # Children get usernames, not invitations (docs/design/invitations.md).
   enum :role, %w[ adult head ].index_by(&:itself), default: :adult, validate: true
 
+  scope :preloaded, -> { includes(:invited_by) }
+  scope :newest_first, -> { order(created_at: :desc) }
+
   attribute :expires_at, default: -> { VALID_FOR.from_now }
 
   # Compared normalized at acceptance (gotcha 18).
   normalizes :email, with: -> { it.strip.downcase }
 
-  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, message: "Enter an email address, like name@example.com." }
+  validates :email, uniqueness: { scope: :household_id }
   validate :not_already_a_member
 
   # Moving expires_at (resending) invalidates the links in earlier emails. The token is never stored.
@@ -30,19 +34,35 @@ class Invitation < ApplicationRecord
     expires_at.past?
   end
 
+  # The deadline's date in the household's time zone, as the email and the Members page show it.
+  def expires_on
+    expires_at.in_time_zone(household.time_zone).to_date
+  end
+
   def deliver_later
     InvitationMailer.with(invitation: self).invite.deliver_later
   end
 
   # Under the household's lock, like accepting and cancelling, so a resend never lands mid-join. Reading the row
-  # again under the lock raises RecordNotFound if a join or cancel deleted it first.
+  # again under the lock raises RecordNotFound if a join or cancel deleted it first. False, and no email, if the
+  # address has since become a member's.
   def resend
+    resent = transaction do
+      household.lock!
+      lock!
+      update(expires_at: VALID_FOR.from_now)
+    end
+    deliver_later if resent
+    resent
+  end
+
+  # Under the same lock as joining, so a cancel and a join never both land (docs/design/invitations.md, "Accepting").
+  def cancel
     transaction do
       household.lock!
       lock!
-      update!(expires_at: VALID_FOR.from_now)
+      destroy!
     end
-    deliver_later
   end
 
   private

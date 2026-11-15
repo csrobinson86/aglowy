@@ -15,12 +15,14 @@ class MembershipPolicyTest < ActiveSupport::TestCase
     assert_not MembershipPolicy.new(memberships(:former_in_home), Membership).index?
   end
 
-  test "create? yes for a head" do
-    assert MembershipPolicy.new(memberships(:head_in_home), Membership).create?
+  test "create? yes for a head and an adult" do
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      assert MembershipPolicy.new(memberships(membership), Membership).create?, "expected #{membership} to add members"
+    end
   end
 
-  test "create? no for an adult and a child" do
-    %i[ spouse_in_home child_in_home ].each do |membership|
+  test "create? no for a child and an inactive member" do
+    %i[ child_in_home former_in_home ].each do |membership|
       assert_not MembershipPolicy.new(memberships(membership), Membership).create?, "expected #{membership} not to add members"
     end
   end

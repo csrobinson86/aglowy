@@ -5,7 +5,7 @@ class Membership < ApplicationRecord
   enum :role, %i[ head adult child ].index_by(&:itself), default: :adult, validate: true
 
   scope :active, -> { where(active: true) }
-  scope :preloaded, -> { includes(:user) }
+  scope :preloaded, -> { includes(user: :identity) }
   scope :by_role, -> { in_order_of(:role, roles.keys).order(:created_at) }
   scope :by_household_name, -> { includes(:household).order("households.name") }
 

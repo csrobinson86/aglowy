@@ -11,6 +11,9 @@ class InvitationPolicy < ApplicationPolicy
     end
   end
 
+  # A built invitation: hiding the Head option isn't authorization, so the role it carries is checked here.
+  def create_with_role? = create_as?(record.role)
+
   def update?  = in_household? && (head? || (head_or_adult? && record.invited_by_id == membership.user_id))
   def destroy? = update?
 
