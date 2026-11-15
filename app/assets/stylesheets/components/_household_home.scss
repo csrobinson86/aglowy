@@ -1,0 +1,8 @@
+// Home's two columns are a Primer Layout inside the app shell's Layout. Below md
+// the shell hides its own sidebar with a descendant selector
+// (.Layout.Layout--flowRow-until-md.Layout--sidebarPosition-flowRow-none .Layout-sidebar),
+// which hides Home's right column too. This shows it again under the left column:
+// the same specificity, and this file loads after Primer's.
+.household-home.Layout > .household-home__aside.Layout-sidebar {
+  display: block;
+}

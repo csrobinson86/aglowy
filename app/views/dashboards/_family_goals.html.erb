@@ -1,0 +1,16 @@
+<%# locals: (goals:) -%>
+<%= render Primer::Beta::BorderBox.new(mb: 4) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Family goals" } } %>
+  <% goals.each do |goal| %>
+    <% box.with_row do %>
+      <%= render(Primer::Beta::Link.new(href: household_goal_path(id: goal), scheme: :primary, classes: "wb-break-word")) { goal.title } %>
+      <div class="f6 color-fg-muted">Set by <%= goal.set_by.first_name %> · since <%= goal.created_at.in_time_zone(Current.household.time_zone).strftime("%B %-d") %></div>
+    <% end %>
+  <% end %>
+  <% if goals.empty? %>
+    <% box.with_row(color: :muted) { "No family goals yet." } %>
+  <% end %>
+  <% box.with_footer do %>
+    <%= render(Primer::Beta::Link.new(href: household_goals_path)) { "All family goals" } %>
+  <% end %>
+<% end %>
