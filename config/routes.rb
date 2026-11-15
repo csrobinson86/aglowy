@@ -53,9 +53,11 @@ Rails.application.routes.draw do
     get "/", to: "dashboards#show", as: :root
     # Household settings at /:household_id/settings, heads only (docs/design/invitations.md, Household settings).
     resource :settings, only: %i[ edit update ], controller: "households/settings", path_names: { edit: "" }
-    resources :members, only: %i[ index new create ] do
+    # Changing a role and removing a member are on household settings, heads only (docs/design/invitations.md).
+    resources :members, only: %i[ index new create destroy ] do
       resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }
       resource :password_link, only: :create, module: :members
+      resource :role, only: :update, module: :members
     end
     resources :invitations, only: %i[ new create update destroy ]
     resources :family_studies, only: %i[ index new create ] do
