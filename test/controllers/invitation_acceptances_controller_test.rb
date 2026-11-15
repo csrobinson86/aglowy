@@ -125,4 +125,220 @@ class InvitationAcceptancesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     assert_select "h1", "This invitation can't be used"
   end
+
+  # Signed in: the existing-account cases (docs/design/invitations.md, "Accepting").
+
+  test "signing in from Sign in to accept comes back to the invitation" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    get invitation_acceptance_path(token: @token)
+
+    post identity_session_path, params: { identity: { login: identities(:outsider).email, password: "password123" } }
+
+    assert_redirected_to invitation_acceptance_path(token: @token)
+  end
+
+  test "signed in with the invited email shows Join the household? with Join household and Decline" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+
+    get invitation_acceptance_path(token: @token)
+
+    assert_response :success
+    assert_select "h1", "Join the The Head Family?"
+    assert_select "main", text: /Hannah Head invited you to join as an adult\./
+    assert_select "form[action=?] button", invitation_acceptance_path(token: @token), text: "Join household"
+    assert_select "form[action=?] input[name=_method][value=delete]", invitation_acceptance_path(token: @token)
+    assert_select "button", text: "Decline"
+    assert_select "main", text: /Signed in as outsider@example\.com/
+  end
+
+  test "matching email joins with the invited role" do
+    @invitation.update_columns(email: identities(:outsider).email, role: "head")
+    sign_in identities(:outsider)
+
+    assert_difference -> { Membership.count } => 1, -> { Invitation.count } => -1 do
+      post invitation_acceptance_path(token: @token)
+    end
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    membership = households(:home).memberships.find_by!(user: users(:outsider))
+    assert_predicate membership, :head?
+    assert_predicate membership, :active?
+  end
+
+  test "someone who left and is invited back has their membership reactivated, not duplicated, and their old meeting-note shares are still gone" do
+    membership = memberships(:former_in_home)
+    membership.update!(active: true)
+    note = users(:former).meeting_notes.create!(kind: :midweek, week_of: Date.new(2026, 11, 16))
+    note.share_with(households(:home))
+    assert membership.deactivate
+
+    @invitation.update_columns(email: identities(:former).email, role: "head")
+    sign_in identities(:former)
+
+    assert_no_difference -> { Membership.count } do
+      post invitation_acceptance_path(token: @token)
+    end
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    membership.reload
+    assert_predicate membership, :active?
+    assert_predicate membership, :head?
+    assert_not MeetingNote::Sharing.exists?(meeting_note: note)
+  end
+
+  test "an active member joining just deletes the invitation, keeping their role" do
+    @invitation.update_columns(email: identities(:spouse).email, role: "head")
+    sign_in identities(:spouse)
+
+    assert_difference -> { Invitation.count } => -1, -> { Membership.count } => 0 do
+      post invitation_acceptance_path(token: @token)
+    end
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_predicate memberships(:spouse_in_home).reload, :adult?
+  end
+
+  test "a different signed-in email can't join or decline (404)" do
+    sign_in identities(:outsider)
+
+    get invitation_acceptance_path(token: @token)
+
+    assert_response :success
+    assert_select "main", text: /This invitation is for a different email address/
+    assert_select "main", text: /It was sent to a•••••@example\.com, and you're signed in as outsider@example\.com\./
+    assert_select "main", text: /ask Hannah Head to send a new invitation/
+    assert_not_includes response.body, "ana.ortiz"
+    assert_select "button", text: "Sign out"
+    assert_select "button", text: "Join household", count: 0
+    assert_select "button", text: "Decline", count: 0
+
+    assert_no_difference %w[ Membership.count Invitation.count ] do
+      post invitation_acceptance_path(token: @token)
+      assert_response :not_found
+
+      delete invitation_acceptance_path(token: @token)
+      assert_response :not_found
+    end
+  end
+
+  test "a username-only login sees the wrong-email page and can't join" do
+    sign_in identities(:eli)
+
+    get invitation_acceptance_path(token: @token)
+
+    assert_select "main", text: /you're signed in as eli\.rivera\./
+    assert_select "button", text: "Join household", count: 0
+
+    assert_no_difference %w[ Membership.count Invitation.count ] do
+      post invitation_acceptance_path(token: @token)
+    end
+    assert_response :not_found
+  end
+
+  test "comparing Daniel@Example.com to daniel@example.com matches" do
+    @invitation.update_column(:email, "daniel@example.com")
+    identities(:outsider).update_column(:email, "Daniel@Example.com")
+    sign_in identities(:outsider)
+
+    assert_difference -> { households(:home).memberships.where(user: users(:outsider)).count } => 1 do
+      post invitation_acceptance_path(token: @token)
+    end
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+  end
+
+  test "double-submitting Join creates one membership" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+
+    assert_difference -> { Membership.count } => 1 do
+      post invitation_acceptance_path(token: @token)
+      post invitation_acceptance_path(token: @token)
+    end
+
+    assert_response :not_found
+  end
+
+  test "an invitation past expires_at shows the invalid page and can't be joined, even if its token is still within its own lifetime" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+
+    travel_to(@invitation.expires_at + 1.minute) do
+      get invitation_acceptance_path(token: @token)
+      assert_response :not_found
+      assert_select "h1", "This invitation can't be used"
+
+      assert_no_difference -> { Membership.count } do
+        post invitation_acceptance_path(token: @token)
+      end
+      assert_response :not_found
+    end
+  end
+
+  test "joining with the link from before a resend fails, even when the resend happens between loading the page and pressing Join" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+    get invitation_acceptance_path(token: @token)
+    assert_response :success
+
+    travel(1.minute) { @invitation.resend }
+
+    assert_no_difference -> { Membership.count } do
+      post invitation_acceptance_path(token: @token)
+    end
+    assert_response :not_found
+  end
+
+  test "the join method itself: resolve the invitation from the token, then invitation.resend, then call the join with the original token; it fails and creates no membership" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    acceptance = InvitationAcceptance.new(token: @token, identity: identities(:outsider))
+    assert acceptance.invitation
+
+    travel(1.minute) { acceptance.invitation.resend }
+
+    assert_no_difference -> { Membership.count } do
+      assert_not acceptance.join
+    end
+  end
+
+  test "an invitation cancelled while Join waits for the lock shows the invalid page with 404" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+    cancel_at_lock = ->(*, payload) { Invitation.where(id: @invitation.id).delete_all if payload[:sql].match?(/FROM "households".*FOR UPDATE/) }
+
+    assert_no_difference -> { Membership.count } do
+      ActiveSupport::Notifications.subscribed(cancel_at_lock, "sql.active_record") do
+        post invitation_acceptance_path(token: @token)
+      end
+    end
+
+    assert_response :not_found
+    assert_select "h1", "This invitation can't be used"
+  end
+
+  test "Decline deletes the invitation and goes to the households page" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+
+    assert_difference -> { Invitation.count } => -1, -> { Membership.count } => 0 do
+      delete invitation_acceptance_path(token: @token)
+    end
+
+    assert_redirected_to households_path
+    assert_equal "Invitation declined.", flash[:notice]
+  end
+
+  test "declining with a link that stopped working shows the invalid page with 404" do
+    @invitation.update_column(:email, identities(:outsider).email)
+    sign_in identities(:outsider)
+    cancel_at_lock = ->(*, payload) { Invitation.where(id: @invitation.id).delete_all if payload[:sql].match?(/FROM "households".*FOR UPDATE/) }
+
+    ActiveSupport::Notifications.subscribed(cancel_at_lock, "sql.active_record") do
+      delete invitation_acceptance_path(token: @token)
+    end
+
+    assert_response :not_found
+    assert_select "h1", "This invitation can't be used"
+  end
 end
