@@ -33,16 +33,21 @@ class Accounts::SignInsControllerTest < ActionDispatch::IntegrationTest
     assert_empty ActionMailer::Base.deliveries
   end
 
-  test "changing email leaves the old email in place until confirmed and mails a confirmation link to the new address" do
+  test "changing email leaves the old email in place until confirmed and enqueues a confirmation link to the new address" do
     sign_in identities(:head)
 
-    patch account_sign_in_path, params: { identity: { email: "Hannah@Example.com", current_password: "password123" } }
+    assert_enqueued_emails 1 do
+      patch account_sign_in_path, params: { identity: { email: "Hannah@Example.com", current_password: "password123" } }
+    end
+    assert_empty ActionMailer::Base.deliveries
 
     assert_redirected_to edit_account_path
     assert_equal "Your sign-in details are saved.", flash[:notice]
     identity = identities(:head).reload
     assert_equal "head@example.com", identity.email
     assert_equal "hannah@example.com", identity.unconfirmed_email
+
+    perform_enqueued_jobs
     assert_equal [ "hannah@example.com" ], ActionMailer::Base.deliveries.sole.to
 
     follow_redirect!
