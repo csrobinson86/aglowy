@@ -1,0 +1,12 @@
+<% content_for :title, "This invitation is for a different email address" %>
+
+<%# The invited address only partly shown, so the wrong person never learns it (docs/design/invitations.md, Accepting). %>
+<div class="auth-form auth-form--wide">
+  <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3, description: "It was sent to #{@invitation_acceptance.invitation.masked_email}, and you're signed in as #{Current.identity.login}. Sign out and sign in with the invited address, or ask #{@invitation_acceptance.invited_by.name} to send a new invitation.")) do %>
+    <h1 class="h5">This invitation is for a different email address</h1>
+  <% end %>
+
+  <%= primer_form_with(url: destroy_identity_session_path, method: :delete) do |f| %>
+    <%= render Sessions::SignOutForm.new(f) %>
+  <% end %>
+</div>

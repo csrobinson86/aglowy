@@ -1,0 +1,26 @@
+<% content_for :title, "Join the #{@invitation_acceptance.household.name}?" %>
+
+<div class="auth-form auth-form--wide">
+  <%= render(Primer::Box.new(border: true, border_radius: 2, p: 4)) do %>
+    <%= render(Primer::Beta::Heading.new(tag: :h1, font_size: 3, mb: 2)) { "Join the #{@invitation_acceptance.household.name}?" } %>
+    <%= render(Primer::Beta::Text.new(tag: :p)) do %>
+      <%= @invitation_acceptance.invited_by.name %> invited you to join as <%= @invitation_acceptance.role == "head" ? "a head" : "an adult" %>.
+      You'll see its family studies, goals and members.
+    <% end %>
+    <%= render(Primer::Beta::Text.new(tag: :p, color: :muted)) do %>
+      Your own meeting notes and goals stay private unless you choose to share them.
+    <% end %>
+    <div class="d-flex">
+      <%= primer_form_with(url: invitation_acceptance_path(token: @invitation_acceptance.token)) do |f| %>
+        <%= render InvitationAcceptances::AnswerForm.new(f, label: "Join household", scheme: :primary) %>
+      <% end %>
+      <%= primer_form_with(url: invitation_acceptance_path(token: @invitation_acceptance.token), method: :delete, class: "ml-2") do |f| %>
+        <%= render InvitationAcceptances::AnswerForm.new(f, label: "Decline") %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, text_align: :center, mt: 3)) do %>
+    Signed in as <%= Current.identity.email %>
+  <% end %>
+</div>

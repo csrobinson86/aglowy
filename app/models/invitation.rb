@@ -39,6 +39,12 @@ class Invitation < ApplicationRecord
     expires_at.in_time_zone(household.time_zone).to_date
   end
 
+  # For someone signed in with another email: enough to recognise their own address, never the whole of it.
+  def masked_email
+    name, domain = email.split("@", 2)
+    "#{name.first}•••••@#{domain}"
+  end
+
   def deliver_later
     InvitationMailer.with(invitation: self).invite.deliver_later
   end
