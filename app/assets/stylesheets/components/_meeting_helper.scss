@@ -123,6 +123,16 @@
   }
 }
 
+.meeting-helper__icon--small {
+  width: var(--base-size-64);
+  height: var(--base-size-64);
+
+  svg {
+    width: var(--base-size-32);
+    height: var(--base-size-32);
+  }
+}
+
 .meeting-helper__icon--accent {
   color: var(--fgColor-accent);
   background-color: var(--bgColor-accent-muted);
@@ -156,8 +166,26 @@
   font-size: var(--text-title-size-large);
 }
 
-.meeting-helper__button--step {
+.meeting-helper__button--step,
+.meeting-helper__button--done {
   min-height: calc(var(--base-size-64) + var(--base-size-8));
+}
+
+// Undo and Start over.
+.meeting-helper__button--tool {
+  min-height: var(--base-size-64);
+}
+
+// Octicons at the frames' sizes: "Draw it" like the mark button's icon, All done, Undo and Start over a step smaller.
+.meeting-helper__button--big .Button-visual svg {
+  width: var(--base-size-32);
+  height: var(--base-size-32);
+}
+
+.meeting-helper__button--done .Button-visual svg,
+.meeting-helper__button--tool .Button-visual svg {
+  width: var(--base-size-24);
+  height: var(--base-size-24);
 }
 
 // The step's icon inside the mark button, at the button's text size.
@@ -231,3 +259,81 @@
     content: "";
   }
 }
+
+// The mark button and "Draw it" side by side on a step.
+.meeting-helper__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--base-size-32);
+}
+
+// The drawing page (frame tablet-draw.png): the prompt and All done, the canvas, then the colours and tools.
+.meeting-helper__draw {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--base-size-24);
+}
+
+.meeting-helper__draw-header {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-16);
+}
+
+.meeting-helper__heading--draw {
+  flex: 1;
+  font-size: var(--text-title-size-large);
+}
+
+// Its size comes from the width and height the drawing controller gives it (1116×470, times the pixel ratio), so a
+// width of 100% keeps that shape. No touch-scrolling while drawing.
+.meeting-helper__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  background-color: var(--bgColor-muted);
+  touch-action: none;
+}
+
+.meeting-helper__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-16);
+}
+
+.meeting-helper__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-16);
+  margin-inline-end: auto;
+}
+
+// 60px colour buttons; the picked one has a ring. Chained, to outrank Primer's .Button colours and hover.
+.meeting-helper__swatch.Button {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive) {
+    width: calc(var(--base-size-48) + var(--base-size-12));
+    height: calc(var(--base-size-48) + var(--base-size-12));
+    padding: 0;
+    border-color: transparent;
+    border-radius: var(--borderRadius-full);
+    background-color: var(--meeting-helper-swatch);
+  }
+
+  &[aria-pressed="true"] {
+    box-shadow: 0 0 0 var(--base-size-4) var(--bgColor-default), 0 0 0 var(--base-size-8) var(--fgColor-default);
+  }
+}
+
+.meeting-helper__swatch--yellow { --meeting-helper-swatch: var(--display-yellow-scale-7); }
+.meeting-helper__swatch--orange { --meeting-helper-swatch: var(--display-orange-scale-7); }
+.meeting-helper__swatch--red { --meeting-helper-swatch: var(--display-red-scale-7); }
+.meeting-helper__swatch--green { --meeting-helper-swatch: var(--display-green-scale-7); }
+.meeting-helper__swatch--blue { --meeting-helper-swatch: var(--display-blue-scale-7); }
+.meeting-helper__swatch--purple { --meeting-helper-swatch: var(--display-purple-scale-7); }
+.meeting-helper__swatch--white { --meeting-helper-swatch: var(--fgColor-default); }

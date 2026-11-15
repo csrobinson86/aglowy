@@ -1,0 +1,49 @@
+<% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@meeting_note.kind) %>
+<% content_for :helper_progress, render("meeting_notes/steps/dots", meeting_note: @meeting_note, step: @step) %>
+
+<%# Draw (frame tablet-draw.png; docs/design/meeting-helper.md, Drawing). A saved drawing loads onto the canvas through
+    the authorizing drawing route, never an Active Storage URL (gotcha 22). The Stimulus controller fills the hidden file
+    input with the canvas's PNG on All done; with nothing changed, or the saved picture unable to load, All done goes back
+    to the step. After a refused save, the saved picture (if any) loads again. %>
+<%= tag.div class: "meeting-helper__draw", data: {
+      controller: "meeting-helper--drawing",
+      meeting_helper__drawing_image_url_value: (household_meeting_note_step_drawing_path(meeting_note_id: @meeting_note, step_id: @step.key) if @meeting_note.drawings.exists?(step: @step.key)),
+      meeting_helper__drawing_step_url_value: household_meeting_note_step_path(meeting_note_id: @meeting_note, id: @step.key)
+    } do %>
+  <%= primer_form_with(url: household_meeting_note_step_drawing_path(meeting_note_id: @meeting_note, step_id: @step.key),
+                       method: :patch, multipart: true, class: "meeting-helper__draw-header",
+                       data: { meeting_helper__drawing_target: "form", action: "submit->meeting-helper--drawing#save turbo:submit-end->meeting-helper--drawing#submitted" }) do |f| %>
+    <%= meeting_helper_icon(icon: @step.icon, color: @step.color, size: :small) %>
+    <h1 class="meeting-helper__heading meeting-helper__heading--draw"><%= @step.draw_prompt %></h1>
+    <input type="file" name="drawing[image]" accept="image/png" hidden aria-label="Drawing" data-meeting-helper--drawing-target="input">
+    <%= render MeetingNotes::Steps::DrawingForm.new(f) %>
+  <% end %>
+
+  <% if @drawing&.errors.present? %>
+    <%= render Primer::Alpha::Banner.new(scheme: :danger, icon: :alert, mb: 3) do %>
+      <%= @drawing.errors.full_messages.to_sentence %>
+    <% end %>
+  <% end %>
+
+  <canvas class="meeting-helper__canvas" role="img" aria-label="Drawing space. Draw with your finger."
+          data-meeting-helper--drawing-target="canvas"
+          data-action="pointerdown->meeting-helper--drawing#start pointermove->meeting-helper--drawing#move pointerup->meeting-helper--drawing#end pointercancel->meeting-helper--drawing#end"></canvas>
+
+  <div class="meeting-helper__tools">
+    <div class="meeting-helper__swatches" role="group" aria-label="Colours">
+      <% MeetingNotesHelper::MEETING_HELPER_COLOURS.each_with_index do |colour, index| %>
+        <%= render Primer::Beta::Button.new(type: :button, aria: { label: colour.titleize, pressed: index.zero?.to_s },
+                                            classes: "meeting-helper__swatch meeting-helper__swatch--#{colour}",
+                                            data: { meeting_helper__drawing_target: "swatch", action: "meeting-helper--drawing#pick" }) %>
+      <% end %>
+    </div>
+    <%= render Primer::Beta::Button.new(type: :button, size: :large, classes: "meeting-helper__button meeting-helper__button--tool", data: { action: "meeting-helper--drawing#undo" }) do |button| %>
+      <% button.with_leading_visual_icon(icon: :undo) %>
+      Undo
+    <% end %>
+    <%= render Primer::Beta::Button.new(type: :button, size: :large, classes: "meeting-helper__button meeting-helper__button--tool", data: { action: "meeting-helper--drawing#clear" }) do |button| %>
+      <% button.with_leading_visual_icon(icon: :trash) %>
+      Start over
+    <% end %>
+  </div>
+<% end %>

@@ -1,20 +1,18 @@
 <% previous_step, next_step = @steps.previous(@step), @steps.next(@step) %>
 <% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@meeting_note.kind) %>
-<% content_for :helper_progress do %>
-  <span class="meeting-helper__dots" aria-hidden="true">
-    <% @steps.each do |step| %>
-      <%= tag.span class: [ "meeting-helper__dot", { "meeting-helper__dot--current": step == @step, "meeting-helper__dot--marked": @meeting_note.marked?(step.key) } ] %>
-    <% end %>
-  </span>
-  <span class="sr-only">Part <%= @steps.position(@step) %> of <%= @steps.size %>: <%= @step.title %></span>
-<% end %>
+<% content_for :helper_progress, render("meeting_notes/steps/dots", meeting_note: @meeting_note, step: @step) %>
 
 <div class="meeting-helper__content">
   <p class="meeting-helper__part"><%= meeting_note_dot(@step.color) %><%= @step.title %></p>
   <%= meeting_helper_icon(icon: @step.icon, color: @step.color, size: :large) %>
   <h1 class="meeting-helper__heading"><%= @step.prompt %></h1>
-  <%# "Draw it" (#147) goes beside the mark button. %>
-  <%= render "meeting_notes/steps/mark", meeting_note: @meeting_note, step: @step %>
+  <div class="meeting-helper__actions">
+    <%= render "meeting_notes/steps/mark", meeting_note: @meeting_note, step: @step %>
+    <%= render Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_step_drawing_path(step_id: @step.key), size: :large, classes: "meeting-helper__button meeting-helper__button--big") do |button| %>
+      <% button.with_leading_visual_icon(icon: :pencil) %>
+      <%= @meeting_note.drawn?(@step.key) ? "My drawing" : "Draw it" %>
+    <% end %>
+  </div>
 </div>
 
 <%# Back on the first step goes Home: Today's meeting would only redirect to this step again. %>

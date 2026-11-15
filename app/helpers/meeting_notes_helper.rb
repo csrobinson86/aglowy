@@ -4,6 +4,9 @@ module MeetingNotesHelper
   MEETING_NOTE_DOTS = { "midweek" => :danger, "weekend" => :muted }.freeze
   # The meeting helper's own decorative icons, inline so they take the text colour. Each file carries aria-hidden.
   MEETING_HELPER_ICONS = Rails.root.glob("app/assets/images/meeting_helper/*.svg").to_h { [ it.basename(".svg").to_s, it.read.html_safe ] }.freeze
+  # The drawing page's seven colours (frame tablet-draw.png), first picked first. Each swatch's BEM modifier
+  # takes its colour from a Primer primitive, and the canvas draws in the picked swatch's colour.
+  MEETING_HELPER_COLOURS = %w[ yellow orange red green blue purple white ].freeze
   # The helper's "Which meeting is it?" cards (frame tablet-pick.png).
   MEETING_HELPER_PICKER_ICONS = { "midweek" => { icon: "book", color: :accent }, "weekend" => { icon: "ear", color: :attention } }.freeze
 

@@ -128,5 +128,52 @@ class TodaysMeetingTest < ApplicationSystemTestCase
     assert_not note.reload.marked?("talk")
   end
 
+  test "a child draws a stroke, taps All done and sees My drawing, and drawing again starts from it" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    sign_in identities(:eli)
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: note, id: "field_ministry")
+    click_on "Draw it"
+
+    assert_selector "h1", text: "Draw what they shared."
+    canvas = find("canvas[aria-label='Drawing space. Draw with your finger.']")
+    find("button[aria-label=Blue]").click
+    assert_selector "button[aria-label=Blue][aria-pressed=true]"
+    page.driver.browser.action.move_to(canvas.native, -200, 0).pointer_down.move_by(400, 0).pointer_up.perform
+    assert_not_equal paper_pixel, canvas_pixel(canvas)
+    assert_accessible
+    capture_screens("todays-meeting-draw", viewports: TABLET)
+    click_on "All done"
+
+    assert_selector "h1", text: "Watch the people talk. What did they share?"
+    assert_link "My drawing"
+    assert_equal 1, note.drawings.count
+    click_on "My drawing"
+
+    assert_selector "canvas[data-loaded]"
+    assert_not_equal paper_pixel, canvas_pixel(find("canvas"))
+    saved = note.drawings.sole.image.blob
+    click_on "All done" # nothing changed, so nothing is saved
+
+    assert_link "My drawing"
+    assert_equal saved, note.drawings.sole.image.blob
+  end
+
   TABLET = { tablet: [ 1180, 820 ] }
+
+  private
+    # The colour at the middle of the canvas, where the stroke crosses, and that of the bare paper in its corner.
+    def canvas_pixel(canvas, at: "middle")
+      page.evaluate_script(<<~JS, canvas, at)
+        ((canvas, at) => {
+          const x = at == "middle" ? canvas.width / 2 : 1
+          const y = at == "middle" ? canvas.height / 2 : 1
+          return Array.from(canvas.getContext("2d").getImageData(x, y, 1, 1).data)
+        })(arguments[0], arguments[1])
+      JS
+    end
+
+    def paper_pixel
+      canvas_pixel(find("canvas"), at: "corner")
+    end
 end

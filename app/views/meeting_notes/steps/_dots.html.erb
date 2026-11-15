@@ -1,0 +1,11 @@
+<%# locals: (meeting_note:, step:) %>
+<%# The step dots in the helper's header: decorative, with the step spelled out for screen readers. A dot fills once
+    its step is marked or drawn. %>
+<% steps = meeting_note.helper_steps %>
+<span class="meeting-helper__dots" aria-hidden="true">
+  <% steps.each do |each_step| %>
+    <%= tag.span class: [ "meeting-helper__dot", { "meeting-helper__dot--current": each_step == step,
+                                                   "meeting-helper__dot--marked": meeting_note.marked?(each_step.key) || meeting_note.drawn?(each_step.key) } ] %>
+  <% end %>
+</span>
+<span class="sr-only">Part <%= steps.position(step) %> of <%= steps.size %>: <%= step.title %></span>
