@@ -51,6 +51,28 @@ class TickGoalStepsTest < ApplicationSystemTestCase
     assert_text "4 of 7 steps done"
   end
 
+  test "a second change while a tick is on its way still lets a failure put the checkbox back" do
+    sign_in identities(:spouse)
+    visit household_goal_url(household_id: households(:home), id: goals(:gospels))
+    assert_text "3 of 7 steps done"
+    page.execute_script(<<~JS)
+      window.realFetch = window.fetch
+      window.fetch = (url, { signal }) => new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
+        setTimeout(() => reject(new TypeError("offline")), 1000)
+      })
+    JS
+
+    check "Mark Read Luke together done"
+    uncheck "Mark Read Luke together done"
+
+    assert_no_checked_field "Mark Read Luke together done"
+    assert_text "3 of 7 steps done"
+    page.execute_script("window.fetch = window.realFetch")
+    check "Mark Read Luke together done"
+    assert_text "4 of 7 steps done"
+  end
+
   test "the last tick shows the Banner to an adult" do
     %i[ read_luke read_john ].each { goal_steps(it).tick(for: nil, by: users(:spouse)) }
     goal_steps(:parables).tick(for: users(:sofia), by: users(:spouse))
