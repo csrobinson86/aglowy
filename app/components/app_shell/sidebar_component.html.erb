@@ -27,6 +27,9 @@
     <% end %>
     <% list.with_group do |group| %>
       <% group.with_heading(title: "Mine", heading_level: 2) %>
+      <% group.with_item(label: "Today's meeting", href: todays_meeting_path, selected_by_ids: :todays_meetings) do |item| %>
+        <% item.with_leading_visual_icon(icon: :sun) %>
+      <% end %>
       <% group.with_item(label: "Meeting notes", href: meeting_notes_path, selected_by_ids: %i[ meeting_notes shared_meeting_notes ]) do |item| %>
         <% item.with_leading_visual_icon(icon: :note) %>
       <% end %>

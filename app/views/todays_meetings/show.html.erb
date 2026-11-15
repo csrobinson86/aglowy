@@ -1,0 +1,33 @@
+<% content_for :title, "Today's meeting" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Today's meeting" } %>
+<% end %>
+
+<%= render Primer::Beta::BorderBox.new do |box| %>
+  <% box.with_body do %>
+    <% if @meeting %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3)) { "#{@meeting.title} · #{@meeting.starts_at.strftime("%A %-l:%M %p")}" } %>
+      <p class="color-fg-muted mt-1 mb-3">Take notes as you go. They stay yours in every household.</p>
+      <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path) do |f| %>
+        <%= render TodaysMeetings::StartForm.new(f, kind: @meeting.kind, week_of: @meeting.week_of, label: "Start my notes", scheme: :primary) %>
+      <% end %>
+    <% else %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3)) { "Which meeting is it?" } %>
+      <p class="color-fg-muted mt-1 mb-3">Pick one to start your notes for this week.</p>
+      <div class="d-flex flex-wrap">
+        <% @todays_meetings.each do |kind, week_of| %>
+          <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path, class: "mr-2 mb-2") do |f| %>
+            <%= render TodaysMeetings::StartForm.new(f, kind:, week_of:, label: Household::Meeting::TITLES.fetch(kind)) %>
+          <% end %>
+        <% end %>
+      </div>
+      <% if policy(Current.household).manage_meetings? %>
+        <p class="color-fg-muted mt-2 mb-0">
+          <%= render(Primer::Beta::Link.new(href: edit_household_settings_path(anchor: "meetings"), underline: true)) { "Set your meeting times" } %>
+          and this page will open the right meeting by itself.
+        </p>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
