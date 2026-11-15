@@ -22,6 +22,12 @@ class GoalTest < ActiveSupport::TestCase
     assert_equal [ goals(:spouse_bible_reading) ], Goal.shared_with(households(:home)).to_a
   end
 
+  # A join eager load would drop the steps' order (by position), and the Shared tab's "Next:" with it.
+  test "shared_with chained with preloaded still preloads, rather than eager loading through a join" do
+    assert_not Goal.shared_with(households(:home)).order(:target_on).preloaded.eager_loading?
+    assert_not MeetingNote.shared_with(households(:home)).preloaded.eager_loading?
+  end
+
   test "shared_with excludes a goal after its owner stops sharing" do
     goals(:spouse_bible_reading).share_with(households(:home))
     goals(:spouse_bible_reading).stop_sharing_with(households(:home))

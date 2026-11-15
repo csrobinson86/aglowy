@@ -114,6 +114,15 @@ class GoalPolicyTest < ActiveSupport::TestCase
     end
   end
 
+  test "personal goal shared with the household: an adult who isn't the owner reads it, read-only" do
+    goal = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+    goal.share_with(households(:home))
+    policy = GoalPolicy.new(memberships(:spouse_in_home), goal)
+
+    assert policy.show?
+    assert_not policy.update? || policy.destroy? || policy.share?
+  end
+
   test "personal goal: the owner through an inactive membership can't" do
     memberships(:spouse_in_home).update_column(:active, false)
     policy = GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading))

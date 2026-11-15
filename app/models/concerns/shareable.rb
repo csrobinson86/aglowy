@@ -9,9 +9,11 @@ module Shareable
     has_many :sharings, dependent: :delete_all
     has_many :shared_households, -> { order(:name) }, through: :sharings, source: :household
 
-    # Shared there by an owner who is still an active member there.
+    # Shared there by an owner who is still an active member there. A subquery, not a join on the outer query,
+    # so chaining preloaded still preloads (a referenced join would eager load and drop the associations' order).
     scope :shared_with, ->(household) do
-      joins(:sharings).where(sharings: { household_id: household }).where(user_id: household.memberships.active.select(:user_id))
+      where(id: unscoped.joins(:sharings).where(sharings: { household_id: household }).select(:id))
+        .where(user_id: household.memberships.active.select(:user_id))
     end
   end
 

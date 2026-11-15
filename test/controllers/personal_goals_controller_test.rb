@@ -56,6 +56,21 @@ class PersonalGoalsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .Box-row .Label", "Shared by Hannah Head"
   end
 
+  # Steps stored in a different order from their positions, so a list that loses the steps' order shows it.
+  test "a shared goal's row names its first undone step by position" do
+    goal = goals(:spouse_bible_reading)
+    later = goal.add_step(title: "Read Exodus")
+    first = goal.add_step(title: "Read Genesis 1 to 25")
+    later.update_column(:position, 2)
+    first.update_column(:position, 1)
+    goal.share_with(households(:home))
+    sign_in identities(:head)
+
+    get household_my_goals_path(household_id: households(:home), status: "shared")
+
+    assert_select "main .Box-row", text: /Next: Read Genesis 1 to 25/
+  end
+
   test "an empty Shared tab says so" do
     sign_in identities(:spouse)
 
