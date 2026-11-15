@@ -24,7 +24,7 @@ class MeetingNote < ApplicationRecord
   validates :week_of, presence: true
   validate :only_repeating_parts_removed
 
-  scope :preloaded, -> { includes(:user, :gems, :shared_households, parts: :rich_text_notes) }
+  scope :preloaded, -> { includes(:user, :gems, :shared_households, :marks, drawings: { image_attachment: :blob }, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
 
   def outline
@@ -68,6 +68,18 @@ class MeetingNote < ApplicationRecord
   # Reads the loaded drawings, like marked?. A refused first save leaves its unsaved drawing among them.
   def drawn?(step)
     drawings.any? { it.persisted? && it.step == step }
+  end
+
+  # True once the child marked or drew anything in Today's meeting. Reads the loaded marks and drawings, like marked?.
+  def helper_used?
+    marks.any? || drawings.any?(&:persisted?)
+  end
+
+  # Up to three "Talk about it" questions for a parent to ask (docs/design/meeting-helper.md): drawn steps first, then
+  # marked ones, each in step order. A drawn step asks about the drawing, never guessing what's in it.
+  def talk_questions
+    drawn, marked = helper_steps.select { drawn?(it.key) }, helper_steps.select { marked?(it.key) && !drawn?(it.key) }
+    drawn.map { "Tell me about your drawing of #{it.short_title.downcase}." }.concat(marked.map(&:talk_question)).first(3)
   end
 
   # Builds every part the outline starts with, in order; a repeating part starts with one.

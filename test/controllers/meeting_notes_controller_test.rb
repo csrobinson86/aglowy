@@ -775,6 +775,67 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "a head reads a child's shared helper note and sees the questions and each step's mark or drawing" do
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    %w[ opening_song talk ].each { note.mark(it) }
+    note.draw("field_ministry", fixture_file_upload("photo.png", "image/png"))
+    note.share_with(households(:home))
+    sign_in identities(:head)
+
+    get note_path(note)
+
+    assert_response :success
+    assert_select ".Subhead h1 .Label", "Shared by Eli Child · from Today's meeting"
+    assert_select "main section[aria-labelledby=helper-note-heading]" do
+      assert_select "h2#helper-note-heading", "From Today's meeting"
+      assert_select "h3#helper-note-talk-heading", "Talk about it with Eli"
+      assert_select "ul[aria-labelledby=helper-note-talk-heading] li", 3 do |questions|
+        assert_equal [ "Tell me about your drawing of field ministry.", "What was the first song about?", "Who from the Bible did you hear about?" ], questions.map(&:text)
+      end
+      assert_select ".Box-row", note.helper_steps.size
+      assert_select ".Box-row", text: /Song and prayer\s+✓ Sang it/, count: 1
+      assert_select ".Box-row", text: /Treasures From God's Word\s+✓ Heard it/
+      assert_select ".Box-row", text: /Apply Yourself to the Field Ministry\s+Drew a picture/
+      assert_select ".Box-row img[src='#{household_meeting_note_step_drawing_path(household_id: households(:home), meeting_note_id: note, step_id: "field_ministry")}'][alt=?]",
+        "Eli's drawing for Apply Yourself to the Field Ministry"
+      assert_select ".Box-row .color-fg-muted", text: "Not marked", count: 5
+      assert_select "form, button", count: 0
+    end
+  end
+
+  test "the author sees the helper section as Talk about it" do
+    note = users(:eli).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 16))
+    note.mark("public_talk")
+    sign_in identities(:eli)
+
+    get note_path(note)
+
+    assert_select "main h3#helper-note-talk-heading", "Talk about it"
+    assert_select "main ul[aria-labelledby=helper-note-talk-heading] li", "Which Bible story did you hear?"
+    assert_select "main .Box-row", text: /Public Talk\s+✓ Heard it/
+  end
+
+  test "a note without marks or drawings has no helper section" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    sign_in identities(:spouse)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_response :success
+    assert_select ".Subhead h1 .Label", "Shared by Hannah Head"
+    assert_select "main", text: /From Today's meeting|Talk about it/, count: 0
+  end
+
+  test "an unshared helper note is 404 for the head" do
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.mark("talk")
+    sign_in identities(:head)
+
+    get note_path(note)
+
+    assert_response :not_found
+  end
+
   private
     def note_path(note, household = households(:home))
       household_meeting_note_path(household_id: household, id: note)

@@ -1,0 +1,41 @@
+<%# locals: (meeting_note:, author:) %>
+<%# What a child did in Today's meeting (frame phone-parent.png): questions to ask them, then each step with its mark
+    or drawing. Read-only, for the author and for members it's shared with. Drawings come through the authorizing
+    drawing route, never an Active Storage URL (docs/design/meeting-helper.md, Trap 9). %>
+<% first_name = meeting_note.user.first_name %>
+<section aria-labelledby="helper-note-heading" class="mb-4">
+  <h2 id="helper-note-heading" class="sr-only">From Today's meeting</h2>
+
+  <%= render(Primer::Box.new(bg: :subtle, border: true, border_radius: 2, p: 3, mb: 3)) do %>
+    <%= render(Primer::Beta::Heading.new(tag: :h3, id: "helper-note-talk-heading", font_size: 4, mb: 2)) do %>
+      <%= author ? "Talk about it" : "Talk about it with #{first_name}" %>
+    <% end %>
+    <ul aria-labelledby="helper-note-talk-heading" class="pl-4">
+      <% meeting_note.talk_questions.each do |question| %>
+        <li class="mb-1"><%= question %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% meeting_note.helper_steps.each do |step| %>
+      <% box.with_row(id: "helper-note-#{step.key}") do %>
+        <div class="d-flex flex-items-center">
+          <%= meeting_note_dot(step.color) %>
+          <span class="flex-auto min-width-0 wb-break-word mr-2"><%= step.title %></span>
+          <% if meeting_note.drawn?(step.key) %>
+            <span class="color-fg-success flex-shrink-0 no-wrap">Drew a picture</span>
+          <% elsif meeting_note.marked?(step.key) %>
+            <span class="color-fg-success flex-shrink-0 no-wrap"><span aria-hidden="true">✓</span> <%= step.marked_label %></span>
+          <% else %>
+            <span class="color-fg-muted flex-shrink-0 no-wrap">Not marked</span>
+          <% end %>
+        </div>
+        <% if meeting_note.drawn?(step.key) %>
+          <%= image_tag household_meeting_note_step_drawing_path(meeting_note_id: meeting_note, step_id: step.key),
+                alt: "#{first_name}'s drawing for #{step.title}", class: "d-block col-12 col-md-8 col-lg-6 rounded-2 mt-2" %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>
