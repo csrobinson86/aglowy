@@ -18,7 +18,7 @@ class Membership < ApplicationRecord
     Time.current.in_time_zone(user.time_zone.presence || household.time_zone).to_date.beginning_of_week(:monday)
   end
 
-  # Leaving ends the person's meeting-note shares here for good, so rejoining never brings them back
+  # Leaving ends the person's meeting-note and goal shares here for good, so rejoining never brings them back
   # (docs/design/meeting-notes.md, "Leaving ends a share for good"), and takes them off the steps not yet
   # done in the household's goals (docs/design/goals.md, "Leaving a household").
   def deactivate
@@ -26,6 +26,7 @@ class Membership < ApplicationRecord
       update(active: false).tap do |deactivated|
         if deactivated
           user.stop_sharing_meeting_notes_with(household)
+          user.stop_sharing_goals_with(household)
           user.leave_open_goal_steps_in(household)
         end
       end

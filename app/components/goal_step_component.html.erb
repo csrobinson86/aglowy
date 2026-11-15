@@ -2,7 +2,7 @@
   <%= tag.div class: "d-flex flex-items-start p-3", hidden: editing?, data: { goal_step_target: "view" } do %>
     <%# Ticking it submits its form. A mixed step's checkbox is set indeterminate by its controller. %>
     <div class="flex-shrink-0 mr-2">
-      <% if open_goal? %>
+      <% if ticking? %>
         <% checkbox = render(Primer::Alpha::CheckBox.new(name: "#{dom_id(step)}_done", label: "Mark #{step.title} done", visually_hide_label: true,
                                                          disabled: !checkbox_tickable?, checked: done?,
                                                          data: { goal_step_target: "checkbox", action: "change->goal-step#tick" })) %>
@@ -22,7 +22,7 @@
             <%= render(Primer::Beta::Octicon.new(:book, mr: 1)) %><%= first_session_label %>
           <% end %>
         <% end %>
-        <% if several? && open_goal? %>
+        <% if several? && ticking? %>
           <div role="group" aria-label="Each person ticks their own part" class="d-flex flex-wrap mt-2">
             <% people.each do |person| %>
               <% done = step.done_for?(person) %>

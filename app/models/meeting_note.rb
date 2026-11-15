@@ -1,13 +1,13 @@
 # One person's notes from one meeting in one week, part by part on the meeting's outline.
 # Personal content: it belongs to its author, never to a household (docs/design/meeting-notes.md).
 class MeetingNote < ApplicationRecord
+  include Shareable
+
   PROGRAM_URL = "https://wol.jw.org/en/wol/meetings/r1/lp-e"
 
   belongs_to :user
   has_many :parts, -> { order(:position) }, dependent: :destroy
   has_many :gems, -> { order(:position) }, dependent: :delete_all
-  has_many :sharings, dependent: :delete_all
-  has_many :shared_households, -> { order(:name) }, through: :sharings, source: :household
 
   # Only Living as Christians parts can be removed (only_repeating_parts_removed); new ones come from revise!.
   accepts_nested_attributes_for :parts, allow_destroy: true
@@ -23,13 +23,6 @@ class MeetingNote < ApplicationRecord
 
   scope :preloaded, -> { includes(:user, :gems, :shared_households, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
-
-  # The notes household members can read: shared there by an author who is still an active member there.
-  # Membership#deactivate deletes the sharings too; this join is the second guard, so a sharing row can
-  # never show while its author is inactive (docs/design/meeting-notes.md, "Leaving ends a share for good").
-  scope :shared_with, ->(household) do
-    joins(:sharings).where(meeting_note_sharings: { household_id: household }).where(user_id: household.memberships.active.select(:user_id))
-  end
 
   def outline
     Outline.new(kind: kind, version: outline_version)
@@ -48,38 +41,6 @@ class MeetingNote < ApplicationRecord
     number_new(parts) { |part, position| part.assign_attributes(key: "living_part", position: position) }
     number_new(gems) { |gem, position| gem.position = position }
     save!
-  end
-
-  # Shares the note, read-only, with the household. Takes the household lock Membership#deactivate takes and
-  # rechecks the author's active membership behind it, so a share can't slip in just after the author leaves
-  # (docs/design/meeting-notes.md, "Leaving ends a share for good"). Not a member: RecordNotFound, a 404.
-  # The lock also serializes two shares at once, so sharing twice leaves one record.
-  def share_with(household)
-    transaction do
-      household.lock!
-      user.memberships.active.find_by!(household: household)
-      sharings.find_or_create_by!(household: household)
-    end
-    shared_households.reset
-  end
-
-  # The filtered delete_all leaves loaded sharings alone, so they're reset for the page that answers from this note.
-  def stop_sharing_with(household)
-    sharings.where(household: household).delete_all
-    sharings.reset
-    shared_households.reset
-  end
-
-  # Reads the loaded sharings, so a list that includes them asks nothing more.
-  def shared_with?(household)
-    sharings.any? { it.household_id == household.id }
-  end
-
-  # The author's other active households that won't see the note once it's shared with this one, as the share
-  # dialog names them. One it's already shared with is left out, so the dialog never says a household that can
-  # read it won't.
-  def households_not_shared_with_besides(household)
-    user.active_households.where.not(id: household).where.not(id: sharings.select(:household_id)).order(:name)
   end
 
   # The parts the person has written something in. Gems are counted on their own.

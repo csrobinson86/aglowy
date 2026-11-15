@@ -95,6 +95,18 @@ class GoalRowComponentTest < ViewComponent::TestCase
     assert_no_selector ".sr-only"
   end
 
+  test "a goal shared by someone else names its owner" do
+    render_inline(GoalRowComponent.new(goal: preloaded(:spouse_bible_reading), household: households(:home), shared_by: true))
+
+    assert_selector ".Label", text: "Shared by Sam Spouse"
+  end
+
+  test "a person's own goal doesn't say who shared it" do
+    render_inline(GoalRowComponent.new(goal: preloaded(:spouse_bible_reading), household: households(:home)))
+
+    assert_no_text "Shared by"
+  end
+
   test "a personal goal's dates are in its owner's time zone" do
     travel_to Time.utc(2026, 11, 15, 2)
     users(:spouse).update!(time_zone: "Pacific Time (US & Canada)")

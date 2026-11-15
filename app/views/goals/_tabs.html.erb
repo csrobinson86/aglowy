@@ -1,8 +1,11 @@
 <%# locals: (status:, counts:, mine: false) %>
 <%# One index, the tab in ?status=, and a line under the tabs saying what this one holds (frames goals-list.png, goals-list-archived.png).
-    mine: the My goals list, whose tabs stay on My goals. %>
-<%= render(Primer::Alpha::UnderlineNav.new(label: "Goals", mb: 3)) do |nav| %>
-  <% { "active" => "Active", "completed" => "Completed", "archived" => "Archived" }.each do |value, label| %>
+    mine: the My goals list, whose tabs stay on My goals, with a tab for goals others shared here. Its four tabs wrap
+    on a phone instead of hiding the last one off the edge. %>
+<% tabs = { "active" => "Active", "completed" => "Completed", "archived" => "Archived" } %>
+<% tabs["shared"] = "Shared in this household" if mine %>
+<%= render(Primer::Alpha::UnderlineNav.new(label: "Goals", mb: 3, body_arguments: { flex_wrap: :wrap })) do |nav| %>
+  <% tabs.each do |value, label| %>
     <% tab_status = value unless value == "active" %>
     <% nav.with_tab(href: mine ? household_my_goals_path(status: tab_status) : household_goals_path(status: tab_status), selected: status == value) do |tab| %>
       <% tab.with_text { label } %>
@@ -12,9 +15,10 @@
 <% end %>
 <p class="color-fg-muted mb-3">
   <% if mine %>
-    <%= { "active" => "Goals you're working on now, private to you.",
+    <%= { "active" => "Goals you're working on now, private until you share one.",
           "completed" => "Goals you reached, kept to look back on.",
-          "archived" => "Put away, finished or not, and kept to look back on." }.fetch(status) %>
+          "archived" => "Put away, finished or not, and kept to look back on.",
+          "shared" => "Goals others in #{Current.household.name} shared with the household, to read and cheer them on." }.fetch(status) %>
   <% else %>
     <%= { "active" => "Goals the family is working on now.",
           "completed" => "Goals the family reached, kept to look back on.",

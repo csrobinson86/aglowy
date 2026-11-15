@@ -4,7 +4,7 @@
 <% tickable = step.parts.select { policy(step.new_tick(it)).create? } %>
 <%= turbo_frame_tag step do %>
   <% schedulable = policy(step).update? && policy(FamilyStudy).create? %>
-  <%= render GoalStepComponent.new(step:, household: Current.household, editing:, tickable:, focused:, schedulable:, highlighted: tickable.any? && !policy(step.goal).update?) do |component| %>
+  <%= render GoalStepComponent.new(step:, household: Current.household, editing:, tickable:, focused:, schedulable:, read_only: step.goal.personal? && !policy(step.goal).update?, highlighted: tickable.any? && !policy(step.goal).update?) do |component| %>
     <% if editable %>
       <% component.with_edit_form do %>
         <% if stale %>

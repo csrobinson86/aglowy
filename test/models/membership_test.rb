@@ -81,6 +81,19 @@ class MembershipTest < ActiveSupport::TestCase
     assert_equal [ households(:parents) ], note.reload.shared_households
   end
 
+  test "deactivate deletes the person's goal sharings into that household only" do
+    goal = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+    goal.share_with(households(:home))
+    goal.share_with(households(:parents))
+    goals(:spouse_bible_reading).share_with(households(:home))
+    memberships(:spouse_in_home).update!(role: :head)
+
+    assert_difference -> { Goal::Sharing.count }, -1 do
+      assert memberships(:head_in_home).deactivate
+    end
+    assert_equal [ households(:parents) ], goal.reload.shared_households
+  end
+
   test "a refused deactivate keeps the person's sharings" do
     meeting_notes(:head_midweek).share_with(households(:home))
 

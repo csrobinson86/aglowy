@@ -9,9 +9,15 @@ class GoalRowComponent < ApplicationComponent
   delegate :progress, to: :goal
 
   # household: the one whose pages the list is in. A personal goal has none of its own, so My goals passes it.
-  def initialize(goal:, household: goal.household)
+  # shared_by: name the goal's owner, for My goals' Shared tab.
+  def initialize(goal:, household: goal.household, shared_by: false)
     @goal = goal
     @household = household
+    @shared_by = shared_by
+  end
+
+  def shared_by?
+    @shared_by
   end
 
   def date_text

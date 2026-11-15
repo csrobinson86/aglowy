@@ -1,6 +1,11 @@
 <div class="d-flex flex-wrap flex-items-center mb-2">
   <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2, classes: "min-width-0 wb-break-word")) { link_to goal.title, household_goal_path(household_id: household.id, id: goal) } %>
   <%= render(Primer::Beta::Label.new(mr: 2)) { "Milestone" } %>
+  <% if shared_by? %>
+    <%= render(Primer::Beta::Label.new(scheme: :accent, mr: 2, title: "Shared by #{goal.user.name}", classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+      <%= render(Primer::Beta::Octicon.new(:people, mr: 1)) %>Shared by <%= goal.user.name %>
+    <% end %>
+  <% end %>
   <span class="color-fg-muted f6 ml-auto"><%= date_text %></span>
 </div>
 <div class="d-flex flex-items-center mb-2">

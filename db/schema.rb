@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_000400) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -116,6 +116,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_000400) do
     t.datetime "created_at", null: false
     t.index ["completed_by_id"], name: "index_goal_completions_on_completed_by_id"
     t.index ["goal_id"], name: "index_goal_completions_on_goal_id", unique: true
+  end
+
+  create_table "goal_sharings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "goal_id", null: false
+    t.uuid "household_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["goal_id", "household_id"], name: "index_goal_sharings_on_goal_id_and_household_id", unique: true
+    t.index ["household_id"], name: "index_goal_sharings_on_household_id"
   end
 
   create_table "goal_step_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -296,6 +304,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_000400) do
   add_foreign_key "goal_archivals", "users", column: "archived_by_id"
   add_foreign_key "goal_completions", "goals", on_delete: :cascade
   add_foreign_key "goal_completions", "users", column: "completed_by_id"
+  add_foreign_key "goal_sharings", "goals", on_delete: :cascade
+  add_foreign_key "goal_sharings", "households", on_delete: :cascade
   add_foreign_key "goal_step_assignments", "goal_steps", column: "step_id", on_delete: :cascade
   add_foreign_key "goal_step_assignments", "users", on_delete: :cascade
   add_foreign_key "goal_step_completions", "goal_steps", column: "step_id", on_delete: :cascade

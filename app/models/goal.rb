@@ -2,6 +2,8 @@
 # database checks it (docs/design/goals.md, gotcha 9). Completing and archiving are records, so a
 # finished goal is kept to look back on.
 class Goal < ApplicationRecord
+  include Shareable
+
   belongs_to :household, optional: true
   belongs_to :user, optional: true
   belongs_to :set_by, class_name: "User"
@@ -22,11 +24,15 @@ class Goal < ApplicationRecord
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
-  scope :preloaded, -> { includes(:user, completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions, { family_study: :first_session } ], household: { active_memberships: :user }) }
+  scope :preloaded, -> { includes(:user, :sharings, :shared_households, completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions, { family_study: :first_session } ], household: { active_memberships: :user }) }
 
-  # The goals a person can open from this household: its family goals and their own personal goals.
-  # Goals shared into the household join this scope with sharing (docs/design/goals.md, "Loading a goal").
-  scope :reachable_from, ->(membership) { where(household_id: membership.household_id).or(where(user_id: membership.user_id)) }
+  # The goals a person works on from this household: its family goals and their own personal goals.
+  # Every change to a goal finds it here, so a goal someone shared with them is a 404 to change.
+  scope :family_or_own, ->(membership) { where(household_id: membership.household_id).or(where(user_id: membership.user_id)) }
+
+  # The goals a person can open from this household: those, and personal goals others shared there,
+  # read-only (docs/design/goals.md, "Loading a goal").
+  scope :reachable_from, ->(membership) { family_or_own(membership).or(where(id: shared_with(membership.household).select(:id))) }
 
   # A tab's goals; anything that isn't a status is Active.
   scope :with_status, ->(status) do

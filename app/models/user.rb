@@ -68,6 +68,11 @@ class User < ApplicationRecord
     MeetingNote::Sharing.where(household: household, meeting_note: meeting_notes).delete_all
   end
 
+  # Membership#deactivate calls this inside its transaction too, so personal goals stop being shared there as well.
+  def stop_sharing_goals_with(household)
+    Goal::Sharing.where(household: household, goal: goals).delete_all
+  end
+
   # Membership#deactivate calls this under the household's lock, so a step naming only someone who left can
   # still be finished. Done steps keep their assignments and ticks as history (docs/design/goals.md,
   # "Leaving a household"). A person's tick on a named step always has an assignment beside it.

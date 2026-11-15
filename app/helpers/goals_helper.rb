@@ -6,12 +6,19 @@ module GoalsHelper
   end
 
   # The list a goal's page leads back to: My goals for a personal goal, Family goals for the household's.
+  # Someone else's goal, shared here, leads back to My goals' Shared tab.
   def goal_list_name(goal)
     goal.personal? ? "My goals" : "Family goals"
   end
 
   def goal_list_path(goal, **)
-    goal.personal? ? household_my_goals_path(**) : household_goals_path(**)
+    if goal.family?
+      household_goals_path(**)
+    elsif goal.user_id == Current.user.id
+      household_my_goals_path(**)
+    else
+      household_my_goals_path(status: "shared")
+    end
   end
 
   # A personal goal's pages select My goals in the sidebar, not Family goals.

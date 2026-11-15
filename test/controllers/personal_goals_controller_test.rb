@@ -40,6 +40,46 @@ class PersonalGoalsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".blankslate a[href='#{new_household_my_goal_path(household_id: households(:home))}']", "New goal"
   end
 
+  test "the Shared tab lists goals others shared here, with the owner's name, and not the person's own" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+    head_goal = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+    head_goal.share_with(households(:home))
+    users(:head).goals.create!(title: "Pray every morning", target_on: Date.new(2027, 2, 28), set_by: users(:head)).share_with(households(:parents))
+    sign_in identities(:spouse)
+
+    get household_my_goals_path(household_id: households(:home), status: "shared")
+
+    assert_response :success
+    assert_select "nav[aria-label='Goals'] a[aria-current='page']", text: /Shared in this household\s*1/
+    assert_select "main .Box-row", count: 1
+    assert_select "main .Box-row a[href='#{household_goal_path(household_id: households(:home), id: head_goal)}']", "Read the Psalms"
+    assert_select "main .Box-row .Label", "Shared by Hannah Head"
+  end
+
+  # Steps stored in a different order from their positions, so a list that loses the steps' order shows it.
+  test "a shared goal's row names its first undone step by position" do
+    goal = goals(:spouse_bible_reading)
+    later = goal.add_step(title: "Read Exodus")
+    first = goal.add_step(title: "Read Genesis 1 to 25")
+    later.update_column(:position, 2)
+    first.update_column(:position, 1)
+    goal.share_with(households(:home))
+    sign_in identities(:head)
+
+    get household_my_goals_path(household_id: households(:home), status: "shared")
+
+    assert_select "main .Box-row", text: /Next: Read Genesis 1 to 25/
+  end
+
+  test "an empty Shared tab says so" do
+    sign_in identities(:spouse)
+
+    get household_my_goals_path(household_id: households(:home), status: "shared")
+
+    assert_select "nav[aria-label='Goals'] a[aria-current='page']", text: /Shared in this household\s*0/
+    assert_select ".blankslate h2", "Nothing shared here yet"
+  end
+
   test "creates one" do
     sign_in identities(:spouse)
 
