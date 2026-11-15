@@ -25,6 +25,17 @@ class User < ApplicationRecord
     MeetingNote::Sharing.where(household: household, meeting_note: meeting_notes).delete_all
   end
 
+  # Membership#deactivate calls this under the household's lock, so a step naming only someone who left can
+  # still be finished. Done steps keep their assignments and ticks as history (docs/design/goals.md,
+  # "Leaving a household"). A person's tick on a named step always has an assignment beside it.
+  def leave_open_goal_steps_in(household)
+    named_steps = household.goal_steps.where(id: Goal::Step::Assignment.where(user: self).select(:step_id))
+    open_steps = named_steps.includes(:assignments, :completions).reject(&:done?)
+
+    Goal::Step::Completion.where(user: self, step: open_steps).delete_all
+    Goal::Step::Assignment.where(user: self, step: open_steps).delete_all
+  end
+
   # That week's Life and Ministry and Weekend notes, in that order. One not started yet is a new, unsaved note.
   def meeting_notes_for_week(week_of)
     started = meeting_notes.preloaded.where(week_of: week_of).index_by(&:kind)

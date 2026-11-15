@@ -260,6 +260,16 @@ class Goal::StepTest < ActiveSupport::TestCase
     assert_empty step.completions.reload
   end
 
+  test "unticking someone with no tick on a done step keeps the history of people who left" do
+    step = goal_steps(:draw_map)
+    assert memberships(:eli_in_home).deactivate
+
+    step.untick(for: @sofia)
+
+    assert_equal [ @eli ], step.assignees.to_a
+    assert step.reload.done?
+  end
+
   test "unticking a step that isn't done keeps everyone named on it" do
     step = goal_steps(:parables)
     memberships(:sofia_in_home).update_column(:active, false)
@@ -273,8 +283,10 @@ class Goal::StepTest < ActiveSupport::TestCase
     head = users(:head)
     step = goal_steps(:read_john)
     step.reassign(to: [ head ])
+    step.tick(for: head, by: head)
+    goal_steps(:parables).reassign(to: [ head, @sofia ])
 
-    assert_no_difference -> { Goal::Step::Assignment.count } do
+    assert_no_difference [ "Goal::Step::Assignment.count", "Goal::Step::Completion.count" ] do
       assert_not memberships(:head_in_home).deactivate
     end
     assert_equal [ head ], step.reload.assignees.to_a

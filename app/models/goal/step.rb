@@ -21,6 +21,11 @@ class Goal::Step < ApplicationRecord
     everyone? ? ticked_for?(nil) : assigned_user_ids.all? { ticked_for?(it) }
   end
 
+  # Theirs: every Everyone step, and the named steps naming them.
+  def for?(user)
+    everyone? || user.id.in?(assigned_user_ids)
+  end
+
   def done_for?(user)
     everyone? ? ticked_for?(nil) : user.id.in?(assigned_user_ids) && ticked_for?(user.id)
   end
@@ -57,14 +62,22 @@ class Goal::Step < ApplicationRecord
   end
 
   # Nothing is checked about the person whose tick goes, so an adult can always remove a departed member's tick.
+  # Unticking a done step also lets go of anyone named on it who has left, so it depends only on people
+  # still there (docs/design/goals.md, "Unticking a step someone has left"). Removing no tick changes nothing.
   def untick(for:)
     user = binding.local_variable_get(:for)
 
     goal.under_lock do
       goal.require_open!
-      completions.where(user: user).delete_all
+      assignments.reset
+      completions.reset
+      was_done = done?
+      unticked = completions.where(user: user).delete_all.positive?
+      let_go_of_people_who_left if was_done && unticked
     end
   ensure
+    assignments.reset
+    assignees.reset
     completions.reset
   end
 
@@ -75,6 +88,15 @@ class Goal::Step < ApplicationRecord
 
     def ticked_for?(user_id)
       completions.any? { it.user_id == user_id }
+    end
+
+    # Only a named step can name someone who left, and only a family goal's steps are named.
+    def let_go_of_people_who_left
+      unless everyone?
+        left = assignments.where.not(user_id: goal.household.memberships.active.select(:user_id)).select(:user_id)
+        completions.where(user_id: left).delete_all
+        assignments.where(user_id: left).delete_all
+      end
     end
 
     def delete_ticks_that_no_longer_fit(user_ids)
