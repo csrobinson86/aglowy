@@ -33,6 +33,10 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_members_path(household_id: household.id)
   end
 
+  def goals_path
+    household_goals_path(household_id: household.id)
+  end
+
   def initial
     user.name.first
   end

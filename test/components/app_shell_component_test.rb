@@ -33,6 +33,14 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Menu'] a[aria-current='page']", text: "Members", count: 1
   end
 
+  test "Family goals follows Members, with the goal icon, and is the current item when selected_item is :goals" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :goals))
+
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(4) a[aria-current='page'][href='/#{households(:home).id}/goals']", text: "Family goals"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(4) svg.octicon-goal"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
+  end
+
   test "Meeting notes is in the Mine group, with the note icon, and is the current item when selected_item is :meeting_notes" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :meeting_notes))
 

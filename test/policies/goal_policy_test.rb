@@ -1,6 +1,16 @@
 require "test_helper"
 
 class GoalPolicyTest < ActiveSupport::TestCase
+  test "every active member can list the household's goals; an inactive member or a nil membership can't" do
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      assert GoalPolicy.new(memberships(membership), Goal).index?, "expected #{membership} to list goals"
+    end
+
+    [ memberships(:former_in_home), nil ].each do |membership|
+      assert_not GoalPolicy.new(membership, Goal).index?, "expected #{membership.inspect} to be refused"
+    end
+  end
+
   test "family goal: head, adult and child can show" do
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       assert GoalPolicy.new(memberships(membership), goals(:gospels)).show?, "expected #{membership} to see the goal"

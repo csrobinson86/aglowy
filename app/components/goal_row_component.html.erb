@@ -1,0 +1,23 @@
+<div class="d-flex flex-wrap flex-items-center mb-2">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2, classes: "min-width-0 wb-break-word")) { goal.title } %>
+  <%= render(Primer::Beta::Label.new(mr: 2)) { "Milestone" } %>
+  <span class="color-fg-muted f6 ml-auto"><%= date_text %></span>
+</div>
+<div class="d-flex flex-items-center mb-2">
+  <%# The steps text says the same, so the bar is hidden from screen readers. %>
+  <%= render(Primer::Beta::ProgressBar.new(flex: 1, mr: 3, aria: { hidden: true })) do |bar| %>
+    <% bar.with_item(percentage: progress.percent) %>
+  <% end %>
+  <span class="flex-shrink-0"><%= steps_text %></span>
+</div>
+<div class="d-flex flex-items-center">
+  <span class="flex-auto min-width-0 color-fg-muted wb-break-word"><%= status_text %></span>
+  <% if people.any? %>
+    <span class="sr-only">With <%= people.map(&:name).to_sentence %></span>
+    <span class="d-flex flex-shrink-0 ml-2" aria-hidden="true">
+      <% people.each do |person| %>
+        <span class="avatar avatar-4 circle d-flex flex-items-center flex-justify-center ml-1 color-bg-accent color-fg-accent text-bold f6"><%= person.name.first %></span>
+      <% end %>
+    </span>
+  <% end %>
+</div>

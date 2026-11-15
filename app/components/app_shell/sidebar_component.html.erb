@@ -21,6 +21,9 @@
       <% group.with_item(label: "Members", href: members_path, selected_by_ids: :members) do |item| %>
         <% item.with_leading_visual_icon(icon: :people) %>
       <% end %>
+      <% group.with_item(label: "Family goals", href: goals_path, selected_by_ids: :goals) do |item| %>
+        <% item.with_leading_visual_icon(icon: :goal) %>
+      <% end %>
     <% end %>
     <% list.with_group do |group| %>
       <% group.with_heading(title: "Mine", heading_level: 2) %>
