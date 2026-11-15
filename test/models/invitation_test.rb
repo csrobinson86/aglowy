@@ -21,6 +21,14 @@ class InvitationTest < ActiveSupport::TestCase
     assert households(:home).invitations.build(invited_by: users(:head), email: "outsider@example.com").valid?
   end
 
+  test "a second invitation for the same address in the household is invalid" do
+    invitation = households(:home).invitations.build(invited_by: users(:spouse), email: "Ana.Ortiz@example.com")
+
+    assert_not invitation.valid?
+    assert_includes invitation.errors[:email], "Already invited. Resend it from the Members page."
+    assert_includes invitation.errors.full_messages, "Already invited. Resend it from the Members page."
+  end
+
   test "the same address can be invited to two households" do
     invitation = households(:parents).invitations.build(invited_by: users(:grandparent), email: invitations(:ana).email)
 
@@ -31,7 +39,7 @@ class InvitationTest < ActiveSupport::TestCase
     invitation = households(:home).invitations.build(invited_by: users(:head), email: "not an email", role: "child")
 
     assert_not invitation.valid?
-    assert_includes invitation.errors[:email], "is invalid"
+    assert_includes invitation.errors[:email], "Enter an email address, like name@example.com."
     assert_includes invitation.errors[:role], "is not included in the list"
   end
 
@@ -102,6 +110,32 @@ class InvitationTest < ActiveSupport::TestCase
     assert_no_enqueued_emails do
       assert_raises(ActiveRecord::RecordNotFound) { stale.resend }
     end
+  end
+
+  test "cancel deletes the invitation" do
+    invitations(:ana).cancel
+
+    assert_not Invitation.exists?(invitations(:ana).id)
+  end
+
+  test "cancel raises RecordNotFound once a join has deleted the invitation" do
+    stale = Invitation.find(invitations(:ana).id)
+    invitations(:ana).destroy!
+
+    assert_raises(ActiveRecord::RecordNotFound) { stale.cancel }
+  end
+
+  test "expires_on is the deadline's date in the household's time zone" do
+    households(:home).update!(time_zone: "Pacific Time (US & Canada)")
+    invitations(:ana).update!(expires_at: Time.utc(2026, 11, 21, 3))
+
+    assert_equal Date.new(2026, 11, 20), invitations(:ana).expires_on
+  end
+
+  test "newest_first lists the latest invitation first" do
+    newest = households(:home).invitations.create!(invited_by: users(:head), email: "rosa@example.com")
+
+    assert_equal newest, households(:home).invitations.newest_first.first
   end
 
   test "deliver_later enqueues the invitation email" do

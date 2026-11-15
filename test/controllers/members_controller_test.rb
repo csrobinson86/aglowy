@@ -8,10 +8,11 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Members"
-    assert_select "main .Box-row", count: 5
-    assert_select "main", text: /Hannah Head.*Head.*Sam Spouse.*Adult.*Charlie Child.*Child/m
-    assert_select "main .Box-row", text: /Eli Child/
-    assert_select "main .Box-row", text: /Sofia Child/
+    assert_select "#members .Box-header", "5 members"
+    assert_select "#members .Box-row", count: 5
+    assert_select "#members", text: /Hannah Head.*Head.*Sam Spouse.*Adult.*Charlie Child.*Child/m
+    assert_select "#members .Box-row", text: /Eli Child/
+    assert_select "#members .Box-row", text: /Sofia Child/
     assert_not_includes response.body, "Frances Former"
   end
 
@@ -33,23 +34,85 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a head sees Add a member on the member list" do
-    sign_in identities(:head)
-
-    get household_members_path(household_id: households(:home))
-
-    assert_select "main a[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
-  end
-
-  test "an adult and a child don't see Add a member" do
-    [ identities(:spouse), child_identity ].each do |identity|
+  test "a head and an adult see Invite by email and Add without a login on the member list" do
+    [ identities(:head), identities(:spouse) ].each do |identity|
       sign_in identity
 
       get household_members_path(household_id: households(:home))
 
-      assert_response :success
-      assert_select "a", { text: "Add a member", count: 0 }, "expected #{identity.email} not to see Add a member"
+      assert_select "main a.Button--primary[href='#{new_household_invitation_path(household_id: households(:home))}']", "Invite by email"
+      assert_select "main a[href='#{new_household_member_path(household_id: households(:home))}']", "Add without a login"
     end
+  end
+
+  test "a child sees neither action" do
+    sign_in child_identity
+
+    get household_members_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select "a", { text: "Invite by email", count: 0 }
+    assert_select "a", { text: "Add without a login", count: 0 }
+  end
+
+  test "heads and adults see how each member signs in" do
+    sign_in identities(:spouse)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "#members .Box-row", text: /Hannah Head\s*head@example.com/
+    assert_select "#members .Box-row", text: /Eli Child\s*Signs in as eli.rivera/
+    assert_select "#members .Box-row", text: /Sofia Child\s*No login/
+  end
+
+  test "a child sees no one's email, and no invitations" do
+    sign_in child_identity
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "#members .Box-row", count: 5
+    assert_not_includes response.body, "head@example.com"
+    assert_not_includes response.body, "Signs in as"
+    assert_not_includes response.body, "No login"
+    assert_select "#invitations", count: 0
+    assert_not_includes response.body, invitations(:ana).email
+  end
+
+  test "open invitations are listed newest first, with resend and cancel for those the viewer may" do
+    travel_to Time.zone.local(2026, 11, 14, 12)
+    invitations(:ana).update_columns(created_at: 2.days.ago, expires_at: Time.zone.local(2026, 11, 21, 12))
+    invitations(:expired).update_columns(created_at: 9.days.ago, expires_at: Time.zone.local(2026, 11, 10, 12))
+    newest = households(:home).invitations.create!(invited_by: users(:spouse), email: "rosa@example.com")
+    sign_in identities(:spouse)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "#invitations h2", "Invited, not joined yet"
+    assert_select "#invitations .Box-row", count: 3
+    assert_select "#invitations", text: /rosa@example.com.*ana.ortiz@example.com.*luis@example.com/m
+    assert_select "#invitations .Box-row", text: /ana.ortiz@example.com\s*Invited by Hannah · until Nov 21/
+    assert_select "#invitations .Box-row .color-fg-attention", "Expired on Nov 10"
+    assert_select "button[aria-label='Resend to #{newest.email}']", "Resend"
+    assert_select "button[aria-label='Cancel the invitation to #{newest.email}']", "Cancel"
+    assert_select "button[aria-label$='#{invitations(:ana).email}']", count: 0
+  end
+
+  test "an expired invitation offers Send again to a head" do
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "button[aria-label='Send again to #{invitations(:expired).email}']", "Send again"
+    assert_select "button[aria-label='Resend to #{invitations(:ana).email}']", "Resend"
+  end
+
+  test "no invitations, no Invited section" do
+    households(:home).invitations.delete_all
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "#invitations", count: 0
   end
 
   test "a head sees the add member form" do
@@ -77,8 +140,19 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to household_members_path(household_id: households(:home))
   end
 
-  test "an adult is refused with an alert and nothing is created" do
+  test "an adult can add a member without a login" do
     sign_in identities(:spouse)
+
+    assert_difference [ "User.count", "Membership.count" ], 1 do
+      post household_members_path(household_id: households(:home)), params: { member: { name: "Rosa Spouse", role: "adult" } }
+    end
+
+    assert households(:home).memberships.joins(:user).find_by!(users: { name: "Rosa Spouse" }).adult?
+    assert_redirected_to household_members_path(household_id: households(:home))
+  end
+
+  test "a child is refused with an alert and nothing is created" do
+    sign_in child_identity
 
     assert_no_difference [ "User.count", "Membership.count" ] do
       post household_members_path(household_id: households(:home)), params: { member: { name: "Baby Head", role: "child" } }

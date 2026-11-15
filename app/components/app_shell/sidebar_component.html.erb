@@ -18,7 +18,7 @@
       <% group.with_item(label: "Family studies", href: family_studies_path, selected_by_ids: :family_studies) do |item| %>
         <% item.with_leading_visual_icon(icon: :book) %>
       <% end %>
-      <% group.with_item(label: "Members", href: members_path, selected_by_ids: :members) do |item| %>
+      <% group.with_item(label: "Members", href: members_path, selected_by_ids: %i[ members invitations ]) do |item| %>
         <% item.with_leading_visual_icon(icon: :people) %>
       <% end %>
       <% group.with_item(label: "Family goals", href: goals_path, selected_by_ids: :goals) do |item| %>

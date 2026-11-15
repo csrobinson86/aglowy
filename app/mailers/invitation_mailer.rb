@@ -6,7 +6,7 @@ class InvitationMailer < ApplicationMailer
   def invite
     @invitation = params[:invitation]
     @accept_url = accept_url_for(@invitation)
-    @deadline = @invitation.expires_at.in_time_zone(@invitation.household.time_zone).to_date
+    @deadline = @invitation.expires_on
 
     mail to: @invitation.email, subject: "#{@invitation.invited_by.name} invited you to the #{@invitation.household.name} on Aglowy"
   end

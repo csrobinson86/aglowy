@@ -1,0 +1,23 @@
+<%# locals: (invitation:) %>
+<%= render(Primer::Beta::Octicon.new(icon: :mail, color: :muted, mr: 3, flex_shrink: 0)) %>
+<div class="flex-auto min-width-0">
+  <div class="text-bold css-truncate css-truncate-overflow"><%= invitation.email %></div>
+  <% if invitation.expired? %>
+    <div class="color-fg-attention text-small">Expired on <%= l(invitation.expires_on, format: "%b %-d") %></div>
+  <% else %>
+    <div class="color-fg-muted text-small">Invited by <%= invitation.invited_by.first_name %> · until <%= l(invitation.expires_on, format: "%b %-d") %></div>
+  <% end %>
+</div>
+<%# Wraps under the address on a phone. %>
+<div class="d-flex flex-items-center ml-auto pl-2">
+  <%= render(Primer::Beta::Label.new(scheme: invitation.head? ? :accent : :secondary)) { invitation.role.humanize } %>
+  <% if policy(invitation).update? %>
+    <% resend_label = invitation.expired? ? "Send again" : "Resend" %>
+    <%= primer_form_with(url: household_invitation_path(id: invitation), method: :patch, class: "ml-2") do |f| %>
+      <%= render Invitations::ActionForm.new(f, label: resend_label, aria_label: "#{resend_label} to #{invitation.email}") %>
+    <% end %>
+    <%= primer_form_with(url: household_invitation_path(id: invitation), method: :delete, class: "ml-2") do |f| %>
+      <%= render Invitations::ActionForm.new(f, label: "Cancel", aria_label: "Cancel the invitation to #{invitation.email}", scheme: :danger) %>
+    <% end %>
+  <% end %>
+</div>

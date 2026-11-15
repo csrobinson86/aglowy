@@ -2,21 +2,42 @@
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Members" } %>
-  <% if policy(Membership).create? %>
-    <% subhead.with_actions do %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_path, scheme: :primary)) do |button| %>
+  <% subhead.with_actions(display: :flex, flex_wrap: :wrap) do %>
+    <% if policy(Invitation).create? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_invitation_path, scheme: :primary, mr: 2)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :mail) %>
+        Invite by email
+      <% end %>
+    <% end %>
+    <% if policy(Membership).create? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_path)) do |button| %>
         <% button.with_leading_visual_icon(icon: :plus) %>
-        Add a member
+        Add without a login
       <% end %>
     <% end %>
   <% end %>
 <% end %>
 
-<%= render Primer::Beta::BorderBox.new do |box| %>
+<%= render Primer::Beta::BorderBox.new(id: "members", mb: 4) do |box| %>
+  <% box.with_header do %>
+    <h2 class="Box-title"><%= pluralize(@memberships.size, "member") %></h2>
+  <% end %>
   <% @memberships.each do |membership| %>
-    <% box.with_row(display: :flex, justify_content: :space_between, align_items: :center) do %>
-      <%= membership.user.name %>
-      <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary)) { membership.role.humanize } %>
+    <% box.with_row(display: :flex, align_items: :center) do %>
+      <%= render "members/member", membership:, show_sign_in: policy(Invitation).create? %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if @invitations.present? %>
+  <%= render Primer::Beta::BorderBox.new(id: "invitations") do |box| %>
+    <% box.with_header do %>
+      <h2 class="Box-title">Invited, not joined yet</h2>
+    <% end %>
+    <% @invitations.each do |invitation| %>
+      <% box.with_row(display: :flex, align_items: :center, flex_wrap: :wrap) do %>
+        <%= render "invitations/invitation", invitation: %>
+      <% end %>
     <% end %>
   <% end %>
 <% end %>

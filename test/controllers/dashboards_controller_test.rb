@@ -38,27 +38,27 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "<title>Home · Tom &amp; Jerry &lt;b&gt; · Aglowy</title>"
   end
 
-  test "a head sees Add a member" do
+  test "a head and an adult see Add a member" do
     without_family_studies
-    sign_in identities(:head)
-
-    get household_root_path(household_id: households(:home))
-
-    assert_select ".blankslate p", "Add the people in your household. Family studies, goals and notes will show up here as you add them."
-    assert_select ".blankslate a[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
-  end
-
-  test "an adult and a child don't see Add a member" do
-    without_family_studies
-    [ identities(:spouse), child_identity ].each do |identity|
+    [ identities(:head), identities(:spouse) ].each do |identity|
       sign_in identity
 
       get household_root_path(household_id: households(:home))
 
-      assert_response :success
-      assert_select ".blankslate p", "Family studies, goals and notes will show up here."
-      assert_select "a", { text: "Add a member", count: 0 }, "expected #{identity.email} not to see Add a member"
+      assert_select ".blankslate p", "Add the people in your household. Family studies, goals and notes will show up here as you add them."
+      assert_select ".blankslate a[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
     end
+  end
+
+  test "a child doesn't see Add a member" do
+    without_family_studies
+    sign_in child_identity
+
+    get household_root_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select ".blankslate p", "Family studies, goals and notes will show up here."
+    assert_select "a", { text: "Add a member", count: 0 }
   end
 
   test "a head's empty state offers Schedule a study first, then Add a member" do
@@ -71,11 +71,12 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".blankslate a:not(.Button--primary)[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
   end
 
-  test "an adult's empty state offers Schedule a study; a child's offers nothing" do
+  test "an adult's empty state offers Schedule a study and Add a member; a child's offers nothing" do
     without_family_studies
     sign_in identities(:spouse)
     get household_root_path(household_id: households(:home))
     assert_select ".blankslate a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+    assert_select ".blankslate a[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
 
     sign_in child_identity
     get household_root_path(household_id: households(:home))

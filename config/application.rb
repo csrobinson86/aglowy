@@ -28,6 +28,9 @@ module Aglowy
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
 
+    # Lets a locale drop the attribute name from a full message, as Primer forms show full messages beside the input.
+    config.active_model.i18n_customize_full_message = true
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

@@ -38,6 +38,13 @@ en:
       clock: "%-l:%M"
       clock_with_meridiem: "%-l:%M %p"
   activerecord:
+    errors:
+      models:
+        invitation:
+          attributes:
+            email:
+              # "Already a member of this household.", not "Email Already a member…" (docs/design/invitations.md).
+              format: "%{message}"
     attributes:
       identity:
         login: "Email or username"

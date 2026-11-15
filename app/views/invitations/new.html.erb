@@ -1,0 +1,21 @@
+<% content_for :title, "Invite someone" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_members_path) { "Members" } %>
+  <% breadcrumbs.with_item(href: new_household_invitation_path) { "Invite" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Invite someone to the #{Current.household.name}" } %>
+<% end %>
+
+<div class="container-md ml-0">
+  <%= primer_form_with(model: @invitation, url: household_invitations_path) do |f| %>
+    <%= render Invitations::InvitationForm.new(f, section: :fields, head: policy(Invitation).create_as?(:head)) %>
+    <%= render(Primer::Beta::BorderBox.new(bg: :subtle, color: :muted, my: 4)) do |box| %>
+      <% box.with_body do %>
+        We'll email a link that works for 7 days and only for this address. Once they join, they'll see the household's family studies, goals and members. Their own notes and goals stay private.
+      <% end %>
+    <% end %>
+    <%= render Invitations::InvitationForm.new(f, section: :actions, cancel_path: household_members_path) %>
+  <% end %>
+</div>

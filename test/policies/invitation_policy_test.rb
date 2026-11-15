@@ -32,6 +32,17 @@ class InvitationPolicyTest < ActiveSupport::TestCase
     assert_not InvitationPolicy.new(nil, Invitation).create_as?("adult")
   end
 
+  test "create_with_role? checks the role the built invitation carries" do
+    head_invitation = households(:home).invitations.build(email: "rosa@example.com", role: "head")
+    adult_invitation = households(:home).invitations.build(email: "rosa@example.com", role: "adult")
+
+    assert InvitationPolicy.new(memberships(:head_in_home), head_invitation).create_with_role?
+    assert InvitationPolicy.new(memberships(:spouse_in_home), adult_invitation).create_with_role?
+    assert_not InvitationPolicy.new(memberships(:spouse_in_home), head_invitation).create_with_role?
+    assert_not InvitationPolicy.new(memberships(:child_in_home), adult_invitation).create_with_role?
+    assert_not InvitationPolicy.new(nil, adult_invitation).create_with_role?
+  end
+
   test "a head can resend and cancel any invitation in their household" do
     [ invitations(:ana), invitation_from(:spouse) ].each do |invitation|
       policy = InvitationPolicy.new(memberships(:head_in_home), invitation)

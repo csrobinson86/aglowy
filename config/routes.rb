@@ -39,6 +39,7 @@ Rails.application.routes.draw do
         constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
     get "/", to: "dashboards#show", as: :root
     resources :members, only: %i[ index new create ]
+    resources :invitations, only: %i[ new create update destroy ]
     resources :family_studies, only: %i[ index new create ] do
       resources :sessions, only: %i[ show edit update ], module: :family_studies do
         resource :notes, only: %i[ edit update ], module: :sessions
