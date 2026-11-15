@@ -11,6 +11,10 @@
 
 <div class="container-md ml-0" data-controller="repeat-field" data-repeat-field-url-value="<%= new_household_family_study_path %>">
   <%= render "family_studies/storage_warning", household: Current.household %>
+  <%# A goal step that another adult linked while this form was open. %>
+  <% if @scheduling.errors[:base].any? %>
+    <%= render(Primer::Beta::Flash.new(scheme: :danger, mb: 4)) { @scheduling.errors[:base].to_sentence } %>
+  <% end %>
   <%= primer_form_with(model: @scheduling, url: household_family_studies_path) do |f| %>
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
       <% box.with_body do %>
@@ -55,6 +59,6 @@
       <% end %>
     <% end %>
 
-    <%= render FamilyStudies::ScheduleForm.new(f, section: :actions, cancel_path: household_family_studies_path) %>
+    <%= render FamilyStudies::ScheduleForm.new(f, section: :actions, cancel_path: @goal_step ? household_goal_path(id: @goal_step.goal_id) : household_family_studies_path) %>
   <% end %>
 </div>

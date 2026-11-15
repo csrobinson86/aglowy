@@ -269,6 +269,73 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_queries_match(/FROM "households" WHERE .* FOR UPDATE/) { assert scheduling.save }
   end
 
+  test "saving with a step links it" do
+    step = goal_steps(:read_luke)
+    scheduling = new_scheduling(goal_step_id: step.id)
+
+    assert scheduling.save
+
+    assert_equal scheduling.study, step.reload.family_study
+  end
+
+  test "a step from another household is refused and nothing is saved" do
+    scheduling = new_scheduling(goal_step_id: goal_steps(:read_acts).id)
+
+    assert_no_difference [ "FamilyStudy.count", "FamilyStudy::Session.count" ] do
+      assert_not scheduling.save
+    end
+    assert_equal [ "That goal step isn't in this household" ], scheduling.errors[:base]
+    assert_nil goal_steps(:read_acts).reload.family_study_id
+  end
+
+  test "a step that already has a study is refused" do
+    step = goal_steps(:read_luke)
+    step.update_column(:family_study_id, family_studies(:weekly).id)
+    scheduling = new_scheduling(goal_step_id: step.id)
+
+    assert_no_difference "FamilyStudy.count" do
+      assert_not scheduling.save
+    end
+    assert_equal [ "That step is already scheduled as a family study" ], scheduling.errors[:base]
+    assert_equal family_studies(:weekly), step.reload.family_study
+  end
+
+  test "a step that's done is refused" do
+    scheduling = new_scheduling(goal_step_id: goal_steps(:read_mark).id)
+
+    assert_no_difference "FamilyStudy.count" do
+      assert_not scheduling.save
+    end
+    assert_equal [ "That step is already done" ], scheduling.errors[:base]
+    assert_nil goal_steps(:read_mark).reload.family_study_id
+  end
+
+  test "a step of a finished goal is refused" do
+    goals(:gospels).archive(by: users(:spouse))
+    scheduling = new_scheduling(goal_step_id: goal_steps(:read_luke).id)
+
+    assert_no_difference "FamilyStudy.count" do
+      assert_not scheduling.save
+    end
+    assert_equal [ "That step's goal is finished" ], scheduling.errors[:base]
+  end
+
+  test "filling in from a step takes its title and due date, or today when it has none or it's past" do
+    scheduling = FamilyStudy::Scheduling.new(household: @household)
+    scheduling.fill_in_from(goal_steps(:read_luke))
+
+    assert_equal "Read Luke together", scheduling.topic
+    assert_equal Date.new(2027, 2, 15), scheduling.starts_on
+    assert_equal goal_steps(:read_luke).id, scheduling.goal_step_id
+
+    [ nil, Date.new(2026, 11, 1) ].each do |due_on|
+      goal_steps(:read_luke).update_column(:due_on, due_on)
+      scheduling = FamilyStudy::Scheduling.new(household: @household)
+      scheduling.fill_in_from(goal_steps(:read_luke).reload)
+      assert_equal Date.new(2026, 11, 14), scheduling.starts_on
+    end
+  end
+
   private
     def new_scheduling(**attributes)
       FamilyStudy::Scheduling.new(household: @household, topic: "Proverbs 3", starts_on: "2026-11-17",

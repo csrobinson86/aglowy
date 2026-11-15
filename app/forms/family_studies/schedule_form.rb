@@ -13,6 +13,8 @@ class FamilyStudies::ScheduleForm < ApplicationForm
     when :topic
       f.text_field(name: :topic, label: "What will you study?", placeholder: "For example, Proverbs 3 or preparing for the memorial",
                    caption: "Everyone in the household sees this. You can change it any time.", full_width: true)
+      # Scheduled from a goal step, which the study is linked to (docs/design/goals.md).
+      f.hidden(name: :goal_step_id) if f.builder.object.goal_step_id.present?
     when :when
       f.group(layout: :horizontal) do |row|
         row.text_field(name: :starts_on, label: "Date", type: :date, required: true,

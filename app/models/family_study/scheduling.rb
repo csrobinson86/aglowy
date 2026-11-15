@@ -1,5 +1,6 @@
 # The Schedule a study form: friendly Date, Starts, Ends and Repeat values, saved as a
 # FamilyStudy with starts_on, time_of_day and duration_minutes (docs/design/family-studies.md).
+# Scheduled from a goal step, it links the step to the new study (docs/design/goals.md, "Schedule a step as a study").
 class FamilyStudy::Scheduling
   include ActiveModel::Model
   include ActiveModel::Attributes
@@ -15,10 +16,11 @@ class FamilyStudy::Scheduling
   attribute :link_urls, default: -> { [] }
   attribute :link_url, :string
   attribute :files, default: -> { [] }
+  attribute :goal_step_id, :string
 
   validates :starts_on, :starts_at, :ends_at, presence: true
   validates :repeat, inclusion: { in: ->(scheduling) { scheduling.repeat_choices.map(&:last) } }
-  validate :starts_on_not_in_the_past, :ends_after_starts, :links_are_web_links, :files_are_allowed
+  validate :starts_on_not_in_the_past, :ends_after_starts, :links_are_web_links, :files_are_allowed, :goal_step_is_free
 
   def initialize(household:, **attributes)
     @household = household
@@ -37,6 +39,18 @@ class FamilyStudy::Scheduling
     end
   end
 
+  # Scheduling a goal step: its title as the topic, and its due date unless that's passed, when the date stays today.
+  def fill_in_from(step)
+    self.goal_step_id = step.id
+    self.topic = step.title
+    self.starts_on = step.due_on if step.due_on && step.due_on >= today
+  end
+
+  # Through the household's goals, so a crafted id from another household finds nothing.
+  def goal_step
+    household.goal_steps.find_by(id: goal_step_id) if goal_step_id.present?
+  end
+
   # The links added to the list, then one still in the field, so nothing typed is lost.
   def links
     [ *link_urls, link_url ].compact_blank
@@ -49,13 +63,15 @@ class FamilyStudy::Scheduling
 
   # The study, its first session with the topic, notes, links and files, then the later sessions (scheduling rule 1).
   # Validated behind the lock on the household that Session#add_files takes, so the quota the files
-  # were judged against still holds when they're attached.
+  # were judged against still holds when they're attached. Every goal step write takes that lock too,
+  # so the step is still free when it's linked, in the same transaction.
   def save
     household.transaction do
       household.lock!
       next false unless valid?
 
       @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, files: file_blobs, **study_attributes)
+      goal_step&.update!(family_study: study) if study.persisted?
       study.persisted?
     end
   end
@@ -92,6 +108,22 @@ class FamilyStudy::Scheduling
 
     def today
       Time.current.in_time_zone(household.time_zone).to_date
+    end
+
+    # Read behind the household's lock, so another adult can't have linked it, ticked it done, or finished its goal, in the meantime.
+    def goal_step_is_free
+      return if goal_step_id.blank?
+
+      step = goal_step
+      if step.nil?
+        errors.add(:base, "That goal step isn't in this household")
+      elsif step.family_study_id?
+        errors.add(:base, "That step is already scheduled as a family study")
+      elsif step.done?
+        errors.add(:base, "That step is already done")
+      elsif !step.goal.open?
+        errors.add(:base, "That step's goal is finished")
+      end
     end
 
     def starts_on_not_in_the_past

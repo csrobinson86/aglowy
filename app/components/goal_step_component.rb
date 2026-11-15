@@ -15,13 +15,15 @@ class GoalStepComponent < ApplicationComponent
   # editing: show the edit form instead of the row, as when a save comes back with an error.
   # tickable: the parts the viewer may tick (Goal::Step#parts the policy allows), so the rest are disabled.
   # highlighted: the step is the viewer's own, for someone who may tick only their own (frame milestone-goal-child.png).
+  # schedulable: the viewer may schedule the step as a family study (heads and adults, frame milestone-goal.png).
   # focused: whose toggle was just pressed. Turbo disables a pressed button while it submits, which drops its focus,
   # and focuses an autofocus element in the Turbo Stream that answers, so the redrawn toggle gets it back.
-  def initialize(step:, editing: false, tickable: [], highlighted: false, focused: nil)
+  def initialize(step:, editing: false, tickable: [], highlighted: false, schedulable: false, focused: nil)
     @step = step
     @editing = editing
     @tickable = tickable
     @highlighted = highlighted
+    @schedulable = schedulable
     @focused = focused
   end
 
@@ -36,6 +38,32 @@ class GoalStepComponent < ApplicationComponent
   # A completed or archived goal takes no ticks, so its steps show only what's done, without controls.
   def open_goal?
     goal.open?
+  end
+
+  # A family goal's open, undone step with no study yet (docs/design/goals.md, "Schedule a step as a study").
+  def schedulable?
+    @schedulable && goal.family? && open_goal? && !done? && study.nil?
+  end
+
+  def schedule_path
+    new_household_family_study_path(household_id: goal.household_id, goal_step_id: step.id)
+  end
+
+  def study
+    step.family_study
+  end
+
+  # The study's first session: "Family study · Tue, Feb 3", in the household's time zone.
+  def first_session
+    study.first_session
+  end
+
+  def first_session_label
+    "Family study · #{l(first_session.scheduled_at.in_time_zone(goal.household.time_zone), format: :step_study)}"
+  end
+
+  def first_session_path
+    household_family_study_session_path(household_id: goal.household_id, family_study_id: study, id: first_session)
   end
 
   # Two or more people, each ticking their own part.
