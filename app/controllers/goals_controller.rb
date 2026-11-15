@@ -10,8 +10,9 @@ class GoalsController < ApplicationController
     @counts = Goal::STATUSES.index_with { Current.household.goals.with_status(it).count }
   end
 
+  # A personal goal someone shared into the household opens here too, read-only.
   def show
-    @goal = reachable_goals.preloaded.find(params[:id])
+    @goal = Goal.reachable_from(Current.membership).preloaded.find(params[:id])
     authorize @goal
   end
 
@@ -34,14 +35,14 @@ class GoalsController < ApplicationController
   # Someone who can't edit has no edit page, so it's a 404 like any page that isn't theirs (story #92).
   # Updating refuses them like any other write.
   def edit
-    @goal = reachable_goals.find(params[:id])
+    @goal = changeable_goals.find(params[:id])
     authorize @goal, :show?
     raise ActiveRecord::RecordNotFound unless policy(@goal).edit?
   end
 
   # The form carries lock_version, so a second editor's save shows the first one's values instead of overwriting them.
   def update
-    @goal = reachable_goals.find(params[:id])
+    @goal = changeable_goals.find(params[:id])
     authorize @goal
 
     if @goal.update(params.expect(goal: %i[ title body target_on lock_version ]))
@@ -57,7 +58,7 @@ class GoalsController < ApplicationController
 
   # Steps, assignments, ticks, the completion and the archival go with it (cascading foreign keys).
   def destroy
-    @goal = reachable_goals.find(params[:id])
+    @goal = changeable_goals.find(params[:id])
     authorize @goal
     @goal.delete_for_good
     redirect_to helpers.goal_list_path(@goal), notice: "Goal deleted."
@@ -65,9 +66,10 @@ class GoalsController < ApplicationController
 
   private
 
-  # Through the membership, so another household's goal, or someone else's personal goal, is a 404.
-  def reachable_goals
-    Goal.reachable_from(Current.membership)
+  # Through the membership, so another household's goal, or someone else's personal goal, is a 404,
+  # even when it's shared here: a shared goal is read-only.
+  def changeable_goals
+    Goal.family_or_own(Current.membership)
   end
 
   def goal_params

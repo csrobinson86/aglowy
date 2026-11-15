@@ -11,16 +11,26 @@
   <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
     <span class="mr-2 wb-break-word min-width-0"><%= @goal.title %></span>
     <%= render(Primer::Beta::Label.new(mr: 2)) { "Milestone" } %>
-    <%# Sharing with a household comes next (#97); until then a personal goal is always private. %>
+    <%# The owner sees who can read it; a member it's shared with sees whose it is (docs/design/goals.md, Pages). %>
     <% if @goal.personal? %>
-      <%= render(Primer::Beta::Label.new(scheme: :secondary)) do %>
-        <%= render(Primer::Beta::Octicon.new(:lock, mr: 1)) %>Private
+      <% if policy(@goal).share? %>
+        <% label = @goal.shared_households.any? ? "Shared with #{@goal.shared_households.map(&:name).to_sentence}" : "Private" %>
+        <%= render(Primer::Beta::Label.new(scheme: :secondary, title: label, classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+          <%= render(Primer::Beta::Octicon.new(@goal.shared_households.any? ? :people : :lock, mr: 1)) %><%= label %>
+        <% end %>
+      <% else %>
+        <%= render(Primer::Beta::Label.new(scheme: :accent, title: "Shared by #{@goal.user.name}", classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+          <%= render(Primer::Beta::Octicon.new(:people, mr: 1)) %>Shared by <%= @goal.user.name %>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
   <% if policy(@goal).edit? %>
     <% subhead.with_actions(display: :flex) do %>
       <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal), mr: 2)) { "Edit" } %>
+      <% if @goal.personal? %>
+        <%= render "goals/sharing", goal: @goal, household: Current.household %>
+      <% end %>
       <%= render "goals/menu", goal: @goal %>
     <% end %>
   <% end %>

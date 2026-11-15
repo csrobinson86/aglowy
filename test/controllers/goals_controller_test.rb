@@ -285,6 +285,117 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a member reads a shared goal: Shared by its owner, progress and steps, and no controls" do
+    goal = goals(:spouse_bible_reading)
+    goal.add_step(title: "Read Genesis", due_on: Date.new(2026, 12, 31))
+    goal.steps.sole.tick(for: nil, by: users(:spouse))
+    goal.add_step(title: "Read Exodus")
+    goal.share_with(households(:home))
+
+    [ identities(:head), identities(:eli) ].each do |identity|
+      sign_in identity
+      get household_goal_path(household_id: households(:home), id: goal)
+
+      assert_response :success
+      assert_select "h1", /Read the whole Bible in a year/
+      assert_select "h1 .Label", "Shared by Sam Spouse"
+      assert_select "h1 .Label", { text: "Private", count: 0 }
+      assert_select "nav[aria-label='Breadcrumb'] a[href=?]", household_my_goals_path(household_id: households(:home), status: "shared"), text: "My goals"
+      assert_select "#goal-progress", text: /1 of 2 steps done/
+      assert_select "#goal-steps .Box-row", count: 2
+      assert_select "#goal-steps .Box-row", text: /Read Genesis\s*Done · /
+      assert_select "main form", count: 0
+      assert_select "main input, main button, main action-menu, main dialog", count: 0
+      assert_select "a[href='#{edit_household_goal_path(household_id: households(:home), id: goal)}']", count: 0
+    end
+  end
+
+  test "a member gets 404 on a shared goal's edit page, and on changing it" do
+    goal = goals(:spouse_bible_reading)
+    goal.share_with(households(:home))
+    sign_in identities(:head)
+
+    get edit_household_goal_path(household_id: households(:home), id: goal)
+    assert_response :not_found
+
+    sign_in identities(:head) # a 404 doesn't keep the session
+    patch household_goal_path(household_id: households(:home), id: goal), params: { goal: { title: "Mine now", lock_version: 0 } }
+    assert_response :not_found
+
+    sign_in identities(:head)
+    post household_goal_completion_path(household_id: households(:home), goal_id: goal)
+    assert_response :not_found
+
+    sign_in identities(:head)
+    post household_goal_archival_path(household_id: households(:home), goal_id: goal)
+    assert_response :not_found
+
+    sign_in identities(:head)
+    post household_goal_steps_path(household_id: households(:home), goal_id: goal), params: { goal_step: { title: "Mine now" } }, as: :turbo_stream
+    assert_response :not_found
+
+    sign_in identities(:head)
+    delete household_goal_path(household_id: households(:home), id: goal)
+    assert_response :not_found
+
+    assert_equal "Read the whole Bible in a year", goal.reload.title
+    assert goal.open?
+    assert_empty goal.steps
+  end
+
+  test "ticking a shared goal's steps is refused (404)" do
+    goal = goals(:spouse_bible_reading)
+    step = goal.add_step(title: "Read Genesis")
+    done_step = goal.add_step(title: "Read Exodus")
+    tick = done_step.tick(for: nil, by: users(:spouse))
+    goal.share_with(households(:home))
+
+    sign_in identities(:head)
+    post household_goal_step_completions_path(household_id: households(:home), goal_id: goal, step_id: step), as: :turbo_stream
+    assert_response :not_found
+
+    sign_in identities(:head)
+    delete household_goal_step_completion_path(household_id: households(:home), goal_id: goal, step_id: done_step, id: tick), as: :turbo_stream
+    assert_response :not_found
+
+    assert_not step.reload.done?
+    assert done_step.reload.done?
+  end
+
+  test "a goal shared into another household is still a 404 here" do
+    goal = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+    goal.share_with(households(:parents))
+    sign_in identities(:spouse)
+
+    get household_goal_path(household_id: households(:home), id: goal)
+    assert_response :not_found
+  end
+
+  test "the owner's page shows who it's shared with and Stop sharing; a private one has Share with household" do
+    goal = goals(:spouse_bible_reading)
+    sign_in identities(:spouse)
+
+    get household_goal_path(household_id: households(:home), id: goal)
+    assert_select "h1 .Label", "Private"
+    assert_select "dialog#share-goal", text: /Members of The Head Family will be able to read this goal and its steps. They can't change it./
+    assert_select "dialog#share-goal form[action='#{household_goal_sharing_path(household_id: households(:home), goal_id: goal)}']"
+
+    goal.share_with(households(:home))
+    get household_goal_path(household_id: households(:home), id: goal)
+    assert_select "h1 .Label", "Shared with The Head Family"
+    assert_select "dialog#share-goal", count: 0
+    assert_select "form[action='#{household_goal_sharing_path(household_id: households(:home), goal_id: goal)}'] input[name=_method][value=delete]"
+  end
+
+  test "a family goal has no sharing controls" do
+    sign_in identities(:spouse)
+
+    get goal_path(goals(:gospels))
+
+    assert_select "dialog#share-goal", count: 0
+    assert_select "h1 .Label", { text: /Private|Shared/, count: 0 }
+  end
+
   test "archiving or deleting a personal goal goes back to My goals" do
     goal = goals(:spouse_bible_reading)
     sign_in identities(:spouse)

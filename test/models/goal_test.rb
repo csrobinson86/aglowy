@@ -8,6 +8,63 @@ class GoalTest < ActiveSupport::TestCase
     assert_equal [ goals(:outsiders_reading) ], Goal.reachable_from(memberships(:outsider_in_other)).to_a
   end
 
+  test "reachable_from also reaches personal goals shared into the household; family_or_own doesn't" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+
+    assert_includes Goal.reachable_from(memberships(:head_in_home)), goals(:spouse_bible_reading)
+    assert_not_includes Goal.family_or_own(memberships(:head_in_home)), goals(:spouse_bible_reading)
+    assert_not_includes Goal.reachable_from(memberships(:head_in_parents)), goals(:spouse_bible_reading)
+  end
+
+  test "shared_with includes a shared goal" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+
+    assert_equal [ goals(:spouse_bible_reading) ], Goal.shared_with(households(:home)).to_a
+  end
+
+  test "shared_with excludes a goal after its owner stops sharing" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+    goals(:spouse_bible_reading).stop_sharing_with(households(:home))
+
+    assert_empty Goal.shared_with(households(:home))
+  end
+
+  test "shared_with excludes a goal once its owner leaves the household" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+
+    assert memberships(:spouse_in_home).deactivate
+
+    assert_empty Goal.shared_with(households(:home))
+  end
+
+  # The second guard: a sharing row left behind while the owner is inactive still never shows.
+  test "shared_with excludes a goal whose owner is inactive even if its sharing is still there" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+
+    memberships(:spouse_in_home).update_column(:active, false)
+
+    assert_equal 1, goals(:spouse_bible_reading).sharings.count
+    assert_empty Goal.shared_with(households(:home))
+  end
+
+  test "shared_with stays excluded after the owner leaves and rejoins" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+    assert memberships(:spouse_in_home).deactivate
+
+    memberships(:spouse_in_home).update!(active: true)
+
+    assert_empty Goal.shared_with(households(:home))
+  end
+
+  test "a family goal can't be shared" do
+    assert_raises(ActiveRecord::RecordNotFound) { goals(:gospels).share_with(households(:home)) }
+
+    sharing = Goal::Sharing.new(goal: goals(:gospels), household: households(:home))
+    assert_not sharing.valid?
+    assert_includes sharing.errors[:goal], "must be a personal goal"
+    assert_empty Goal.shared_with(households(:home))
+  end
+
   test "active, completed and archived hold the right fixtures, in the right order" do
     assert_equal [ goals(:spouse_bible_reading), goals(:gospels), goals(:outsiders_reading) ], Goal.active
     assert_equal [ goals(:gospels) ], households(:home).goals.active

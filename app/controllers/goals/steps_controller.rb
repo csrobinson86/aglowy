@@ -32,9 +32,9 @@ class Goals::StepsController < ApplicationController
 
   private
 
-  # Through the membership, so another household's goal is a 404.
+  # Through the membership, so another household's goal, or one only shared with the person, is a 404.
   def set_goal
-    @goal = Goal.reachable_from(Current.membership).find(params[:goal_id])
+    @goal = Goal.family_or_own(Current.membership).find(params[:goal_id])
   end
 
   # Through the goal, so another goal's step is a 404.
@@ -58,7 +58,7 @@ class Goals::StepsController < ApplicationController
   end
 
   def render_changes
-    @goal = Goal.reachable_from(Current.membership).preloaded.find(@goal.id)
+    @goal = Goal.family_or_own(Current.membership).preloaded.find(@goal.id)
     render :changes
   end
 

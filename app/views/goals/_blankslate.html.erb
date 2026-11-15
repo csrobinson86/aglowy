@@ -22,5 +22,8 @@
   <% when "archived" %>
     <% blankslate.with_heading(tag: :h2) { "Nothing archived" } %>
     <% blankslate.with_description { "Goals put away show up here, finished or not." } %>
+  <% when "shared" %>
+    <% blankslate.with_heading(tag: :h2) { "Nothing shared here yet" } %>
+    <% blankslate.with_description { "When someone in the household shares a goal of their own, it shows up here." } %>
   <% end %>
 <% end %>

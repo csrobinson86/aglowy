@@ -1,12 +1,13 @@
 # Family goals: every active member of the goal's household sees them; heads and adults set and change them.
-# Personal goals: only the owner, through any household they're active in. Sharing comes later
-# (docs/design/goals.md, Who can do what).
+# Personal goals: only the owner, through any household they're active in. The owner may share one with the
+# household, whose members then read it, read-only (docs/design/goals.md, Who can do what).
 class GoalPolicy < ApplicationPolicy
   def index?   = member?
-  def show?    = record.family? ? member_here? : owner?
+  def show?    = record.family? ? member_here? : owner? || shared_here?
   def create?  = record.family? ? head_or_adult_here? : owner?
   def update?  = create?
   def destroy? = create?
+  def share?   = record.personal? && owner?
 
   private
 
@@ -20,5 +21,9 @@ class GoalPolicy < ApplicationPolicy
 
   def owner?
     member? && membership.user_id == record.user_id
+  end
+
+  def shared_here?
+    member? && Goal.shared_with(membership.household).exists?(record.id)
   end
 end

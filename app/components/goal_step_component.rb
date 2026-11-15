@@ -17,10 +17,12 @@ class GoalStepComponent < ApplicationComponent
   # tickable: the parts the viewer may tick (Goal::Step#parts the policy allows), so the rest are disabled.
   # highlighted: the step is the viewer's own, for someone who may tick only their own (frame milestone-goal-child.png).
   # schedulable: the viewer may schedule the step as a family study (heads and adults, frame milestone-goal.png).
+  # read_only: a personal goal shared with the viewer, which shows its steps like a finished goal's, without controls.
   # focused: whose toggle was just pressed. Turbo disables a pressed button while it submits, which drops its focus,
   # and focuses an autofocus element in the Turbo Stream that answers, so the redrawn toggle gets it back.
-  def initialize(step:, household: step.goal.household, editing: false, tickable: [], highlighted: false, schedulable: false, focused: nil)
+  def initialize(step:, household: step.goal.household, editing: false, tickable: [], highlighted: false, schedulable: false, read_only: false, focused: nil)
     @step = step
+    @read_only = read_only
     @household = household
     @editing = editing
     @tickable = tickable
@@ -37,14 +39,15 @@ class GoalStepComponent < ApplicationComponent
     @highlighted
   end
 
-  # A completed or archived goal takes no ticks, so its steps show only what's done, without controls.
-  def open_goal?
-    goal.open?
+  # A completed or archived goal takes no ticks, and nor does a goal shared with the viewer, so its steps
+  # show only what's done, without controls.
+  def ticking?
+    goal.open? && !@read_only
   end
 
   # A family goal's open, undone step with no study yet (docs/design/goals.md, "Schedule a step as a study").
   def schedulable?
-    @schedulable && goal.family? && open_goal? && !done? && study.nil?
+    @schedulable && goal.family? && ticking? && !done? && study.nil?
   end
 
   def schedule_path

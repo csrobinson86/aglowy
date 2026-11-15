@@ -221,6 +221,19 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_selector ".goal-step__meta", exact_text: "Done · Nov 14"
   end
 
+  test "a personal goal shared with the viewer shows its steps read-only, like a finished goal's" do
+    goal = goals(:spouse_bible_reading)
+    goal.add_step(title: "Read Genesis").tick(for: nil, by: users(:spouse))
+    goal.add_step(title: "Read Exodus")
+
+    Goal.preloaded.find(goal.id).steps.each do |step|
+      render_inline(GoalStepComponent.new(step:, household: households(:home), read_only: true))
+
+      assert_no_selector "input, button, form"
+      assert_selector "svg[aria-label='#{step.done? ? "Done" : "Not done"}']"
+    end
+  end
+
   private
     def completions_path(step)
       "/#{households(:home).id}/goals/#{goals(:gospels).id}/steps/#{step.id}/completions"

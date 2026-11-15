@@ -82,6 +82,38 @@ class GoalPolicyTest < ActiveSupport::TestCase
     assert_not GoalPolicy.new(nil, users(:spouse).goals.new).create?
   end
 
+  test "personal goal: only the owner can share it, through an active membership" do
+    assert GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading)).share?
+
+    [ memberships(:head_in_home), memberships(:child_in_home), memberships(:outsider_in_other), nil ].each do |membership|
+      assert_not GoalPolicy.new(membership, goals(:spouse_bible_reading)).share?, "expected #{membership.inspect} to be refused"
+    end
+
+    memberships(:spouse_in_home).update_column(:active, false)
+    assert_not GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading)).share?
+  end
+
+  test "family goal: nobody shares it" do
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      assert_not GoalPolicy.new(memberships(membership), goals(:gospels)).share?, "expected #{membership} to be refused"
+    end
+  end
+
+  test "personal goal shared with the household: every member reads it, read-only; other households and a nil membership can't" do
+    goals(:spouse_bible_reading).share_with(households(:home))
+
+    %i[ head_in_home child_in_home eli_in_home ].each do |membership|
+      policy = GoalPolicy.new(memberships(membership), goals(:spouse_bible_reading))
+
+      assert policy.show?, "expected #{membership} to read the goal"
+      assert_not policy.update? || policy.edit? || policy.destroy? || policy.share?, "expected #{membership} to only read"
+    end
+
+    [ memberships(:head_in_parents), memberships(:outsider_in_other), memberships(:former_in_home), nil ].each do |membership|
+      assert_not GoalPolicy.new(membership, goals(:spouse_bible_reading)).show?, "expected #{membership.inspect} to be refused"
+    end
+  end
+
   test "personal goal: the owner through an inactive membership can't" do
     memberships(:spouse_in_home).update_column(:active, false)
     policy = GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading))

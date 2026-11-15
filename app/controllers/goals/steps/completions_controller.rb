@@ -32,13 +32,13 @@ class Goals::Steps::CompletionsController < ApplicationController
 
   private
 
-  # Through the membership, then the goal, so another household's goal or step is a 404.
+  # Through the membership, then the goal, so another household's goal or step, or a shared goal's, is a 404.
   def set_step
-    @step = Goal.reachable_from(Current.membership).find(params[:goal_id]).steps.find(params[:step_id])
+    @step = Goal.family_or_own(Current.membership).find(params[:goal_id]).steps.find(params[:step_id])
   end
 
   def render_changes(status: :ok)
-    @goal = Goal.reachable_from(Current.membership).preloaded.find(@step.goal_id)
+    @goal = Goal.family_or_own(Current.membership).preloaded.find(@step.goal_id)
     @step = @goal.steps.find { it.id == @step.id }
     render :changes, status: status
   end

@@ -13,7 +13,7 @@
 <% if @goals.present? %>
   <%= render Primer::Beta::BorderBox.new do |box| %>
     <% @goals.each do |goal| %>
-      <% box.with_row { render GoalRowComponent.new(goal:, household: Current.household) } %>
+      <% box.with_row { render GoalRowComponent.new(goal:, household: Current.household, shared_by: @status == "shared") } %>
     <% end %>
   <% end %>
 <% else %>
