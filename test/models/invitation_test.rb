@@ -167,4 +167,32 @@ class InvitationTest < ActiveSupport::TestCase
       Invitation.insert!({ household_id: households(:home).id, invited_by_id: users(:head).id, email: "kid@example.com", role: "child", expires_at: 7.days.from_now })
     end
   end
+
+  test "database: an invitation without a household raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { invitations(:ana).update_column(:household_id, nil) }
+  end
+
+  test "database: an invitation for a missing household raises InvalidForeignKey" do
+    assert_raises(ActiveRecord::InvalidForeignKey) { invitations(:ana).update_column(:household_id, SecureRandom.uuid_v7) }
+  end
+
+  test "database: an invitation without an email raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { invitations(:ana).update_column(:email, nil) }
+  end
+
+  test "database: an invitation without a role raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { invitations(:ana).update_column(:role, nil) }
+  end
+
+  test "database: an invitation without an invited_by raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { invitations(:ana).update_column(:invited_by_id, nil) }
+  end
+
+  test "database: an invited_by that isn't a user raises InvalidForeignKey" do
+    assert_raises(ActiveRecord::InvalidForeignKey) { invitations(:ana).update_column(:invited_by_id, SecureRandom.uuid_v7) }
+  end
+
+  test "database: an invitation without an expires_at raises NotNullViolation" do
+    assert_raises(ActiveRecord::NotNullViolation) { invitations(:ana).update_column(:expires_at, nil) }
+  end
 end

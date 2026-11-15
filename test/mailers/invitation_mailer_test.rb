@@ -2,6 +2,7 @@ require "test_helper"
 
 class InvitationMailerTest < ActionMailer::TestCase
   setup do
+    travel_to Time.utc(2026, 11, 15, 12)
     @invitation = invitations(:ana)
     @invitation.household.update!(name: "Rivera household", time_zone: "Pacific Time (US & Canada)")
     @invitation.invited_by.update!(name: "Daniel Rivera")
