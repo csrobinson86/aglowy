@@ -232,13 +232,16 @@ households or roles. The non-negotiables:
   ask Casey before building it by hand.
 - Devise's generated views still use plain `form_for`. Convert them only in a
   story that asks for it.
-- **Three approved exceptions** (decided Nov 2026): the file drop zone (Active
+- **Four approved exceptions** (decided Nov 2026): the file drop zone (Active
   Storage direct upload, Stimulus, BEM Sass from primitives) and the Lexxy notes
-  editor (`rich_text_area`), both in `docs/design/family-studies.md`; and the
+  editor (`rich_text_area`), both in `docs/design/family-studies.md`; the
   meeting helper's child screens and drawing canvas (large touch targets in BEM
-  Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`.
-  Primer has none of these. Each keeps a real labelled input inside a Primer
-  form and uses Primer `Button` for buttons; nothing else is hand-built.
+  Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`;
+  and the scripture picker anchored at the caret in a notes editor (BEM Sass
+  from primitives, Stimulus, a Lexxy extension), in
+  `docs/design/scripture-links.md`. Primer has none of these. Each keeps a real
+  labelled input inside a Primer form and uses Primer `Button` for buttons;
+  nothing else is hand-built.
 
 ---
 
