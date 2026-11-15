@@ -349,7 +349,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
     sign_in child_identity
     get goal_path(goals(:gospels))
-    assert_select "action-menu", count: 0
+    assert_select "button[aria-label='Goal actions']", count: 0
     assert_select "dialog#delete-goal", count: 0
   end
 
@@ -369,7 +369,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     travel_to Time.utc(2026, 11, 14, 12)
     sign_in identities(:spouse)
     goal = goals(:proverbs)
-    goal.add_step(title: "Read Proverbs 1")
+    goal.steps.create!(title: "Read Proverbs 1", position: 1) # a finished goal takes no new steps through add_step
 
     get goal_path(goal)
 
@@ -388,7 +388,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     goal = goals(:proverbs)
     goal.archive(by: users(:head))
     goal.archival.update_column(:created_at, Time.utc(2026, 8, 30, 18))
-    goal.add_step(title: "Read Proverbs 1")
+    goal.steps.create!(title: "Read Proverbs 1", position: 1) # a finished goal takes no new steps through add_step
 
     get goal_path(goal)
 

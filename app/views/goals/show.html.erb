@@ -11,10 +11,10 @@
     <span class="mr-2 wb-break-word min-width-0"><%= @goal.title %></span>
     <%= render(Primer::Beta::Label.new) { "Milestone" } %>
   <% end %>
-  <%# The "…" menu (complete, archive, delete) joins Edit here in the next stories. %>
   <% if policy(@goal).edit? %>
     <% subhead.with_actions(display: :flex) do %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal))) { "Edit" } %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal), mr: 2)) { "Edit" } %>
+      <%= render "goals/menu", goal: @goal %>
     <% end %>
   <% end %>
   <% subhead.with_description do %>
@@ -25,5 +25,8 @@
   <%= simple_format(@goal.body, class: "mb-4") %>
 <% end %>
 
+<% unless @goal.open? %>
+  <%= render "goals/finished", goal: @goal %>
+<% end %>
 <%= render "goals/progress", goal: @goal %>
 <%= render "goals/steps", goal: @goal %>

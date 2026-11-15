@@ -17,7 +17,7 @@ class GoalLifecycleTest < ApplicationSystemTestCase
     assert_accessible
     capture_screens("goal-menu")
     find("body").send_keys(:escape)
-    assert_no_selector "[role=menu]"
+    assert_no_selector "#goal-menu-list"
 
     visit household_goal_url(household_id: households(:home), id: goal)
     check "Mark Read Jonah 3 and 4 done"
@@ -31,10 +31,13 @@ class GoalLifecycleTest < ApplicationSystemTestCase
     capture_screens("goal-completed")
 
     click_on "Family goals", match: :first
+    assert_selector "h1", text: "Family goals"
     click_on "Completed"
+    assert_selector "nav[aria-label='Goals'] a[aria-current='page']", text: "Completed"
     within("main .Box") { assert_text "Read Jonah together" }
 
     click_on "Read Jonah together"
+    assert_selector "h1", text: "Read Jonah together"
     open_goal_menu
     find("[role=menuitem]", text: "Archive").click
 
@@ -43,13 +46,16 @@ class GoalLifecycleTest < ApplicationSystemTestCase
     within("main .Box") { assert_text "Read Jonah together" }
 
     click_on "Read Jonah together"
+    assert_selector "h1", text: "Read Jonah together"
     assert_text "Completed on November 14 by Sam Spouse. Archived on November 14 by Sam Spouse."
     within(".Banner") { click_on "Restore" }
 
     assert_text "Goal restored."
     assert_text "Completed on November 14 by Sam Spouse."
     click_on "Family goals", match: :first
+    assert_selector "h1", text: "Family goals"
     click_on "Completed"
+    assert_selector "nav[aria-label='Goals'] a[aria-current='page']", text: "Completed"
     within("main .Box") { assert_text "Read Jonah together" }
 
     visit household_goal_url(household_id: households(:home), id: goals(:gospels))
@@ -59,6 +65,7 @@ class GoalLifecycleTest < ApplicationSystemTestCase
       assert_selector "h1", text: "Delete this goal?"
       assert_text "Its steps and progress are deleted too. Archive it instead to keep it for looking back."
     end
+    wait_for_transitions # the menu closing and the Dialog opening fade the buttons' colours
     assert_accessible
     capture_screens("goal-delete-dialog")
     within("dialog[open]") { click_on "Delete goal" }
@@ -84,6 +91,6 @@ class GoalLifecycleTest < ApplicationSystemTestCase
   private
     def open_goal_menu
       find("button[aria-label='Goal actions']").click
-      assert_selector "[role=menu]"
+      assert_selector "#goal-menu-list[role=menu]"
     end
 end
