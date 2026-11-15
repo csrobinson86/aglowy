@@ -82,13 +82,14 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
   test "a non-member gets 404" do
     sign_in identities(:outsider)
-
     get household_goals_path(household_id: households(:home))
     assert_response :not_found
 
+    sign_in identities(:outsider)
     get new_household_goal_path(household_id: households(:home))
     assert_response :not_found
 
+    sign_in identities(:outsider)
     assert_no_difference "Goal.count" do
       post household_goals_path(household_id: households(:home)), params: { goal: valid_params }
     end
@@ -162,7 +163,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
 
     def queries_for(&block)
       count = 0
-      counter = ->(*, payload) { count += 1 unless payload[:name].in?([ "SCHEMA", "TRANSACTION" ]) || payload[:cached] }
+      counter = ->(*, payload) { count += 1 unless payload[:name].in?([ "SCHEMA", "TRANSACTION" ]) }
       ActiveSupport::Notifications.subscribed(counter, "sql.active_record", &block)
       count
     end

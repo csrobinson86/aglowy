@@ -13,7 +13,7 @@ class GoalRowComponentTest < ViewComponent::TestCase
     assert_text "3 of 7 steps"
     assert_text "Next: Read Luke together · due Feb 15"
     assert_selector ".avatar", count: 5
-    assert_selector ".sr-only", text: "With Hannah Head, Sam Spouse, Charlie Child, Eli Child and Sofia Child"
+    assert_selector ".sr-only", text: "With Hannah Head, Sam Spouse, Charlie Child, Eli Child, and Sofia Child"
   end
 
   test "the next step names the people it's for" do
