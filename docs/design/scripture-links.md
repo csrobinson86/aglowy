@@ -199,12 +199,12 @@ Styles live in `app/assets/stylesheets/components/_scripture_picker.scss`, BEM (
 1. **`attachments: false` blocks scripture links.** Lexxy's `permitsAttachmentContentType` returns false for everything when attachments are off. Use `permitted-attachment-types` instead, and keep uploads off with the `no-uploads` controller and the model validation.
 2. **Lexxy is pinned at 1.0.4, and the extension API is experimental.** Upgrade Lexxy only in its own story, and run `test/system/scripture_links_test.rb` first. If `CustomActionTextAttachmentNode`, `contents.replaceTextBackUntil` or `contents.insertAtCursor` change, fix the extension in that story.
 3. **Keep the caret.** Restore the session's selection inside the `editor.update` that inserts, or the link lands at the start of the note on a phone. From `+`, the selection must be the end of the current query, refreshed on every update, never the moment the `+` was typed.
-9. **A late response never inserts.** The insert handler checks the session id and the editor, and drops anything from an ended or superseded session (see Sessions).
 4. **The server signs.** The browser never builds an sgid. `ScripturesController#show` parses the id with `Bible::Reference.find` and 404s on anything invalid.
 5. **Strict linking on save.** Only book, chapter and verse ("Matt 24:14"). Never inside code, links or existing attachments, and never a chapter alone. Test the false positives: "Job 5", "Acts of kindness", "John 3" and "1 John".
 6. **Abbreviations collide.** No abbreviation in `config/bible.yml` may belong to two books. A test loads the file and checks.
 7. **Encrypted notes stay encrypted.** The sgid sits inside the encrypted body like any other content; nothing about the reference is stored in the clear.
 8. **No N+1:** rendering a note with many links does no database work per link, since `Bible::Reference.find` is a parse, not a query.
+9. **A late response never inserts.** The insert handler checks the session id and the editor, and drops anything from an ended or superseded session (see Sessions).
 
 ## States each story checks
 
