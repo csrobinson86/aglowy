@@ -22,6 +22,39 @@ class UserTest < ActiveSupport::TestCase
     assert_empty users(:former).active_households
   end
 
+  # users(:head) is Maria in the frames; users(:eli) is Eli, a child in one household.
+  test "can_start_household? is true for Maria" do
+    assert users(:head).can_start_household?
+  end
+
+  test "can_start_household? is false for Eli" do
+    assert_not users(:eli).can_start_household?
+  end
+
+  test "can_start_household? is true for someone who's a child in one household and an adult in another" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :adult)
+
+    assert users(:eli).can_start_household?
+  end
+
+  test "can_start_household? is true for an adult whose only membership is inactive" do
+    assert_equal [ [ "adult", false ] ], users(:former).memberships.map { [ it.role, it.active ] }
+
+    assert users(:former).can_start_household?
+  end
+
+  test "can_start_household? is false for a child whose only membership is inactive" do
+    memberships(:eli_in_home).update!(active: false)
+
+    assert_not users(:eli).can_start_household?
+  end
+
+  test "can_start_household? is true for someone with no memberships yet" do
+    assert_empty users(:newcomer).memberships
+
+    assert users(:newcomer).can_start_household?
+  end
+
   test "give_login makes a confirmed username-only login whose password nobody knows" do
     identity = users(:sofia).give_login(username: "Sofia.Rivera")
 

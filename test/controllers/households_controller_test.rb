@@ -44,6 +44,49 @@ class HouseholdsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to household_root_path(household_id: household)
   end
 
+  test "Eli gets refused on new" do
+    sign_in identities(:eli)
+
+    get new_household_path
+
+    assert_redirected_to root_path
+    assert_equal "You can't do that in this household.", flash[:alert]
+  end
+
+  test "Eli gets refused on create" do
+    sign_in identities(:eli)
+
+    assert_no_difference -> { Household.count } do
+      assert_no_difference -> { Membership.count } do
+        post households_path, params: { household: { name: "Eli's household", time_zone: "London" } }
+      end
+    end
+
+    assert_redirected_to root_path
+  end
+
+  test "someone with no memberships yet can still start their first household" do
+    assert_empty users(:staff).memberships
+    sign_in identities(:staff)
+
+    get new_household_path
+    assert_response :success
+
+    assert_difference "Household.count" do
+      post households_path, params: { household: { name: "The Staff Family", time_zone: "London" } }
+    end
+  end
+
+  test "the households page offers \"Create a household\" only to someone who may start one" do
+    sign_in identities(:head)
+    get households_path
+    assert_select "main a[href='#{new_household_path}']", text: "Create a household"
+
+    sign_in identities(:eli)
+    get households_path
+    assert_select "main a[href='#{new_household_path}']", count: 0
+  end
+
   test "an invalid household re-renders with 422" do
     sign_in identities(:spouse)
 

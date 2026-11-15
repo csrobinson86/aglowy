@@ -18,8 +18,8 @@ class AppShell::HouseholdSwitcherComponent < ApplicationComponent
     other.household_id == membership.household_id
   end
 
-  # Showing the item isn't authorization: HouseholdsController still authorizes.
+  # Showing the item isn't authorization: HouseholdsController still authorizes, with the same record.
   def show_new_household?
-    Pundit.policy!(membership, Household).create?
+    HouseholdPolicy.new(membership, membership.user).create?
   end
 end

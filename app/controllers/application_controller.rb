@@ -17,13 +17,14 @@ class ApplicationController < ActionController::Base
     Current.identity = current_identity
   end
 
-  # Only active memberships count: none, one, or several households.
+  # Only active memberships count: none, one, or several households. A child with none goes to the chooser,
+  # because new household would refuse them and send them back to / and round again.
   def after_sign_in_path_for(identity)
     households = identity.user.active_households.limit(2).to_a
 
     stored_location_for(identity) ||
       case households.size
-      when 0 then new_household_path
+      when 0 then HouseholdPolicy.new(nil, identity.user).create? ? new_household_path : households_path
       when 1 then household_root_path(household_id: households.first)
       else households_path
       end

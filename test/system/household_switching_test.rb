@@ -62,6 +62,18 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     capture_screens("switcher-open")
   end
 
+  test "a child's open switcher has no New household and passes assert_accessible" do
+    sign_in identities(:eli)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    open_household_switcher
+    assert_selector "action-menu a[aria-checked='true']", text: "The Head Family"
+    assert_no_selector "action-menu a", text: "New household"
+    assert_accessible
+    capture_screens("switcher-open-child")
+  end
+
   test "every page on the way passes assert_accessible" do
     sign_in identities(:head)
 

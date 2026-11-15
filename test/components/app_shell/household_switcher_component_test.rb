@@ -29,11 +29,29 @@ class AppShell::HouseholdSwitcherComponentTest < ViewComponent::TestCase
   end
 
   test "shows \"New household\" when the policy allows it" do
-    assert HouseholdPolicy.new(memberships(:child_in_home), Household).create?
+    assert HouseholdPolicy.new(memberships(:spouse_in_home), users(:spouse)).create?
 
-    render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:child_in_home)))
+    render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:spouse_in_home)))
 
+    assert_selector "action-menu .ActionList-sectionDivider"
     assert_selector "action-menu a[href='#{new_household_path}']", text: "New household"
+  end
+
+  test "no \"New household\" item for Eli" do
+    render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:eli_in_home)))
+
+    assert_selector "action-menu [role='menuitemradio']", text: "The Head Family"
+    assert_no_selector "action-menu a[href='#{new_household_path}']"
+    assert_no_text "New household"
+    assert_no_selector "action-menu .ActionList-sectionDivider"
+  end
+
+  test "the child preview has no \"New household\" item; the others do" do
+    render_preview(:child)
+    assert_no_text "New household"
+
+    render_preview(:one_household)
+    assert_text "New household"
   end
 
   test "the previews render" do

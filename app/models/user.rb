@@ -41,6 +41,14 @@ class User < ApplicationRecord
     households.merge(Membership.active)
   end
 
+  # Children can't start a household (docs/design/invitations.md, Traps). Seats count active or not, so an adult
+  # who left every household still can, and someone who only ever had child seats still can't. Someone with no
+  # seats yet can. Read from the loaded seats, so the switcher's previews of unsaved people answer it too.
+  def can_start_household?
+    seats = memberships.to_a
+    seats.none? || !seats.all?(&:child?)
+  end
+
   # Finds this person's note for the meeting that week, or creates it with its parts in the same
   # transaction. The unique index on (user_id, kind, week_of) settles two starts at once.
   def start_meeting_note(kind:, week_of:)
