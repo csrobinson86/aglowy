@@ -218,6 +218,51 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_not meeting_notes(:head_weekend).marks.new(step: "talk").valid?
   end
 
+  test "helper_used? is false with neither marks nor drawings, true with a mark, true with a drawing" do
+    assert_not meeting_notes(:head_midweek).helper_used?
+
+    marked = meeting_notes(:head_midweek)
+    marked.mark("talk")
+    assert marked.helper_used?
+
+    drawn = meeting_notes(:head_weekend)
+    drawn.draw("public_talk", photo)
+    assert drawn.helper_used?
+  end
+
+  test "talk_questions puts drawn steps first, keeps step order, and stops at 3" do
+    note = meeting_notes(:head_midweek)
+    %w[ closing_song living talk ].each { note.mark(it) }
+    %w[ field_ministry bible_reading ].each { note.draw(it, photo) }
+
+    assert_equal [
+      "Tell me about your drawing of bible reading.",
+      "Tell me about your drawing of field ministry.",
+      "Who from the Bible did you hear about?"
+    ], note.reload.talk_questions
+  end
+
+  test "talk_questions asks about a step's drawing once, even when it's marked too" do
+    note = meeting_notes(:head_weekend)
+    note.mark("public_talk")
+    note.draw("public_talk", photo)
+
+    assert_equal [ "Tell me about your drawing of public talk." ], note.reload.talk_questions
+  end
+
+  test "preloaded loads the marks and the drawings with their images" do
+    meeting_notes(:head_midweek).mark("talk")
+    %w[ talk field_ministry ].each { meeting_notes(:head_midweek).draw(it, photo) }
+
+    note = MeetingNote.preloaded.find(meeting_notes(:head_midweek).id)
+
+    assert_no_queries do
+      assert note.helper_used?
+      assert_equal %w[ talk ], note.marks.map(&:step)
+      assert_equal [ "image/png" ] * 2, note.drawings.map { it.image.content_type }
+    end
+  end
+
   test "destroying the author destroys their notes, parts, part notes and gems" do
     assert_difference -> { MeetingNote.count } => -2, -> { MeetingNote::Part.count } => -8, -> { ActionText::RichText.count } => -2, -> { MeetingNote::Gem.count } => -2 do
       users(:head).destroy!
@@ -325,4 +370,9 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_empty MeetingNote.shared_with(households(:home))
     assert_equal [ meeting_notes(:head_midweek) ], MeetingNote.shared_with(households(:parents)).to_a
   end
+
+  private
+    def photo
+      Rack::Test::UploadedFile.new(file_fixture("photo.png"), "image/png")
+    end
 end

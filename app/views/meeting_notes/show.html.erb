@@ -9,6 +9,11 @@
   <% end %>
 <% end %>
 
+<% helper_used = @meeting_note.helper_used? %>
+<% if helper_used %>
+  <%= render "meeting_notes/from_todays_meeting", meeting_note: @meeting_note, author: !reader %>
+<% end %>
+
 <% sections = @meeting_note.filled_sections %>
 <% if sections.any? %>
   <% sections.each do |section, parts| %>
@@ -30,7 +35,8 @@
       <% end %>
     </section>
   <% end %>
-<% else %>
+<%# A helper note with nothing typed isn't empty: its marks and drawings are above. %>
+<% elsif !helper_used %>
   <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :note) %>
     <% blankslate.with_heading(tag: :h2) { "Nothing written yet." } %>

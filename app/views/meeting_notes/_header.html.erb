@@ -13,9 +13,11 @@
     <% if author %>
       <%= render "meeting_notes/sharing_label", meeting_note: %>
     <% else %>
-      <%= render(Primer::Beta::Label.new(scheme: :accent, title: "Shared by #{meeting_note.user.name}", classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+      <%# "· from Today's meeting" on a note made with the meeting helper (docs/design/meeting-helper.md). %>
+      <% label = [ "Shared by #{meeting_note.user.name}", ("from Today's meeting" if meeting_note.helper_used?) ].compact.join(" · ") %>
+      <%= render(Primer::Beta::Label.new(scheme: :accent, title: label, classes: "css-truncate css-truncate-overflow min-width-0")) do %>
         <%= render(Primer::Beta::Octicon.new(:people, size: :xsmall)) %>
-        Shared by <%= meeting_note.user.name %>
+        <%= label %>
       <% end %>
     <% end %>
   <% end %>
