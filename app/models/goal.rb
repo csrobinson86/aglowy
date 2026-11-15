@@ -24,6 +24,10 @@ class Goal < ApplicationRecord
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
   scope :preloaded, -> { includes(completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions ], household: { active_memberships: :user }) }
 
+  # The goals a person can open from this household: its family goals and their own personal goals.
+  # Goals shared into the household join this scope with sharing (docs/design/goals.md, "Loading a goal").
+  scope :reachable_from, ->(membership) { where(household_id: membership.household_id).or(where(user_id: membership.user_id)) }
+
   # A tab's goals; anything that isn't a status is Active.
   scope :with_status, ->(status) do
     case status
@@ -51,6 +55,11 @@ class Goal < ApplicationRecord
 
   def progress
     Progress.new(self)
+  end
+
+  # Who a step can be for: the household's active members, from Goal.preloaded. A personal goal's steps name no one.
+  def assignable_users
+    family? ? household.active_memberships.map(&:user) : []
   end
 
   # Neither completed nor archived; only an open goal takes new steps or ticks.

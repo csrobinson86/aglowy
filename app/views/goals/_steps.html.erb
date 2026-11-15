@@ -1,0 +1,17 @@
+<%# locals: (goal:) %>
+<%# A row per step, then the add-step row for whoever may change the steps (frame milestone-goal.png). %>
+<%# By goal_id, so the unsaved step doesn't join goal.steps and the counts. %>
+<% editable = policy(Goal::Step.new(goal_id: goal.id)).create? %>
+<div id="goal-steps">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_header do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5)) { "Steps" } %>
+    <% end %>
+    <% goal.steps.each do |step| %>
+      <% box.with_row(p: 0) { render "goals/steps/step", step:, editable: } %>
+    <% end %>
+    <% if editable %>
+      <% box.with_footer(bg: :subtle) { render "goals/steps/new", goal:, step: Goal::Step.new } %>
+    <% end %>
+  <% end %>
+</div>

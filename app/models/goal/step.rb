@@ -46,6 +46,31 @@ class Goal::Step < ApplicationRecord
     completions.reset
   end
 
+  # Editing a step: its title, due date and people at once. The form's lock_version is checked even when only
+  # the people change (touch writes the row), and a stale or invalid edit rolls everything back, ticks included.
+  # The title is checked and the people reassigned before the row is written, so a failure leaves this record's
+  # lock_version as the database has it, ready for the form to show again.
+  def revise(title:, due_on:, assignees:, lock_version:)
+    goal.under_lock do
+      goal.require_open!
+      assign_attributes(title: title, due_on: due_on, lock_version: lock_version)
+      validate!
+      reassign(to: assignees)
+      changed? ? save! : touch
+    end
+  rescue ActiveRecord::RecordInvalid => error
+    errors.add(:assignments, :invalid) if error.record.is_a?(Assignment)
+    raise
+  end
+
+  # Its people and ticks go with it (dependent: :delete_all, and cascades underneath).
+  def remove
+    goal.under_lock do
+      goal.require_open!
+      destroy!
+    end
+  end
+
   # A person's part of a named step, or nil for done together. Ticking twice is a no-op. The completion's
   # validations recheck, behind the lock, that the person is still named and still an active member.
   # (`for` is a keyword, so it's read through the binding.)

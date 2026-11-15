@@ -1,0 +1,5 @@
+// A goal's step row (GoalStepComponent). A done step is struck through and muted (frame milestone-goal.png).
+.goal-step__title--done {
+  color: var(--fgColor-muted);
+  text-decoration: line-through;
+}

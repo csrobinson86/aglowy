@@ -1,0 +1,35 @@
+<%# locals: (goal:) %>
+<%# "3 of 7 steps done", what's left, the bar, and each person's count (docs/design/goals.md, Progress). %>
+<% progress = goal.progress %>
+<%= render(Primer::Beta::BorderBox.new(id: "goal-progress", mb: 4)) do |box| %>
+  <% box.with_body do %>
+    <div class="d-flex flex-wrap flex-items-baseline gap-2 mb-2">
+      <% if progress.steps_count.zero? %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { "No steps yet" } %>
+      <% else %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { "#{progress.done_count} of #{pluralize(progress.steps_count, "step")} done" } %>
+        <span class="color-fg-muted ml-auto">
+          <%= [ progress.all_done? ? "Every step is done" : "#{progress.remaining_count} to go",
+                ("next due #{progress.next_due_on.strftime("%b %-d")}" if progress.next_due_on) ].compact.join(" · ") %>
+        </span>
+      <% end %>
+    </div>
+    <%# The heading says the same, so the bar is hidden from screen readers. %>
+    <%= render(Primer::Beta::ProgressBar.new(size: :large, mb: 3, aria: { hidden: true })) do |bar| %>
+      <% bar.with_item(percentage: progress.percent, bg: :success_emphasis) %>
+    <% end %>
+    <% people = progress.people.select { it.steps_count.positive? } %>
+    <% if people.any? %>
+      <ul class="list-style-none d-flex flex-wrap gap-2">
+        <% people.each do |person| %>
+          <li>
+            <%= render(Primer::Beta::Label.new(size: :large)) do %>
+              <span class="avatar avatar-4 circle d-inline-flex flex-items-center flex-justify-center mr-1 color-bg-accent color-fg-accent text-bold f6" aria-hidden="true"><%= person.name.first %></span>
+              <%= person.name %> · <%= person.done_count %> of <%= person.steps_count %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+<% end %>

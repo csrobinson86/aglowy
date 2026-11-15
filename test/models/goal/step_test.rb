@@ -386,4 +386,67 @@ class Goal::StepTest < ActiveSupport::TestCase
 
     assert_nil step.reload.family_study_id
   end
+
+  test "revise changes the title, due date and people together, and moves lock_version on" do
+    step = goal_steps(:read_luke)
+
+    step.revise(title: "Read Luke", due_on: Date.new(2027, 2, 20), assignees: [ @eli ], lock_version: 0)
+
+    step.reload
+    assert_equal [ "Read Luke", Date.new(2027, 2, 20), [ @eli ], 1 ], [ step.title, step.due_on, step.assignees.to_a, step.lock_version ]
+  end
+
+  test "revise with only new people still moves lock_version on" do
+    step = goal_steps(:read_luke)
+
+    step.revise(title: step.title, due_on: step.due_on, assignees: [ @sofia ], lock_version: 0)
+
+    assert_equal 1, step.reload.lock_version
+  end
+
+  test "a stale revise raises StaleObjectError and keeps the ticks and the people" do
+    step = goal_steps(:parables)
+    Goal::Step.find(step.id).touch
+
+    assert_raises(ActiveRecord::StaleObjectError) do
+      step.revise(title: "Find one parable", due_on: nil, assignees: [], lock_version: 0)
+    end
+
+    step.reload
+    assert_equal "Find three parables and explain one", step.title
+    assert_equal [ @eli, @sofia ].sort_by(&:id), step.assignees.sort_by(&:id)
+    assert_equal [ @eli.id ], step.completions.map(&:user_id)
+  end
+
+  test "revise to someone outside the household is invalid on the step's assignments and writes nothing" do
+    step = goal_steps(:parables)
+
+    error = assert_raises(ActiveRecord::RecordInvalid) do
+      step.revise(title: "Visit Olive", due_on: nil, assignees: [ users(:outsider) ], lock_version: 0)
+    end
+
+    assert_includes step.errors[:assignments], "is invalid"
+    assert_equal 0, step.lock_version_in_database
+    assert_kind_of Goal::Step::Assignment, error.record
+    assert_equal "Find three parables and explain one", step.reload.title
+    assert_equal 1, step.completions.count
+  end
+
+  test "revising or removing a step of a finished goal is refused" do
+    goals(:gospels).archive(by: users(:spouse))
+
+    assert_raises(ActiveRecord::RecordInvalid) { goal_steps(:read_luke).revise(title: "x", due_on: nil, assignees: [], lock_version: 0) }
+    assert_raises(ActiveRecord::RecordInvalid) { goal_steps(:read_luke).remove }
+    assert Goal::Step.exists?(goal_steps(:read_luke).id)
+  end
+
+  test "remove deletes the step with its people and ticks" do
+    step = goal_steps(:parables)
+
+    step.remove
+
+    assert_not Goal::Step.exists?(step.id)
+    assert_not Goal::Step::Assignment.exists?(step_id: step.id)
+    assert_not Goal::Step::Completion.exists?(step_id: step.id)
+  end
 end

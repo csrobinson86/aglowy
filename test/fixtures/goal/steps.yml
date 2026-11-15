@@ -37,3 +37,9 @@ share_learned:
   title: Share what each of us learned
   due_on: 2027-03-31
   position: 7
+
+# Another household's goal, for the 404 tests.
+read_acts:
+  goal: outsiders_reading
+  title: Read Acts chapter 1
+  position: 1

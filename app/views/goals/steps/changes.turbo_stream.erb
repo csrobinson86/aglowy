@@ -1,0 +1,3 @@
+<%# Every step change redraws the steps and the progress box from the reloaded goal. %>
+<%= turbo_stream.replace "goal-steps", partial: "goals/steps", locals: { goal: @goal } %>
+<%= turbo_stream.replace "goal-progress", partial: "goals/progress", locals: { goal: @goal } %>

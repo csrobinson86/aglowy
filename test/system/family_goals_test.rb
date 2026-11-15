@@ -62,6 +62,11 @@ class FamilyGoalsTest < ApplicationSystemTestCase
     click_on "Create goal"
 
     assert_text "Goal created."
+    assert_selector "h1", text: "Read Acts together"
+    assert_text "Target June 30, 2027 · Set by Sam Spouse"
+    assert_selector "#goal-progress h2", text: "No steps yet"
+
+    within("nav[aria-label='Breadcrumb']") { click_on "Family goals" }
     assert_selector "nav[aria-label='Goals'] a[aria-current='page']", text: /Active\s*2/
     assert_text "Read Acts together"
     assert_text "Target Jun 30, 2027"

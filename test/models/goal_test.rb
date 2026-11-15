@@ -1,8 +1,15 @@
 require "test_helper"
 
 class GoalTest < ActiveSupport::TestCase
+  test "reachable_from: the household's goals and the person's own personal goals, nothing else" do
+    assert_equal [ goals(:gospels), goals(:proverbs), goals(:songs), goals(:spouse_bible_reading) ].sort_by(&:id),
+                 Goal.reachable_from(memberships(:spouse_in_home)).sort_by(&:id)
+    assert_equal [ goals(:gospels), goals(:proverbs), goals(:songs) ].sort_by(&:id), Goal.reachable_from(memberships(:head_in_home)).sort_by(&:id)
+    assert_equal [ goals(:outsiders_reading) ], Goal.reachable_from(memberships(:outsider_in_other)).to_a
+  end
+
   test "active, completed and archived hold the right fixtures, in the right order" do
-    assert_equal [ goals(:spouse_bible_reading), goals(:gospels) ], Goal.active
+    assert_equal [ goals(:spouse_bible_reading), goals(:gospels), goals(:outsiders_reading) ], Goal.active
     assert_equal [ goals(:gospels) ], households(:home).goals.active
     assert_equal [ goals(:proverbs) ], Goal.completed
     assert_equal [ goals(:songs) ], Goal.archived

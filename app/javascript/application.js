@@ -14,3 +14,5 @@ import AppShellController from "../components/app_shell_component_controller"
 application.register("app-shell", AppShellController)
 import FileDropController from "../components/file_drop_component_controller"
 application.register("file-drop", FileDropController)
+import GoalStepController from "../components/goal_step_component_controller"
+application.register("goal-step", GoalStepController)
