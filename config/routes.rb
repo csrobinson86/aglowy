@@ -29,6 +29,9 @@ Rails.application.routes.draw do
   end
 
   resource :signup, only: %i[ new create ]
+  # /invitation?token=…: the token is a query parameter, never a path segment, so filtered_path keeps it out of
+  # the Rails log and Lograge (docs/design/invitations.md, Traps). Declining arrives with its own story.
+  resource :invitation_acceptance, path: "invitation", only: %i[ show create ]
   resources :households, only: %i[ index new create ]
 
   namespace :admin do
