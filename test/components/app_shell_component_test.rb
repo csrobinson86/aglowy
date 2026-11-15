@@ -82,13 +82,17 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_no_selector "nav[aria-label='Main settings'] a[aria-current='page']"
   end
 
-  test "adults and children don't see Household settings" do
-    %i[ spouse_in_home child_in_home ].each do |membership|
-      render_inline(AppShellComponent.new(membership: memberships(membership), selected_item: :dashboards))
+  test "an adult sees Household settings in the footer" do
+    render_inline(AppShellComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards))
 
-      assert_no_text "Household settings"
-      assert_no_selector "nav[aria-label='Main settings']", visible: :all
-    end
+    assert_selector "nav[aria-label='Main settings'] a[href='/#{households(:home).id}/settings']", text: "Household settings"
+  end
+
+  test "children don't see Household settings" do
+    render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :dashboards))
+
+    assert_no_text "Household settings"
+    assert_no_selector "nav[aria-label='Main settings']", visible: :all
   end
 
   test "the sidebar is hidden below md, where the phone menu takes over" do

@@ -10,8 +10,18 @@ class HouseholdPolicy < ApplicationPolicy
     member? && membership.household_id == record.id
   end
 
-  # Household settings: heads of this household only (docs/design/invitations.md, Who can do what).
+  # Household settings' name and time zone: heads of this household only (docs/design/invitations.md, Who can do what).
   def update?
     head? && membership.household_id == record.id
+  end
+
+  # Heads and adults open Household settings; adults see only its Meetings section (docs/design/meeting-helper.md, Trap 10).
+  def edit?
+    head_or_adult? && membership.household_id == record.id
+  end
+
+  # Setting the meeting times: heads and adults of this household.
+  def manage_meetings?
+    head_or_adult? && membership.household_id == record.id
   end
 end
