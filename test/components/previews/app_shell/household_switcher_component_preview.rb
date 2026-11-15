@@ -18,11 +18,12 @@ class AppShell::HouseholdSwitcherComponentPreview < ViewComponent::Preview
   end
 
   private
-    # Unsaved records, so previews need no database rows; the first is the current household.
+    # Unsaved records, so previews need no database rows; the first is the current household. Built through
+    # the user, so User#can_start_household? sees them.
     def render_switcher(*households)
       user = User.new(name: "Maria Rivera")
       memberships = households.map do |name, role|
-        Membership.new(role:, user:, household: Household.new(id: SecureRandom.uuid_v7, name:))
+        user.memberships.build(role:, household: Household.new(id: SecureRandom.uuid_v7, name:))
       end
 
       render(AppShell::HouseholdSwitcherComponent.new(membership: memberships.first, memberships:))

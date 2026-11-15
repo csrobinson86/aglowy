@@ -32,6 +32,17 @@ class IdentitySessionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_household_path
   end
 
+  # New household would refuse them and send them back to /, which sends them to new household again.
+  test "a child with no active household lands on the chooser, not new household" do
+    memberships(:eli_in_home).update!(active: false)
+
+    sign_in_with identities(:eli)
+    assert_redirected_to households_path
+
+    follow_redirect!
+    assert_response :success
+  end
+
   test "an unconfirmed identity can't" do
     sign_in_with identities(:newcomer)
 

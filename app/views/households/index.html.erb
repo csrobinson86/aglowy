@@ -10,4 +10,6 @@
   <% end %>
 <% end %>
 
-<%= render(Primer::Beta::Button.new(tag: :a, href: new_household_path)) { "Create a household" } %>
+<% if HouseholdPolicy.new(nil, Current.user).create? %>
+  <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_path)) { "Create a household" } %>
+<% end %>

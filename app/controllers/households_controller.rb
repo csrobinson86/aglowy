@@ -1,7 +1,8 @@
 class HouseholdsController < ApplicationController
   layout "focused"
 
-  before_action { authorize Household }
+  before_action(only: :index) { authorize Household }
+  before_action(only: %i[ new create ]) { authorize Current.user, policy_class: HouseholdPolicy }
 
   def index
     @households = Current.user.active_households.order(:name)
