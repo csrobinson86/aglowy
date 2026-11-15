@@ -53,6 +53,23 @@ class DashboardTest < ApplicationSystemTestCase
     assert_selector "h3", text: "Recent meeting notes"
     assert_accessible
     capture_screens("home-full")
+    capture_screens("home-full-mine", scroll_to: ".household-home__aside h3")
+  end
+
+  # The app shell hides its own sidebar below md with a selector that also reaches Home's right column;
+  # _household_home.scss shows it again.
+  test "on a phone the right column stacks under the left" do
+    with_goals_and_notes
+    sign_in identities(:head)
+    emulate_viewport(390, 844, phone: true)
+
+    visit household_root_url(household_id: households(:home))
+
+    assert_selector "h2", text: "Family goals", visible: true
+    assert_selector "h3", text: "Recent meeting notes", visible: true
+    assert_operator find("h2", text: "Family goals").rect.y, :>, find("h2", text: "Coming up").rect.y
+  ensure
+    cdp("Emulation.clearDeviceMetricsOverride")
   end
 
   test "the household home with goals and notes passes assert_accessible as a child" do
