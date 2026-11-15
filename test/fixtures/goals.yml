@@ -1,0 +1,25 @@
+# Family goals belong to a household; a personal goal belongs to one person. Never both (docs/design/goals.md).
+gospels:
+  household: home
+  set_by: spouse
+  title: Read the four Gospels together
+  body: So we get to know Jesus better as a family.
+  target_on: 2027-03-31
+
+proverbs:
+  household: home
+  set_by: spouse
+  title: Read Proverbs together
+  target_on: 2026-10-31
+
+songs:
+  household: home
+  set_by: spouse
+  title: Learn the new songs
+  target_on: 2026-09-30
+
+spouse_bible_reading:
+  user: spouse
+  set_by: spouse
+  title: Read the whole Bible in a year
+  target_on: 2027-01-31

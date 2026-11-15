@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_230200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -100,6 +100,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_220000) do
     t.index ["conductor_id"], name: "index_family_study_sessions_on_conductor_id"
     t.index ["family_study_id", "recurrence_at"], name: "index_family_study_sessions_on_study_and_recurrence_at", unique: true
     t.index ["scheduled_at"], name: "index_family_study_sessions_on_scheduled_at"
+  end
+
+  create_table "goal_archivals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "goal_id", null: false
+    t.uuid "archived_by_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["archived_by_id"], name: "index_goal_archivals_on_archived_by_id"
+    t.index ["goal_id"], name: "index_goal_archivals_on_goal_id", unique: true
+  end
+
+  create_table "goal_completions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "goal_id", null: false
+    t.uuid "completed_by_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["completed_by_id"], name: "index_goal_completions_on_completed_by_id"
+    t.index ["goal_id"], name: "index_goal_completions_on_goal_id", unique: true
+  end
+
+  create_table "goals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id"
+    t.uuid "user_id"
+    t.uuid "set_by_id", null: false
+    t.string "kind", default: "milestone", null: false
+    t.string "title", null: false
+    t.text "body"
+    t.date "target_on", null: false
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id"], name: "index_goals_on_household_id"
+    t.index ["set_by_id"], name: "index_goals_on_set_by_id"
+    t.index ["user_id"], name: "index_goals_on_user_id"
+    t.check_constraint "kind::text = 'milestone'::text", name: "goals_kind_check"
+    t.check_constraint "num_nonnulls(household_id, user_id) = 1", name: "goals_one_owner_check"
   end
 
   create_table "households", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -209,6 +243,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_220000) do
   add_foreign_key "family_study_resources", "family_study_sessions", column: "session_id"
   add_foreign_key "family_study_sessions", "family_studies"
   add_foreign_key "family_study_sessions", "users", column: "conductor_id"
+  add_foreign_key "goal_archivals", "goals", on_delete: :cascade
+  add_foreign_key "goal_archivals", "users", column: "archived_by_id"
+  add_foreign_key "goal_completions", "goals", on_delete: :cascade
+  add_foreign_key "goal_completions", "users", column: "completed_by_id"
+  add_foreign_key "goals", "households", on_delete: :cascade
+  add_foreign_key "goals", "users", column: "set_by_id"
+  add_foreign_key "goals", "users", on_delete: :cascade
   add_foreign_key "identities", "users"
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
