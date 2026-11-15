@@ -12,7 +12,7 @@
     } do %>
   <%= primer_form_with(url: household_meeting_note_step_drawing_path(meeting_note_id: @meeting_note, step_id: @step.key),
                        method: :patch, multipart: true, class: "meeting-helper__draw-header",
-                       data: { meeting_helper__drawing_target: "form", action: "submit->meeting-helper--drawing#save" }) do |f| %>
+                       data: { meeting_helper__drawing_target: "form", action: "submit->meeting-helper--drawing#save turbo:submit-end->meeting-helper--drawing#submitted" }) do |f| %>
     <%= meeting_helper_icon(icon: @step.icon, color: @step.color, size: :small) %>
     <h1 class="meeting-helper__heading meeting-helper__heading--draw"><%= @step.draw_prompt %></h1>
     <input type="file" name="drawing[image]" accept="image/png" hidden aria-label="Drawing" data-meeting-helper--drawing-target="input">

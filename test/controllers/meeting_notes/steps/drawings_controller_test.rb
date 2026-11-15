@@ -73,6 +73,7 @@ class MeetingNotes::Steps::DrawingsControllerTest < ActionDispatch::IntegrationT
     assert_response :unprocessable_content
     assert_select "main h1", "Draw who you heard about."
     assert_select "main", text: /Image must be a PNG/
+    assert_select "header .meeting-helper__dot--marked", count: 0
     assert_empty @note.drawings
   end
 

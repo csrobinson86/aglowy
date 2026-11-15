@@ -16,6 +16,7 @@ export default class extends Controller {
     this.strokes = []
     this.picture = null
     this.changed = false
+    this.loading = Promise.resolve()
     this.colour = this.colourOf(this.swatchTargets.find(swatch => swatch.getAttribute("aria-pressed") === "true"))
 
     const ratio = window.devicePixelRatio || 1
@@ -32,16 +33,26 @@ export default class extends Controller {
   }
 
   // Production storage is another host; asking for it with CORS keeps the canvas exportable. If the saved picture
-  // can't load, All done keeps it rather than saving over it without it.
+  // can't load, All done keeps it rather than saving over it without it. Start over replaces this.loading, so a
+  // picture that arrives after it stays off the paper.
   load() {
     const picture = new Image()
     picture.crossOrigin = "anonymous"
-    picture.onload = () => {
-      this.picture = picture
-      this.redraw()
-      this.canvasTarget.setAttribute("data-loaded", "")
-    }
-    picture.onerror = () => { this.keepSaved = true }
+    const loading = this.loading = new Promise(resolve => {
+      picture.onload = () => resolve(true)
+      picture.onerror = () => resolve(false)
+    })
+    loading.then(loaded => {
+      if (this.loading !== loading) return
+
+      if (loaded) {
+        this.picture = picture
+        this.redraw()
+        this.canvasTarget.setAttribute("data-loaded", "")
+      } else {
+        this.keepSaved = true
+      }
+    })
     picture.src = this.imageUrlValue
   }
 
@@ -81,29 +92,43 @@ export default class extends Controller {
   }
 
   clear() {
+    this.loading = Promise.resolve()
+    this.keepSaved = false
     this.strokes = []
     this.picture = null
     this.changed = true
     this.redraw()
   }
 
-  // All done. toBlob is asynchronous, so the PNG goes into the file input and the form submits only inside its
-  // callback; that second submit finds the file and goes through. Nothing changed, or the saved picture didn't load:
-  // back to the step, saving nothing.
-  save(event) {
-    if (this.inputTarget.files.length > 0) return
+  // All done. It waits for the saved picture, so the export has it as its first layer. toBlob is asynchronous, so
+  // the PNG goes into the file input and the form submits only inside its callback; requestSubmit fires that second
+  // submit at once, and it goes through. Nothing changed, or the saved picture didn't load: back to the step, saving
+  // nothing.
+  async save(event) {
+    if (this.exported) {
+      this.exported = false
+      return
+    }
 
     event.preventDefault()
     if (this.saving) return
-    if (!this.changed || this.keepSaved) return Turbo.visit(this.stepUrlValue)
 
     this.saving = true
+    await this.loading
+    if (!this.changed || this.keepSaved) return Turbo.visit(this.stepUrlValue)
+
     this.canvasTarget.toBlob(blob => {
       const transfer = new DataTransfer()
       transfer.items.add(new File([ blob ], "drawing.png", { type: "image/png" }))
       this.inputTarget.files = transfer.files
+      this.exported = true
       this.formTarget.requestSubmit(this.doneTarget)
     }, "image/png")
+  }
+
+  // A submission that never reached the server (Turbo leaves the page as it is): All done can export again.
+  submitted({ detail: { success } }) {
+    if (!success) this.saving = false
   }
 
   redraw() {

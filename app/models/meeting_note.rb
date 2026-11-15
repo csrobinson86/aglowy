@@ -54,19 +54,20 @@ class MeetingNote < ApplicationRecord
   end
 
   # Saves the step's drawing, replacing the one before (whose image Active Storage purges). create_or_find_by
-  # leans on the unique index, so two saves at once can't make two. Returns the drawing, with errors when the
-  # image isn't a small PNG. The upload's declared type and file name are dropped, so Active Storage judges the
+  # leans on the unique index, so two saves at once can't make two; the row lock makes the second replacement wait
+  # and reload, so it replaces the first's image instead of both being kept. Returns the drawing, with errors when
+  # the image isn't a small PNG. The upload's declared type and file name are dropped, so Active Storage judges the
   # type by the bytes alone: bytes it can't recognise are application/octet-stream, never a PNG (Trap 8).
   def draw(step, upload)
     image = { io: upload.to_io, filename: "drawing" } if upload.present?
     drawing = drawings.create_or_find_by(step: step) { it.image = image }
-    drawing.update(image: image) if drawing.persisted? && !drawing.previously_new_record?
+    drawing.with_lock { drawing.update(image: image) } if drawing.persisted? && !drawing.previously_new_record?
     drawing
   end
 
-  # Reads the loaded drawings, like marked?.
+  # Reads the loaded drawings, like marked?. A refused first save leaves its unsaved drawing among them.
   def drawn?(step)
-    drawings.any? { it.step == step }
+    drawings.any? { it.persisted? && it.step == step }
   end
 
   # Builds every part the outline starts with, in order; a repeating part starts with one.
