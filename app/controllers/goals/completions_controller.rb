@@ -3,13 +3,15 @@ class Goals::CompletionsController < ApplicationController
   include HouseholdScoped
   include GoalScoped
 
+  before_action { authorize @goal, :update? }
+
   def create
     @goal.complete(by: Current.user)
-    redirect_to goal_path, notice: "Goal marked complete."
+    redirect_to_goal notice: "Goal marked complete."
   end
 
   def destroy
     @goal.reopen
-    redirect_to goal_path, notice: "Goal reopened."
+    redirect_to_goal notice: "Goal reopened."
   end
 end

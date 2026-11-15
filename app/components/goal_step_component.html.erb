@@ -8,7 +8,7 @@
                                                          data: { goal_step_target: "checkbox", action: "change->goal-step#tick" })) %>
         <%= checkbox_tickable? ? primer_form_with(**tick_form_options(step.parts.first)) { checkbox } : checkbox %>
       <% else %>
-        <%= render(Primer::Beta::Octicon.new(done? ? :"check-circle-fill" : :circle, color: done? ? :success : :muted)) %>
+        <%= render(Primer::Beta::Octicon.new(done? ? :"check-circle-fill" : :circle, color: done? ? :success : :muted, aria: { label: done? ? "Done" : "Not done" })) %>
       <% end %>
     </div>
     <%# Avatars sit beside the text from md up, and under it on a phone (frame phone-goal.png). %>

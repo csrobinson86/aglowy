@@ -4,6 +4,8 @@ class Goals::ArchivalsController < ApplicationController
   include HouseholdScoped
   include GoalScoped
 
+  before_action { authorize @goal, :update? }
+
   def create
     @goal.archive(by: Current.user)
     redirect_to household_goals_path(status: "archived"), notice: "Goal archived."
@@ -11,6 +13,6 @@ class Goals::ArchivalsController < ApplicationController
 
   def destroy
     @goal.restore
-    redirect_to goal_path, notice: "Goal restored."
+    redirect_to_goal notice: "Goal restored."
   end
 end

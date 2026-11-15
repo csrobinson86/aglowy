@@ -143,13 +143,13 @@ class GoalStepComponentTest < ViewComponent::TestCase
 
     render_inline(GoalStepComponent.new(step: preloaded(:read_matthew)))
     assert_no_selector "input[type=checkbox]"
-    assert_selector "svg.octicon-check-circle-fill.color-fg-success[aria-hidden=true]"
+    assert_selector "svg.octicon-check-circle-fill.color-fg-success[role=img][aria-label=Done]"
     assert_text "Everyone · Done together · Dec 12"
 
     render_inline(GoalStepComponent.new(step: preloaded(:parables)))
     assert_no_selector "input[type=checkbox]"
     assert_no_selector "button"
-    assert_selector "svg.octicon-circle.color-fg-muted[aria-hidden=true]"
+    assert_selector "svg.octicon-circle.color-fg-muted[role=img][aria-label='Not done']"
     assert_text "Eli Child done · waiting on Sofia Child"
   end
 
