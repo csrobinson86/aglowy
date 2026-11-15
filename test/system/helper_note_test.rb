@@ -23,8 +23,9 @@ class HelperNoteTest < ApplicationSystemTestCase
     assert_selector "li", text: "Tell me about your drawing of field ministry."
     assert_selector ".Box-row", text: "Treasures From God's Word\n✓ Heard it"
     assert_selector ".Box-row", text: "Congregation Bible Study\nNot marked"
-    drawing = find("img[alt=\"Eli's drawing for Apply Yourself to the Field Ministry\"]")
-    assert_predicate drawing.evaluate_script("this.naturalWidth"), :positive?
+    assert_selector "img[alt=\"Eli's drawing for Apply Yourself to the Field Ministry\"]" do |drawing|
+      drawing.evaluate_script("this.complete && this.naturalWidth > 0")
+    end
     assert_no_button "Stop sharing"
     assert_accessible
     capture_screens("helper-note-parent")
