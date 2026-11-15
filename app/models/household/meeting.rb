@@ -2,6 +2,7 @@
 # (docs/design/meeting-helper.md, Meeting times). starts_at is in the household's time zone.
 Household::Meeting = Data.define(:kind, :starts_at) do
   self::LENGTH = 2.hours
+  self::TITLES = { "midweek" => "Midweek meeting", "weekend" => "Weekend meeting" }.freeze
 
   # A Sunday weekend meeting belongs to the week that started the Monday before, like MeetingNote's week_of.
   def week_of
@@ -18,6 +19,6 @@ Household::Meeting = Data.define(:kind, :starts_at) do
   end
 
   def title
-    "#{kind.humanize} meeting"
+    self.class::TITLES.fetch(kind)
   end
 end

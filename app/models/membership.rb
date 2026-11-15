@@ -18,6 +18,21 @@ class Membership < ApplicationRecord
     Time.current.in_time_zone(user.time_zone.presence || household.time_zone).to_date.beginning_of_week(:monday)
   end
 
+  # What Today's meeting offers, kind => week_of: the household's current or next meeting, or this week's two before
+  # any times are set (docs/design/meeting-helper.md, The Today's meeting page).
+  def todays_meetings
+    if (meeting = household.current_or_next_meeting)
+      { meeting.kind => meeting.week_of }
+    else
+      Household::MEETING_KINDS.index_with(this_week)
+    end
+  end
+
+  # Start accepts only what the page could have offered (Trap 4). week_of is the ISO date the page posted.
+  def todays_meeting?(kind:, week_of:)
+    todays_meetings[kind]&.iso8601 == week_of
+  end
+
   # Leaving ends the person's meeting-note and goal shares here for good, so rejoining never brings them back
   # (docs/design/meeting-notes.md, "Leaving ends a share for good"), and takes them off the steps not yet
   # done in the household's goals (docs/design/goals.md, "Leaving a household").

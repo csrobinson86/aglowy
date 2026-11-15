@@ -72,6 +72,8 @@ Rails.application.routes.draw do
         resources :files, only: :create, module: :sessions
       end
     end
+    # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).
+    resource :todays_meeting, only: %i[ show create ]
     resources :meeting_notes, only: %i[ index create show edit update ] do
       resource :sharing, only: %i[ create destroy ], module: :meeting_notes
     end
