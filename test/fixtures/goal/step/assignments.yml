@@ -1,0 +1,15 @@
+draw_map_eli:
+  step: draw_map
+  user: eli
+
+parables_eli:
+  step: parables
+  user: eli
+
+parables_sofia:
+  step: parables
+  user: sofia
+
+share_learned_spouse:
+  step: share_learned
+  user: spouse

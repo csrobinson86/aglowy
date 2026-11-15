@@ -23,3 +23,10 @@ newcomer:
 
 staff:
   name: Stella Staff
+
+# The children in the goals frames (docs/design/goals/milestone-goal.png).
+eli:
+  name: Eli Child
+
+sofia:
+  name: Sofia Child

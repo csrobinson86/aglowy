@@ -1,0 +1,39 @@
+# The seven steps of "Read the four Gospels together" (frame milestone-goal.png). No assignments means Everyone.
+read_matthew:
+  goal: gospels
+  title: Read Matthew together
+  position: 1
+
+read_mark:
+  goal: gospels
+  title: Read Mark together
+  position: 2
+
+draw_map:
+  goal: gospels
+  title: Draw a map of Jesus' travels
+  position: 3
+
+read_luke:
+  goal: gospels
+  title: Read Luke together
+  due_on: 2027-02-15
+  position: 4
+
+parables:
+  goal: gospels
+  title: Find three parables and explain one
+  due_on: 2027-02-28
+  position: 5
+
+read_john:
+  goal: gospels
+  title: Read John together
+  due_on: 2027-03-25
+  position: 6
+
+share_learned:
+  goal: gospels
+  title: Share what each of us learned
+  due_on: 2027-03-31
+  position: 7

@@ -33,3 +33,13 @@ grandparent_in_parents:
   household: parents
   user: grandparent
   role: head
+
+eli_in_home:
+  household: home
+  user: eli
+  role: child
+
+sofia_in_home:
+  household: home
+  user: sofia
+  role: child
