@@ -21,6 +21,6 @@
   <% end %>
 
   <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, text_align: :center, mt: 3)) do %>
-    Signed in as <%= Current.identity.email %>
+    Signed in as <%= Current.identity.login %>
   <% end %>
 </div>
