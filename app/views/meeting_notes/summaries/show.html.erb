@@ -1,0 +1,38 @@
+<% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@meeting_note.kind) %>
+
+<%# The end (frame tablet-done.png): what the child did on each step, a drawing or a mark or nothing, with no counts,
+    score or "missed" (docs/design/meeting-helper.md, Decisions). Drawings come through the authorizing drawing route,
+    never an Active Storage URL (Trap 9). %>
+<div class="meeting-helper__content meeting-helper__content--summary">
+  <span class="meeting-helper__icon meeting-helper__icon--attention meeting-helper__icon--small"><%= render Primer::Beta::Octicon.new(:sun) %></span>
+  <h1 class="meeting-helper__heading">You listened all the way through!</h1>
+  <p class="meeting-helper__lead">Here's what you did today.</p>
+
+  <ul class="meeting-helper__tiles">
+    <% @steps.each do |step| %>
+      <li id="summary-<%= step.key %>" class="meeting-helper__tile">
+        <p class="meeting-helper__tile-title"><%= meeting_helper_icon(icon: step.icon, color: step.color, size: :tiny) %><%= step.short_title %></p>
+        <% if @meeting_note.drawn?(step.key) %>
+          <%= image_tag household_meeting_note_step_drawing_path(step_id: step.key), alt: "Your drawing", class: "meeting-helper__tile-drawing" %>
+        <% elsif @meeting_note.marked?(step.key) %>
+          <p class="meeting-helper__tile-mark"><span aria-hidden="true">✓</span> <%= step.marked_label %></p>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <div class="meeting-helper__actions">
+    <% if @meeting_note.shared_with?(Current.household) %>
+      <p class="meeting-helper__lead meeting-helper__shared" role="status">
+        <%= render Primer::Beta::Octicon.new(:people, size: :medium, mr: 2) %>Your family can see it now
+      </p>
+    <% else %>
+      <%= primer_form_with(url: household_meeting_note_sharing_path(meeting_note_id: @meeting_note)) do |f| %>
+        <%= render MeetingNotes::ShowMyFamilyForm.new(f, return_to: household_meeting_note_summary_path(meeting_note_id: @meeting_note)) %>
+      <% end %>
+    <% end %>
+    <%= render Primer::Beta::Button.new(tag: :a, href: household_root_path, size: :large, classes: "meeting-helper__button meeting-helper__button--big") do %>
+      Finished
+    <% end %>
+  </div>
+</div>

@@ -68,7 +68,8 @@ class TodaysMeetingTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Sing the last song together."
     click_on "Finish"
 
-    assert_current_path household_root_path(household_id: households(:home))
+    assert_selector "h1", text: "You listened all the way through!"
+    assert_current_path household_meeting_note_summary_path(household_id: households(:home), meeting_note_id: note)
   end
 
   test "a child with the helper and no times picks which meeting it is" do
@@ -157,6 +158,33 @@ class TodaysMeetingTest < ApplicationSystemTestCase
 
     assert_link "My drawing"
     assert_equal saved, note.drawings.sole.image.blob
+  end
+
+  test "a child goes to the last step, taps Finish, then Show my family, and sees Your family can see it now" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    (note.helper_steps.map(&:key) - %w[ field_ministry ]).each { note.mark(it) }
+    note.draw("field_ministry", Rack::Test::UploadedFile.new(file_fixture("helper-drawing.png"), "image/png"))
+    sign_in identities(:eli)
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: note, id: "closing_song")
+    click_on "Finish"
+
+    assert_selector "h1", text: "You listened all the way through!"
+    assert_selector "li", text: "Treasures\n✓ Heard it"
+    assert_selector "li img[alt='Your drawing']"
+    assert_accessible
+    capture_screens("todays-meeting-done", viewports: TABLET)
+    click_on "Show my family"
+
+    assert_selector "[role=status]", text: "Your family can see it now"
+    assert_no_button "Show my family"
+    assert note.shared_with?(households(:home))
+    assert_current_path household_meeting_note_summary_path(household_id: households(:home), meeting_note_id: note)
+    assert_accessible
+    capture_screens("todays-meeting-done-shared", viewports: TABLET)
+    click_on "Finished"
+
+    assert_current_path household_root_path(household_id: households(:home))
   end
 
   TABLET = { tablet: [ 1180, 820 ] }

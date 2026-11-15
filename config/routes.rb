@@ -82,6 +82,8 @@ Rails.application.routes.draw do
         # edit and update are helper pages; show serves the image to anyone who can read the note.
         resource :drawing, only: %i[ show edit update ], module: :steps
       end
+      # The helper's end screen, after the last step.
+      resource :summary, only: :show, module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
     # The signed-in person's own goals; each opens at /goals/:id like a family goal (docs/design/goals.md, Pages).

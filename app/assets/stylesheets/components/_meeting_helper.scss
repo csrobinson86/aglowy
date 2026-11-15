@@ -337,3 +337,73 @@
 .meeting-helper__swatch--blue { --meeting-helper-swatch: var(--display-blue-scale-7); }
 .meeting-helper__swatch--purple { --meeting-helper-swatch: var(--display-purple-scale-7); }
 .meeting-helper__swatch--white { --meeting-helper-swatch: var(--fgColor-default); }
+
+// The end screen fits a tablet without scrolling, so it sits closer together than a step.
+.meeting-helper__content--summary {
+  gap: var(--base-size-16);
+}
+
+// A step's icon in a summary tile.
+.meeting-helper__icon--tiny {
+  width: var(--base-size-48);
+  height: var(--base-size-48);
+
+  svg {
+    width: var(--base-size-24);
+    height: var(--base-size-24);
+  }
+}
+
+// The end screen's tiles (frame tablet-done.png): four across on a tablet, fewer on a narrower screen.
+.meeting-helper__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--base-size-128) * 2), 1fr));
+  gap: var(--base-size-16);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: start;
+}
+
+.meeting-helper__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-12);
+  min-height: var(--base-size-112);
+  padding: var(--base-size-16);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  background-color: var(--bgColor-muted);
+}
+
+.meeting-helper__tile-title {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-12);
+  margin: 0;
+  font-size: var(--text-title-size-small);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+.meeting-helper__tile-mark {
+  margin: 0;
+  color: var(--fgColor-success);
+  font-size: var(--text-title-size-medium);
+}
+
+// The whole drawing, letterboxed in a strip like the frame's, so the tiles stay one height.
+.meeting-helper__tile-drawing {
+  width: 100%;
+  height: var(--base-size-80);
+  object-fit: contain;
+  border-radius: var(--borderRadius-medium);
+  background-color: var(--bgColor-muted);
+}
+
+// "Your family can see it now", in the space Show my family left.
+.meeting-helper__shared {
+  display: flex;
+  align-items: center;
+  color: var(--fgColor-success);
+}

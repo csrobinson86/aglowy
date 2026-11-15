@@ -108,6 +108,33 @@ class MeetingNotes::SharingsControllerTest < ActionDispatch::IntegrationTest
     assert_turbo_stream(action: :prepend, targets: "main .container-xl") { assert_select "template", text: /Stopped sharing with The Head Family\./ }
   end
 
+  # Turbo's form submission accepts a stream first; from the meeting helper's end screen it still goes back there.
+  test "sharing from the summary returns to the summary" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    summary_path = household_meeting_note_summary_path(household_id: households(:home), meeting_note_id: note)
+    sign_in identities(:eli)
+
+    post sharing_path(note, households(:home)), params: { return_to: summary_path },
+      headers: { "Accept" => "text/vnd.turbo-stream.html, text/html, application/xhtml+xml" }
+
+    assert_redirected_to summary_path
+    assert_response :see_other
+    assert note.shared_with?(households(:home))
+  end
+
+  test "a return_to to any other path is ignored" do
+    sign_in identities(:head)
+    note = meeting_notes(:head_midweek)
+
+    [ "https://evil.example/", "//evil.example/", household_root_path(household_id: households(:home)),
+      household_meeting_note_summary_path(household_id: households(:home), meeting_note_id: meeting_notes(:head_weekend)) ].each do |return_to|
+      post sharing_path(note, households(:home)), params: { return_to: }
+
+      assert_redirected_to household_meeting_note_path(household_id: households(:home), id: note)
+    end
+  end
+
   private
     def sharing_path(note, household)
       household_meeting_note_sharing_path(household_id: household, meeting_note_id: note)

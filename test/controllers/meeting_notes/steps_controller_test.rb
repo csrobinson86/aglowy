@@ -40,13 +40,13 @@ class MeetingNotes::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a[href='#{step_path("talk")}']", "Next"
   end
 
-  test "Finish on the last step goes to Home" do
+  test "Finish on the last step goes to the summary" do
     sign_in identities(:eli)
 
     get step_path("closing_song")
 
     assert_select "main a[href='#{step_path("congregation_bible_study")}']", "Back"
-    assert_select "main a[href='#{household_root_path(household_id: households(:home))}']", "Finish"
+    assert_select "main a[href='#{household_meeting_note_summary_path(household_id: households(:home), meeting_note_id: @note)}']", "Finish"
     assert_select "main a", text: "Next", count: 0
   end
 
