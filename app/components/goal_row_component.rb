@@ -54,7 +54,8 @@ class GoalRowComponent < ApplicationComponent
 
     # "Oct 30", with the year when it isn't this year, in the household's time zone.
     def short_date(time)
-      date = time.in_time_zone(goal.household.time_zone).to_date
-      date.strftime(date.year == Date.current.year ? "%b %-d" : "%b %-d, %Y")
+      zone = goal.household.time_zone
+      date = time.in_time_zone(zone).to_date
+      date.strftime(date.year == Time.current.in_time_zone(zone).year ? "%b %-d" : "%b %-d, %Y")
     end
 end

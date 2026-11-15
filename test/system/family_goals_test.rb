@@ -30,6 +30,17 @@ class FamilyGoalsTest < ApplicationSystemTestCase
     capture_screens("family-goals-archived")
   end
 
+  test "a child sees an empty Completed tab, and no New goal button" do
+    goals(:proverbs).destroy
+    sign_in Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+    visit household_goals_url(household_id: households(:home), status: "completed")
+
+    assert_selector ".blankslate h2", text: "Nothing completed yet"
+    assert_no_link "New goal"
+    assert_accessible
+    capture_screens("family-goals-empty")
+  end
+
   test "create a goal" do
     sign_in identities(:spouse)
     visit household_goals_url(household_id: households(:home))
@@ -47,7 +58,7 @@ class FamilyGoalsTest < ApplicationSystemTestCase
 
     fill_in "Title", with: "Read Acts together"
     fill_in "Why this goal? (optional)", with: "To see how the early Christians preached."
-    fill_in "Target date", with: "06/30/2027"
+    fill_in "Target date", with: Date.new(2027, 6, 30)
     click_on "Create goal"
 
     assert_text "Goal created."
