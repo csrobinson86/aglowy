@@ -1,0 +1,5 @@
+<%# locals: (reference:, in_gallery: false) -%>
+<%# A scripture link as the notes editor shows it: the same text, styled as a link, but not clickable (docs/design/scripture-links.md). %>
+<span class="scripture-link">
+  <%= reference.text %><%= render(Primer::Beta::Octicon.new(:"link-external", size: :xsmall, classes: "scripture-link__icon")) %>
+</span>
