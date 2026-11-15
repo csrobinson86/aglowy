@@ -73,15 +73,17 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, step.lock_version
   end
 
-  test "a blank title on an edit re-renders the step's frame with the error and changes nothing" do
+  test "a blank title on an edit re-renders the step's frame with the error and the people ticked, and changes nothing" do
     step = goal_steps(:parables)
     sign_in identities(:spouse)
 
-    patch step_path(step), params: { goal_step: { title: "", assignee_ids: [ "" ], lock_version: 0 } }, as: :turbo_stream
+    patch step_path(step), params: { goal_step: { title: "", assignee_ids: [ "", @sofia.id ], lock_version: 0 } }, as: :turbo_stream
 
     assert_response :unprocessable_content
     assert_select "turbo-stream[action=replace][target='#{dom_id(step)}']"
     assert_includes response.body, "can&#39;t be blank"
+    assert_select "input[type=checkbox][value='#{@sofia.id}'][checked]", count: 1
+    assert_select "input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
     assert_equal 2, step.reload.assignees.count
     assert_equal 1, step.completions.count
   end

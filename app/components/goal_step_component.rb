@@ -41,10 +41,6 @@ class GoalStepComponent < ApplicationComponent
     step.completions.map { it.user_id.to_s }
   end
 
-  def title_id
-    "#{dom_id(step)}_title"
-  end
-
   private
     def status
       if done?

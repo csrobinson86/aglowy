@@ -1,12 +1,14 @@
 <%= tag.div data: { controller: "goal-step", goal_step_mixed_value: mixed?, goal_step_ticks_value: ticks.to_json } do %>
   <%= tag.div class: "d-flex flex-items-start p-3", hidden: editing?, data: { goal_step_target: "view" } do %>
     <%# Read-only for now; the next story makes it tick. A mixed step's checkbox is set indeterminate by its controller. %>
-    <%= tag.input type: "checkbox", class: "FormControl-checkbox flex-shrink-0 mt-1 mr-2", checked: done?, disabled: true,
-                  aria: { labelledby: title_id }, data: { goal_step_target: "checkbox" } %>
+    <div class="flex-shrink-0 mr-2">
+      <%= render(Primer::Alpha::CheckBox.new(name: "#{dom_id(step)}_done", label: step.title, visually_hide_label: true, disabled: true,
+                                             checked: done?, data: { goal_step_target: "checkbox" })) %>
+    </div>
     <%# Avatars sit beside the text from md up, and under it on a phone (frame phone-goal.png). %>
     <div class="d-flex flex-column flex-md-row flex-auto min-width-0">
       <div class="flex-auto min-width-0">
-        <%= tag.div step.title, id: title_id, class: [ "goal-step__title wb-break-word", { "goal-step__title--done": done? } ] %>
+        <%= tag.div step.title, class: [ "goal-step__title wb-break-word", { "goal-step__title--done": done? } ] %>
         <div class="goal-step__meta color-fg-muted f6"><%= meta_text %></div>
       </div>
       <% if people.any? %>

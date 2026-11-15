@@ -19,7 +19,7 @@ class Goals::StepsController < ApplicationController
     @step.revise(title: step_params[:title], due_on: step_params[:due_on], assignees: assignees, lock_version: step_params.fetch(:lock_version))
     render_changes
   rescue ActiveRecord::RecordInvalid
-    render_step status: :unprocessable_content
+    render_step status: :unprocessable_content, checked_ids: assignee_ids
   rescue ActiveRecord::StaleObjectError
     @step = @goal.steps.find(@step.id)
     render_step status: :conflict, stale: true
@@ -50,7 +50,11 @@ class Goals::StepsController < ApplicationController
   # Found by id, then checked as active members of the goal's household under its lock when assigned
   # (Goal::Step::Assignment), so anyone else makes the step invalid. No ids means Everyone.
   def assignees
-    User.where(id: step_params.fetch(:assignee_ids, []).compact_blank)
+    User.where(id: assignee_ids)
+  end
+
+  def assignee_ids
+    step_params.fetch(:assignee_ids, []).compact_blank
   end
 
   def render_changes
@@ -58,8 +62,9 @@ class Goals::StepsController < ApplicationController
     render :changes
   end
 
-  def render_step(status:, stale: false)
-    render turbo_stream: turbo_stream.replace(@step, partial: "goals/steps/step", locals: { step: @step, editable: true, editing: true, stale: stale }),
+  # A failed edit shows the people the user ticked; a stale one shows the step as it is now.
+  def render_step(status:, stale: false, checked_ids: nil)
+    render turbo_stream: turbo_stream.replace(@step, partial: "goals/steps/step", locals: { step: @step, editable: true, editing: true, stale:, checked_ids: }),
            status: status
   end
 end

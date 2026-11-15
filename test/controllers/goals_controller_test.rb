@@ -157,8 +157,8 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_select "title", "Read the four Gospels together · The Head Family · Aglowy"
       assert_select "nav[aria-label='Breadcrumb'] a[href='#{household_goals_path(household_id: households(:home))}']", "Family goals"
-      assert_select "h1", "Read the four Gospels together"
-      assert_select ".Label", "Milestone"
+      assert_select "h1", /\ARead the four Gospels together\s*Milestone\z/
+      assert_select "h1 .Label", "Milestone"
       assert_text_on_page "Target March 31, 2027 · Set by Sam Spouse"
       assert_text_on_page "So we get to know Jesus better as a family."
       assert_select "#goal-progress", text: /3 of 7 steps done/

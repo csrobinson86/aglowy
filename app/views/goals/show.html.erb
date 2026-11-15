@@ -5,25 +5,25 @@
   <% breadcrumbs.with_item(href: household_goal_path(id: @goal)) { @goal.title } %>
 <% end %>
 
-<%# Subhead can't put the kind Label beside the title, so the header follows frame milestone-goal.png with utilities. %>
-<div class="pb-3 mb-4 border-bottom">
-  <div class="d-flex flex-column flex-md-row flex-md-items-start mb-2">
-    <div class="d-flex flex-wrap flex-items-center gap-2 flex-auto min-width-0">
-      <%= render(Primer::Beta::Heading.new(tag: :h1, font_size: 2, classes: "min-width-0 wb-break-word")) { @goal.title } %>
-      <%= render(Primer::Beta::Label.new) { "Milestone" } %>
-    </div>
-    <%# The "…" menu (complete, archive, delete) joins Edit here in the next stories. %>
-    <div class="d-flex gap-2 flex-shrink-0 mt-2 mt-md-0 ml-md-3">
-      <% if policy(@goal).edit? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal))) { "Edit" } %>
-      <% end %>
-    </div>
-  </div>
-  <p class="color-fg-muted mb-2">Target <%= @goal.target_on.strftime("%B %-d, %Y") %> · Set by <%= @goal.set_by.name %></p>
-  <% if @goal.body.present? %>
-    <%= simple_format(@goal.body, class: "mb-0") %>
+<%= render Primer::Beta::Subhead.new(mb: 3) do |subhead| %>
+  <%# Wraps, so the Milestone Label drops below a long title instead of squeezing it (frame phone-goal.png). %>
+  <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
+    <span class="mr-2 wb-break-word min-width-0"><%= @goal.title %></span>
+    <%= render(Primer::Beta::Label.new) { "Milestone" } %>
   <% end %>
-</div>
+  <%# The "…" menu (complete, archive, delete) joins Edit here in the next stories. %>
+  <% if policy(@goal).edit? %>
+    <% subhead.with_actions(display: :flex) do %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal))) { "Edit" } %>
+    <% end %>
+  <% end %>
+  <% subhead.with_description do %>
+    Target <%= @goal.target_on.strftime("%B %-d, %Y") %> · Set by <%= @goal.set_by.name %>
+  <% end %>
+<% end %>
+<% if @goal.body.present? %>
+  <%= simple_format(@goal.body, class: "mb-4") %>
+<% end %>
 
 <%= render "goals/progress", goal: @goal %>
 <%= render "goals/steps", goal: @goal %>

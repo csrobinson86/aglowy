@@ -3,10 +3,12 @@
 # For lists the household's active members; ticking no one makes the step for everyone.
 class Goals::Steps::StepForm < ApplicationForm
   # section: :fields or :actions. members: who the step can be for (none on a personal goal).
-  def initialize(section:, members: [], editing: false)
+  # checked_ids: the people ticked in a submission that came back with an error, instead of the step's own.
+  def initialize(section:, members: [], editing: false, checked_ids: nil)
     @section = section
     @members = members
     @editing = editing
+    @checked_ids = checked_ids
   end
 
   form do |f|
@@ -39,6 +41,6 @@ class Goals::Steps::StepForm < ApplicationForm
 
     # From loaded assignments, so a page of steps asks no query per form.
     def assigned_ids
-      @assigned_ids ||= step.assignments.map(&:user_id)
+      @assigned_ids ||= @checked_ids || step.assignments.map(&:user_id)
     end
 end
