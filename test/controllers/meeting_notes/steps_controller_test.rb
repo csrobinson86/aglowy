@@ -50,6 +50,24 @@ class MeetingNotes::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a", text: "Next", count: 0
   end
 
+  test "the mark button, unmarked and marked, and a marked step's dot is filled" do
+    sign_in identities(:eli)
+
+    get step_path("field_ministry")
+
+    assert_select "main ##{dom_id(@note, :mark)} form[method=post] button[aria-pressed=false]", text: "I watched!"
+    assert_select "header .meeting-helper__dot--marked", count: 0
+
+    @note.mark("opening_song")
+    @note.mark("field_ministry")
+    get step_path("field_ministry")
+
+    assert_select "main ##{dom_id(@note, :mark)} input[name=_method][value=delete]"
+    assert_select "main ##{dom_id(@note, :mark)} button[aria-pressed=true]", text: "✓ Watched it"
+    assert_select "main button[autofocus]", count: 0
+    assert_select "header .meeting-helper__dot--marked", count: 2
+  end
+
   test "an unknown step key is 404" do
     sign_in identities(:eli)
 

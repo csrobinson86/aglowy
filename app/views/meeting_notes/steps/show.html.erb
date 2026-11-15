@@ -3,7 +3,7 @@
 <% content_for :helper_progress do %>
   <span class="meeting-helper__dots" aria-hidden="true">
     <% @steps.each do |step| %>
-      <span class="meeting-helper__dot<%= " meeting-helper__dot--current" if step == @step %>"></span>
+      <%= tag.span class: [ "meeting-helper__dot", { "meeting-helper__dot--current": step == @step, "meeting-helper__dot--marked": @meeting_note.marked?(step.key) } ] %>
     <% end %>
   </span>
   <span class="sr-only">Part <%= @steps.position(@step) %> of <%= @steps.size %>: <%= @step.title %></span>
@@ -13,7 +13,8 @@
   <p class="meeting-helper__part"><%= meeting_note_dot(@step.color) %><%= @step.title %></p>
   <%= meeting_helper_icon(icon: @step.icon, color: @step.color, size: :large) %>
   <h1 class="meeting-helper__heading"><%= @step.prompt %></h1>
-  <%# The mark button (#146) and "Draw it" (#147) go here, under the prompt. %>
+  <%# "Draw it" (#147) goes beside the mark button. %>
+  <%= render "meeting_notes/steps/mark", meeting_note: @meeting_note, step: @step %>
 </div>
 
 <%# Back on the first step goes Home: Today's meeting would only redirect to this step again. %>

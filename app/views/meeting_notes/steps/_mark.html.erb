@@ -1,0 +1,16 @@
+<%# locals: (meeting_note:, step:, focused: false) %>
+<%# The mark button (frame tablet-listen.png): "I heard it!" with the step's icon, or "✓ Heard it" once marked.
+    Tapping it again takes the mark away. focused: just pressed, since Turbo's swap would drop the focus. %>
+<% marked = meeting_note.marked?(step.key) %>
+<%= tag.div id: dom_id(meeting_note, :mark) do %>
+  <%= primer_form_with(url: household_meeting_note_step_mark_path(meeting_note_id: meeting_note, step_id: step.key), method: marked ? :delete : :post) do %>
+    <%= render Primer::Beta::Button.new(type: :submit, scheme: marked ? :default : :primary, size: :large, autofocus: focused, aria: { pressed: marked.to_s },
+                                        classes: [ "meeting-helper__button", "meeting-helper__button--big", { "meeting-helper__button--marked": marked } ]) do %>
+      <% if marked %>
+        <span aria-hidden="true">✓</span> <%= step.marked_label %>
+      <% else %>
+        <%= tag.span MeetingNotesHelper::MEETING_HELPER_ICONS.fetch(step.icon), class: "meeting-helper__button-icon" %><%= step.mark_label %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -77,7 +77,9 @@ Rails.application.routes.draw do
     resources :meeting_notes, only: %i[ index create show edit update ] do
       resource :sharing, only: %i[ create destroy ], module: :meeting_notes
       # The meeting helper's steps, one at a time; :id is the step's key (MeetingNote::HelperSteps).
-      resources :steps, only: :show, module: :meeting_notes
+      resources :steps, only: :show, module: :meeting_notes do
+        resource :mark, only: %i[ create destroy ], module: :steps
+      end
     end
     resources :shared_meeting_notes, only: :index
     # The signed-in person's own goals; each opens at /goals/:id like a family goal (docs/design/goals.md, Pages).

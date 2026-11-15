@@ -179,6 +179,45 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_includes note.errors[:week_of], "can't be blank"
   end
 
+  test "mark adds one mark" do
+    note = meeting_notes(:head_midweek)
+
+    assert_difference -> { note.marks.count }, 1 do
+      note.mark("talk")
+    end
+    assert note.marked?("talk")
+    assert_not note.marked?("spiritual_gems")
+  end
+
+  test "marking twice keeps one" do
+    note = meeting_notes(:head_midweek)
+    first = note.mark("talk")
+
+    assert_no_difference -> { MeetingNote::Mark.count } do
+      assert_equal first, note.mark("talk")
+    end
+  end
+
+  test "unmark removes it" do
+    note = meeting_notes(:head_midweek)
+    note.mark("talk")
+    assert note.marked?("talk")
+
+    assert_difference -> { note.marks.count }, -1 do
+      note.unmark("talk")
+    end
+    assert_not note.marked?("talk")
+  end
+
+  test "a step from the other kind is invalid" do
+    note = meeting_notes(:head_midweek)
+
+    assert_no_difference -> { MeetingNote::Mark.count } do
+      assert_raises(ActiveRecord::RecordInvalid) { note.mark("public_talk") }
+    end
+    assert_not meeting_notes(:head_weekend).marks.new(step: "talk").valid?
+  end
+
   test "destroying the author destroys their notes, parts, part notes and gems" do
     assert_difference -> { MeetingNote.count } => -2, -> { MeetingNote::Part.count } => -8, -> { ActionText::RichText.count } => -2, -> { MeetingNote::Gem.count } => -2 do
       users(:head).destroy!
