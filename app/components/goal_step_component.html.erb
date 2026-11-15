@@ -16,7 +16,7 @@
           <div role="group" aria-label="Each person ticks their own part" class="d-flex flex-wrap mt-2">
             <% people.each do |person| %>
               <% done = step.done_for?(person) %>
-              <% toggle = render(Primer::Beta::Button.new(type: :submit, disabled: !tickable?(person.id), aria: { pressed: done.to_s }, mr: 2, mb: 1,
+              <% toggle = render(Primer::Beta::Button.new(type: :submit, disabled: !tickable?(person.id), autofocus: focused?(person.id), aria: { pressed: done.to_s }, mr: 2, mb: 1,
                                                           classes: [ "goal-step__part", { "goal-step__part--done": done } ])) do |button| %>
                 <% button.with_leading_visual_icon(icon: done ? :"check-circle-fill" : :circle, color: (:success if done)) %>
                 <%= done ? "#{person.name} done" : person.name %>

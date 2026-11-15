@@ -15,7 +15,8 @@ class Goals::Steps::CompletionsController < ApplicationController
   # their part is the policy's question.
   def create
     user = @step.assignees.find(params[:user_id]) if params[:user_id].present?
-    authorize @step.new_tick(user&.id)
+    @part = user&.id
+    authorize @step.new_tick(@part)
     @step.tick(for: user, by: Current.user)
     render_changes
   end
@@ -23,6 +24,7 @@ class Goals::Steps::CompletionsController < ApplicationController
   # Through the step, so another step's tick is a 404.
   def destroy
     completion = @step.completions.find(params[:id])
+    @part = completion.user_id
     authorize completion
     @step.untick(for: completion.user)
     render_changes

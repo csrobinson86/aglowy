@@ -19,6 +19,7 @@ class TickGoalStepsTest < ApplicationSystemTestCase
         assert_selector "button[aria-pressed=true]", text: "Eli Child done"
         click_on "Sofia Child"
         assert_selector "button[aria-pressed=true]", text: "Sofia Child done"
+        assert_selector "button:focus", text: "Sofia Child done"
       end
       assert_text "Done by Eli Child and Sofia Child"
     end
@@ -31,6 +32,23 @@ class TickGoalStepsTest < ApplicationSystemTestCase
 
     assert_accessible
     assert page.evaluate_script("window.stillTheSamePage"), "expected Turbo to update the page in place"
+  end
+
+  test "a tick that never reaches the server puts the checkbox back" do
+    sign_in identities(:spouse)
+    visit household_goal_url(household_id: households(:home), id: goals(:gospels))
+    assert_text "3 of 7 steps done"
+    page.execute_script(<<~JS)
+      const fetch = window.fetch
+      window.fetch = () => { window.fetch = fetch; return Promise.reject(new TypeError("offline")) }
+    JS
+
+    check "Mark Read Luke together done"
+
+    assert_no_checked_field "Mark Read Luke together done"
+    assert_text "3 of 7 steps done"
+    check "Mark Read Luke together done"
+    assert_text "4 of 7 steps done"
   end
 
   test "the last tick shows the Banner to an adult" do

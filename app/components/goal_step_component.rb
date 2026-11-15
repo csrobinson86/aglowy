@@ -15,11 +15,14 @@ class GoalStepComponent < ApplicationComponent
   # editing: show the edit form instead of the row, as when a save comes back with an error.
   # tickable: the parts the viewer may tick (Goal::Step#parts the policy allows), so the rest are disabled.
   # highlighted: the step is the viewer's own, for someone who may tick only their own (frame milestone-goal-child.png).
-  def initialize(step:, editing: false, tickable: [], highlighted: false)
+  # focused: whose toggle was just pressed. Turbo disables a pressed button while it submits, which drops its focus,
+  # and focuses an autofocus element in the Turbo Stream that answers, so the redrawn toggle gets it back.
+  def initialize(step:, editing: false, tickable: [], highlighted: false, focused: nil)
     @step = step
     @editing = editing
     @tickable = tickable
     @highlighted = highlighted
+    @focused = focused
   end
 
   def editing?
@@ -41,6 +44,10 @@ class GoalStepComponent < ApplicationComponent
 
   def tickable?(user_id)
     user_id.in?(@tickable)
+  end
+
+  def focused?(user_id)
+    user_id == @focused
   end
 
   # Ticking posts the part (no user_id for done together); unticking deletes its tick. The answer is a Turbo Stream;

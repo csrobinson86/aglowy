@@ -13,8 +13,13 @@ export default class extends Controller {
   }
 
   // A checkbox's own form ticks or unticks the step; the Turbo Stream answer redraws the row.
-  tick(event) {
-    event.target.form.requestSubmit()
+  // A request that fails without one (the network dropped) puts the checkbox back as it was.
+  tick({ target: checkbox }) {
+    const was = !checkbox.checked
+    checkbox.form.addEventListener("turbo:submit-end", ({ detail }) => {
+      if (!detail.success) checkbox.checked = was
+    }, { once: true })
+    checkbox.form.requestSubmit()
   }
 
   edit() {

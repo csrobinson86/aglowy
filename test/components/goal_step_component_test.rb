@@ -120,6 +120,13 @@ class GoalStepComponentTest < ViewComponent::TestCase
     group = "[role=group][aria-label='Each person ticks their own part']"
     assert_selector "#{group} form input[name=_method][value=delete] ~ button[aria-pressed=true].goal-step__part--done", text: "Eli Child done"
     assert_selector "#{group} form[method=post][action='#{completions_path(step)}?user_id=#{users(:sofia).id}'] button[aria-pressed=false]", text: "Sofia Child"
+    assert_no_selector "button[autofocus]"
+  end
+
+  test "the toggle just pressed gets focus back when its row is redrawn" do
+    render_inline(GoalStepComponent.new(step: preloaded(:parables), tickable: [ users(:eli).id, users(:sofia).id ], focused: users(:sofia).id))
+
+    assert_selector "button[autofocus]", count: 1, text: "Sofia Child"
   end
 
   test "a child's own steps are highlighted, and only their own toggle is enabled" do

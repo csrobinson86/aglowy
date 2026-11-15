@@ -36,6 +36,7 @@ class Goals::Steps::CompletionsControllerTest < ActionDispatch::IntegrationTest
       post completions_path(step), params: { user_id: @eli.id }, as: :turbo_stream
     end
     assert_response :success
+    assert_select "button[autofocus]", count: 1, text: /Eli Child done/
     tick = step.completions.find_by!(user: @eli)
     assert_equal @eli, tick.completed_by
 
@@ -44,6 +45,7 @@ class Goals::Steps::CompletionsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :success
     assert_select "turbo-stream[action=replace][target=#{dom_id(step)}]"
+    assert_select "button[autofocus]", count: 1, text: /Eli Child\s*\z/
   end
 
   test "Eli posting an everyone step is refused" do
