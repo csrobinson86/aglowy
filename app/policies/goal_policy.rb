@@ -2,6 +2,7 @@
 # Personal goals: only the owner, through any household they're active in. Sharing comes later
 # (docs/design/goals.md, Who can do what).
 class GoalPolicy < ApplicationPolicy
+  def index?   = member?
   def show?    = record.family? ? member_here? : owner?
   def create?  = record.family? ? head_or_adult_here? : owner?
   def update?  = create?

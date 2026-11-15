@@ -15,11 +15,23 @@ class Goal < ApplicationRecord
 
   validates :title, :target_on, presence: true
 
+  # The family goals list's tabs (docs/design/goals.md, Pages).
+  STATUSES = %w[ active completed archived ].freeze
+
   # Titles are encrypted, so lists sort by dates only.
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
-  scope :preloaded, -> { includes(steps: %i[ assignments completions ], household: { active_memberships: :user }) }
+  scope :preloaded, -> { includes(completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions ], household: { active_memberships: :user }) }
+
+  # A tab's goals; anything that isn't a status is Active.
+  scope :with_status, ->(status) do
+    case status
+    when "completed" then completed
+    when "archived" then archived
+    else active
+    end
+  end
 
   def family?
     household_id.present?
