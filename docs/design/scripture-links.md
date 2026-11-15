@@ -141,6 +141,7 @@ Each opening of the picker is a **session**. The extension creates it and owns i
 - Close, Cancel, Esc, a click outside, or the editor being removed (`dispose()`) end the session.
 - The picker's fetch of `GET /scriptures/:id` carries the session id and uses an `AbortController`, aborted when the session ends.
 - **Aborting is only an optimisation.** The insert handler applies a response only when its session id is the open session and its editor is that session's editor. Anything else is dropped, even if the request finished.
+- **A lookup belongs to one reference.** Each request records the reference id it asked for ("19:37:8-9") and the query as it was. While a lookup is pending, the picker's grids, book list and Insert are disabled (`aria-busy="true"` on the picker). The insert handler also drops a response whose reference id isn't the picker's current selection, or whose query isn't the session's current query. Typing in the editor during the wait therefore never lets an older reference replace a newer query.
 
 ### The selection to restore
 
@@ -204,7 +205,7 @@ Styles live in `app/assets/stylesheets/components/_scripture_picker.scss`, BEM (
 6. **Abbreviations collide.** No abbreviation in `config/bible.yml` may belong to two books. A test loads the file and checks.
 7. **Encrypted notes stay encrypted.** The sgid sits inside the encrypted body like any other content; nothing about the reference is stored in the clear.
 8. **No N+1:** rendering a note with many links does no database work per link, since `Bible::Reference.find` is a parse, not a query.
-9. **A late response never inserts.** The insert handler checks the session id and the editor, and drops anything from an ended or superseded session (see Sessions).
+9. **A late response never inserts.** The insert handler checks the session id, the editor, the reference id and the query, and drops anything from an ended or superseded session, or for a reference or query that has since changed (see Sessions).
 
 ## States each story checks
 
@@ -216,7 +217,7 @@ Styles live in `app/assets/stylesheets/components/_scripture_picker.scss`, BEM (
   - a whole chapter (Insert with no verse chosen)
   - Back and Close
 - **The picker on desktop:** all three columns; "+ps 37:8-9" with the match row; Enter inserts and replaces the whole query; Esc leaves the text.
-- **Sessions:** close the picker while its lookup is slow, open it in another editor, and the late response inserts nothing anywhere.
+- **Sessions:** close the picker while its lookup is slow, open it in another editor, and the late response inserts nothing anywhere. Change the typed query while a lookup is slow, and the old response inserts nothing.
 - **The toolbar button** opens the picker with no query.
 - **Saving:**
   - "matt 24:14" becomes "Matthew 24:14"
