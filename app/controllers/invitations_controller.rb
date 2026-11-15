@@ -21,11 +21,18 @@ class InvitationsController < ApplicationController
     else
       render :new, status: :unprocessable_content
     end
+  rescue ActiveRecord::RecordNotUnique
+    # Someone else invited the same address between the uniqueness check and the insert; the unique index stopped it.
+    @invitation.errors.add(:email, :taken)
+    render :new, status: :unprocessable_content
   end
 
   def update
-    @invitation.resend
-    redirect_to household_members_path, notice: "Invitation sent again to #{@invitation.email}."
+    if @invitation.resend
+      redirect_to household_members_path, notice: "Invitation sent again to #{@invitation.email}."
+    else
+      redirect_to household_members_path, alert: @invitation.errors.full_messages.to_sentence
+    end
   end
 
   def destroy

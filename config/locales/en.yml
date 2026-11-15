@@ -45,6 +45,7 @@ en:
             email:
               # "Already a member of this household.", not "Email Already a member…" (docs/design/invitations.md).
               format: "%{message}"
+              taken: "Already invited. Resend it from the Members page."
     attributes:
       identity:
         login: "Email or username"

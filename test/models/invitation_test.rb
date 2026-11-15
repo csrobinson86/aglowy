@@ -112,6 +112,16 @@ class InvitationTest < ActiveSupport::TestCase
     end
   end
 
+  test "resend returns false and sends nothing once the address is a member's" do
+    invitation = households(:home).invitations.create!(invited_by: users(:head), email: "child@example.com")
+    Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+
+    assert_no_enqueued_emails do
+      assert_not invitation.resend
+    end
+    assert_includes invitation.errors[:email], "Already a member of this household."
+  end
+
   test "cancel deletes the invitation" do
     invitations(:ana).cancel
 

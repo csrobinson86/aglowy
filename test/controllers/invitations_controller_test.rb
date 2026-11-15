@@ -78,6 +78,24 @@ class InvitationsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".FormControl-inlineValidation", text: "Already invited. Resend it from the Members page."
   end
 
+  # Two people inviting one address at once both pass the uniqueness check in Ruby; the unique index stops the second.
+  test "losing the race to invite an address re-renders with the error on Email" do
+    sign_in identities(:head)
+    uniqueness = Invitation.validators_on(:email).grep(ActiveRecord::Validations::UniquenessValidator).sole
+    uniqueness.define_singleton_method(:validate) { |_record| }
+
+    assert_no_difference "Invitation.count" do
+      assert_no_enqueued_emails do
+        post household_invitations_path(household_id: households(:home)), params: { invitation: { email: invitations(:ana).email, role: "adult" } }
+      end
+    end
+
+    assert_response :unprocessable_content
+    assert_select ".FormControl-inlineValidation", text: "Already invited. Resend it from the Members page."
+  ensure
+    uniqueness.singleton_class.remove_method(:validate)
+  end
+
   test "a mistyped email re-renders with a full sentence on Email" do
     sign_in identities(:head)
 
@@ -104,6 +122,19 @@ class InvitationsControllerTest < ActionDispatch::IntegrationTest
       delete household_invitation_path(household_id: households(:home), id: invitations(:ana))
     end
     assert_redirected_to household_root_path(household_id: households(:home))
+  end
+
+  test "resending to an address that has since joined says so and sends nothing" do
+    sign_in identities(:head)
+    invitation = households(:home).invitations.create!(invited_by: users(:head), email: "child@example.com")
+    child_identity
+
+    assert_no_enqueued_emails do
+      patch household_invitation_path(household_id: households(:home), id: invitation)
+    end
+    assert_redirected_to household_members_path(household_id: households(:home))
+    assert_equal "Already a member of this household.", flash[:alert]
+    assert_nil flash[:notice]
   end
 
   test "a head cancels any invitation in the household" do
