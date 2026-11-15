@@ -299,6 +299,150 @@ class HouseholdTest < ActiveSupport::TestCase
     end
   end
 
+  # Meeting times (docs/design/meeting-helper.md, Meeting times). The week of Monday 16 November 2026 in Chicago, with
+  # the midweek meeting on Thursday at 7:00 PM and the weekend meeting on Sunday at 10:00 AM unless a test says otherwise.
+  CHICAGO = ActiveSupport::TimeZone["Central Time (US & Canada)"]
+
+  def household_meeting(midweek: [ 4, "19:00" ], weekend: [ 0, "10:00" ])
+    households(:home).tap do |household|
+      household.update!(time_zone: CHICAGO.name)
+      assert household.change_meeting_times(midweek_wday: midweek.first, midweek_time: midweek.last, weekend_wday: weekend.first, weekend_time: weekend.last)
+    end
+  end
+
+  def chicago(*args) = CHICAGO.local(2026, *args)
+
+  test "with no times, current_or_next_meeting is nil" do
+    household = households(:home)
+
+    assert_not household.meeting_times_set?
+    assert_nil household.current_or_next_meeting
+    assert_not household.meeting_day?
+  end
+
+  test "change_meeting_times saves all four, and meeting_times_set? is true" do
+    household = household_meeting
+
+    household.reload
+    assert household.meeting_times_set?
+    assert_equal [ 4, 0 ], [ household.midweek_meeting_wday, household.weekend_meeting_wday ]
+    assert_equal [ "19:00", "10:00" ], [ household.midweek_meeting_time, household.weekend_meeting_time ].map { it.strftime("%H:%M") }
+  end
+
+  test "change_meeting_times with a missing one saves nothing and puts the error on its field" do
+    household = households(:home)
+
+    assert_not household.change_meeting_times(midweek_wday: 4, midweek_time: "", weekend_wday: 0, weekend_time: "10:00")
+    assert_includes household.errors[:midweek_meeting_time], "can't be blank"
+    assert_not household.reload.meeting_times_set?
+  end
+
+  test "change_meeting_times refuses a day that isn't 0 to 6" do
+    household = households(:home)
+
+    assert_not household.change_meeting_times(midweek_wday: 7, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    assert_includes household.errors[:midweek_meeting_wday], "is not included in the list"
+  end
+
+  test "midweek Thursday 7:00 PM: on Thursday at 6 PM, it's that evening's meeting" do
+    household = household_meeting
+    meeting = household.current_or_next_meeting(chicago(11, 19, 18))
+
+    assert_equal "midweek", meeting.kind
+    assert_equal chicago(11, 19, 19), meeting.starts_at
+    assert_equal chicago(11, 19, 21), meeting.ends_at
+    assert_equal "Midweek meeting", meeting.title
+  end
+
+  test "at 8:30 PM, and at 11:30 PM that Thursday, it's still the same meeting" do
+    household = household_meeting
+
+    [ chicago(11, 19, 20, 30), chicago(11, 19, 23, 30) ].each do |now|
+      assert_equal chicago(11, 19, 19), household.current_or_next_meeting(now).starts_at, "at #{now}"
+    end
+    assert_equal chicago(11, 19).end_of_day, household.current_or_next_meeting(chicago(11, 19, 23, 30)).current_until
+  end
+
+  test "on Friday morning, it's the weekend meeting" do
+    meeting = household_meeting.current_or_next_meeting(chicago(11, 20, 8))
+
+    assert_equal "weekend", meeting.kind
+    assert_equal chicago(11, 22, 10), meeting.starts_at
+    assert_equal "Weekend meeting", meeting.title
+  end
+
+  test "a weekend meeting on Sunday at 11:30 PM is still current at 12:15 AM Monday" do
+    meeting = household_meeting(weekend: [ 0, "23:30" ]).current_or_next_meeting(chicago(11, 23, 0, 15))
+
+    assert_equal "weekend", meeting.kind
+    assert_equal chicago(11, 22, 23, 30), meeting.starts_at
+    assert_equal chicago(11, 23, 1, 30), meeting.current_until
+  end
+
+  # A Saturday weekend meeting, so the Sunday has no meeting: the next one is in the following week.
+  test "on a Sunday after the weekend meeting ends, it's next week's midweek meeting" do
+    meeting = household_meeting(weekend: [ 6, "10:00" ]).current_or_next_meeting(chicago(11, 22, 12))
+
+    assert_equal "midweek", meeting.kind
+    assert_equal chicago(11, 26, 19), meeting.starts_at
+  end
+
+  test "once a Sunday meeting's day is over, it's next week's midweek meeting" do
+    meeting = household_meeting.current_or_next_meeting(chicago(11, 23, 0, 0))
+
+    assert_equal [ "midweek", chicago(11, 26, 19) ], [ meeting.kind, meeting.starts_at ]
+  end
+
+  test "a Sunday meeting's week_of is the Monday before" do
+    meeting = household_meeting.current_or_next_meeting(chicago(11, 22, 9))
+
+    assert_equal Date.new(2026, 11, 22), meeting.starts_at.to_date
+    assert_equal Date.new(2026, 11, 16), meeting.week_of
+  end
+
+  # Daylight saving time ends at 2:00 AM on Sunday 1 November 2026 in Chicago (Trap 5).
+  test "the week daylight saving time ends, a meeting is still at 7:00 PM local" do
+    meeting = household_meeting(weekend: [ 0, "19:00" ]).current_or_next_meeting(chicago(10, 30, 12))
+
+    assert_equal chicago(11, 1, 19), meeting.starts_at
+    assert_equal [ 19, 0 ], [ meeting.starts_at.hour, meeting.starts_at.min ]
+    assert_equal Time.utc(2026, 11, 2, 1), meeting.starts_at.utc
+  end
+
+  test "meeting_day? is true all day on the meeting's day, including after it ends, and false the day before" do
+    household = household_meeting
+
+    assert household.meeting_day?(chicago(11, 19, 0, 1))
+    assert household.meeting_day?(chicago(11, 19, 22))
+    assert household.meeting_day?(chicago(11, 19, 23, 59))
+    assert_not household.meeting_day?(chicago(11, 18, 23, 59))
+  end
+
+  test "meeting_day? defaults to now" do
+    household = household_meeting
+
+    travel_to(chicago(11, 19, 12)) { assert household.meeting_day? }
+    travel_to(chicago(11, 20, 12)) { assert_not household.meeting_day? }
+  end
+
+  test "database: a midweek meeting day outside 0 to 6 raises CheckViolation" do
+    assert_raises ActiveRecord::CheckViolation do
+      households(:home).update_columns(midweek_meeting_wday: 7, midweek_meeting_time: "19:00", weekend_meeting_wday: 0, weekend_meeting_time: "10:00")
+    end
+  end
+
+  test "database: a weekend meeting day outside 0 to 6 raises CheckViolation" do
+    assert_raises ActiveRecord::CheckViolation do
+      households(:home).update_columns(midweek_meeting_wday: 4, midweek_meeting_time: "19:00", weekend_meeting_wday: 7, weekend_meeting_time: "10:00")
+    end
+  end
+
+  test "database: setting only midweek_meeting_wday raises CheckViolation" do
+    assert_raises ActiveRecord::CheckViolation do
+      households(:home).update_column(:midweek_meeting_wday, 4)
+    end
+  end
+
   test "database: a household without a name raises NotNullViolation" do
     assert_raises ActiveRecord::NotNullViolation do
       Household.insert!({ name: nil })

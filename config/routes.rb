@@ -51,8 +51,10 @@ Rails.application.routes.draw do
   scope "/:household_id", as: :household,
         constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
     get "/", to: "dashboards#show", as: :root
-    # Household settings at /:household_id/settings, heads only (docs/design/invitations.md, Household settings).
+    # Household settings at /:household_id/settings: heads, and adults for its Meetings section (docs/design/invitations.md).
     resource :settings, only: %i[ edit update ], controller: "households/settings", path_names: { edit: "" }
+    # The settings page's Meetings section, for heads and adults (docs/design/meeting-helper.md, Pages).
+    resource :meeting_times, only: :update, controller: "households/meeting_times"
     # Changing a role and removing a member are on household settings, heads only (docs/design/invitations.md).
     resources :members, only: %i[ index new create destroy ] do
       resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }

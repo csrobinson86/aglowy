@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -180,6 +180,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_090000) do
     t.string "time_zone", default: "UTC", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "midweek_meeting_wday", limit: 2
+    t.time "midweek_meeting_time"
+    t.integer "weekend_meeting_wday", limit: 2
+    t.time "weekend_meeting_time"
+    t.check_constraint "midweek_meeting_wday >= 0 AND midweek_meeting_wday <= 6", name: "households_midweek_meeting_wday_check"
+    t.check_constraint "num_nulls(midweek_meeting_wday, midweek_meeting_time, weekend_meeting_wday, weekend_meeting_time) = ANY (ARRAY[0, 4])", name: "households_meeting_times_check"
+    t.check_constraint "weekend_meeting_wday >= 0 AND weekend_meeting_wday <= 6", name: "households_weekend_meeting_wday_check"
   end
 
   create_table "identities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

@@ -13,8 +13,17 @@ class Household < ApplicationRecord
   has_many :invitations, dependent: :delete_all
   has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
 
+  MEETING_KINDS = %w[ midweek weekend ].freeze
+  MEETING_TIME_ATTRIBUTES = %i[ midweek_meeting_wday midweek_meeting_time weekend_meeting_wday weekend_meeting_time ].freeze
+
+  # Meeting times are wall-clock times in the household's own zone, never converted through the app's.
+  self.skip_time_zone_conversion_for_attributes = %i[ midweek_meeting_time weekend_meeting_time ]
+
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }
+  validates :midweek_meeting_wday, :weekend_meeting_wday, inclusion: { in: 0..6 }, allow_nil: true
+  # The database holds them all-or-none; the form asks for all four (docs/design/meeting-helper.md, Pages).
+  validates(*MEETING_TIME_ATTRIBUTES, presence: true, on: :meeting_times)
 
   def self.create_with_head(household:, head:)
     transaction do
@@ -97,6 +106,33 @@ class Household < ApplicationRecord
     update_settings(time_zone: zone)
   end
 
+  def change_meeting_times(midweek_wday:, midweek_time:, weekend_wday:, weekend_time:)
+    assign_attributes(midweek_meeting_wday: midweek_wday, midweek_meeting_time: midweek_time,
+                      weekend_meeting_wday: weekend_wday, weekend_meeting_time: weekend_time)
+    save(context: :meeting_times)
+  end
+
+  def meeting_times_set?
+    MEETING_TIME_ATTRIBUTES.all? { self[it].present? }
+  end
+
+  # Each kind's occurrence in the previous, this and next week where the household lives: the previous week catches a
+  # late Sunday meeting still running after midnight (docs/design/meeting-helper.md, Meeting times).
+  def current_or_next_meeting(now = Time.current)
+    return unless meeting_times_set?
+
+    monday = now.in_time_zone(time_zone).to_date.beginning_of_week(:monday)
+    [ monday.prev_week, monday, monday.next_week ].product(MEETING_KINDS)
+      .map { |week, kind| meeting_in(week, kind) }
+      .select { it.current_until > now }
+      .min_by(&:starts_at)
+  end
+
+  # True for the whole of the meeting's day, including after it ends.
+  def meeting_day?(now = Time.current)
+    current_or_next_meeting(now)&.starts_at&.to_date == now.in_time_zone(time_zone).to_date
+  end
+
   def schedule_family_study(topic: nil, notes: nil, links: [], files: [], **attributes)
     family_studies.build(attributes).tap { it.schedule(topic: topic, notes: notes, links: links, files: files) }
   end
@@ -125,6 +161,14 @@ class Household < ApplicationRecord
       # the latest first when slots move later, the earliest first when they move earlier.
       moves.sort_by { |session, moved| moved[:recurrence_at] > session.recurrence_at ? -session.recurrence_at.to_f : session.recurrence_at.to_f }
         .each { |session, moved| session.update_columns(moved.merge(updated_at: now)) }
+    end
+
+    # Built from the local date and time with zone.local, so a week when daylight saving time changes keeps the
+    # wall-clock time (Trap 5). wday puts Sunday at 0; the offset from Monday is (wday - 1) % 7.
+    def meeting_in(monday, kind)
+      wday, time = self[:"#{kind}_meeting_wday"], self[:"#{kind}_meeting_time"]
+      date = monday + (wday - 1) % 7
+      Household::Meeting.new(kind:, starts_at: ActiveSupport::TimeZone[time_zone].local(date.year, date.month, date.day, time.hour, time.min))
     end
 
     def stored_blobs
