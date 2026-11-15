@@ -136,6 +136,30 @@ class IdentityTest < ActiveSupport::TestCase
     assert_includes reset.errors[:reset_password_token], "is invalid"
   end
 
+  test "a password-setup token works once: it finds nothing after the password is set" do
+    identity = identities(:eli)
+    token = identity.generate_token_for(:password_setup)
+
+    assert_equal identity, Identity.find_by_token_for(:password_setup, token)
+
+    identity.update!(password: "chosen-by-eli")
+
+    assert_nil Identity.find_by_token_for(:password_setup, token)
+  end
+
+  test "a password-setup token finds nothing after 12 hours" do
+    identity = identities(:eli)
+    token = identity.generate_token_for(:password_setup)
+
+    travel 12.hours - 1.minute do
+      assert_equal identity, Identity.find_by_token_for(:password_setup, token)
+    end
+
+    travel 12.hours + 1.second do
+      assert_nil Identity.find_by_token_for(:password_setup, token)
+    end
+  end
+
   test "database: a duplicate email raises RecordNotUnique" do
     assert_raises ActiveRecord::RecordNotUnique do
       Identity.insert!({ user_id: users(:child).id, email: identities(:head).email, encrypted_password: "x" })

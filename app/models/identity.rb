@@ -12,7 +12,13 @@ class Identity < ApplicationRecord
 
   validates :username, format: { with: /\A[a-z0-9][a-z0-9.-]{2,29}\z/ }, uniqueness: { case_sensitive: false }, allow_nil: true
 
-  delegate :name, to: :user
+  delegate :name, :first_name, to: :user
+
+  # The link a head or adult makes for a child to choose a password (docs/design/invitations.md, Child logins).
+  # Setting a password changes encrypted_password, so a link works once.
+  generates_token_for :password_setup, expires_in: 12.hours do
+    encrypted_password.last(10)
+  end
 
   # The sign-in field (Devise's authentication key).
   attr_writer :login

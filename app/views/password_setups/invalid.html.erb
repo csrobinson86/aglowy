@@ -1,0 +1,9 @@
+<% content_for :title, "This link can't be used" %>
+
+<%# Says nothing about whose login it was. %>
+<%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+  <% blankslate.with_visual_icon(icon: :key) %>
+  <% blankslate.with_heading(tag: :h1) { "This link can't be used" } %>
+  <% blankslate.with_description { "This link has expired or been used. Ask a parent to make a new link." } %>
+  <% blankslate.with_secondary_action(href: new_identity_session_path) { "Go to sign in" } %>
+<% end %>

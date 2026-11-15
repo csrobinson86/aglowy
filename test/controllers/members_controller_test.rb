@@ -65,6 +65,33 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#members .Box-row", text: /Sofia Child\s*No login/
   end
 
+  test "heads and adults see Give a login on a child without one and New password link on a username-only child" do
+    child_identity # Charlie's login has an email, so there's no password link for it.
+    [ identities(:head), identities(:spouse) ].each do |identity|
+      sign_in identity
+
+      get household_members_path(household_id: households(:home))
+
+      assert_select "#members .Box-row", text: /Sofia Child/ do
+        assert_select "a[href=?]", new_household_member_login_path(household_id: households(:home), member_id: memberships(:sofia_in_home)), text: "Give a login"
+      end
+      assert_select "#members .Box-row", text: /Eli Child/ do
+        assert_select "form[action=?] button", household_member_password_link_path(household_id: households(:home), member_id: memberships(:eli_in_home)), text: "New password link"
+      end
+      assert_select "a", text: "Give a login", count: 1
+      assert_select "button", text: "New password link", count: 1
+    end
+  end
+
+  test "a child sees neither Give a login nor New password link" do
+    sign_in identities(:eli)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "a", text: "Give a login", count: 0
+    assert_select "button", text: "New password link", count: 0
+  end
+
   test "a child sees no one's email, and no invitations" do
     sign_in child_identity
 

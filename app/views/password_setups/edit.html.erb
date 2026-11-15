@@ -1,0 +1,22 @@
+<% content_for :title, "Choose your password" %>
+
+<div class="auth-form auth-form--wide">
+  <%= render(Primer::Beta::Heading.new(tag: :h1, font_size: 2, font_weight: :normal, text_align: :center)) { "Hi #{@password_setup.first_name}! Choose your password" } %>
+  <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, text_align: :center, mb: 4)) { "Your family set up an Aglowy login for you." } %>
+
+  <%= render(Primer::Box.new(bg: :subtle, border: true, border_radius: 2, p: 4)) do %>
+    <dl class="mt-0 mb-3">
+      <dt class="text-bold">Your username</dt>
+      <dd class="ml-0 my-1 text-mono f3"><%= @password_setup.username %></dd>
+      <dd class="ml-0 color-fg-muted text-small">You'll type this to sign in, with your password.</dd>
+    </dl>
+
+    <%= primer_form_with(model: @password_setup, url: password_setup_path(token: @password_setup.token), method: :patch) do |f| %>
+      <%= render PasswordSetups::PasswordSetupForm.new(f) %>
+    <% end %>
+
+    <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, mt: 3, mb: 0)) do %>
+      This link works once and only for 12 hours. Forgot your password later? Ask a parent to make a new link.
+    <% end %>
+  <% end %>
+</div>
