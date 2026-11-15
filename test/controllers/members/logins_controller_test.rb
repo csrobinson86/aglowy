@@ -29,6 +29,7 @@ class Members::LoginsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.headers["Cache-Control"], "no-store"
+    assert_select "meta[name='turbo-cache-control'][content='no-cache']"
     assert_select ".Banner", text: /Sofia's login is ready. The username is sofia.rivera./
     assert_select "h2", "Open this link on Sofia's device"
     assert_includes response.body, "The link works once, for the next 12 hours."

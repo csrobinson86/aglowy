@@ -17,7 +17,9 @@ class ChildLoginTest < ApplicationSystemTestCase
 
     assert_text "Sofia's login is ready. The username is sofia.rivera."
     assert_selector "h2", text: "Open this link on Sofia's device"
-    assert_button "Copy link"
+    click_on "Copy link"
+    # Headless Chrome may refuse the clipboard; then the link is selected for copying by hand.
+    assert_selector "[role=status]", text: /\A(Link copied\.|The link is selected\. Copy it from there\.)\z/, visible: :all
     assert_accessible
     capture_screens("child-login-link")
     link = find_field("Password link", readonly: true).value
