@@ -16,8 +16,9 @@
   border-bottom: var(--borderWidth-thin) solid var(--borderColor-default);
 }
 
-// At least 44px to touch, like Primer's coarse-pointer targets.
-.meeting-helper__home {
+// At least 44px to touch, like Primer's coarse-pointer targets. Chained, to outrank Primer's
+// .Button--iconOnly.Button--large width.
+.meeting-helper__home.Button--iconOnly {
   justify-self: start;
   width: var(--base-size-48);
   height: var(--base-size-48);
