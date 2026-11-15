@@ -20,8 +20,21 @@ class User < ApplicationRecord
   # A child's username-only login (docs/design/invitations.md, Child logins). Its random password is never shown,
   # so nobody can sign in until the child chooses one through a password link. Identity.new, not build_identity,
   # which would replace a login the person already has; the unique index on identities.user_id keeps it to one.
+  # Two submissions at once both pass the checks in Ruby, so the loser gets an error on Username, not an exception.
   def give_login(username:)
-    Identity.new(user: self, username: username, password: SecureRandom.base58(32), confirmed_at: Time.current).tap(&:save)
+    identity = Identity.new(user: self, username: username, password: SecureRandom.base58(32), confirmed_at: Time.current)
+    identity.save
+    identity
+  rescue ActiveRecord::RecordNotUnique => conflict
+    raise unless conflict.message.match?(/index_identities_on_(lower_username|user_id)/)
+
+    if conflict.message.include?("index_identities_on_user_id")
+      identity.errors.add(:username, "wasn't saved: #{first_name} already has a login")
+    else
+      identity.errors.add(:username, :taken)
+    end
+
+    identity
   end
 
   def active_households

@@ -54,6 +54,23 @@ class Members::LoginsControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "password_setup?token="
   end
 
+  # Two adults choosing one username at once both pass the uniqueness check in Ruby; the unique index stops the second.
+  test "losing the race for a username re-renders with the error, not a 500" do
+    sign_in identities(:head)
+    uniqueness = Identity.validators_on(:username).grep(ActiveRecord::Validations::UniquenessValidator).sole
+    uniqueness.define_singleton_method(:validate) { |_record| }
+
+    assert_no_difference -> { Identity.count } do
+      post household_member_login_path(household_id: @household, member_id: @sofia), params: { identity: { username: "eli.rivera" } }
+    end
+
+    assert_response :unprocessable_content
+    assert_includes response.body, "Username has already been taken"
+    assert_not_includes response.body, "password_setup?token="
+  ensure
+    uniqueness.singleton_class.remove_method(:validate)
+  end
+
   test "an invalid username re-renders with the error" do
     sign_in identities(:head)
 

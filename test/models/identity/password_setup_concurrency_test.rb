@@ -31,6 +31,8 @@ class Identity::PasswordSetupConcurrencyTest < ActiveSupport::TestCase
           go.wait
           [ password, setup.save ]
         end
+      ensure
+        ready.count_down # A thread that raised first still releases ready.wait; threads.map(&:value) re-raises.
       end
     end
 
