@@ -1,7 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
-// A goal's step (GoalStepComponent). Shows the edit form in place of the row, and says how many ticks a change
-// of people would clear before it's saved (docs/design/goals.md, "Changing who a step is for").
+// A goal's step (GoalStepComponent). Ticks the step when its checkbox changes, shows the edit form in place of
+// the row, and says how many ticks a change of people would clear before it's saved (docs/design/goals.md,
+// "Changing who a step is for").
 export default class extends Controller {
   static targets = [ "view", "form", "checkbox", "editButton", "warning" ]
   static values = { mixed: Boolean, ticks: Array }
@@ -9,6 +10,11 @@ export default class extends Controller {
   // Only script can make a checkbox indeterminate.
   checkboxTargetConnected(checkbox) {
     checkbox.indeterminate = this.mixedValue
+  }
+
+  // A checkbox's own form ticks or unticks the step; the Turbo Stream answer redraws the row.
+  tick(event) {
+    event.target.form.requestSubmit()
   }
 
   edit() {

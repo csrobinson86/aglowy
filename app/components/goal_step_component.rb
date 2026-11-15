@@ -3,7 +3,8 @@
 # One step of a goal: its checkbox, title, who it's for, its due date or who finished it and when, and the
 # people's avatars (frame milestone-goal.png). Pass a step from Goal.preloaded, so a page asks no query per step.
 # Whoever may change the step passes the edit form, which the Edit button shows in place of the row.
-# The checkbox is read-only until ticking arrives.
+# An Everyone step, or a step for one person, ticks with its checkbox; a step for two or more people has a
+# toggle per person and a checkbox that only shows how far they've got (frame milestone-goal.png).
 class GoalStepComponent < ApplicationComponent
   renders_one :edit_form
 
@@ -12,13 +13,43 @@ class GoalStepComponent < ApplicationComponent
   delegate :done?, :everyone?, to: :step
 
   # editing: show the edit form instead of the row, as when a save comes back with an error.
-  def initialize(step:, editing: false)
+  # tickable: the parts the viewer may tick (Goal::Step#parts the policy allows), so the rest are disabled.
+  # highlighted: the step is the viewer's own, for someone who may tick only their own (frame milestone-goal-child.png).
+  def initialize(step:, editing: false, tickable: [], highlighted: false)
     @step = step
     @editing = editing
+    @tickable = tickable
+    @highlighted = highlighted
   end
 
   def editing?
     @editing && edit_form?
+  end
+
+  def highlighted?
+    @highlighted
+  end
+
+  # Two or more people, each ticking their own part.
+  def several?
+    step.parts.many?
+  end
+
+  def checkbox_tickable?
+    !several? && tickable?(step.parts.first)
+  end
+
+  def tickable?(user_id)
+    user_id.in?(@tickable)
+  end
+
+  # Ticking posts the part (no user_id for done together); unticking deletes its tick.
+  def tick_form_options(user_id)
+    if (tick = step.tick_for(user_id))
+      { url: household_goal_step_completion_path(household_id: goal.household_id, goal_id: goal, step_id: step, id: tick), method: :delete }
+    else
+      { url: household_goal_step_completions_path(household_id: goal.household_id, goal_id: goal, step_id: step, user_id: user_id), method: :post }
+    end
   end
 
   # Some of a named step's people have ticked, not all.
@@ -42,6 +73,10 @@ class GoalStepComponent < ApplicationComponent
   end
 
   private
+    def goal
+      step.goal
+    end
+
     def status
       if done?
         [ everyone? ? "Done together" : "Done by #{names(people)}", short_date(step.completions.map(&:created_at).max) ]

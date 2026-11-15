@@ -30,6 +30,22 @@ class Goal::Step < ApplicationRecord
     everyone? ? ticked_for?(nil) : user.id.in?(assigned_user_ids) && ticked_for?(user.id)
   end
 
+  # Whose parts can be ticked: nil for done together on an Everyone step, or each named person's id.
+  def parts
+    everyone? ? [ nil ] : assigned_user_ids
+  end
+
+  # The tick for a part, if it's been made.
+  def tick_for(user_id)
+    completions.find { it.user_id == user_id }
+  end
+
+  # A tick not made yet, for the policy to judge. It's given this step without joining completions
+  # (Association#target= doesn't set the inverse), so done? and the progress counts don't see it.
+  def new_tick(user_id)
+    Completion.new(user_id: user_id).tap { it.association(:step).target = self }
+  end
+
   # An empty list means Everyone. Assignments that stay are kept; every assignee is rechecked as an active
   # member under the lock, and ticks that no longer fit are deleted (docs/design/goals.md, "Changing who a step is for").
   # Editing a step needs an open goal, so a finished goal's ticks are kept.

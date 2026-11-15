@@ -4,8 +4,12 @@
 <% editable = policy(Goal::Step.new(goal_id: goal.id)).create? %>
 <div id="goal-steps">
   <%= render(Primer::Beta::BorderBox.new) do |box| %>
-    <% box.with_header do %>
-      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5)) { "Steps" } %>
+    <% box.with_header(display: :flex, flex_wrap: :wrap, align_items: :center) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, mr: 2)) { "Steps" } %>
+      <%# Someone who may tick only their own parts (a child), on a goal still taking ticks (frame milestone-goal-child.png). %>
+      <% if goal.family? && goal.open? && !policy(goal).update? %>
+        <span class="color-fg-muted f6 ml-auto">You can tick the steps that are yours</span>
+      <% end %>
     <% end %>
     <% goal.steps.each do |step| %>
       <% box.with_row(p: 0) { render "goals/steps/step", step:, editable: } %>
