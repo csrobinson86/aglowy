@@ -183,6 +183,8 @@ households or roles. The non-negotiables:
   `import "@primer/view-components"` in `app/javascript/application.js`.
 - Theming via `data-color-mode="auto" data-light-theme="light"
   data-dark-theme="dark"` on `<body>`. Any new layout must include these.
+  The one exception is the `meeting_helper` layout, which is always
+  `data-color-mode="dark"` (`docs/design/meeting-helper.md`).
 - **Design tokens are Primer primitives** (CSS custom properties like
   `var(--bgColor-default)`, `var(--base-size-16)`, `var(--fgColor-muted)`).
   Never use magic numbers — reference a primitive.
@@ -203,6 +205,8 @@ households or roles. The non-negotiables:
   navigation, a page header or an empty state.
 - Household pages use the `household` layout (sidebar + main, via
   `AppShellComponent`); pages outside a household use the `focused` layout.
+  The exception is the meeting helper for children, which uses the full-screen
+  `meeting_helper` layout (`docs/design/meeting-helper.md`).
 - A navigation item appears only once its page exists.
 - Look at your work: save desktop and phone screenshots from the system test
   and compare them with the mockup frames in `docs/design/app-shell/` before
@@ -228,11 +232,13 @@ households or roles. The non-negotiables:
   ask Casey before building it by hand.
 - Devise's generated views still use plain `form_for`. Convert them only in a
   story that asks for it.
-- **Two approved exceptions** (decided Nov 2026, `docs/design/family-studies.md`):
-  the file drop zone (Active Storage direct upload, Stimulus, BEM Sass from
-  primitives) and the Lexxy notes editor (`rich_text_area`). Primer has neither.
-  Both keep a real labelled input inside the Primer form; nothing else is
-  hand-built.
+- **Three approved exceptions** (decided Nov 2026): the file drop zone (Active
+  Storage direct upload, Stimulus, BEM Sass from primitives) and the Lexxy notes
+  editor (`rich_text_area`), both in `docs/design/family-studies.md`; and the
+  meeting helper's child screens and drawing canvas (large touch targets in BEM
+  Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`.
+  Primer has none of these. Each keeps a real labelled input inside a Primer
+  form and uses Primer `Button` for buttons; nothing else is hand-built.
 
 ---
 
