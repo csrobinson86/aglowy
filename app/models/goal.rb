@@ -22,7 +22,7 @@ class Goal < ApplicationRecord
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
-  scope :preloaded, -> { includes(completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions ], household: { active_memberships: :user }) }
+  scope :preloaded, -> { includes(completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions, { family_study: :first_session } ], household: { active_memberships: :user }) }
 
   # The goals a person can open from this household: its family goals and their own personal goals.
   # Goals shared into the household join this scope with sharing (docs/design/goals.md, "Loading a goal").

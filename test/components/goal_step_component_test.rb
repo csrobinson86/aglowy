@@ -153,6 +153,51 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_text "Eli Child done · waiting on Sofia Child"
   end
 
+  test "linked to a study" do
+    study = households(:home).schedule_family_study(frequency: :weekly, starts_on: Date.new(2027, 2, 2), time_of_day: "19:00")
+    goal_steps(:read_luke).update!(family_study: study)
+    first_session = study.sessions.order(:recurrence_at).first
+
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke), schedulable: true))
+
+    session_path = "/#{households(:home).id}/family_studies/#{study.id}/sessions/#{first_session.id}"
+    assert_selector "a[href='#{session_path}'][data-turbo-frame=_top]", text: "Family study · Tue, Feb 2"
+    assert_selector "a[href='#{session_path}'] svg.octicon-book"
+    assert_no_link "Schedule as a family study"
+  end
+
+  test "schedulable" do
+    step = preloaded(:read_luke)
+    render_inline(GoalStepComponent.new(step:, schedulable: true))
+
+    assert_selector "a[href='/#{households(:home).id}/family_studies/new?goal_step_id=#{step.id}'][data-turbo-frame=_top]", text: "Schedule as a family study"
+    assert_selector "a svg.octicon-calendar"
+    assert_no_text "Family study ·"
+  end
+
+  test "not schedulable for a child" do
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke), schedulable: false))
+
+    assert_no_link "Schedule as a family study"
+  end
+
+  test "not schedulable when the step is done or the goal is finished" do
+    render_inline(GoalStepComponent.new(step: preloaded(:read_matthew), schedulable: true))
+    assert_no_link "Schedule as a family study"
+
+    goals(:gospels).archive(by: users(:spouse))
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke), schedulable: true))
+    assert_no_link "Schedule as a family study"
+  end
+
+  test "a personal goal's step is never schedulable" do
+    step = goals(:spouse_bible_reading).add_step(title: "Read Genesis")
+
+    render_inline(GoalStepComponent.new(step: Goal.preloaded.find(step.goal_id).steps.sole, schedulable: true))
+
+    assert_no_link "Schedule as a family study"
+  end
+
   private
     def completions_path(step)
       "/#{households(:home).id}/goals/#{goals(:gospels).id}/steps/#{step.id}/completions"

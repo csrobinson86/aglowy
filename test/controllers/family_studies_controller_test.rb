@@ -228,6 +228,90 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "new with a step prefills the topic" do
+    step = goal_steps(:read_luke)
+    sign_in identities(:spouse)
+
+    get new_household_family_study_path(household_id: households(:home), goal_step_id: step.id)
+
+    assert_response :success
+    assert_select "input[name='family_study_scheduling[topic]'][value='Read Luke together']"
+    assert_select "input[name='family_study_scheduling[starts_on]'][value='2027-02-15']"
+    assert_select "input[type=hidden][name='family_study_scheduling[goal_step_id]'][value='#{step.id}']"
+    assert_select "main a[href='#{household_goal_path(household_id: households(:home), id: goals(:gospels))}']", "Cancel"
+  end
+
+  test "new without a step carries no step" do
+    sign_in identities(:spouse)
+
+    get new_household_family_study_path(household_id: households(:home))
+
+    assert_select "input[name='family_study_scheduling[goal_step_id]']", count: 0
+  end
+
+  test "scheduling from a step links it and goes back to the goal" do
+    step = goal_steps(:read_luke)
+    sign_in identities(:spouse)
+
+    assert_difference "FamilyStudy.count" => 1 do
+      post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params.merge(goal_step_id: step.id) }
+    end
+
+    assert_redirected_to household_goal_path(household_id: households(:home), id: goals(:gospels))
+    assert_equal "The study is scheduled and linked to this step.", flash[:notice]
+    assert_equal households(:home).family_studies.order(:created_at).last, step.reload.family_study
+  end
+
+  test "a step that's already scheduled re-renders the form saying so" do
+    step = goal_steps(:read_luke)
+    step.update_column(:family_study_id, family_studies(:weekly).id)
+    sign_in identities(:spouse)
+
+    assert_no_difference "FamilyStudy.count" do
+      post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params.merge(goal_step_id: step.id) }
+    end
+
+    assert_response :unprocessable_content
+    assert_select ".flash-error", text: "That step is already scheduled as a family study"
+  end
+
+  test "a step from another household is 404" do
+    sign_in identities(:head)
+
+    get new_household_family_study_path(household_id: households(:home), goal_step_id: goal_steps(:read_acts).id)
+    assert_response :not_found
+
+    sign_in identities(:head)
+    assert_no_difference "FamilyStudy.count" do
+      post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params.merge(goal_step_id: goal_steps(:read_acts).id) }
+    end
+    assert_response :not_found
+    assert_nil goal_steps(:read_acts).reload.family_study_id
+  end
+
+  test "a step of a finished goal is refused" do
+    goals(:gospels).complete(by: users(:spouse))
+    sign_in identities(:spouse)
+
+    get new_household_family_study_path(household_id: households(:home), goal_step_id: goal_steps(:read_luke).id)
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_equal "You can't do that in this household.", flash[:alert]
+  end
+
+  test "a child is refused scheduling a step (as today)" do
+    sign_in child_identity
+
+    get new_household_family_study_path(household_id: households(:home), goal_step_id: goal_steps(:read_luke).id)
+    assert_redirected_to household_root_path(household_id: households(:home))
+
+    assert_no_difference "FamilyStudy.count" do
+      post household_family_studies_path(household_id: households(:home)), params: { family_study_scheduling: valid_params.merge(goal_step_id: goal_steps(:read_luke).id) }
+    end
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_nil goal_steps(:read_luke).reload.family_study_id
+  end
+
   private
     def valid_params
       { topic: "", starts_on: 3.days.from_now.to_date.iso8601, starts_at: "19:00", ends_at: "19:45", repeat: "weekly" }

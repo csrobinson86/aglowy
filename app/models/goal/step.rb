@@ -3,6 +3,8 @@
 # behind it, so a tick or an assignment can't slip past a reassignment, a deactivation or an archival.
 class Goal::Step < ApplicationRecord
   belongs_to :goal
+  # Set when the step is scheduled as a family study; the database unlinks it if the study is deleted.
+  belongs_to :family_study, optional: true
   has_many :assignments, dependent: :delete_all, inverse_of: :step
   has_many :assignees, through: :assignments, source: :user
   has_many :completions, dependent: :delete_all, inverse_of: :step
@@ -10,6 +12,7 @@ class Goal::Step < ApplicationRecord
   encrypts :title
 
   validates :title, presence: true
+  validate :family_study_in_goal_household, if: :family_study
 
   def everyone?
     assignments.empty?
@@ -123,6 +126,11 @@ class Goal::Step < ApplicationRecord
   end
 
   private
+    # Only a family goal's steps become studies, and only studies of that household.
+    def family_study_in_goal_household
+      errors.add(:family_study, "must be in the goal's household") unless family_study.household_id == goal.household_id
+    end
+
     def assigned_user_ids
       assignments.map(&:user_id)
     end

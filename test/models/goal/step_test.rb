@@ -55,6 +55,27 @@ class Goal::StepTest < ActiveSupport::TestCase
     assert_includes assignment.errors[:base], "A personal goal's steps are for its owner only"
   end
 
+  test "a family study from another household can't be linked" do
+    step = goal_steps(:read_luke)
+    other = households(:other).schedule_family_study(frequency: :once, starts_on: 3.days.from_now.to_date, time_of_day: "18:00")
+
+    step.family_study = other
+    assert_not step.valid?
+    assert_includes step.errors[:family_study], "must be in the goal's household"
+
+    step.family_study = family_studies(:weekly)
+    assert step.valid?
+  end
+
+  test "a personal goal's steps can't be linked to a family study" do
+    step = goals(:spouse_bible_reading).add_step(title: "Read Genesis")
+
+    step.family_study = family_studies(:weekly)
+
+    assert_not step.valid?
+    assert_includes step.errors[:family_study], "must be in the goal's household"
+  end
+
   test "a completion for someone not named on the step is invalid" do
     completion = goal_steps(:parables).completions.new(user: users(:spouse), completed_by: users(:spouse))
 

@@ -3,7 +3,8 @@
 <%# The parts this person may tick; someone who may tick only their own (a child) sees those rows highlighted. %>
 <% tickable = step.parts.select { policy(step.new_tick(it)).create? } %>
 <%= turbo_frame_tag step do %>
-  <%= render GoalStepComponent.new(step:, editing:, tickable:, focused:, highlighted: tickable.any? && !policy(step.goal).update?) do |component| %>
+  <% schedulable = policy(step).update? && policy(FamilyStudy).create? %>
+  <%= render GoalStepComponent.new(step:, editing:, tickable:, focused:, schedulable:, highlighted: tickable.any? && !policy(step.goal).update?) do |component| %>
     <% if editable %>
       <% component.with_edit_form do %>
         <% if stale %>

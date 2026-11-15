@@ -5,6 +5,8 @@ class FamilyStudy < ApplicationRecord
   belongs_to :household
   belongs_to :default_conductor, class_name: "User", optional: true
   has_many :sessions, dependent: :destroy
+  # The one its first slot produced, even if it has moved or been cancelled since. A goal step links to it.
+  has_one :first_session, -> { order(:recurrence_at) }, class_name: "FamilyStudy::Session"
 
   enum :frequency, %i[ once daily weekly monthly ].index_by(&:itself), default: :once, validate: true
 

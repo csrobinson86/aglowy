@@ -16,6 +16,12 @@
       <div class="flex-auto min-width-0">
         <%= tag.div step.title, class: [ "goal-step__title wb-break-word", { "goal-step__title--done": done? } ] %>
         <div class="goal-step__meta color-fg-muted f6"><%= meta_text %></div>
+        <%# _top: the row sits in the step's Turbo Frame, and the session page replaces the whole page. %>
+        <% if study %>
+          <%= render(Primer::Beta::Label.new(tag: :a, href: first_session_path, scheme: :accent, size: :large, mt: 2, data: { turbo_frame: "_top" })) do %>
+            <%= render(Primer::Beta::Octicon.new(:book, mr: 1)) %><%= first_session_label %>
+          <% end %>
+        <% end %>
         <% if several? && open_goal? %>
           <div role="group" aria-label="Each person ticks their own part" class="d-flex flex-wrap mt-2">
             <% people.each do |person| %>
@@ -37,6 +43,13 @@
             <span class="avatar avatar-4 circle d-flex flex-items-center flex-justify-center mr-1 color-bg-accent color-fg-accent text-bold f6"><%= person.name.first %></span>
           <% end %>
         </span>
+      <% end %>
+      <%# Beside the avatars from md up; on a phone it wraps under the step's title (frame milestone-goal.png). %>
+      <% if schedulable? %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: schedule_path, size: :small, mt: 2, mt_md: 0, ml_md: 2, flex_shrink: 0, align_self: :start, data: { turbo_frame: "_top" })) do |button| %>
+          <% button.with_leading_visual_icon(icon: :calendar) %>
+          Schedule as a family study
+        <% end %>
       <% end %>
     </div>
     <% if edit_form? %>
