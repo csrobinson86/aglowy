@@ -1,0 +1,14 @@
+# Daniel (head) invited Ana from the Members frame (docs/design/invitations/members.png).
+ana:
+  household: home
+  invited_by: head
+  email: ana.ortiz@example.com
+  role: adult
+  expires_at: <%= 5.days.from_now %>
+
+expired:
+  household: home
+  invited_by: head
+  email: luis@example.com
+  role: adult
+  expires_at: <%= 4.days.ago %>

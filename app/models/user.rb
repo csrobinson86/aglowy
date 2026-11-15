@@ -5,6 +5,8 @@ class User < ApplicationRecord
   has_many :meeting_notes, dependent: :destroy
   # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
   has_many :goals, dependent: :destroy
+  # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
+  has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 
   normalizes :name, with: -> { it.squish }
 
