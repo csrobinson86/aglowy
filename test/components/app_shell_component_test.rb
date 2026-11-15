@@ -50,10 +50,10 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
-  test "shows the person's name and a Sign out button" do
+  test "shows the person's name, linking to their account settings, and a Sign out button" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
 
-    assert_text "Hannah Head"
+    assert_selector "a[href='/account?return_to=#{households(:home).id}']", text: "Hannah Head"
     assert_selector "form[action='/identities/sign_out'] button", text: "Sign out"
   end
 

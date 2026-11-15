@@ -36,6 +36,11 @@ Rails.application.routes.draw do
   # (docs/design/invitations.md, Child logins). A query parameter for the same reason as the invitation's token.
   resource :password_setup, only: %i[ edit update ], path_names: { edit: "" }
   resources :households, only: %i[ index new create ]
+  # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
+  # The sign-in details form on the same page posts to /account/sign_in.
+  resource :account, only: %i[ edit update ], path_names: { edit: "" } do
+    resource :sign_in, only: %i[ edit update ], module: :accounts, path_names: { edit: "" }
+  end
 
   namespace :admin do
     resource :impersonation, only: [ :create, :destroy ]

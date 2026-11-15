@@ -33,6 +33,11 @@ class Identity < ApplicationRecord
     @login || email || username
   end
 
+  # Signs in with an email, as saved. A username-only login (a child's) has none, so it never sees an Email field.
+  def email_login?
+    email_in_database.present?
+  end
+
   # A username-only login can't receive an unlock email, so it unlocks by time.
   def unlock_strategy_enabled?(strategy)
     super && (email.present? || strategy != :email)

@@ -35,7 +35,9 @@
 
   <div class="d-flex flex-items-center mt-auto pt-3 border-top">
     <span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-2 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= initial %></span>
-    <span class="flex-auto min-width-0 mr-2 Truncate"><span class="Truncate-text"><%= user.name %></span></span>
+    <%= render(Primer::Beta::Link.new(href: account_settings_path, scheme: :primary, flex: :auto, mr: 2, classes: "min-width-0 Truncate")) do %>
+      <span class="Truncate-text"><%= user.name %></span>
+    <% end %>
     <%= primer_form_with(url: destroy_identity_session_path, method: :delete) do |f| %>
       <%= render Sessions::SignOutForm.new(f) %>
     <% end %>
