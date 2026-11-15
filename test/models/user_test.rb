@@ -17,6 +17,23 @@ class UserTest < ActiveSupport::TestCase
     assert_includes user.errors[:name], "can't be blank"
   end
 
+  test "time_zone is a known zone or unset" do
+    assert User.new(name: "Ann", time_zone: "Central Time (US & Canada)").valid?
+    assert_nil User.new(name: "Ann", time_zone: "").time_zone
+
+    user = User.new(name: "Ann", time_zone: "Atlantis")
+    assert_not user.valid?
+    assert_includes user.errors[:time_zone], "is not included in the list"
+  end
+
+  test "active_household finds one of the person's active households by id, and nothing else" do
+    assert_equal households(:home), users(:head).active_household(households(:home).id)
+    assert_nil users(:former).active_household(households(:home).id)
+    assert_nil users(:head).active_household(households(:other).id)
+    assert_nil users(:head).active_household("not-a-uuid")
+    assert_nil users(:head).active_household(nil)
+  end
+
   test "active_households excludes households where the membership is inactive" do
     assert_equal [ households(:home), households(:parents) ].sort_by(&:id), users(:head).active_households.sort_by(&:id)
     assert_empty users(:former).active_households

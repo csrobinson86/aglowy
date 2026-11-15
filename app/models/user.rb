@@ -9,8 +9,11 @@ class User < ApplicationRecord
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 
   normalizes :name, with: -> { it.squish }
+  # For personal reminders; a login-less child has none, and account settings can leave it unset.
+  normalizes :time_zone, with: -> { it.presence }
 
   validates :name, presence: true
+  validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }, allow_nil: true
 
   # "Invited by Daniel" (frame members.png).
   def first_name
@@ -39,6 +42,11 @@ class User < ApplicationRecord
 
   def active_households
     households.merge(Membership.active)
+  end
+
+  # One of this person's active households, or nil: how account settings checks its return_to.
+  def active_household(id)
+    active_households.find_by(id: id)
   end
 
   # Children can't start a household (docs/design/invitations.md, Traps). Seats count active or not, so an adult

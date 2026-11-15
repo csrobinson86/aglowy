@@ -37,6 +37,11 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_goals_path(household_id: household.id)
   end
 
+  # Account settings, with the way back to this household.
+  def account_settings_path
+    edit_account_path(return_to: household.id)
+  end
+
   def initial
     user.name.first
   end

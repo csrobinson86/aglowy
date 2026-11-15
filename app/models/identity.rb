@@ -33,12 +33,27 @@ class Identity < ApplicationRecord
     @login || email || username
   end
 
+  # Signs in with an email, as saved. A username-only login (a child's) has none, so it never sees an Email field.
+  def email_login?
+    email_in_database.present?
+  end
+
   # A username-only login can't receive an unlock email, so it unlocks by time.
   def unlock_strategy_enabled?(strategy)
     super && (email.present? || strategy != :email)
   end
 
   protected
+    # The confirmation link for a changed email is enqueued (story #111); Devise's other mail still goes now.
+    # Devise sends it after commit, so the job finds the saved record.
+    def send_devise_notification(notification, *args)
+      if notification == :confirmation_instructions && pending_reconfirmation?
+        devise_mailer.send(notification, self, *args).deliver_later
+      else
+        super
+      end
+    end
+
     def email_required?
       username.blank?
     end
