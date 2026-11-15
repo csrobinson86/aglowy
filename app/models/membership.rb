@@ -19,11 +19,15 @@ class Membership < ApplicationRecord
   end
 
   # Leaving ends the person's meeting-note shares here for good, so rejoining never brings them back
-  # (docs/design/meeting-notes.md, "Leaving ends a share for good").
+  # (docs/design/meeting-notes.md, "Leaving ends a share for good"), and takes them off the steps not yet
+  # done in the household's goals (docs/design/goals.md, "Leaving a household").
   def deactivate
     without_losing_last_head(leaves_headship: true) do
       update(active: false).tap do |deactivated|
-        user.stop_sharing_meeting_notes_with(household) if deactivated
+        if deactivated
+          user.stop_sharing_meeting_notes_with(household)
+          user.leave_open_goal_steps_in(household)
+        end
       end
     end
   end

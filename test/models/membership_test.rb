@@ -89,6 +89,48 @@ class MembershipTest < ActiveSupport::TestCase
     end
   end
 
+  test "deactivating Sofia removes her from the open parables step, which becomes done because Eli ticked; her assignment on a done step stays" do
+    sofia = users(:sofia)
+    map = goal_steps(:draw_map)
+    map.reassign(to: [ users(:eli), sofia ])
+    map.tick(for: sofia, by: users(:spouse))
+
+    assert memberships(:sofia_in_home).deactivate
+
+    parables = goal_steps(:parables).reload
+    assert_equal [ users(:eli) ], parables.assignees.to_a
+    assert parables.done?
+    assert_includes map.reload.assignees, sofia
+    assert map.completions.exists?(user: sofia)
+  end
+
+  test "deactivating Eli instead removes his assignment and his tick from the open parables step, leaving it for Sofia alone" do
+    eli = users(:eli)
+
+    assert memberships(:eli_in_home).deactivate
+
+    parables = goal_steps(:parables).reload
+    assert_equal [ users(:sofia) ], parables.assignees.to_a
+    assert_not parables.completions.exists?(user: eli)
+    assert_not parables.done?
+    map = goal_steps(:draw_map).reload
+    assert_equal [ eli ], map.assignees.to_a, "a done step keeps its assignments and ticks as history"
+    assert map.done?
+  end
+
+  test "deactivate leaves the person's open steps in their other households" do
+    head = users(:head)
+    goal = households(:parents).goals.create!(set_by: head, title: "Visit the sick", target_on: Date.new(2027, 5, 1))
+    parents_step = goal.add_step(title: "Bake bread", assignees: [ head ])
+    home_step = goal_steps(:read_john)
+    home_step.reassign(to: [ head ])
+
+    assert memberships(:head_in_parents).deactivate
+
+    assert_empty parents_step.reload.assignees
+    assert_equal [ head ], home_step.reload.assignees.to_a
+  end
+
   test "change_role refuses to demote the sole head" do
     membership = memberships(:head_in_home)
 

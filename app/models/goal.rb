@@ -19,7 +19,7 @@ class Goal < ApplicationRecord
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
-  scope :preloaded, -> { includes(steps: %i[ assignments completions ]) }
+  scope :preloaded, -> { includes(steps: %i[ assignments completions ], household: { active_memberships: :user }) }
 
   def family?
     household_id.present?
@@ -35,6 +35,10 @@ class Goal < ApplicationRecord
 
   def archived?
     archival.present?
+  end
+
+  def progress
+    Progress.new(self)
   end
 
   # Neither completed nor archived; only an open goal takes new steps or ticks.

@@ -4,11 +4,13 @@ class Household < ApplicationRecord
 
   # Never dependent: :destroy on users: a shared-custody child belongs to other households too.
   has_many :memberships, dependent: :destroy
+  has_many :active_memberships, -> { active.by_role }, class_name: "Membership", inverse_of: :household
   has_many :users, through: :memberships
   has_many :family_studies, dependent: :destroy
   has_many :family_study_sessions, through: :family_studies, source: :sessions, class_name: "FamilyStudy::Session"
   has_many :family_study_resources, through: :family_study_sessions, source: :resources, class_name: "FamilyStudy::Resource"
   has_many :goals, dependent: :destroy
+  has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
 
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }

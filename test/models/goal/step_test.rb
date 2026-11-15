@@ -219,12 +219,77 @@ class Goal::StepTest < ActiveSupport::TestCase
     assert_not step.completions.reload.exists?(user: @eli)
   end
 
-  test "ticking for someone named on the step who has since left is refused" do
+  test "ticking for someone who has left is refused" do
     step = goal_steps(:parables)
     assert memberships(:sofia_in_home).deactivate
 
     error = assert_raises(ActiveRecord::RecordInvalid) { step.tick(for: @sofia, by: users(:spouse)) }
+    assert_includes error.record.errors[:user], "isn't named on this step"
+  end
+
+  # Deactivating takes a leaver off open steps; the completion's own check still stands behind it.
+  test "ticking for someone still named on the step who is no longer active is refused" do
+    step = goal_steps(:parables)
+    memberships(:sofia_in_home).update_column(:active, false)
+
+    error = assert_raises(ActiveRecord::RecordInvalid) { step.tick(for: @sofia, by: users(:spouse)) }
     assert_includes error.record.errors[:user], "isn't an active member of the household"
+  end
+
+  test "after Eli leaves, unticking the done map step he was named on removes his assignment and tick, so it becomes an Everyone step again" do
+    step = goal_steps(:draw_map)
+    assert memberships(:eli_in_home).deactivate
+    assert step.reload.done?, "a done step keeps him as history"
+
+    step.untick(for: @eli)
+
+    assert step.everyone?
+    assert_empty step.assignments.reload
+    assert_empty step.completions.reload
+    assert_not step.done?
+  end
+
+  test "unticking a done step keeps the people who are still there" do
+    step = goal_steps(:parables)
+    step.tick(for: @sofia, by: users(:spouse))
+    assert memberships(:eli_in_home).deactivate
+
+    step.untick(for: @sofia)
+
+    assert_equal [ @sofia ], step.assignees.to_a
+    assert_empty step.completions.reload
+  end
+
+  test "unticking someone with no tick on a done step keeps the history of people who left" do
+    step = goal_steps(:draw_map)
+    assert memberships(:eli_in_home).deactivate
+
+    step.untick(for: @sofia)
+
+    assert_equal [ @eli ], step.assignees.to_a
+    assert step.reload.done?
+  end
+
+  test "unticking a step that isn't done keeps everyone named on it" do
+    step = goal_steps(:parables)
+    memberships(:sofia_in_home).update_column(:active, false)
+
+    step.untick(for: @eli)
+
+    assert_equal [ @eli, @sofia ].sort_by(&:id), step.assignees.sort_by(&:id)
+  end
+
+  test "a failed deactivation (last head) removes nothing" do
+    head = users(:head)
+    step = goal_steps(:read_john)
+    step.reassign(to: [ head ])
+    step.tick(for: head, by: head)
+    goal_steps(:parables).reassign(to: [ head, @sofia ])
+
+    assert_no_difference [ "Goal::Step::Assignment.count", "Goal::Step::Completion.count" ] do
+      assert_not memberships(:head_in_home).deactivate
+    end
+    assert_equal [ head ], step.reload.assignees.to_a
   end
 
   test "add_step puts new steps last, with their assignees" do
