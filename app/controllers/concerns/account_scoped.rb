@@ -15,6 +15,7 @@ module AccountScoped
       @user = Current.user
       @identity = Current.identity
       @return_household = Current.user.active_household(params[:return_to])
+      @memberships = Current.user.memberships.active.by_household_name
     end
 
     def return_to_params

@@ -37,9 +37,11 @@ Rails.application.routes.draw do
   resource :password_setup, only: %i[ edit update ], path_names: { edit: "" }
   resources :households, only: %i[ index new create ]
   # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
-  # The sign-in details form on the same page posts to /account/sign_in.
+  # The sign-in details form on the same page posts to /account/sign_in; leaving a household deletes
+  # /account/memberships/:id, one of the person's own active seats.
   resource :account, only: %i[ edit update ], path_names: { edit: "" } do
     resource :sign_in, only: %i[ edit update ], module: :accounts, path_names: { edit: "" }
+    resources :memberships, only: :destroy, module: :accounts
   end
 
   namespace :admin do

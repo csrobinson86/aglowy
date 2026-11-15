@@ -1,6 +1,8 @@
 require "test_helper"
 
 class MembershipPolicyTest < ActiveSupport::TestCase
+  teardown { Current.reset }
+
   test "index? yes for head, adult and child" do
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       assert MembershipPolicy.new(memberships(membership), Membership).index?, "expected #{membership} to list members"
@@ -84,5 +86,28 @@ class MembershipPolicyTest < ActiveSupport::TestCase
     identities(:spouse).update!(username: "sam.spouse", email: nil)
 
     assert_not MembershipPolicy.new(memberships(:head_in_home), memberships(:spouse_in_home).reload).new_password_link?
+  end
+
+  # Leaving is in account settings, outside any household, so the membership is nil there (docs/design/invitations.md).
+  test "leave? yes for a head or an adult leaving their own seat" do
+    { head: :head_in_home, spouse: :spouse_in_home }.each do |identity, membership|
+      Current.identity = identities(identity)
+
+      assert MembershipPolicy.new(nil, memberships(membership)).leave?, "expected #{identity} to leave"
+    end
+  end
+
+  test "leave? no for a child" do
+    Current.identity = identities(:eli)
+
+    assert_not MembershipPolicy.new(nil, memberships(:eli_in_home)).leave?
+  end
+
+  test "leave? no for someone else's seat, or with nobody signed in" do
+    Current.identity = identities(:spouse)
+    assert_not MembershipPolicy.new(nil, memberships(:head_in_home)).leave?
+
+    Current.reset
+    assert_not MembershipPolicy.new(nil, memberships(:spouse_in_home)).leave?
   end
 end

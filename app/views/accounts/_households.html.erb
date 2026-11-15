@@ -1,0 +1,49 @@
+<%# locals: (memberships:) %>
+<%# My households (frames account-settings.png, leave-household.png). Leave asks first in a Primer Dialog, never a
+    browser confirm. The last head's Dialog explains why they can't, and the controller refuses them too. Children
+    don't see Leave; a head or adult removes them. %>
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "My households" } } %>
+  <% memberships.each do |membership| %>
+    <% household = membership.household %>
+    <% box.with_row(display: :flex, align_items: :center) do %>
+      <span class="avatar avatar-5 d-flex flex-shrink-0 flex-items-center flex-justify-center mr-2 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= household.name.first %></span>
+      <span class="Truncate mr-2"><span class="Truncate-text"><%= household.name %></span></span>
+      <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary, flex_shrink: 0)) { membership.role.humanize } %>
+
+      <% unless membership.child? %>
+        <% dialog_id = "leave-household-#{membership.id}" %>
+        <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: "Leave the #{household.name}?")) do |dialog| %>
+          <% dialog.with_show_button(scheme: :danger, size: :small, ml: :auto, "aria-label": "Leave #{household.name}") { "Leave" } %>
+          <% if membership.sole_head? %>
+            <% dialog.with_body do %>
+              <p class="mb-0">Make someone else a head before you leave.</p>
+            <% end %>
+            <% dialog.with_footer do %>
+              <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dialog_id })) { "Close" } %>
+            <% end %>
+          <% else %>
+            <% dialog.with_body do %>
+              <p>You'll stop seeing its family studies, goals and members.</p>
+              <ul class="pl-4 mb-3 color-fg-muted">
+                <li>Notes and goals you shared there become private again, and stay private if you rejoin.</li>
+                <li>Steps given to you that aren't done go back to the family.</li>
+                <li>Your own notes and goals aren't touched.</li>
+              </ul>
+              <p class="mb-0 color-fg-muted">Anyone who runs the <%= household.name %> can invite you again later.</p>
+            <% end %>
+            <% dialog.with_footer do %>
+              <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dialog_id })) { "Cancel" } %>
+              <%= primer_form_with(url: account_membership_path(membership, return_to_params), method: :delete) do |f| %>
+                <%= render Accounts::LeaveForm.new(f) %>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% box.with_footer(font_size: :small, color: :muted) do %>
+    Your meeting notes and personal goals stay with you, whichever households you're in.
+  <% end %>
+<% end %>
