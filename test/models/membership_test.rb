@@ -146,6 +146,15 @@ class MembershipTest < ActiveSupport::TestCase
     assert memberships(:head_in_home).reload.adult?
   end
 
+  test "deactivate reads the seat again under the lock, so a copy loaded before a promotion can't remove the last head" do
+    loaded_as_adult = Membership.find(memberships(:spouse_in_home).id)
+    memberships(:spouse_in_home).update!(role: :head)
+    assert memberships(:head_in_home).deactivate
+
+    assert_not loaded_as_adult.deactivate
+    assert memberships(:spouse_in_home).reload.active?
+  end
+
   test "deactivate locks the household row" do
     assert_queries_match(/FOR UPDATE/) { memberships(:spouse_in_home).deactivate }
   end

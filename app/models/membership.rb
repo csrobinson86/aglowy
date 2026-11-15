@@ -38,10 +38,12 @@ class Membership < ApplicationRecord
 
   private
 
-  # Locks the household so two heads can't demote each other at the same moment (gotcha 5).
+  # Locks the household so two heads can't demote each other at the same moment (gotcha 5), then reads this
+  # seat again: every change to a seat takes the same lock, so a copy loaded before a promotion can't slip past.
   def without_losing_last_head(leaves_headship:)
     transaction do
       household.lock!
+      reload
 
       if leaves_headship && sole_head?
         errors.add(:base, "A household needs at least one active head")
