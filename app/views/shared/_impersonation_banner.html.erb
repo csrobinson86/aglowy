@@ -7,6 +7,6 @@
         <%= render Admin::Impersonations::StopForm.new(f) %>
       <% end %>
     <% end %>
-    You're using <%= current_identity.user.name %>'s account (<%= current_identity.email %>).
+    You're using <%= current_identity.user.name %>'s account (<%= current_identity.login %>).
   <% end %>
 <% end %>

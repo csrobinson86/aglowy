@@ -137,7 +137,7 @@ class Goals::Steps::CompletionsControllerTest < ActionDispatch::IntegrationTest
   private
     # Eli is a child with a login (frame milestone-goal-child.png).
     def eli_identity
-      Identity.create!(user: @eli, email: "eli@example.com", password: "password123", confirmed_at: Time.current)
+      identities(:eli)
     end
 
     def completions_path(step)

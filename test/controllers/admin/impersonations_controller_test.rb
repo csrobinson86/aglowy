@@ -44,6 +44,19 @@ class Admin::ImpersonationsControllerTest < ActionDispatch::IntegrationTest
     assert_equal identities(:staff).email, controller.current_identity.email
   end
 
+  test "impersonating a username-only login names it by its username" do
+    sign_in identities(:staff)
+
+    get madmin_identity_path(identities(:eli))
+    assert_select "h1", text: /eli\.rivera/
+
+    impersonate_from_madmin identities(:eli)
+    assert_equal "Now impersonating eli.rivera", flash[:notice]
+
+    get household_root_path(household_id: households(:home))
+    assert_select "x-banner", text: /You're using Eli Child's account \(eli\.rivera\)\./
+  end
+
   test "a non-staff identity is refused" do
     sign_in identities(:head)
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_000200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_000300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -176,7 +176,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_000200) do
 
   create_table "identities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
-    t.string "email", default: "", null: false
+    t.string "email"
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
@@ -191,11 +191,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_000200) do
     t.boolean "staff", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "username"
+    t.index "lower((username)::text)", name: "index_identities_on_lower_username", unique: true
     t.index ["confirmation_token"], name: "index_identities_on_confirmation_token", unique: true
     t.index ["email"], name: "index_identities_on_email", unique: true
     t.index ["reset_password_token"], name: "index_identities_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_identities_on_unlock_token", unique: true
     t.index ["user_id"], name: "index_identities_on_user_id", unique: true
+    t.check_constraint "email::text <> ''::text", name: "identities_email_not_blank_check"
+    t.check_constraint "num_nonnulls(email, username) >= 1", name: "identities_email_or_username_check"
+    t.check_constraint "username::text ~ '^[a-z0-9][a-z0-9.-]{2,29}$'::text", name: "identities_username_format_check"
   end
 
   create_table "meeting_note_gems", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

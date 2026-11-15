@@ -10,14 +10,14 @@ class Admin::ImpersonationsController < ApplicationController
     # Devise signs out the current identity if the target can't sign in,
     # which would strand the staff session with no way to stop.
     unless identity.active_for_authentication?
-      redirect_to "/madmin", alert: "#{identity.email} can't sign in, so it can't be impersonated"
+      redirect_to "/madmin", alert: "#{identity.login} can't sign in, so it can't be impersonated"
       return
     end
 
     staff_identity_id = current_identity.id
     sign_in(:identity, identity)
     session[:staff_identity_id] = staff_identity_id
-    redirect_to root_path, notice: "Now impersonating #{identity.email}"
+    redirect_to root_path, notice: "Now impersonating #{identity.login}"
   end
 
   def destroy
