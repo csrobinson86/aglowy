@@ -28,6 +28,11 @@ class MeetingNote < ApplicationRecord
     Outline.new(kind: kind, version: outline_version)
   end
 
+  # The meeting helper's steps for this note's kind (docs/design/meeting-helper.md).
+  def helper_steps
+    HelperSteps.for(kind)
+  end
+
   # Builds every part the outline starts with, in order; a repeating part starts with one.
   def build_parts
     outline.parts.each.with_index(1) { |part, position| parts.build(key: part.key, position: position) }

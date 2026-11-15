@@ -1,0 +1,27 @@
+<% content_for :title, "Today's meeting" %>
+<%# Today's meeting for a child with the meeting helper: Start for the current or next meeting, or, before any
+    times are set, which meeting it is (frame tablet-pick.png). %>
+<div class="meeting-helper__content">
+  <h1 class="meeting-helper__heading">Hi, <%= Current.user.first_name %>!</h1>
+
+  <% if @meeting %>
+    <% content_for :helper_meeting, @meeting.title %>
+    <p class="meeting-helper__lead"><%= @meeting.title %> · <%= @meeting.starts_at.strftime("%A %-l:%M %p") %></p>
+    <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path) do |f| %>
+      <%= render TodaysMeetings::StartForm.new(f, kind: @meeting.kind, week_of: @meeting.week_of, label: "Start", scheme: :primary, size: :large, classes: "meeting-helper__button meeting-helper__button--big") %>
+    <% end %>
+  <% else %>
+    <p class="meeting-helper__lead">Which meeting is it?</p>
+    <div class="meeting-helper__choices">
+      <% @todays_meetings.each do |kind, week_of| %>
+        <div class="meeting-helper__choice">
+          <%= meeting_helper_icon(**MeetingNotesHelper::MEETING_HELPER_PICKER_ICONS.fetch(kind)) %>
+          <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path) do |f| %>
+            <%= render TodaysMeetings::StartForm.new(f, kind:, week_of:, label: Household::Meeting::TITLES.fetch(kind), scheme: :invisible, size: :large, classes: "meeting-helper__choice-button") %>
+          <% end %>
+          <p class="meeting-helper__lead"><%= pluralize(MeetingNote::HelperSteps.for(kind).size, "part") %></p>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

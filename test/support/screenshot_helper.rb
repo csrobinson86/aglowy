@@ -1,18 +1,19 @@
 # Saves the current page at desktop and phone sizes, in light and dark, to
 # tmp/screenshots/ui/<name>-<viewport>-<theme>.png (docs/design/app-shell.md,
 # Screenshots). Does nothing unless ENV["SCREENSHOTS"] is set. With scroll_to, the element
-# matching that CSS selector is scrolled to the middle of each viewport first.
+# matching that CSS selector is scrolled to the middle of each viewport first. viewports
+# replaces the default sizes, as the meeting helper's tablet does; all but desktop are touch.
 module ScreenshotHelper
   VIEWPORTS = { desktop: [ 1440, 1000 ], phone: [ 390, 844 ] }
   THEMES = %w[ light dark ]
 
-  def capture_screens(name, scroll_to: nil)
+  def capture_screens(name, scroll_to: nil, viewports: VIEWPORTS)
     return unless ENV["SCREENSHOTS"]
 
     FileUtils.mkdir_p(screenshot_dir)
 
-    VIEWPORTS.each do |viewport, (width, height)|
-      phone = viewport == :phone
+    viewports.each do |viewport, (width, height)|
+      phone = viewport != :desktop
       emulate_viewport(width, height, phone:)
       emulate_touch(phone)
       page.execute_script("document.querySelector(arguments[0]).scrollIntoView({ block: 'center' })", scroll_to) if scroll_to
