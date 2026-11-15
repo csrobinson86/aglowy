@@ -72,14 +72,15 @@ These are settings, not state, so plain columns are right here; State as Records
 A PORO (`Data.define(:kind, :starts_at)`) in `app/models/household/meeting.rb`, with:
 - `week_of`: `starts_at.to_date.beginning_of_week(:monday)`. A Sunday weekend meeting belongs to the week that started the Monday before, matching `MeetingNote`'s `week_of`.
 - `ends_at`: `starts_at + Household::Meeting::LENGTH`, where `LENGTH` is 2 hours.
+- `current_until`: the later of `ends_at` and the end of the meeting's day (`starts_at.end_of_day`, in the household's time zone). It stays "today's meeting" for the rest of its day, and until it ends if it runs past midnight.
 - `title`: "Midweek meeting" or "Weekend meeting".
 
 `household.current_or_next_meeting(now = Time.current)` works it out:
-1. In the household's time zone, build each kind's occurrence in this week and in next week. The date is the Monday plus `(wday - 1) % 7` days, and the time comes from `ActiveSupport::TimeZone#local`, so changes to and from daylight saving time are right.
-2. Return the earliest occurrence whose `ends_at` is after `now`.
+1. In the household's time zone, build each kind's occurrence in the previous week, this week and next week. The previous week catches a late Sunday meeting that is still running after midnight. The date is the Monday plus `(wday - 1) % 7` days, and the time comes from `ActiveSupport::TimeZone#local`, so changes to and from daylight saving time are right.
+2. Return the earliest occurrence whose `current_until` is after `now`.
 3. Return nil when the times aren't set.
 
-`household.meeting_day?(now)` is true when `current_or_next_meeting` starts today, in the household's time zone.
+`household.meeting_day?(now)` is true when `current_or_next_meeting` starts today, in the household's time zone. Because of `current_until`, it stays true for the whole of the meeting's day, including after the meeting ends, so the Home card shows all day and its Start still matches what `POST todays_meeting` accepts.
 
 ## The helper's steps
 
@@ -169,7 +170,7 @@ Methods on `MeetingNote`:
 | Household settings, Children section | `PATCH /:household_id/meeting_helper` (`Households::MeetingHelpersController#update`) | A `BorderBox` "Children". The mockup draws a switch; build it as a Primer form (`Households::MeetingHelperForm`) with one check box, "Meeting helper for children", its caption, and a Save button, because Primer's ToggleSwitch only POSTs a value to one URL, which doesn't fit our CRUD routes. When the helper is on, a muted line says "Turned on by <name> on <date>". Adults see the Meetings and Children sections and a line saying a head changes the name, time zone and roles |
 | Today's meeting | `GET /:household_id/todays_meeting` (`TodaysMeetingsController#show`) | See below. A child with the helper gets the `meeting_helper` layout; everyone else gets the household layout |
 | Start | `POST /:household_id/todays_meeting` (`kind` and `week_of` from the page, checked against what the page offered) | `Current.user.start_meeting_note(kind:, week_of:)`, then the note's first step (a child with the helper) or the note's edit page (everyone else) |
-| A step | `GET /:household_id/meeting_notes/:meeting_note_id/steps/:id` (`MeetingNotes::StepsController#show`; `:id` is the step key) | Frames `tablet-listen.png`, `tablet-listen-light.png` (light shown for reference only), `tablet-weekend-watchtower.png`. The step's title in small print with its tone dot, the big icon, the prompt as the `h1`, the mark button and "Draw it" ("My drawing" once one exists), and Back and Next ("Finish" on the last step). Back on the first step goes to Today's meeting |
+| A step | `GET /:household_id/meeting_notes/:meeting_note_id/steps/:id` (`MeetingNotes::StepsController#show`; `:id` is the step key) | Frames `tablet-listen.png`, `tablet-listen-light.png` (light shown for reference only), `tablet-weekend-watchtower.png`. The step's title in small print with its tone dot, the big icon, the prompt as the `h1`, the mark button and "Draw it" ("My drawing" once one exists), and Back and Next ("Finish" on the last step). Back on the first step goes to Home: Today's meeting would only redirect to the same step |
 | Mark | `POST` / `DELETE …/steps/:step_id/mark` (`MeetingNotes::Steps::MarksController`) | Turbo Stream replaces the mark button: "I heard it!" ↔ "✓ Heard it" (`aria-pressed`) |
 | Draw | `GET …/steps/:step_id/drawing/edit`, `PATCH …/steps/:step_id/drawing` (`MeetingNotes::Steps::DrawingsController`) | Frame `tablet-draw.png`. The draw prompt as the `h1`, "All done", the canvas, seven colours, Undo and Start over. An existing drawing loads onto the canvas so the child can add to it. "All done" saves and goes back to the step |
 | A drawing's image | `GET …/steps/:step_id/drawing` (`show`) | Not a helper page (Trap 1). Finds the note among the person's own notes or those shared into this household, authorizes with `MeetingNotePolicy#show?`, then redirects to a short-lived service URL |
@@ -212,9 +213,9 @@ Methods on `MeetingNote`:
 - Draw at a fixed 1116×470 logical size, scaled by `devicePixelRatio`, with 9px round strokes in the picked colour on the dark paper colour.
 - Undo removes the last stroke and redraws; Start over clears.
 - "All done":
-  1. `canvas.toBlob("image/png")`.
-  2. Put the file into the form's hidden file input with `DataTransfer`.
-  3. Submit. The form is a Primer form class with that file input inside, the same pattern as the file drop zone.
+  1. Call `canvas.toBlob(callback, "image/png")`. It's asynchronous; the callback receives the blob.
+  2. In the callback, wrap the blob in a `File` and put it into the form's hidden file input with `DataTransfer`.
+  3. Submit from the same callback, after step 2. The form is a Primer form class with that file input inside, the same pattern as the file drop zone.
 - The canvas has `role="img"` and `aria-label="Drawing space. Draw with your finger."`. Drawing is optional; everything else works from the keyboard.
 
 ## CLAUDE.md and app-shell.md changes in this design PR
@@ -248,7 +249,8 @@ Methods on `MeetingNote`:
 
 - **Meeting times:**
   - not set, so the picker shows
-  - set, on a meeting day before, during and just after the meeting (within 2 hours of the start)
+  - set, on a meeting day before, during and after the meeting (still today's meeting until the end of its day)
+  - a Sunday meeting that runs past midnight is still current at 00:15 Monday
   - set, on a day with no meeting, so the next meeting shows
   - the Sunday weekend meeting's `week_of`
   - a week when daylight saving time changes
@@ -257,7 +259,7 @@ Methods on `MeetingNote`:
   - with and without an existing note
 - **Helper off:** the helper's pages 404 for a child, who gets the meeting note instead.
 - **Each step,** for midweek and weekend:
-  - Back on the first step goes to Today's meeting
+  - Back on the first step goes to Home
   - Finish on the last step goes to the summary
 - **Marks and drawings:**
   - marked and unmarked
