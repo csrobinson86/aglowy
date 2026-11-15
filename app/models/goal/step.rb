@@ -27,14 +27,17 @@ class Goal::Step < ApplicationRecord
 
   # An empty list means Everyone. Assignments that stay are kept; every assignee is rechecked as an active
   # member under the lock, and ticks that no longer fit are deleted (docs/design/goals.md, "Changing who a step is for").
+  # Editing a step needs an open goal, so a finished goal's ticks are kept.
   def reassign(to:)
     goal.under_lock do
+      goal.require_open!
       assignments.where.not(user: to).delete_all
       to.uniq.each { assignments.find_or_initialize_by(user: it).save! }
       delete_ticks_that_no_longer_fit(to.map(&:id))
     end
   ensure
     assignments.reset
+    assignees.reset
     completions.reset
   end
 

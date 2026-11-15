@@ -182,6 +182,24 @@ class Goal::StepTest < ActiveSupport::TestCase
     assert step.done?
   end
 
+  test "reassigning a step of a completed goal is refused and keeps its ticks" do
+    step = goal_steps(:parables)
+    goals(:gospels).complete(by: users(:spouse))
+
+    assert_raises(ActiveRecord::RecordInvalid) { step.reassign(to: []) }
+    assert_equal [ @eli, @sofia ].sort_by(&:id), step.assignees.sort_by(&:id)
+    assert step.done_for?(@eli)
+  end
+
+  test "assignees loaded before a reassignment show the new people after it" do
+    step = goal_steps(:parables)
+    assert_includes step.assignees.load, @eli
+
+    step.reassign(to: [ @sofia ])
+
+    assert_equal [ @sofia ], step.assignees.to_a
+  end
+
   test "reassigning to someone whose membership was just deactivated is refused" do
     step = goal_steps(:read_john)
     assert memberships(:sofia_in_home).deactivate
