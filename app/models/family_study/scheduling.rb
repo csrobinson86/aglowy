@@ -110,7 +110,7 @@ class FamilyStudy::Scheduling
       Time.current.in_time_zone(household.time_zone).to_date
     end
 
-    # Read behind the household's lock, so another adult can't have linked it, or finished its goal, in the meantime.
+    # Read behind the household's lock, so another adult can't have linked it, ticked it done, or finished its goal, in the meantime.
     def goal_step_is_free
       return if goal_step_id.blank?
 
@@ -119,6 +119,8 @@ class FamilyStudy::Scheduling
         errors.add(:base, "That goal step isn't in this household")
       elsif step.family_study_id?
         errors.add(:base, "That step is already scheduled as a family study")
+      elsif step.done?
+        errors.add(:base, "That step is already done")
       elsif !step.goal.open?
         errors.add(:base, "That step's goal is finished")
       end

@@ -300,6 +300,16 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     assert_equal family_studies(:weekly), step.reload.family_study
   end
 
+  test "a step that's done is refused" do
+    scheduling = new_scheduling(goal_step_id: goal_steps(:read_mark).id)
+
+    assert_no_difference "FamilyStudy.count" do
+      assert_not scheduling.save
+    end
+    assert_equal [ "That step is already done" ], scheduling.errors[:base]
+    assert_nil goal_steps(:read_mark).reload.family_study_id
+  end
+
   test "a step of a finished goal is refused" do
     goals(:gospels).archive(by: users(:spouse))
     scheduling = new_scheduling(goal_step_id: goal_steps(:read_luke).id)
