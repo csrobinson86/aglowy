@@ -23,3 +23,9 @@ spouse_bible_reading:
   set_by: spouse
   title: Read the whole Bible in a year
   target_on: 2027-01-31
+
+outsiders_reading:
+  household: other
+  set_by: outsider
+  title: Read Acts together
+  target_on: 2027-05-31

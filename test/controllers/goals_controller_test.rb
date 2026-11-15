@@ -124,7 +124,7 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     end
 
     goal = Goal.order(:created_at).last
-    assert_redirected_to household_goals_path(household_id: households(:home))
+    assert_redirected_to household_goal_path(household_id: households(:home), id: goal)
     assert_equal "Read Acts together", goal.title
     assert_equal "To see how the early Christians preached.", goal.body
     assert_equal Date.new(2027, 6, 30), goal.target_on
@@ -148,9 +148,167 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_select "textarea[name='goal[body]']", text: /To see how the early Christians preached./
   end
 
+  test "every member can show a family goal" do
+    [ identities(:head), identities(:spouse), child_identity ].each do |identity|
+      sign_in identity
+
+      get goal_path(goals(:gospels))
+
+      assert_response :success
+      assert_select "title", "Read the four Gospels together · The Head Family · Aglowy"
+      assert_select "nav[aria-label='Breadcrumb'] a[href='#{household_goals_path(household_id: households(:home))}']", "Family goals"
+      assert_select "h1", "Read the four Gospels together"
+      assert_select ".Label", "Milestone"
+      assert_text_on_page "Target March 31, 2027 · Set by Sam Spouse"
+      assert_text_on_page "So we get to know Jesus better as a family."
+      assert_select "#goal-progress", text: /3 of 7 steps done/
+      assert_select "#goal-progress", text: /4 to go · next due Feb 15/
+      assert_select "#goal-progress .Progress"
+      assert_select "#goal-progress li", text: /Eli Child · 4 of 6/
+      assert_select "#goal-progress li", text: /Sofia Child · 2 of 5/
+      assert_select "#goal-steps .Box-row", count: 7
+      assert_select "nav[aria-label='Main'] a[aria-current='page']", "Family goals"
+    end
+  end
+
+  test "heads and adults get Edit and the add-step row; a child gets neither" do
+    [ identities(:head), identities(:spouse) ].each do |identity|
+      sign_in identity
+      get goal_path(goals(:gospels))
+      assert_select "main a[href='#{edit_goal_path(goals(:gospels))}']", "Edit"
+      assert_select "form[action='#{household_goal_steps_path(household_id: households(:home), goal_id: goals(:gospels))}']"
+    end
+
+    sign_in child_identity
+    get goal_path(goals(:gospels))
+    assert_select "a", { text: "Edit", count: 0 }
+    assert_select "button[aria-label^='Edit step']", count: 0
+    assert_select "form[action='#{household_goal_steps_path(household_id: households(:home), goal_id: goals(:gospels))}']", count: 0
+    assert_select "form[method=post][action*='/steps/']", count: 0
+  end
+
+  test "a goal with seven more steps runs no more queries" do
+    sign_in identities(:spouse)
+    goal = goals(:proverbs)
+    goal.completion.destroy
+    goal.add_step(title: "Read chapter 1", assignees: [ users(:eli) ])
+    get goal_path(goal)
+    one_step = queries_for { get goal_path(goal) }
+
+    7.times { goal.add_step(title: "Read chapter #{it + 2}", assignees: [ users(:eli), users(:sofia) ]).tick(for: users(:eli), by: users(:spouse)) }
+    eight_steps = queries_for { get goal_path(goal) }
+
+    assert_select "#goal-steps .Box-row", count: 8
+    assert_equal one_step, eight_steps
+  end
+
+  test "a non-member gets 404, and so does a goal from another household" do
+    sign_in identities(:outsider)
+    get goal_path(goals(:gospels))
+    assert_response :not_found
+
+    sign_in identities(:spouse) # a 404 doesn't keep the session
+    get household_goal_path(household_id: households(:home), id: goals(:outsiders_reading))
+    assert_response :not_found
+
+    sign_in identities(:spouse)
+    patch household_goal_path(household_id: households(:home), id: goals(:outsiders_reading)), params: { goal: { title: "Mine now", lock_version: 0 } }
+    assert_response :not_found
+    assert_equal "Read Acts together", goals(:outsiders_reading).reload.title
+  end
+
+  test "someone else's personal goal is 404, even for a head of the same household" do
+    sign_in identities(:head)
+    get household_goal_path(household_id: households(:home), id: goals(:spouse_bible_reading))
+    assert_response :not_found
+  end
+
+  test "a child can't edit: 404 on edit, refused on update" do
+    child = child_identity
+    sign_in child
+    get edit_goal_path(goals(:gospels))
+    assert_response :not_found
+
+    sign_in child # a 404 doesn't keep the session
+    patch goal_path(goals(:gospels)), params: { goal: { title: "Mine now", lock_version: goals(:gospels).lock_version } }
+    assert_redirected_to household_root_path(household_id: households(:home))
+    assert_equal "You can't do that in this household.", flash[:alert]
+    assert_equal "Read the four Gospels together", goals(:gospels).reload.title
+  end
+
+  test "an adult edits a goal" do
+    sign_in identities(:spouse)
+    goal = goals(:gospels)
+
+    get edit_goal_path(goal)
+    assert_response :success
+    assert_select "title", "Edit goal · The Head Family · Aglowy"
+    assert_select "nav[aria-label='Breadcrumb'] a[href='#{goal_path(goal)}']", "Read the four Gospels together"
+    assert_select "input[name='goal[title]'][value='Read the four Gospels together']"
+    assert_select "input[type=hidden][name='goal[lock_version]'][value='0']"
+    assert_select "input[type=date][name='goal[target_on]'][value='2027-03-31']"
+
+    patch goal_path(goal), params: { goal: { title: "Read the Gospels", body: "Before the Memorial.", target_on: "2027-04-01", lock_version: 0 } }
+
+    assert_redirected_to goal_path(goal)
+    assert_equal "Goal updated.", flash[:notice]
+    goal.reload
+    assert_equal [ "Read the Gospels", "Before the Memorial.", Date.new(2027, 4, 1) ], [ goal.title, goal.body, goal.target_on ]
+    assert_equal users(:spouse), goal.set_by
+  end
+
+  test "a blank title re-renders the edit page with the error" do
+    sign_in identities(:spouse)
+
+    patch goal_path(goals(:gospels)), params: { goal: { title: "", lock_version: 0 } }
+
+    assert_response :unprocessable_content
+    assert_select "input[name='goal[title]'][aria-invalid='true']"
+    assert_equal "Read the four Gospels together", goals(:gospels).reload.title
+  end
+
+  test "a stale lock_version re-renders with the message and the fresh values" do
+    goals(:gospels).update!(title: "Read the Gospels, changed by Hannah")
+    sign_in identities(:spouse)
+
+    patch goal_path(goals(:gospels)), params: { goal: { title: "Sam's title", target_on: "2027-04-01", lock_version: 0 } }
+
+    assert_response :conflict
+    assert_select ".flash", text: /Someone else changed this goal. Here's the latest./
+    assert_select "input[name='goal[title]'][value='Read the Gospels, changed by Hannah']"
+    assert_select "input[type=hidden][name='goal[lock_version]'][value='1']"
+    assert_equal "Read the Gospels, changed by Hannah", goals(:gospels).reload.title
+    assert_equal Date.new(2027, 3, 31), goals(:gospels).target_on
+  end
+
+  test "a stale step edit changes nothing and keeps the ticks" do
+    step = goal_steps(:parables)
+    step.touch # someone else saved it first
+    sign_in identities(:spouse)
+
+    patch household_goal_step_path(household_id: households(:home), goal_id: goals(:gospels), id: step),
+          params: { goal_step: { title: "Find one parable", assignee_ids: [ "" ], lock_version: 0 } }, as: :turbo_stream
+
+    assert_response :conflict
+    assert_select "turbo-stream[action=replace][target='#{ActionView::RecordIdentifier.dom_id(step)}']"
+    assert_includes response.body, "Someone else changed this step. Here&#39;s the latest."
+    step.reload
+    assert_equal "Find three parables and explain one", step.title
+    assert_equal [ users(:eli), users(:sofia) ].sort_by(&:id), step.assignees.sort_by(&:id)
+    assert_equal [ users(:eli).id ], step.completions.map(&:user_id)
+  end
+
   private
     def valid_params
       { title: "Read Acts together", body: "To see how the early Christians preached.", target_on: "2027-06-30" }
+    end
+
+    def goal_path(goal)
+      household_goal_path(household_id: goal.household, id: goal)
+    end
+
+    def edit_goal_path(goal)
+      edit_household_goal_path(household_id: goal.household, id: goal)
     end
 
     def child_identity
