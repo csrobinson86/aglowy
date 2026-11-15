@@ -46,7 +46,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 6 | **GOALS-01** Goals: family and personal milestone goals, steps, sharing (habit goals follow) | Stories filed |
 | 7 | Notifications: in-app list and email | Design done |
 | 8 | Production on AWS: EC2 + Docker Compose, SES, bounce handler | Stack decided |
-| 9 | **KIDS-01** Meeting helper for children: Today's meeting on a child's tablet, marks, drawing, sharing with the family | Design done |
+| 9 | **KIDS-01** Today's meeting: meeting times, the right note for everyone, and the meeting helper for children (marks, drawing, sharing with the family) | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 

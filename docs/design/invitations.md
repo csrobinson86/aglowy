@@ -108,9 +108,9 @@ Leaving runs the existing `Membership#deactivate`, including the steps other epi
 
 ## Household settings (heads)
 
-> Since KIDS-01, adults also open this page, to see only its Children section (the meeting helper switch). Everything below stays heads-only. See `docs/design/meeting-helper.md`.
+> Since KIDS-01, adults also open this page, to see only its Meetings section (meeting times) and Children section (the meeting helper switch). Everything below stays heads-only. See `docs/design/meeting-helper.md`.
 
-At `/:household_id/settings` (`Households::SettingsController`, household layout, frame `household-settings.png`). "Household settings" in the sidebar footer, heads only (`docs/design/app-shell.md`).
+At `/:household_id/settings` (`Households::SettingsController`, household layout, frame `household-settings.png`). "Household settings" in the sidebar footer, for heads and adults since KIDS-01 (`docs/design/app-shell.md`).
 
 - **Name and time zone.** Changing the time zone keeps every future family study session at the same local wall-clock time in the new zone: in one transaction holding `household.lock!`, recompute `scheduled_at` and `recurrence_at` of sessions after now from their local time in the old zone (gotcha 14). Past sessions don't move. The hint says so: "Changing it keeps each study at the same local time."
 - **Members and roles.** A row per active member with a role select and Remove. `PATCH /:household_id/members/:member_id/role` (`Members::RolesController`) calls `membership.change_role`; `DELETE /:household_id/members/:id` calls `membership.deactivate`. Both keep the last-head guard (gotcha 5); a refusal shows "A household needs at least one active head" on that row.

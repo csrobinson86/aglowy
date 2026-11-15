@@ -31,7 +31,8 @@ this document says otherwise.
 
 | Layout | Used by | Shape |
 | --- | --- | --- |
-| `household` | Every controller that includes `HouseholdScoped` | The app shell: sidebar + main |
+| `household` | Every controller that includes `HouseholdScoped`, except the meeting helper's pages for a child | The app shell: sidebar + main |
+| `meeting_helper` | The meeting helper's pages for a child with the helper on (`docs/design/meeting-helper.md`) | Full screen, always dark, no sidebar |
 | `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark at the top left, then one centred column. No sidebar, because there is no household to navigate |
 
 Both keep the `<body>` theming attributes from `CLAUDE.md`
@@ -82,7 +83,7 @@ and `lang` on `<html>`.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
 3. **Household group:** Home, Family studies, Members, Family goals.
 4. **Mine group:** Meeting notes, My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
-5. **Footer:** Household settings (heads and adults; adults see only its Children section, `docs/design/meeting-helper.md`), then the person's initial and name with a Sign out button.
+5. **Footer:** Household settings (heads and adults; adults see only its Meetings and Children sections, `docs/design/meeting-helper.md`), then the person's initial and name with a Sign out button.
 
 **Main**
 
