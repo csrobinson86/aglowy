@@ -236,6 +236,18 @@ class GoalTest < ActiveSupport::TestCase
     assert_not Goal.exists?(goal.id)
   end
 
+  test "deleting a family goal takes the household lock first, like its other writes" do
+    assert_queries_match(/FROM "households" WHERE .* FOR UPDATE/) { goals(:gospels).delete_for_good }
+  end
+
+  test "a family goal's writes are RecordNotFound once someone else has deleted it" do
+    goal = Goal.find(goals(:gospels).id)
+    Goal.find(goal.id).delete_for_good
+
+    assert_raises(ActiveRecord::RecordNotFound) { goal.add_step(title: "Read Acts") }
+    assert_raises(ActiveRecord::RecordNotFound) { goal.complete(by: users(:head)) }
+  end
+
   test "database: deleting a goal deletes its steps, assignments and completions" do
     goal = goals(:gospels)
     step_ids = goal.steps.ids
