@@ -19,6 +19,24 @@ class MeetingNote::MarkTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::NotNullViolation) { mark.update_column(:step, nil) }
   end
 
+  test "database: a mark without a note raises NotNullViolation" do
+    mark = meeting_notes(:head_midweek).mark("talk")
+
+    assert_raises(ActiveRecord::NotNullViolation) { mark.update_column(:meeting_note_id, nil) }
+  end
+
+  test "database: a mark for a missing note raises InvalidForeignKey" do
+    mark = meeting_notes(:head_midweek).mark("talk")
+
+    assert_raises(ActiveRecord::InvalidForeignKey) { mark.update_column(:meeting_note_id, SecureRandom.uuid_v7) }
+  end
+
+  test "database: a mark without a created_at raises NotNullViolation" do
+    mark = meeting_notes(:head_midweek).mark("talk")
+
+    assert_raises(ActiveRecord::NotNullViolation) { mark.update_column(:created_at, nil) }
+  end
+
   test "database: the unique index rejects a duplicate" do
     meeting_notes(:head_midweek).mark("talk")
 
