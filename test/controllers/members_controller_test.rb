@@ -8,8 +8,10 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Members"
-    assert_select "main .Box-row", count: 3
+    assert_select "main .Box-row", count: 5
     assert_select "main", text: /Hannah Head.*Head.*Sam Spouse.*Adult.*Charlie Child.*Child/m
+    assert_select "main .Box-row", text: /Eli Child/
+    assert_select "main .Box-row", text: /Sofia Child/
     assert_not_includes response.body, "Frances Former"
   end
 

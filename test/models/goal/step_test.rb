@@ -147,12 +147,13 @@ class Goal::StepTest < ActiveSupport::TestCase
 
   test "removing Eli from the parables step deletes his tick and keeps Sofia's assignment" do
     step = goal_steps(:parables)
+    eli_tick = goal_step_completions(:parables_eli)
 
     step.reassign(to: [ @sofia ])
 
     assert_equal [ @sofia ], step.assignees
     assert goal_step_assignments(:parables_sofia).reload, "Sofia's assignment is the same record"
-    assert_not Goal::Step::Completion.exists?(goal_step_completions(:parables_eli).id)
+    assert_not Goal::Step::Completion.exists?(eli_tick.id)
   end
 
   test "adding someone to a named step leaves the others' ticks alone" do
@@ -298,7 +299,7 @@ class Goal::StepTest < ActiveSupport::TestCase
     step = goal_steps(:read_luke)
     step.update_column(:family_study_id, family_studies(:weekly).id)
 
-    FamilyStudy.where(id: family_studies(:weekly).id).delete_all
+    family_studies(:weekly).destroy!
 
     assert_nil step.reload.family_study_id
   end
