@@ -68,6 +68,22 @@ class MeetingNotes::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_select "header .meeting-helper__dot--marked", count: 2
   end
 
+  test "Draw it, or My drawing once there is one, and a drawn step's dot is filled" do
+    sign_in identities(:eli)
+
+    get step_path("talk")
+
+    assert_select "main a[href='#{edit_household_meeting_note_step_drawing_path(household_id: households(:home), meeting_note_id: @note, step_id: "talk")}']", "Draw it"
+    assert_select "header .meeting-helper__dot--marked", count: 0
+
+    @note.draw("talk", fixture_file_upload("photo.png", "image/png"))
+    get step_path("talk")
+
+    assert_select "main a", text: "My drawing"
+    assert_select "main a", text: "Draw it", count: 0
+    assert_select "header .meeting-helper__dot--marked", count: 1
+  end
+
   test "an unknown step key is 404" do
     sign_in identities(:eli)
 

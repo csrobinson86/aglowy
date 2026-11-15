@@ -79,6 +79,8 @@ Rails.application.routes.draw do
       # The meeting helper's steps, one at a time; :id is the step's key (MeetingNote::HelperSteps).
       resources :steps, only: :show, module: :meeting_notes do
         resource :mark, only: %i[ create destroy ], module: :steps
+        # edit and update are helper pages; show serves the image to anyone who can read the note.
+        resource :drawing, only: %i[ show edit update ], module: :steps
       end
     end
     resources :shared_meeting_notes, only: :index

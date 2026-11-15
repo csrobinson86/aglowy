@@ -11,11 +11,15 @@ module MeetingHelperScoped
 
     rescue_from(Pundit::NotAuthorizedError) { raise ActiveRecord::RecordNotFound }
 
-    before_action { authorize Current.household, :show?, policy_class: MeetingHelperPolicy }
+    before_action :authorize_meeting_helper
     before_action :set_meeting_note
   end
 
   private
+
+  def authorize_meeting_helper
+    authorize Current.household, :show?, policy_class: MeetingHelperPolicy
+  end
 
   def set_meeting_note
     @meeting_note = Current.user.meeting_notes.find(params[:meeting_note_id])

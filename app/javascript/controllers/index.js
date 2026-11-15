@@ -22,6 +22,9 @@ application.register("hello", HelloController)
 import LivingPartsController from "./living_parts_controller"
 application.register("living-parts", LivingPartsController)
 
+import MeetingHelper__DrawingController from "./meeting_helper/drawing_controller"
+application.register("meeting-helper--drawing", MeetingHelper__DrawingController)
+
 import RepeatFieldController from "./repeat_field_controller"
 application.register("repeat-field", RepeatFieldController)
 

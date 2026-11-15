@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -240,6 +240,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_120000) do
     t.check_constraint "role::text = ANY (ARRAY['adult'::character varying, 'head'::character varying]::text[])", name: "invitations_role_check"
   end
 
+  create_table "meeting_note_drawings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_note_id", null: false
+    t.string "step", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meeting_note_id", "step"], name: "index_meeting_note_drawings_on_meeting_note_id_and_step", unique: true
+  end
+
   create_table "meeting_note_gems", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "meeting_note_id", null: false
     t.string "scripture", null: false
@@ -344,6 +352,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_120000) do
   add_foreign_key "identities", "users"
   add_foreign_key "invitations", "households", on_delete: :cascade
   add_foreign_key "invitations", "users", column: "invited_by_id"
+  add_foreign_key "meeting_note_drawings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_marks", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade
