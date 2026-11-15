@@ -74,9 +74,10 @@ class FamilyStudy < ApplicationRecord
     session_time_on(starts_on)
   end
 
-  # Built in the household's zone, then stored as UTC; never arithmetic on a UTC time (gotcha 14).
-  def session_time_on(date)
-    ActiveSupport::TimeZone[household.time_zone].local(date.year, date.month, date.day, time_of_day.hour, time_of_day.min)
+  # Built in the household's zone, then stored as UTC; never arithmetic on a UTC time (gotcha 14). A zone change
+  # passes the new zone, so a moved slot is built exactly as the generator will build it.
+  def session_time_on(date, zone: ActiveSupport::TimeZone[household.time_zone])
+    zone.local(date.year, date.month, date.day, time_of_day.hour, time_of_day.min)
   end
 
   # Counted from the month, not Date#cweek: 17 November 2026 is the third Tuesday (scheduling rule 5).

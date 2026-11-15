@@ -22,7 +22,9 @@ class FamilyStudy::Session::Edit
   def save
     return false unless valid?
 
+    # The household's lock before the session's row, in the order a time zone change takes them, so the two can't deadlock.
     session.transaction do
+      session.family_study.household.lock!
       session.update!(topic: topic.presence)
       session.reschedule(on: starts_on, at: starts_at)
     end

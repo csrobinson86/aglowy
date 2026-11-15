@@ -82,6 +82,10 @@ class Household < ApplicationRecord
       keep_sessions_at_local_time(from: time_zone_was) if time_zone_changed?
       save!
     end
+  rescue ActiveRecord::RecordNotUnique
+    # Only zones a day apart can do this: a daily study's session lands on the slot of one that's over and keeps it.
+    errors.add(:time_zone, "can't be used: it's a day from the current zone, so a daily study would have two sessions in one slot")
+    false
   end
 
   def change_time_zone(zone)
@@ -97,18 +101,25 @@ class Household < ApplicationRecord
     # session on the other side of a DST change keeps its time too. recurrence_at moves with it, and so does the slot of
     # any session the generator could build again, which starts from today: then every slot it builds in the new zone
     # is taken (gotcha 21). Past sessions keep their time, even when their slot follows the zone.
+    # A slot is rebuilt from its date and the study's time, not its stored time: a study at 2:30 AM has its spring-forward
+    # slot at 3:30, which in a zone without that gap the generator builds at 2:30.
     def keep_sessions_at_local_time(from:)
       old_zone, new_zone, now = ActiveSupport::TimeZone[from], ActiveSupport::TimeZone[time_zone], Time.current
       same_local_time = ->(time) { time.in_time_zone(old_zone).then { new_zone.local(it.year, it.month, it.day, it.hour, it.min) } }
       # Zones run at most 14 hours ahead of UTC, so a slot dated today anywhere starts after yesterday began.
       sessions = family_study_sessions.where(scheduled_at: now..).or(family_study_sessions.where(recurrence_at: Date.yesterday.beginning_of_day..))
 
-      sessions.find_each do |session|
-        moved = {}
+      moves = sessions.includes(:family_study).filter_map do |session|
+        moved, slot_date = {}, session.recurrence_at.in_time_zone(old_zone).to_date
         moved[:scheduled_at] = same_local_time.(session.scheduled_at) if session.scheduled_at >= now
-        moved[:recurrence_at] = same_local_time.(session.recurrence_at) if moved.any? || session.recurrence_at.in_time_zone(old_zone).to_date >= Date.current
-        session.update_columns(moved.merge(updated_at: now)) if moved.any?
+        moved[:recurrence_at] = session.family_study.session_time_on(slot_date, zone: new_zone) if moved.any? || slot_date >= Date.current
+        [ session, moved ] if moved.any?
       end
+
+      # Between zones a day apart, a daily study's slot moves onto the next one's, so that one has to move first:
+      # the latest first when slots move later, the earliest first when they move earlier.
+      moves.sort_by { |session, moved| moved[:recurrence_at] > session.recurrence_at ? -session.recurrence_at.to_f : session.recurrence_at.to_f }
+        .each { |session, moved| session.update_columns(moved.merge(updated_at: now)) }
     end
 
     def stored_blobs

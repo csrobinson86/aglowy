@@ -213,6 +213,60 @@ class HouseholdTest < ActiveSupport::TestCase
     end
   end
 
+  # On 14 March 2027 Chicago skips 2:00 to 3:00 AM, so that day's 2:30 slot is stored at 3:30. In UTC the generator
+  # builds it at 2:30, so that's where the slot must go; the session keeps the 3:30 it showed.
+  test "a slot in a spring-forward gap moves to where the generator builds it in the new zone" do
+    travel_to Time.utc(2027, 3, 10, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Central Time (US & Canada)")
+      study = household.schedule_family_study(frequency: "daily", starts_on: Date.new(2027, 3, 13), time_of_day: "02:30")
+      in_the_gap = study.sessions.find_by!(recurrence_at: Time.utc(2027, 3, 14, 8, 30))
+
+      assert household.change_time_zone("UTC")
+
+      assert_equal Time.utc(2027, 3, 14, 3, 30), in_the_gap.reload.scheduled_at
+      assert_equal Time.utc(2027, 3, 14, 2, 30), in_the_gap.recurrence_at
+      assert_no_difference -> { study.sessions.count } do
+        study.reload.extend_sessions
+      end
+    end
+  end
+
+  # Samoa is 13 hours ahead of UTC and American Samoa 11 behind, so each day's 7:00 PM lands on the next day's slot,
+  # which has to move out of the way first.
+  test "a daily study keeps its local time between zones a day apart" do
+    travel_to Time.utc(2026, 11, 14, 12) do
+      household = households(:parents)
+      household.update!(time_zone: "Samoa")
+      study = household.schedule_family_study(frequency: "daily", starts_on: Date.new(2026, 11, 16), time_of_day: "19:00")
+
+      assert household.change_time_zone("American Samoa")
+
+      study.sessions.each do |session|
+        assert_equal "19:00", session.scheduled_at.in_time_zone("Pacific/Pago_Pago").strftime("%H:%M")
+        assert_equal session.scheduled_at, session.recurrence_at
+      end
+      assert_no_difference -> { study.sessions.count } do
+        study.reload.extend_sessions
+      end
+    end
+  end
+
+  # Back the other way, today's 7:00 PM session lands on the slot of yesterday's, which is over and keeps its slot.
+  test "a zone change that would put two sessions in one slot is refused and moves nothing" do
+    household = households(:parents)
+    household.update!(time_zone: "American Samoa")
+    study = travel_to(Time.utc(2026, 11, 10, 12)) { household.schedule_family_study(frequency: "daily", starts_on: Date.new(2026, 11, 10), time_of_day: "19:00") }
+
+    travel_to Time.utc(2026, 11, 14, 12) do
+      assert_no_changes -> { study.sessions.order(:recurrence_at).pluck(:scheduled_at, :recurrence_at) } do
+        assert_not household.change_time_zone("Samoa")
+      end
+      assert_includes household.errors[:time_zone], "can't be used: it's a day from the current zone, so a daily study would have two sessions in one slot"
+      assert_equal "American Samoa", household.reload.time_zone
+    end
+  end
+
   test "another household's sessions don't move" do
     travel_to Time.utc(2026, 11, 14, 12) do
       other = households(:other).schedule_family_study(starts_on: Date.new(2026, 11, 17), time_of_day: "19:00").sessions.sole
