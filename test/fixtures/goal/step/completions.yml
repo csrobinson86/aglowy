@@ -1,0 +1,22 @@
+# No user: done together. Sofia hasn't ticked the parables step yet, so it's partly done.
+read_matthew_together:
+  step: read_matthew
+  completed_by: spouse
+  created_at: 2026-12-12 19:00:00
+
+read_mark_together:
+  step: read_mark
+  completed_by: spouse
+  created_at: 2027-01-09 19:00:00
+
+draw_map_eli:
+  step: draw_map
+  user: eli
+  completed_by: eli
+  created_at: 2027-01-18 19:00:00
+
+parables_eli:
+  step: parables
+  user: eli
+  completed_by: eli
+  created_at: 2027-01-25 19:00:00

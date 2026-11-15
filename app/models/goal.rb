@@ -7,6 +7,7 @@ class Goal < ApplicationRecord
   belongs_to :set_by, class_name: "User"
   has_one :completion, dependent: :delete
   has_one :archival, dependent: :delete
+  has_many :steps, -> { order(:position) }, dependent: :delete_all, inverse_of: :goal
 
   enum :kind, %w[ milestone ].index_by(&:itself), default: :milestone, validate: true
 
@@ -18,6 +19,7 @@ class Goal < ApplicationRecord
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
+  scope :preloaded, -> { includes(steps: %i[ assignments completions ]) }
 
   def family?
     household_id.present?
@@ -60,16 +62,34 @@ class Goal < ApplicationRecord
     under_lock { self.archival = nil if archived? }
   end
 
-  private
-    # One lock for every write: the household's row for a family goal (the lock Membership#deactivate
-    # takes), the goal's own row for a personal one. The state is reread behind the lock, so two people
-    # pressing the same button at once write once (docs/design/goals.md, "One lock for every write").
-    def under_lock
-      transaction do
-        family? ? household.lock! : lock!
-        reload_completion
-        reload_archival
-        yield
+  # New steps go last. The assignees are checked as active members behind the lock, like Step#reassign.
+  def add_step(title:, due_on: nil, assignees: [])
+    under_lock do
+      require_open!
+      steps.create!(title: title, due_on: due_on, position: steps.maximum(:position).to_i + 1) do |step|
+        assignees.uniq.each { step.assignments.build(user: it) }
       end
     end
+  end
+
+  # One lock for every write: the household's row for a family goal (the lock Membership#deactivate
+  # takes), the goal's own row for a personal one. The state is reread behind the lock, so two people
+  # pressing the same button at once write once (docs/design/goals.md, "One lock for every write").
+  # Steps take it too, for adding, reassigning and ticking.
+  def under_lock
+    transaction do
+      family? ? household.lock! : lock!
+      reload_completion
+      reload_archival
+      yield
+    end
+  end
+
+  # Inside under_lock, so the state it checks was reread behind the lock.
+  def require_open!
+    unless open?
+      errors.add(:base, "This goal is finished, so it takes no new steps or ticks")
+      raise ActiveRecord::RecordInvalid, self
+    end
+  end
 end

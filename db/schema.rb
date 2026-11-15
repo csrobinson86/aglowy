@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_230200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_000200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -116,6 +116,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_230200) do
     t.datetime "created_at", null: false
     t.index ["completed_by_id"], name: "index_goal_completions_on_completed_by_id"
     t.index ["goal_id"], name: "index_goal_completions_on_goal_id", unique: true
+  end
+
+  create_table "goal_step_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "step_id", null: false
+    t.uuid "user_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["step_id", "user_id"], name: "index_goal_step_assignments_on_step_id_and_user_id", unique: true
+    t.index ["user_id"], name: "index_goal_step_assignments_on_user_id"
+  end
+
+  create_table "goal_step_completions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "step_id", null: false
+    t.uuid "user_id"
+    t.uuid "completed_by_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["completed_by_id"], name: "index_goal_step_completions_on_completed_by_id"
+    t.index ["step_id", "user_id"], name: "index_goal_step_completions_on_step_id_and_user_id", unique: true, nulls_not_distinct: true
+    t.index ["user_id"], name: "index_goal_step_completions_on_user_id"
+  end
+
+  create_table "goal_steps", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "goal_id", null: false
+    t.string "title", null: false
+    t.date "due_on"
+    t.integer "position", null: false
+    t.uuid "family_study_id"
+    t.integer "lock_version", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family_study_id"], name: "index_goal_steps_on_family_study_id"
+    t.index ["goal_id", "position"], name: "index_goal_steps_on_goal_id_and_position"
   end
 
   create_table "goals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -247,6 +278,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_230200) do
   add_foreign_key "goal_archivals", "users", column: "archived_by_id"
   add_foreign_key "goal_completions", "goals", on_delete: :cascade
   add_foreign_key "goal_completions", "users", column: "completed_by_id"
+  add_foreign_key "goal_step_assignments", "goal_steps", column: "step_id", on_delete: :cascade
+  add_foreign_key "goal_step_assignments", "users", on_delete: :cascade
+  add_foreign_key "goal_step_completions", "goal_steps", column: "step_id", on_delete: :cascade
+  add_foreign_key "goal_step_completions", "users", column: "completed_by_id"
+  add_foreign_key "goal_step_completions", "users", on_delete: :cascade
+  add_foreign_key "goal_steps", "family_studies", on_delete: :nullify
+  add_foreign_key "goal_steps", "goals", on_delete: :cascade
   add_foreign_key "goals", "households", on_delete: :cascade
   add_foreign_key "goals", "users", column: "set_by_id"
   add_foreign_key "goals", "users", on_delete: :cascade

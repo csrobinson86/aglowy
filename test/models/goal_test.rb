@@ -206,6 +206,31 @@ class GoalTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::NotNullViolation) { goal_archivals(:songs).update_column(:archived_by_id, nil) }
   end
 
+  test "a goal's steps are in position order" do
+    goal_steps(:read_matthew).update_column(:position, 9)
+
+    assert_equal "Read Mark together", goals(:gospels).steps.first.title
+    assert_equal "Read Matthew together", goals(:gospels).steps.last.title
+  end
+
+  test "preloaded includes steps with their assignments and completions" do
+    goal = Goal.preloaded.find(goals(:gospels).id)
+
+    assert goal.association(:steps).loaded?
+    assert goal.steps.all? { it.association(:assignments).loaded? && it.association(:completions).loaded? }
+  end
+
+  test "database: deleting a goal deletes its steps, assignments and completions" do
+    goal = goals(:gospels)
+    step_ids = goal.steps.ids
+
+    Goal.where(id: goal.id).delete_all
+
+    assert_not Goal::Step.exists?(goal_id: goal.id)
+    assert_not Goal::Step::Assignment.exists?(step_id: step_ids)
+    assert_not Goal::Step::Completion.exists?(step_id: step_ids)
+  end
+
   test "database: deleting a goal deletes its completion and archival" do
     goal = goals(:proverbs)
     goal.archive(by: users(:head))
