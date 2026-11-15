@@ -34,6 +34,21 @@
   <% end %>
 <% end %>
 
+<% meeting_helper = Current.household.meeting_helper %>
+<%= render(Primer::Beta::BorderBox.new(id: "children", mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Children" } } %>
+  <% box.with_body do %>
+    <%= primer_form_with(scope: :meeting_helper, url: household_meeting_helper_path, method: :patch) do |f| %>
+      <%= render Households::MeetingHelperForm.new(f, enabled: meeting_helper.present?) %>
+    <% end %>
+    <% if meeting_helper %>
+      <p class="f6 color-fg-muted mt-3 mb-0">
+        Turned on by <%= meeting_helper.enabled_by.name %> on <%= meeting_helper.created_at.in_time_zone(Current.household.time_zone).strftime("%B %-d") %>.
+      </p>
+    <% end %>
+  <% end %>
+<% end %>
+
 <% if head %>
   <%= render(Primer::Beta::BorderBox.new(id: "members-and-roles", mb: 4)) do |box| %>
     <% box.with_header { |header| header.with_title(tag: :h2) { "Members and roles" } } %>

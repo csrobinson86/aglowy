@@ -48,8 +48,10 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "main h2", text: "Household"
     assert_select "main h2", text: "Meetings"
+    assert_select "main h2", text: "Children"
     assert_select "main h2", text: "Members and roles"
     assert_select "form[action=?]", household_meeting_times_path(household_id: households(:home))
+    assert_select "form[action=?]", household_meeting_helper_path(household_id: households(:home))
     assert_no_match "A head changes the household's name", response.body
   end
 
@@ -62,10 +64,32 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Household settings"
     assert_select "p", text: "A head changes the household's name, time zone and roles. Adults can set the meeting times and turn on the meeting helper for children."
     assert_select "main h2", text: "Meetings"
+    assert_select "main h2", text: "Children"
     assert_select "main h2", text: "Household", count: 0
     assert_select "main h2", text: "Members and roles", count: 0
     assert_select "#household_name", count: 0
     assert_select "nav a[aria-current=page]", text: "Household settings"
+  end
+
+  test "the helper is off by default, and says nothing about who turned it on" do
+    sign_in identities(:spouse)
+
+    get edit_household_settings_path(household_id: households(:home))
+
+    assert_select "#children input[type=checkbox][name=?]:not([checked])", "meeting_helper[enabled]"
+    assert_no_match "Turned on by", response.body
+  end
+
+  test "when the helper is on, the box is ticked and says who turned it on, on the date where the household lives" do
+    households(:home).update!(time_zone: "Central Time (US & Canada)")
+    # 2:00 AM UTC on November 16 is still the evening of November 15 in Chicago.
+    travel_to(Time.utc(2026, 11, 16, 2)) { households(:home).enable_meeting_helper(by: users(:spouse)) }
+    sign_in identities(:head)
+
+    get edit_household_settings_path(household_id: households(:home))
+
+    assert_select "#children input[type=checkbox][name=?][checked]", "meeting_helper[enabled]"
+    assert_select "#children p", text: "Turned on by Sam Spouse on November 15."
   end
 
   test "an adult still can't rename the household" do

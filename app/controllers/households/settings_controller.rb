@@ -1,6 +1,7 @@
-# Household settings: the household's name and time zone and its members' roles for heads, and the meeting times for
-# heads and adults (docs/design/invitations.md, Household settings; docs/design/meeting-helper.md, Trap 10).
-# Roles and removing are Members::RolesController and MembersController; meeting times Households::MeetingTimesController.
+# Household settings: the household's name and time zone and its members' roles for heads, and the meeting times and
+# the meeting helper for heads and adults (docs/design/invitations.md, Household settings; docs/design/meeting-helper.md,
+# Trap 10). Roles and removing are Members::RolesController and MembersController; meeting times
+# Households::MeetingTimesController; the meeting helper Households::MeetingHelpersController.
 class Households::SettingsController < ApplicationController
   include HouseholdScoped
 
