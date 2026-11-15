@@ -9,7 +9,7 @@ class GoalTest < ActiveSupport::TestCase
   end
 
   test "active, completed and archived hold the right fixtures, in the right order" do
-    assert_equal [ goals(:spouse_bible_reading), goals(:gospels) ], Goal.active
+    assert_equal [ goals(:spouse_bible_reading), goals(:gospels), goals(:outsiders_reading) ], Goal.active
     assert_equal [ goals(:gospels) ], households(:home).goals.active
     assert_equal [ goals(:proverbs) ], Goal.completed
     assert_equal [ goals(:songs) ], Goal.archived

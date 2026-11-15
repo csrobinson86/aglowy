@@ -1,0 +1,30 @@
+<%= tag.div data: { controller: "goal-step", goal_step_mixed_value: mixed?, goal_step_ticks_value: ticks.to_json } do %>
+  <%= tag.div class: "d-flex flex-items-start p-3", hidden: editing?, data: { goal_step_target: "view" } do %>
+    <%# Read-only for now; the next story makes it tick. A mixed step's checkbox is set indeterminate by its controller. %>
+    <%= tag.input type: "checkbox", class: "FormControl-checkbox flex-shrink-0 mt-1 mr-2", checked: done?, disabled: true,
+                  aria: { labelledby: title_id }, data: { goal_step_target: "checkbox" } %>
+    <%# Avatars sit beside the text from md up, and under it on a phone (frame phone-goal.png). %>
+    <div class="d-flex flex-column flex-md-row flex-auto min-width-0">
+      <div class="flex-auto min-width-0">
+        <%= tag.div step.title, id: title_id, class: [ "goal-step__title wb-break-word", { "goal-step__title--done": done? } ] %>
+        <div class="goal-step__meta color-fg-muted f6"><%= meta_text %></div>
+      </div>
+      <% if people.any? %>
+        <span class="sr-only">With <%= people.map(&:name).to_sentence %></span>
+        <span class="d-flex flex-shrink-0 mt-2 mt-md-0 ml-md-2" aria-hidden="true">
+          <% people.each do |person| %>
+            <span class="avatar avatar-4 circle d-flex flex-items-center flex-justify-center mr-1 color-bg-accent color-fg-accent text-bold f6"><%= person.name.first %></span>
+          <% end %>
+        </span>
+      <% end %>
+    </div>
+    <% if edit_form? %>
+      <%# show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
+      <%= render(Primer::Beta::IconButton.new(icon: :pencil, scheme: :invisible, show_tooltip: false, ml: 2, "aria-label": "Edit step: #{step.title}",
+                                              data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
+    <% end %>
+  <% end %>
+  <% if edit_form? %>
+    <%= tag.div edit_form, class: "p-3", hidden: !editing?, data: { goal_step_target: "form" } %>
+  <% end %>
+<% end %>

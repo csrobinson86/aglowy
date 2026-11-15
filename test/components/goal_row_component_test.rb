@@ -6,7 +6,7 @@ class GoalRowComponentTest < ViewComponent::TestCase
   test "active with progress" do
     render_inline(GoalRowComponent.new(goal: preloaded(:gospels)))
 
-    assert_selector "h2", text: "Read the four Gospels together"
+    assert_selector "h2 a[href='/#{households(:home).id}/goals/#{goals(:gospels).id}']", text: "Read the four Gospels together"
     assert_selector ".Label", text: "Milestone"
     assert_text "Target Mar 31, 2027"
     assert_selector ".Progress .Progress-item[style*='width: 42%']"

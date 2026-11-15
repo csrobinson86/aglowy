@@ -12,6 +12,7 @@ class GoalPageTest < ApplicationSystemTestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Family goals"
     assert_text "3 of 7 steps done"
     assert_text "Eli Child · 4 of 6"
+    assert page.evaluate_script("document.querySelector('##{dom_id(goal_steps(:parables))} input[type=checkbox]').indeterminate"), "expected the mixed step's checkbox to be indeterminate"
     assert_accessible
     capture_screens("goal")
     page.execute_script("window.stillTheSamePage = true")
@@ -29,7 +30,7 @@ class GoalPageTest < ApplicationSystemTestCase
     assert_text "Eli Child · 4 of 7"
     within("#new-goal-step") { assert_field "New step", with: "" }
 
-    click_on "Edit step: Find three parables and explain one"
+    find("button[aria-label='Edit step: Find three parables and explain one']").click
     within("##{dom_id(goal_steps(:parables))}") do
       assert_field "Title", with: "Find three parables and explain one"
       uncheck "Eli Child"
@@ -50,14 +51,14 @@ class GoalPageTest < ApplicationSystemTestCase
     end
     assert_text "4 of 8 steps done"
 
-    click_on "Edit step: Memorize John 3:16"
+    find("button[aria-label='Edit step: Memorize John 3:16']").click
     within("##{dom_id(Goal::Step.find_by!(position: 8, goal: goals(:gospels)))}") do
       click_on "Cancel"
     end
     assert_no_field "Title"
 
-    click_on "Edit step: Memorize John 3:16"
-    click_on "Remove step: Memorize John 3:16"
+    find("button[aria-label='Edit step: Memorize John 3:16']").click
+    find("button[aria-label='Remove step: Memorize John 3:16']").click
     within("#goal-steps") { assert_no_text "Memorize John 3:16" }
     assert_text "4 of 7 steps done"
 

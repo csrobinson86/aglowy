@@ -38,6 +38,11 @@ class Goal::Progress
     steps.find { !it.done? }
   end
 
+  # The earliest due date among the steps still to do ("next due Feb 15"), or nil when none has one.
+  def next_due_on
+    steps.reject(&:done?).filter_map(&:due_on).min
+  end
+
   # Each active member of the household, in membership order. A personal goal has no household, so no one.
   def people
     return [] if goal.personal?

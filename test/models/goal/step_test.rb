@@ -449,5 +449,4 @@ class Goal::StepTest < ActiveSupport::TestCase
     assert_not Goal::Step::Assignment.exists?(step_id: step.id)
     assert_not Goal::Step::Completion.exists?(step_id: step.id)
   end
-
 end

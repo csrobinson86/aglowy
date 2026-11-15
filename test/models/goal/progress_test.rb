@@ -15,6 +15,18 @@ class Goal::ProgressTest < ActiveSupport::TestCase
     assert_equal Date.new(2027, 2, 15), progress.next_step.due_on
   end
 
+  test "next due is the earliest due date among the steps still to do" do
+    goal = goals(:gospels)
+    assert_equal Date.new(2027, 2, 15), goal.progress.next_due_on
+
+    goal.add_step(title: "Pray about it", due_on: Date.new(2027, 1, 5))
+    goal_steps(:read_luke).tick(for: nil, by: users(:spouse))
+    assert_equal Date.new(2027, 1, 5), goal.reload.progress.next_due_on
+
+    goal.steps.where.not(due_on: nil).update_all(due_on: nil)
+    assert_nil goal.reload.progress.next_due_on
+  end
+
   test "Maria 2 of 5, Daniel 2 of 4, Eli 4 of 6, Sofia 2 of 5" do
     people = goals(:gospels).progress.people.index_by(&:user)
 
@@ -71,6 +83,7 @@ class Goal::ProgressTest < ActiveSupport::TestCase
       progress = goal.progress
       progress.done_count
       progress.next_step&.due_on
+      progress.next_due_on
       progress.people.each { [ it.name, it.done_count, it.steps_count ] }
     end
   end

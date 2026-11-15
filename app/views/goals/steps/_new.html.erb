@@ -1,0 +1,8 @@
+<%# locals: (goal:, step:) %>
+<div id="new-goal-step">
+  <%# The namespace keeps this form's ids apart from each step's edit form. %>
+  <%= primer_form_with(model: step, url: household_goal_steps_path(goal_id: goal), namespace: "new_goal_step") do |f| %>
+    <%= render Goals::Steps::StepForm.new(f, section: :fields, members: goal.assignable_users) %>
+    <%= render Goals::Steps::StepForm.new(f, section: :actions) %>
+  <% end %>
+</div>
