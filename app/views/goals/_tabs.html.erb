@@ -15,7 +15,7 @@
 <% end %>
 <p class="color-fg-muted mb-3">
   <% if mine %>
-    <%= { "active" => "Goals you're working on now, private to you.",
+    <%= { "active" => "Goals you're working on now, private until you share one.",
           "completed" => "Goals you reached, kept to look back on.",
           "archived" => "Put away, finished or not, and kept to look back on.",
           "shared" => "Goals others in #{Current.household.name} shared with the household, to read and cheer them on." }.fetch(status) %>
