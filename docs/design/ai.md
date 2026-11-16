@@ -45,7 +45,9 @@ A PORO per purpose in `app/models/ai/purpose/`, for example `Ai::Purpose::Family
 
 - `config/initializers/ruby_llm.rb` reads `AI_MODEL` (a model id) and the provider keys from the environment. Code never names a model.
 - The web search is the provider's own search tool, turned on through RubyLLM's provider tools, with the purpose's `allowed_hosts` as the allowed domains and `max_searches` as its limit. The provider runs the search, so Aglowy itself never requests a jw.org page.
-- The first story confirms that RubyLLM 2.2 passes the allowed domains through to the provider's search tool. If it doesn't, it passes the provider's tool definition directly, and records which in this doc.
+- The first story confirms two things with a recorded reply from the configured provider, and records both in this doc:
+  - that RubyLLM 2.2 passes the allowed domains through to the provider's search tool. If it doesn't, the story passes the provider's tool definition directly
+  - that the provider's citations carry an excerpt (`cited_text`) the copy check can compare against. Anthropic's web search documents excerpts of up to 150 characters per citation
 
 ### Links the AI used: `Ai::SourceLink`
 
@@ -86,6 +88,7 @@ Every AI feature has all of these. A feature's design doc only adds to them.
    - **Policy values.** 8 words and 5 words live on `Ai::Purpose` (`copy_overlap_words`, `quote_max_words`) and are Casey's call to tune.
    - **Too thin.** If the checks leave fewer than 2 points, the request fails with "Couldn't make a draft this time. Try again."
    - **What it can't see.** `cited_text` is a short excerpt (up to about 150 characters per citation), so the check can only compare against what the search returned. The instructions, the quotation rule and "AI can get things wrong. Check each point against its source" cover the rest.
+   - **Citations without an excerpt.** A source whose citations carry no `cited_text` can't be checked for overlap. Its link may still be shown (requirements 1–3 of `Ai::SourceLink` still apply), but the quotation rule then applies to the whole draft with no exceptions. `AI_MODEL` must name a provider whose citations carry excerpts; a provider that returns none for any citation isn't supported for AI features. The first story's check above enforces this.
 6. **AI output is untrusted text.** Every field is rendered through ERB escaping or Primer components, never `html_safe` and never `raw`. Notes HTML built from a draft comes from our own template filled with escaped fields, then goes through Action Text's sanitizer like any note.
 7. **Never send more than the request needs.** Only what the person typed and the feature's options go to the provider. Never names, household names, notes, goals or other records. The prompt box says so.
 8. **Heads and adults only.** Children never see AI features in a household, and the policies refuse them. Any future feature for children needs its own decision.

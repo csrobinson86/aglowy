@@ -181,7 +181,7 @@ If the provider fails, the panel goes back to Describe with their text kept and 
   2. `chat.ask_within_purpose`, broadcasting **progress lines only** to the draft's stream, and returning early if the draft was `stopped`
   3. the checks in `docs/design/ai.md` (off topic, scriptures, copy check, source links)
   4. the final status (`drafted`, `off_topic` or `failed`) and the outline, written with a conditional update that applies only while the draft is still `drafting`. A draft stopped during the checks stays `stopped` and is never shown
-  5. only then, one broadcast that replaces the panel with the checked draft (or the refusal, or the failure)
+  5. only then, and only if step 4's conditional update changed the row and the draft's status is still the one this job wrote (re-read just before broadcasting), one broadcast that replaces the panel with the checked draft (or the refusal, or the failure). A draft stopped or discarded in between never replaces the panel
 - `draft.notes_html` builds the Notes from our own ERB partial with escaped fields. Scripture references go in as plain text, and `link_scriptures` turns them into scripture links when the study is saved (`docs/design/scripture-links.md`).
 
 ### Routes
