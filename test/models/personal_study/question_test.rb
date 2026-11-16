@@ -249,6 +249,48 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
     assert_nil use.reload.question_id
   end
 
+  test "save_to_notes appends the text and links" do
+    study = @question.personal_study
+    study.update!(notes: "<p>My own thoughts first.</p>")
+    saved_answer
+
+    @question.save_to_notes
+
+    notes = study.reload.notes.body
+    assert_equal [ "My own thoughts first.", "Jehovah never causes suffering.", "He will soon end it for good.", "Pages:" ],
+      notes.fragment.find_all("p").map { it.text.squish }
+    assert_equal [ [ SUFFERING, "Why Does God Allow Suffering?" ], [ END_OF_SUFFERING, "The End of Suffering" ] ],
+      notes.fragment.find_all("li a").map { [ it["href"], it.text ] }
+    assert_operator notes.to_html.index("My own thoughts first."), :<, notes.to_html.index("Jehovah never causes suffering.")
+  end
+
+  test "references become scripture links after save" do
+    saved_answer(paragraphs: [ "Jehovah never causes suffering. Read James 1:13." ])
+
+    @question.save_to_notes
+
+    assert_equal [ Bible::Reference.find("59:1:13") ], @question.personal_study.reload.notes.body.attachables
+  end
+
+  test "escapes <script>" do
+    saved_answer(paragraphs: [ %(<script>alert("hi")</script> Read James 1:13.) ],
+      sources: [ { "url" => SUFFERING, "title" => "<script>alert(1)</script>" } ])
+
+    @question.save_to_notes
+
+    notes = @question.personal_study.reload.notes.body
+    assert_empty notes.fragment.find_all("script")
+    assert_includes notes.to_plain_text, %(<script>alert("hi")</script>)
+    assert_includes notes.to_plain_text, "<script>alert(1)</script>"
+  end
+
+  test "a stopped question raises" do
+    @question.update!(status: "stopped")
+
+    assert_raises(PersonalStudy::Question::NotAnswered) { @question.save_to_notes }
+    assert_nil @question.personal_study.reload.notes
+  end
+
   test "database: a status of done raises CheckViolation" do
     assert_raises(ActiveRecord::CheckViolation) { @question.update_column(:status, "done") }
   end
@@ -289,6 +331,12 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
         ],
         web_sources: [ RubyLLM::WebSource.new(url: SUFFERING, title: "Why Does God Allow Suffering?"), RubyLLM::WebSource.new(url: END_OF_SUFFERING, title: "The End of Suffering") ]
       ))
+    end
+
+    # An answered question, as the job leaves it, with both pages.
+    def saved_answer(paragraphs: [ "Jehovah never causes suffering.", "He will soon end it for good." ], sources: nil)
+      @question.update!(status: "answered", answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => paragraphs, "next_questions" => [] },
+        sources: sources || [ { "url" => SUFFERING, "title" => "Why Does God Allow Suffering?" }, { "url" => END_OF_SUFFERING, "title" => "The End of Suffering" } ])
     end
 
     def chunk(content)

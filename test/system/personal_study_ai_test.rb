@@ -126,6 +126,59 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     assert_enqueued_jobs 1, only: PersonalStudy::AnswerQuestionJob
   end
 
+  test "save an answer to notes and see it with scripture links" do
+    @study.update!(notes: "<p>Start with Job.</p>")
+    personal_study_question(@study, status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [] })
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+
+    within(question_card("Why does Jehovah allow suffering?")) { click_on "Save to notes" }
+
+    within("section[aria-labelledby=my-notes]") do
+      assert_text "Saved"
+      within("lexxy-editor") do
+        assert_text "Start with Job."
+        assert_text "Jehovah never causes suffering"
+        assert_selector ".scripture-link", text: "James 1:13"
+        assert_text "Pages:"
+        assert_link "Why Does God Allow Suffering?"
+      end
+    end
+    assert_accessible
+    capture_screens("personal-study-saved-to-notes", scroll_to: "#my-notes")
+
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+    within("section[aria-labelledby=my-notes] lexxy-editor") { assert_text "Jehovah never causes suffering" }
+  end
+
+  test "plan a family study and see the prefilled box" do
+    personal_study_question(@study, prompt: "How does the ransom fit in?")
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+
+    click_on "Plan a family study from this"
+
+    assert_selector "h1", text: "Schedule a family study"
+    within("turbo-frame#ai_panel") do
+      assert_field "What should the study be about?", with: "Why does Jehovah allow suffering?: How does the ransom fit in?"
+      assert_button "Draft outline"
+    end
+    assert_equal 0, FamilyStudy::Draft.count
+    assert_accessible
+    capture_screens("plan-family-study-from-study", scroll_to: "turbo-frame#ai_panel")
+  end
+
+  test "a child sees no plan button" do
+    child = Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+    study = users(:child).personal_studies.create!(title: "Why do we pray?")
+    sign_out :identity
+    sign_in child
+
+    visit household_personal_study_url(household_id: households(:home), id: study)
+
+    assert_selector "h1", text: "Why do we pray?"
+    assert_no_link "Plan a family study from this"
+  end
+
   private
     # A question's card, by its question: an earlier answer's "Keep digging" chip can have the same words.
     def question_card(prompt)
