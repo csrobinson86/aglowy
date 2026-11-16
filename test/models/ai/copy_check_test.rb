@@ -80,9 +80,12 @@ class Ai::CopyCheckTest < ActiveSupport::TestCase
   end
 
   test "removes a sentence whose quotation opens with two digits and closes after a stop" do
-    fields, = clean("question" => "Read '12 men went out and preached good news.' In ‘05 our grandparents’ faith grew. Pray.")
+    fields, = clean(
+      "question" => "Read '12 men went out and preached good news.' In ‘05 our grandparents’ faith grew. Pray.",
+      "closing" => "Read ‘12 men joined Jesus’ disciples and preached good news.’ Pray."
+    )
 
-    assert_equal({ "question" => "In ‘05 our grandparents’ faith grew. Pray." }, fields)
+    assert_equal({ "question" => "In ‘05 our grandparents’ faith grew. Pray.", "closing" => "Pray." }, fields)
   end
 
   test "measures a quotation opening with two digits only up to the next quotation mark" do
@@ -92,12 +95,18 @@ class Ai::CopyCheckTest < ActiveSupport::TestCase
   end
 
   test "removes a single-quoted verse holding a plural possessive, but not a short quotation before one" do
-    fields, = clean(
-      "question" => "Read it. ‘Then Jesus’ disciples came and asked him why they could not expel it.’ Pray.",
-      "closing" => "Ask ‘why pray?’ and listen to the kids’ answers before bed tonight. Say ‘Jehovah loves us’ and read his ‘word.’"
-    )
+    fields, = clean("question" => "Read it. ‘Then Jesus’ disciples came and asked him why they could not expel it.’ Pray.")
 
-    assert_equal({ "question" => "Read it. Pray.", "closing" => "Ask ‘why pray?’ and listen to the kids’ answers before bed tonight. Say ‘Jehovah loves us’ and read his ‘word.’" }, fields)
+    assert_equal({ "question" => "Read it. Pray." }, fields)
+  end
+
+  test "keeps a short quotation ending in a plural apart from a later possessive or quotation" do
+    fields = {
+      "question" => "Ask ‘why pray?’ and listen to the kids’ answers before bed tonight. Say ‘Jehovah loves us’ and read his ‘word.’",
+      "closing" => "Is ‘Jesus loves us’ a favorite saying of your parents’? Say ‘thanks, brothers’ to the elders today. We love the kids’."
+    }
+
+    assert_equal [ fields, false ], clean(fields)
   end
 
   test "checks a long text of quotation marks left open within the regexp timeout" do

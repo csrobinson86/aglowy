@@ -8,6 +8,8 @@ class Ai::CopyCheck
   YEAR = /[[:digit:]]{2}s?(?![[:alnum:]])/
   # A single quotation mark outside a word, so not the apostrophe in "don’t" or "let's", opening a quotation.
   OPENING = /(?<![[:alnum:]])['‘](?!#{YEAR})/
+  # One inside a word ("don’t"), or ending a plural possessive before the next word ("Jesus’ disciples").
+  APOSTROPHE = /(?<=[[:alnum:]])['’](?=[[:alnum:]])|(?<=[sS])['’](?=\s+[[:alpha:]])/
   # In double quotation marks, where one left open runs to the end of the text; or in single ones, which only open
   # and close outside a word. A single one never runs past another opening, so each is measured on its own.
   QUOTATION = /
@@ -16,10 +18,11 @@ class Ai::CopyCheck
       (?:
         # One before a year opens a quotation ('12 men …') only when a stop or comma closes it, before any other
         # quotation mark.
-        (?=#{YEAR}) (?:[^.!?"“”'‘’]|(?<=[[:alnum:]])['’](?=[[:alnum:]]))*? [.!?,]
-        # Any other runs past a plural possessive (Jesus’ disciples) to a later closing mark, and otherwise closes at
-        # the first.
-        | (?!#{YEAR}) (?=\S) (?:(?:(?!#{OPENING}).)*? (?<=\S) (?:(?<![sS])|(?!['’]\s+[[:alpha:]])) | (?:(?!#{OPENING}).)*? (?<=\S))
+        (?=#{YEAR}) (?:[^.!?"“”'‘’]|#{APOSTROPHE})*? [.!?,]
+        # Any other runs past a plural possessive (‘Then Jesus’ disciples came …’) only to a closing mark after a stop
+        # or comma, as a verse ends, and otherwise closes at the first.
+        | (?!#{YEAR}) (?=\S)
+          (?:(?:[^'‘’]|#{APOSTROPHE}|(?<![[:alnum:]])['‘](?=#{YEAR}))*? [.!?,] | (?:(?!#{OPENING}).)*? (?<=\S))
       )
       ['’](?![[:alnum:]])
   /mx
