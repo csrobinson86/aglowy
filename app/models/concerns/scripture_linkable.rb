@@ -16,16 +16,21 @@ module ScriptureLinkable
     # builds an empty rich text that would then be saved. Finding a scripture is a parse, never a query.
     # A refused attachment leaves the unsaved notes, so the form shows again with what's left, as a refused
     # file leaves the Schedule a study list: the editor can't render another record's attachment.
+    # A plain <img> is no attachment at all, so it's looked for on its own.
     def link_only_scriptures_in(name)
       return unless association(:"rich_text_#{name}").loaded?
 
       rich_text = public_send(:"rich_text_#{name}")
       return unless rich_text&.changed?
-      return if rich_text.body.nil? || rich_text.body.attachables.all?(Bible::Reference)
+      return if rich_text.body.nil? || only_scriptures_in?(rich_text.body)
 
       errors.add(name, "can only link scriptures")
-      rich_text.body = rich_text.body.fragment.replace(ActionText::Attachment.tag_name) do |node|
-        ActionText::Attachable.from_node(node).is_a?(Bible::Reference) ? node : ""
+      rich_text.body = rich_text.body.fragment.replace("#{ActionText::Attachment.tag_name}, img") do |node|
+        node.name == ActionText::Attachment.tag_name && ActionText::Attachable.from_node(node).is_a?(Bible::Reference) ? node : ""
       end.to_html
+    end
+
+    def only_scriptures_in?(body)
+      body.attachables.all?(Bible::Reference) && body.fragment.find_all("img").none?
     end
 end

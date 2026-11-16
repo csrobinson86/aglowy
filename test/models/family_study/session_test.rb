@@ -260,6 +260,16 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
   end
 
+  test "notes with a plain image are invalid, and the image leaves the unsaved notes" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>Read #{scripture_attachment("40:24:14")}</p>#{image_tag_html}"
+
+    assert_not session.valid?
+    assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
+    assert_empty session.notes.body.fragment.find_all("img")
+    assert_equal [ Bible::Reference.find("40:24:14") ], session.notes.body.attachables
+  end
+
   test "notes are checked only when they change, so a session with older stored notes can still be cancelled" do
     session = family_study_sessions(:weekly_next)
     ActionText::EncryptedRichText.create!(record: session, name: "notes", body: "<p>#{foreign_attachment(households(:other))}</p>")

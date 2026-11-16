@@ -52,6 +52,11 @@ module ActiveSupport
     def remote_image_attachment
       %(<action-text-attachment url="https://example.com/cat.png" content-type="image/png"></action-text-attachment>)
     end
+
+    # A plain image, no attachment at all, as a crafted request could send.
+    def image_tag_html
+      %(<img src="https://example.com/cat.png">)
+    end
   end
 end
 

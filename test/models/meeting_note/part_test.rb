@@ -74,6 +74,16 @@ class MeetingNote::PartTest < ActiveSupport::TestCase
     assert_equal [ "Notes can only link scriptures" ], part.errors.full_messages_for(:notes)
   end
 
+  test "notes with a plain image are invalid, and the image leaves the unsaved notes" do
+    part = meeting_note_parts(:head_talk)
+    part.notes = "<p>Read #{scripture_attachment("40:24:14")}</p>#{image_tag_html}"
+
+    assert_not part.valid?
+    assert_equal [ "Notes can only link scriptures" ], part.errors.full_messages_for(:notes)
+    assert_empty part.notes.body.fragment.find_all("img")
+    assert_equal [ Bible::Reference.find("40:24:14") ], part.notes.body.attachables
+  end
+
   test "a refused attachment leaves the unsaved notes, so the form shows what's left" do
     part = meeting_note_parts(:head_talk)
     part.notes = "<p>Kept #{scripture_attachment("40:24:14")} #{foreign_attachment(users(:spouse))}#{remote_image_attachment}</p>"
