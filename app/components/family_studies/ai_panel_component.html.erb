@@ -16,7 +16,7 @@
   <% end %>
 
   <%= tag.div hidden: !open?, data: { ai_panel_target: "opened" } do %>
-    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <%= render(Primer::Beta::BorderBox.new(data: { ai_draft_target: ("review" if opened_state == :drafted) })) do |box| %>
       <% box.with_header(display: :flex, align_items: :center, justify_content: :space_between) do %>
         <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, display: :flex, align_items: :center)) do %>
           <%= heading %>
@@ -53,7 +53,7 @@
                 <% draft.sources.each do |source| %>
                   <li class="d-flex flex-items-baseline mb-1">
                     <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
-                    <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || host(source["url"]) } %> <span class="color-fg-muted">· <%= host(source["url"]) %></span></span>
+                    <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener", data: { ai_draft_target: "source" })) { source["title"].presence || host(source["url"]) } %> <span class="color-fg-muted">· <%= host(source["url"]) %></span></span>
                   </li>
                 <% end %>
               </ul>
@@ -62,12 +62,23 @@
               <p class="color-fg-muted">No matching pages found on jw.org or wol.jw.org.</p>
             <% end %>
           </div>
+          <%# The draft as Notes, for "Use this draft" to put in the editor. Our own partial, every field escaped. %>
+          <template data-ai-draft-target="template"><%= draft.notes_html %></template>
+          <%= render(Primer::Alpha::Dialog.new(id: "ai-draft-topic", title: "Replace the topic?", data: { ai_draft_target: "topicDialog" })) do |dialog| %>
+            <% dialog.with_body do %>
+              <p>Your topic: <strong data-ai-draft-target="typedTopic"></strong></p>
+              <p class="mb-0">The draft's: <strong><%= draft.outline["title"] %></strong></p>
+            <% end %>
+            <% dialog.with_footer do %>
+              <%= render(Primer::Beta::Button.new(data: { action: "ai-draft#keepTopic" })) { "Keep mine" } %>
+              <%= render(Primer::Beta::Button.new(scheme: :primary, data: { action: "ai-draft#replaceTopic" })) { "Replace" } %>
+            <% end %>
+          <% end %>
           <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) do %>
             AI can get things wrong. Check each point against its source before your study.
           <% end %>
           <div class="d-flex flex-wrap flex-items-center">
-            <%# Filling the form is the next story (docs/design/family-studies.md, Use this draft). %>
-            <%= render(Primer::Beta::Button.new(scheme: :primary, disabled: true, mr: 2)) { "Use this draft" } %>
+            <%= render(Primer::Beta::Button.new(scheme: :primary, mr: 2, data: { action: "ai-draft#use" })) { "Use this draft" } %>
             <%= primer_form_with(model: draft, url: drafts_path, method: :post, class: "mr-2") do |f| %>
               <%= render FamilyStudies::DraftForm.new(f, section: :again) %>
             <% end %>
@@ -122,6 +133,21 @@
             <%= render FamilyStudies::DraftForm.new(f, section: :actions) %>
           <% end %>
           <p class="text-small color-fg-muted mt-3 mb-0"><%= drafts_left %> of <%= daily_limit %> drafts left today for the <%= household.name %></p>
+        <% end %>
+      <% end %>
+    <% end %>
+    <% if opened_state == :drafted %>
+      <%# "Use this draft" shows this in place of the draft, with the form filled (frame ai-draft-added.png). %>
+      <%= render(Primer::Beta::BorderBox.new(hidden: true, data: { ai_draft_target: "added" })) do |box| %>
+        <% box.with_body do %>
+          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center, tabindex: -1)) do %>
+            <%= render(Primer::Beta::Octicon.new(:check, color: :success, mr: 2)) %>Draft added
+          <% end %>
+          <p><%= added_summary %></p>
+          <%# Back to Describe with the text kept: the draft is done with, so it's discarded, as "Change" does. %>
+          <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+            <%= render FamilyStudies::DraftActionForm.new(f, label: "Draft again") %>
+          <% end %>
         <% end %>
       <% end %>
     <% end %>

@@ -16,7 +16,7 @@ module ScreenshotHelper
       phone = viewport != :desktop
       emulate_viewport(width, height, phone:)
       emulate_touch(phone)
-      page.execute_script("document.querySelector(arguments[0]).scrollIntoView({ block: 'center' })", scroll_to) if scroll_to
+      scroll_to_center(scroll_to) if scroll_to
 
       THEMES.each do |theme|
         emulate_color_scheme(theme)
@@ -33,6 +33,17 @@ module ScreenshotHelper
   end
 
   private
+    # The page lays out again after the viewport changes, and a scroll before then is lost, so wait two frames first.
+    def scroll_to_center(selector)
+      page.evaluate_async_script(<<~JS, selector)
+        const [ selector, done ] = arguments
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          document.querySelector(selector).scrollIntoView({ block: "center" })
+          done()
+        }))
+      JS
+    end
+
     def screenshot_dir
       Rails.root.join("tmp/screenshots/ui")
     end

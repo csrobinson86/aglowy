@@ -5,6 +5,11 @@ require "application_system_test_case"
 class FamilyStudyAiTest < ApplicationSystemTestCase
   include ActiveJob::TestHelper
 
+  # The three pages the saved reply's search returned (test/fixtures/files/ai/family_study_draft.json).
+  SOURCES = %w[ https://www.jw.org/en/bible-teachings/family/family-worship/ https://wol.jw.org/en/wol/d/r1/lp-e/1200275025
+                https://www.jw.org/en/bible-teachings/questions/how-to-pray/ ].freeze
+  END_OF_TEXT = RUBY_PLATFORM.include?("darwin") ? [ :command, :down ] : [ :control, :end ]
+
   test "a head turns on AI drafts, describes a study and sees Drafting with AI" do
     sign_in identities(:head)
     visit new_household_family_study_url(household_id: households(:home))
@@ -175,6 +180,129 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
     assert_predicate households(:home).family_study_drafts.sole, :stopped?
   end
 
+  test "Use this draft fills Topic, Notes and three Resources, and Schedule study saves them" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+
+    within("turbo-frame#ai_panel") { click_on "Use this draft" }
+
+    within("turbo-frame#ai_panel") do
+      assert_selector "h2", text: "Draft added"
+      assert_text "The topic, notes and 3 links from jw.org and wol.jw.org are now in the form."
+      assert_button "Draft again"
+      assert_no_button "Use this draft"
+    end
+    assert_field "What will you study?", with: "Talking to Jehovah as a family"
+    assert_selector "lexxy-editor", text: "Jehovah listens to each of us"
+    assert_selector "lexxy-editor", text: "Read Philippians 4:6, 7."
+    assert_selector ".Label", text: "From an AI draft"
+    assert_equal SOURCES, all("#schedule-links input[name='family_study_scheduling[link_urls][]']", visible: :hidden).map(&:value)
+    assert_accessible
+    capture_screens("ai-draft-added")
+    capture_screens("ai-draft-added-notes", scroll_to: "[data-ai-draft-target=label]")
+    # On a phone the panel stacks under the form.
+    capture_screens("ai-draft-added-panel", scroll_to: "[data-ai-draft-target=added]", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+
+    fill_in "Date", with: 7.days.from_now.to_date
+    fill_in "Starts", with: Time.zone.parse("19:00")
+    fill_in "Ends", with: Time.zone.parse("19:45")
+    click_on "Schedule study"
+
+    assert_text "Your family study is scheduled."
+    session = households(:home).family_studies.order(:created_at).last.sessions.sole
+    assert_equal "Talking to Jehovah as a family", session.topic
+    assert_equal %w[ 50:4:6-7 19:65:2 60:5:7 40:6:9 ].map { Bible::Reference.find(it) }, session.notes.body.attachables
+    assert_equal SOURCES, session.resources.map(&:url)
+    assert session.resources.all?(&:link?)
+  end
+
+  test "with a Topic already typed, Keep mine keeps it" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    fill_in "What will you study?", with: "Praying as a family"
+
+    within("turbo-frame#ai_panel") { click_on "Use this draft" }
+    within("dialog", text: "Replace the topic?") do
+      assert_text "Praying as a family"
+      assert_text "Talking to Jehovah as a family"
+      click_on "Keep mine"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_field "What will you study?", with: "Praying as a family"
+    assert_selector "turbo-frame#ai_panel h2", text: "Draft added"
+    assert_selector "lexxy-editor", text: "Jehovah listens to each of us"
+    assert_selector "#schedule-links li", count: 3
+  end
+
+  test "Replace takes the draft's title, and notes already written stay above the draft's" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    fill_in "What will you study?", with: "Praying as a family"
+    write_notes "Start with a song."
+
+    within("turbo-frame#ai_panel") { click_on "Use this draft" }
+    within("dialog", text: "Replace the topic?") { click_on "Replace" }
+
+    assert_field "What will you study?", with: "Talking to Jehovah as a family"
+    assert_selector "lexxy-editor", text: /Start with a song\..*Jehovah listens to each of us/m
+  end
+
+  test "a page already in Resources isn't listed twice" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    within("turbo-frame#ai_panel") { click_on "Use this draft" }
+    assert_selector "#schedule-links li", count: 3
+
+    fill_in "Add a link", with: SOURCES.first
+    click_on "Add link"
+
+    assert_field "Add a link", with: ""
+    assert_selector "#schedule-links li", count: 3
+  end
+
+  test "editing Notes removes the From an AI draft label" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    within("turbo-frame#ai_panel") { click_on "Use this draft" }
+    assert_selector ".Label", text: "From an AI draft"
+
+    write_notes " Sing song 44."
+
+    assert_no_selector ".Label", text: "From an AI draft"
+    assert_selector "lexxy-editor", text: "Sing song 44."
+  end
+
+  test "Draft again on Draft added returns to Describe" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    within("turbo-frame#ai_panel") { click_on "Use this draft" }
+
+    within("turbo-frame#ai_panel") { click_on "Draft again" }
+
+    within("turbo-frame#ai_panel") do
+      assert_field "What should the study be about?", with: "Talking to Jehovah together"
+      assert_button "Draft outline"
+    end
+    assert_field "What will you study?", with: "Talking to Jehovah as a family"
+  end
+
+  test "Discard instead: the form is unchanged" do
+    start_draft("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    fill_in "What will you study?", with: "Praying as a family"
+
+    within("turbo-frame#ai_panel") { click_on "Discard" }
+
+    assert_field "What should the study be about?", with: "Talking to Jehovah together"
+    assert_field "What will you study?", with: "Praying as a family"
+    assert_selector "lexxy-editor.lexxy-editor--empty"
+    assert_no_selector "#schedule-links li"
+    assert_text "No resources yet."
+    assert_no_selector ".Label", text: "From an AI draft"
+    assert_predicate households(:home).family_study_drafts.sole, :discarded?
+  end
+
   test "a child sees no panel" do
     sign_in identities(:eli)
     visit new_household_family_study_url(household_id: households(:home))
@@ -197,6 +325,13 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
         assert_selector "h2", text: "Drafting with AI"
       end
       assert_selector "turbo-cable-stream-source[connected]", visible: :all
+    end
+
+    # Types into the Notes editor the way a person does: focus the editable area, then type at its end.
+    def write_notes(text)
+      editor = find("lexxy-editor [contenteditable='true']")
+      editor.click
+      editor.send_keys(END_OF_TEXT, text)
     end
 
     # Runs the draft's job here, with moderation passing and Chat#ask_within_purpose standing in for the provider:

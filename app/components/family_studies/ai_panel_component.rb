@@ -47,6 +47,13 @@ class FamilyStudies::AiPanelComponent < ApplicationComponent
       ("young children" if draft.young_children?) ].compact.join(" · ")
   end
 
+  # What "Use this draft" put in the form (frame ai-draft-added.png).
+  def added_summary
+    links = draft.sources.size
+    added = links.zero? ? "The topic and notes" : "The topic, notes and #{helpers.pluralize(links, "link")} from jw.org and wol.jw.org"
+    "#{added} are now in the form. Change anything you like before you schedule."
+  end
+
   # "jw.org" for www.jw.org, as each source shows beside its title.
   def host(url)
     URI(url).host.delete_prefix("www.")

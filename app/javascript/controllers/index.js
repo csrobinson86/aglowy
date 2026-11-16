@@ -4,6 +4,9 @@
 
 import { application } from "./application"
 
+import AiDraftController from "./ai_draft_controller"
+application.register("ai-draft", AiDraftController)
+
 import AutoSubmitController from "./auto_submit_controller"
 application.register("auto-submit", AutoSubmitController)
 
