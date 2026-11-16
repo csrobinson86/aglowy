@@ -111,6 +111,8 @@ Rails.application.routes.draw do
         resources :completions, only: %i[ create destroy ], module: :steps
       end
     end
+    # The signed-in person's own tags, found by name through Current.user, so another person's is a 404 (docs/design/tags.md).
+    resources :tags, only: %i[ index show update destroy ], param: :name
     resources :direct_uploads, only: :create
     resources :resources, only: [] do
       resource :file, only: :show, module: :resources

@@ -942,7 +942,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a[href='#{note_path(meeting_notes(:head_weekend))}']", count: 0
     assert_select "main a[href='#{note_path(untagged)}']", count: 0
     assert_select "main .Box-row", text: /#ministry.*#prayer/m
-    assert_select "main a.Label[href='#{household_meeting_notes_path(household_id: households(:home), tag: "prayer")}']", text: "#prayer"
+    assert_select "main a.Label[href='#{household_tag_path(household_id: households(:home), name: "prayer")}']", text: "#prayer"
   end
 
   test "an unknown tag shows the empty filter state" do

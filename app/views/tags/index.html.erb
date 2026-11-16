@@ -1,0 +1,43 @@
+<% content_for :title, "My tags" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "My tags" } %>
+  <% subhead.with_description { "Open a tag to see everything carrying it. Only you can see your tags." } %>
+<% end %>
+
+<%= render Primer::Beta::BorderBox.new do |box| %>
+  <% if @tags.any? %>
+    <% @tags.each do |tag| %>
+      <% box.with_row(display: :flex, align_items: :center) do %>
+        <%= render(Primer::Beta::Label.new(tag: :a, href: household_tag_path(name: tag.name), scheme: :accent, mr: 2, classes: "css-truncate css-truncate-overflow")) { "##{tag.name}" } %>
+        <span class="color-fg-muted flex-auto"><%= pluralize(tag.taggings_count, "item") %></span>
+        <%= render(Primer::Alpha::Dialog.new(id: dom_id(tag, :rename_dialog), title: "Rename ##{tag.name}")) do |dialog| %>
+          <% dialog.with_show_button(size: :small, ml: 2, flex_shrink: 0, "aria-label": "Rename ##{tag.name}") { "Rename" } %>
+          <% dialog.with_body(pb: 3) do %>
+            <%= render "tags/rename_form", tag: %>
+          <% end %>
+        <% end %>
+        <%= render(Primer::Alpha::Dialog.new(id: dom_id(tag, :delete_dialog), title: "Delete ##{tag.name}?")) do |dialog| %>
+          <% dialog.with_show_button(scheme: :danger, size: :small, ml: 2, flex_shrink: 0, "aria-label": "Delete ##{tag.name}") { "Delete" } %>
+          <% dialog.with_body do %>
+            It comes off <%= pluralize(tag.taggings_count, "item") %>. Nothing it's on is deleted.
+          <% end %>
+          <% dialog.with_footer do %>
+            <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dom_id(tag, :delete_dialog) })) { "Cancel" } %>
+            <%= primer_form_with(url: household_tag_path(name: tag.name), method: :delete) do |f| %>
+              <%= render ::Tags::DeleteForm.new(f) %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% else %>
+    <% box.with_body do %>
+      <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :tag) %>
+        <% blankslate.with_heading(tag: :h2) { "No tags yet" } %>
+        <% blankslate.with_description { "Add a tag from a meeting note or a personal goal, under its title." } %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

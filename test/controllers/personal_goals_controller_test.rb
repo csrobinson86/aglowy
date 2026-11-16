@@ -150,7 +150,7 @@ class PersonalGoalsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a[href='#{household_my_goals_path(household_id: households(:home))}'][aria-label='Remove filter #ministry']"
     assert_select "nav[aria-label='Goals'] a[aria-current='page'][href*='tag=ministry']", text: /Active\s*1/
     assert_select "main .Box-row", count: 1
-    assert_select "main .Box-row a.Label[href='#{household_my_goals_path(household_id: households(:home), tag: "ministry")}']", text: "#ministry"
+    assert_select "main .Box-row a.Label[href='#{household_tag_path(household_id: households(:home), name: "ministry")}']", text: "#ministry"
 
     get household_my_goals_path(household_id: households(:home), tag: "unknown")
 

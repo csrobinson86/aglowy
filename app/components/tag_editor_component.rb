@@ -45,8 +45,7 @@ class TagEditorComponent < ApplicationComponent
     helpers.polymorphic_path([ :household, taggable, :tagging ], id: tag.id, household_id: household.id)
   end
 
-  # The list the thing is in, filtered by the tag, until each tag has its own page.
-  def filtered_list_path(tag)
-    helpers.tag_filter_path(taggable, tag, household: household.id)
+  def tag_page_path(tag)
+    helpers.household_tag_path(household_id: household.id, name: tag.name)
   end
 end

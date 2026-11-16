@@ -1,6 +1,6 @@
 <%# locals: (taggable:, household: Current.household) %>
-<%# A list row's tags: the signed-in person's own only, through tags_for, never tags (docs/design/tags.md, Traps).
+<%# A list row's tags, each linking to its page: the signed-in person's own only, through tags_for, never tags (docs/design/tags.md, Traps).
     From a preloaded :tags, so a list asks no query per row. %>
 <% taggable.tags_for(Current.user).sort_by(&:name).each do |tag| %>
-  <%= render(Primer::Beta::Label.new(tag: :a, href: tag_filter_path(taggable, tag, household:), scheme: :accent, mr: 1)) { "##{tag.name}" } %>
+  <%= render(Primer::Beta::Label.new(tag: :a, href: household_tag_path(household_id: household, name: tag.name), scheme: :accent, mr: 1)) { "##{tag.name}" } %>
 <% end %>

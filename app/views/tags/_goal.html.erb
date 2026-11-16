@@ -1,0 +1,10 @@
+<%# locals: (record:) %>
+<%# From Goal.preloaded, so the steps count asks no query per goal. %>
+<% progress = record.progress %>
+<%= render(Primer::Beta::Octicon.new(:flag, color: :muted, mr: 2, mt: 1, flex_shrink: 0)) %>
+<div class="min-width-0">
+  <%= render(Primer::Beta::Link.new(href: household_goal_path(id: record), font_weight: :bold, classes: "wb-break-word")) { record.title } %>
+  <div class="color-fg-muted">
+    Milestone goal · <%= progress.steps_count.zero? ? "No steps yet" : "#{progress.done_count} of #{pluralize(progress.steps_count, "step")} done" %>
+  </div>
+</div>

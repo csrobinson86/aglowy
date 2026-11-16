@@ -32,6 +32,52 @@ class TagTest < ActiveSupport::TestCase
     assert_equal tags(:head_ministry), users(:head).tags.create_or_find_by!(name: "ministry")
   end
 
+  test "rename normalizes the new name and keeps the tag on everything it was on" do
+    tag = tags(:head_ministry)
+
+    assert tag.rename("#Field Service")
+    assert_equal "field-service", tag.reload.name
+    assert_equal [ tag ], meeting_notes(:head_midweek).tags.to_a
+  end
+
+  test "rename to a name the person already has fails; another person's same name doesn't count" do
+    users(:head).tags.create!(name: "prayer")
+    users(:spouse).tags.create!(name: "service")
+    tag = tags(:head_ministry)
+
+    assert_not tag.rename("Prayer")
+    assert_equal [ "You already have #prayer." ], tag.errors.full_messages
+    assert_equal "ministry", tag.reload.name
+    assert tag.rename("service")
+  end
+
+  test "a rename that races another to the same name reaches the unique index and fails with the same message" do
+    users(:head).tags.create!(name: "prayer")
+    tag = tags(:head_ministry)
+
+    # As if the other request took the name after this one checked it.
+    tag.stub(:name_changed?, false) { assert_not tag.rename("Prayer") }
+    assert_equal [ "You already have #prayer." ], tag.errors.full_messages
+    assert_equal "ministry", tag.reload.name
+  end
+
+  test "rename to a name that normalizes to nothing fails" do
+    assert_not tags(:head_ministry).rename("###")
+    assert_equal "ministry", tags(:head_ministry).reload.name
+  end
+
+  test "meeting notes and goals carrying it, newest first; no personal studies before PSTUDY-01" do
+    tag = tags(:head_ministry)
+    meeting_notes(:head_weekend).tag_with("ministry", by: users(:head))
+    older = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
+    newer = users(:head).goals.create!(title: "Start a Bible study", target_on: Date.new(2027, 1, 31), set_by: users(:head))
+    [ older, newer ].each { it.tag_with("ministry", by: users(:head)) }
+
+    assert_equal [ meeting_notes(:head_weekend), meeting_notes(:head_midweek) ], tag.meeting_notes.to_a
+    assert_equal [ newer, older ], tag.goals.to_a
+    assert_empty tag.personal_studies
+  end
+
   test "database: a name that isn't normalized raises CheckViolation" do
     assert_raises ActiveRecord::CheckViolation do
       Tag.insert!({ user_id: users(:head).id, name: "Talk Prep" })

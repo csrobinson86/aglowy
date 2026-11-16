@@ -1,0 +1,12 @@
+<%# locals: (id:, heading:, records:, row:) %>
+<%# One kind of thing on a tag's page, newest first. row is the partial that draws each record. %>
+<section aria-labelledby="<%= id %>" class="mb-4">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, id:)) do %>
+    <%= heading %> <span class="color-fg-muted text-normal"><%= records.size %></span>
+  <% end %>
+  <%= render Primer::Beta::BorderBox.new do |box| %>
+    <% records.each do |record| %>
+      <% box.with_row(display: :flex) { render row, record: } %>
+    <% end %>
+  <% end %>
+</section>
