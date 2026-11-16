@@ -170,7 +170,35 @@ class PersonalStudyTest < ActiveSupport::TestCase
     end
   end
 
+  test "tags_for: an allowed head sees the child's tags on a study; a head without a grant, an adult and another household don't" do
+    study = eli_study_tagged("creation")
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+
+    assert_equal [ "creation" ], study.tags_for(users(:head), membership: memberships(:head_in_home)).map(&:name)
+    assert_empty study.tags_for(users(:spouse), membership: memberships(:spouse_in_home))
+    assert_empty study.tags_for(users(:grandparent), membership: memberships(:grandparent_in_parents))
+    assert_empty study.tags_for(users(:head), membership: nil)
+
+    memberships(:eli_in_home).revoke_study_ai
+
+    assert_empty study.tags_for(users(:head), membership: memberships(:head_in_home))
+  end
+
+  test "tags_for: the child's meeting note stays empty for an allowed head" do
+    eli_study_tagged("creation")
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.tag_with("creation", by: users(:eli))
+
+    assert_empty note.tags_for(users(:head), membership: memberships(:head_in_home))
+    assert_equal [ "creation" ], note.tags_for(users(:eli), membership: memberships(:eli_in_home)).map(&:name)
+  end
+
   private
+    def eli_study_tagged(name)
+      users(:eli).personal_studies.create!(title: "How did life begin?").tap { it.tag_with(name, by: users(:eli)) }
+    end
+
     def new_chat
       Chat.create!(user: users(:head), purpose: "personal_study")
     end
