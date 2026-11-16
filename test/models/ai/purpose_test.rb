@@ -18,6 +18,11 @@ class Ai::PurposeTest < ActiveSupport::TestCase
     assert_predicate @purpose.max_output_tokens, :positive?
   end
 
+  test "its copy check takes 8 words in a row as a copy, and allows quotations of 5 words" do
+    assert_equal 8, @purpose.copy_overlap_words
+    assert_equal 5, @purpose.quote_max_words
+  end
+
   test "an unknown purpose raises" do
     assert_raises(Ai::Purpose::Unknown) { Ai::Purpose.find("chatbot") }
   end
