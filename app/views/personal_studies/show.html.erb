@@ -1,6 +1,7 @@
 <% content_for :title, @personal_study.title_in_database %>
 
 <%= render "personal_studies/header", personal_study: @personal_study %>
+<%= render "personal_studies/read_by_heads" %>
 <%= render "personal_studies/errors", personal_study: @personal_study %>
 
 <%# The conversation and the ask box, with My notes and the study's sources beside them (frame personal-study.png);

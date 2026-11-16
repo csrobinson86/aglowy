@@ -1,9 +1,10 @@
-<%# locals: (question:, household: nil) -%>
+<%# locals: (question:, household: nil, read_only: false) -%>
 <%# One question in a study's conversation and its answer card (frame personal-study.png). The job's result broadcast
-    replaces it once the answer is checked; household is for Stop and Save to notes, and the broadcast has none. %>
+    replaces it once the answer is checked; household is for Stop and Save to notes, and the broadcast has none.
+    read_only is a head reading a child's study. %>
 <div id="<%= dom_id(question) %>" class="study-question">
   <div class="d-flex flex-justify-end pl-6 mb-3">
     <p class="color-bg-subtle border rounded-3 px-3 py-2 mb-0 wb-break-word"><%= question.prompt %></p>
   </div>
-  <%= render PersonalStudies::AnswerComponent.new(question:, household:) %>
+  <%= render PersonalStudies::AnswerComponent.new(question:, household:, read_only:) %>
 </div>

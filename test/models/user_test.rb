@@ -150,4 +150,22 @@ class UserTest < ActiveSupport::TestCase
 
     assert_predicate users(:head), :accepted_ai_terms?
   end
+
+  test "may_ask_study_ai? for a child with a grant in one of two households" do
+    Membership.create!(household: households(:parents), user: users(:eli), role: :child)
+    assert_not users(:eli).may_ask_study_ai?
+
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+
+    assert users(:eli).reload.may_ask_study_ai?
+  end
+
+  test "personal_study_read_by_heads? while any of their child seats has a grant" do
+    assert_not users(:eli).personal_study_read_by_heads?
+
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+
+    assert users(:eli).personal_study_read_by_heads?
+    assert_not users(:head).personal_study_read_by_heads?
+  end
 end

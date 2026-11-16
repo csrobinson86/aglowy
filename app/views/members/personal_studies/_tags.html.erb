@@ -1,0 +1,6 @@
+<%# locals: (personal_study:) %>
+<%# The child's tags on a study, as plain labels: tags_for lets an allowed head see them, but a tag's page is the
+    child's own, so they don't link (docs/design/personal-study.md, Children). From a preloaded :tags. %>
+<% personal_study.tags_for(Current.user).sort_by(&:name).each do |tag| %>
+  <%= render(Primer::Beta::Label.new(scheme: :accent, mr: 1)) { "##{tag.name}" } %>
+<% end %>

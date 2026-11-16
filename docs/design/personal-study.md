@@ -123,7 +123,7 @@ State as a record: `membership_id` (FK, unique, `on_delete: :cascade`) and `gran
   - `ChildStudyPolicy#show?` requires the viewer to be a head here, and the member to be an active child here with a grant
   - Anyone else gets a 404
 - **The child is told.** Their Personal study page shows a Primer Banner: "Your parents can read your personal study, including what you ask and your notes."
-- **Leaving the household** destroys the membership, and with it the grant. The child's studies stay with them.
+- **Leaving the household** (`Membership#deactivate`) deletes the grant, so rejoining doesn't bring it back, and so does a head making the child an adult. Deleting the membership deletes it too (`on_delete: :cascade`). The child's studies stay with them.
 
 ## Pages and routes
 

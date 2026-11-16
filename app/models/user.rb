@@ -63,10 +63,15 @@ class User < ApplicationRecord
     ai_acceptances.create_or_find_by(version: Rails.configuration.x.ai.terms_version) { it.understood = understood }
   end
 
-  # Head or adult in any active household: personal study is the person's, not one household's
-  # (docs/design/personal-study.md, Who can do what). Children get it with a head's grant, in a later story.
+  # Head or adult in any active household, or a child with a head's grant in any of them: personal study is the
+  # person's, not one household's (docs/design/personal-study.md, Who can do what).
   def may_ask_study_ai?
-    memberships.active.where(role: %w[ head adult ]).exists?
+    memberships.active.merge(Membership.where(role: %w[ head adult ]).or(Membership.child.with_study_ai_grant)).exists?
+  end
+
+  # A head somewhere can read their personal studies, so their Personal study page tells them.
+  def personal_study_read_by_heads?
+    memberships.active.child.with_study_ai_grant.exists?
   end
 
   # Where midnight is for their per-person AI limits: their own time zone, else their oldest active membership's

@@ -4,7 +4,7 @@ class MembersController < ApplicationController
   before_action(except: :destroy) { authorize Membership }
 
   def index
-    @memberships = Current.household.memberships.active.preloaded.by_role
+    @memberships = Current.household.memberships.active.preloaded.includes(:study_ai_grant).by_role
     # Invitations show other people's addresses, so children don't get them.
     @invitations = Current.household.invitations.preloaded.newest_first if policy(Invitation).create?
   end

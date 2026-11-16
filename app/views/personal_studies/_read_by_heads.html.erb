@@ -1,0 +1,4 @@
+<%# The child is told while a head can read their personal study (docs/design/personal-study.md, Children). %>
+<% if Current.user.personal_study_read_by_heads? %>
+  <%= render(Primer::Alpha::Banner.new(icon: :eye, mb: 3)) { "Your parents can read your personal study, including what you ask and your notes." } %>
+<% end %>

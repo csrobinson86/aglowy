@@ -117,6 +117,36 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_no_text "From jw.org and wol.jw.org"
   end
 
+  test "read-only asking: a muted line, with no stream and no Stop" do
+    render_inline(PersonalStudies::AnswerComponent.new(question: personal_study_question, household: nil, read_only: true))
+
+    assert_selector "p", text: "Answering…"
+    assert_no_selector "turbo-cable-stream-source", visible: :all
+    assert_no_selector "form"
+  end
+
+  test "read-only answered: the answer and its pages, with no chips, no Save to notes and nothing to press" do
+    answer = { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [ "What did Job learn?" ] }
+    question = personal_study_question(status: "answered", answer:, sources: [ { "url" => SUFFERING, "title" => "Why Does God Allow Suffering?" } ])
+
+    render_inline(PersonalStudies::AnswerComponent.new(question:, household: nil, read_only: true))
+
+    assert_selector "p", text: "Jehovah never causes suffering"
+    assert_link "Why Does God Allow Suffering?", href: SUFFERING
+    assert_text "Check each point against its page."
+    assert_no_text "Keep digging"
+    assert_no_selector "button, form, [data-study-ask-target]"
+  end
+
+  test "read-only failed and stopped: what happened, with nothing to press" do
+    render_inline(PersonalStudies::AnswerComponent.new(question: personal_study_question(status: "failed"), household: nil, read_only: true))
+    assert_text "Couldn't answer right now. Try again."
+    assert_no_selector "button"
+
+    render_inline(PersonalStudies::AnswerComponent.new(question: personal_study_question(status: "stopped"), household: nil, read_only: true))
+    assert_text "This answer was stopped."
+  end
+
   private
     def render_answered(sources: [ { "url" => SUFFERING, "title" => "Why Does God Allow Suffering?" } ], **answer)
       answer = { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ],
