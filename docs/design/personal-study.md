@@ -116,14 +116,14 @@ State as a record: `membership_id` (FK, unique, `on_delete: :cascade`) and `gran
   - `POST /:household_id/memberships/:membership_id/study_ai_grant`
   - `DELETE` the same path
 
-  It lives in Household settings → Children → "Personal study with AI".
+  It lives in Household settings → Children → "Personal study with AI". The frame draws a switch; each child's row has a Primer "Turn on" or "Turn off" button instead, because turning it on and off are a create and a destroy, and Primer's ToggleSwitch posts to one URL (as the meeting helper's check box, `docs/design/meeting-helper.md`).
 - **Turning it off** stops new questions. The child keeps their studies, notes and answers. Heads stop seeing them.
 - **What heads see.** A head of a household where the child has a grant can read the child's studies, read-only: the list, each conversation with its answers and sources, the notes and the tags.
   - `GET /:household_id/members/:member_id/personal_studies` and `…/personal_studies/:id` (`Members::PersonalStudiesController`)
   - `ChildStudyPolicy#show?` requires the viewer to be a head here, and the member to be an active child here with a grant
   - Anyone else gets a 404
 - **The child is told.** Their Personal study page shows a Primer Banner: "Your parents can read your personal study, including what you ask and your notes."
-- **Leaving the household** destroys the membership, and with it the grant. The child's studies stay with them.
+- **Leaving the household** (`Membership#deactivate`) deletes the grant, so rejoining doesn't bring it back, and so does a head making the child an adult. Deleting the membership deletes it too (`on_delete: :cascade`). The child's studies stay with them.
 
 ## Pages and routes
 
