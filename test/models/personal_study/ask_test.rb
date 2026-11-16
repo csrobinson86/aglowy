@@ -141,6 +141,18 @@ class PersonalStudy::AskTest < ActiveSupport::TestCase
     assert question.errors.added?(:base, :not_allowed)
   end
 
+  test "someone other than the study's owner is :not_allowed" do
+    spouse = users(:spouse)
+    spouse.accept_ai_terms(understood: true)
+
+    question = nil
+    assert_no_difference [ -> { PersonalStudy::Question.count }, -> { Ai::Use.count } ] do
+      assert_no_enqueued_jobs { question = @study.ask("Why does Jehovah allow suffering?", by: spouse) }
+    end
+
+    assert question.errors.added?(:base, :not_allowed)
+  end
+
   test "young_reader: true adds the young-reader line to the request" do
     sent = []
     capture = ->(text, **) { sent << text

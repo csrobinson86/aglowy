@@ -35,12 +35,15 @@ class PersonalStudy < ApplicationRecord
   end
 
   # The question, asking, with its use, then answered in the background; or an unsaved question with errors: :limit
-  # once the person has asked the day's questions, :not_allowed without AI access or the AI terms. Counted under the
-  # person's lock, as they can ask from more than one household at once (docs/design/ai.md, safety measure 9).
+  # once the person has asked the day's questions, :not_allowed for anyone but the study's owner or without AI access
+  # or the AI terms. Counted under the person's lock, as they can ask from more than one household at once
+  # (docs/design/ai.md, safety measure 9).
   def ask(prompt, by:, young_reader: false)
     question = by.with_lock do
       PersonalStudy::Question.new(personal_study: self, user: by, prompt: prompt, young_reader: young_reader, use: Ai::Use.new(user: by, purpose: PURPOSE)).tap do |question|
-        if by.study_questions_left_today.zero?
+        if by != user
+          question.errors.add(:base, :not_allowed, message: "Only the study's owner can ask in it")
+        elsif by.study_questions_left_today.zero?
           question.errors.add(:base, :limit, message: "You've asked #{PersonalStudy::Question.daily_limit} questions today. You can ask again after midnight.")
         elsif !(by.may_ask_study_ai? && by.accepted_ai_terms?)
           question.errors.add(:base, :not_allowed, message: "Personal study with AI isn't turned on for you")
