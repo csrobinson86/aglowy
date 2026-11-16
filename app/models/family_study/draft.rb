@@ -50,6 +50,11 @@ class FamilyStudy::Draft < ApplicationRecord
     change_status_to "discarded", from: self.class.counted.where.not(status: "drafting")
   end
 
+  # Stops a draft still being written, or discards one that's done, including one whose job finished after it was read.
+  def stop_or_discard
+    stop || discard
+  end
+
   # The outline as study notes, from our own partial with every field escaped. References stay plain text, linked
   # when the study is saved (docs/design/scripture-links.md).
   def notes_html

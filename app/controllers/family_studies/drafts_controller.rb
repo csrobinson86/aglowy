@@ -25,7 +25,7 @@ class FamilyStudies::DraftsController < ApplicationController
   end
 
   def destroy
-    @draft.drafting? ? @draft.stop : @draft.discard
+    @draft.stop_or_discard
 
     # An unsaved copy: Describe, with the draft's text and options kept.
     render turbo_stream: turbo_stream.replace(:ai_panel, panel(@draft.dup))

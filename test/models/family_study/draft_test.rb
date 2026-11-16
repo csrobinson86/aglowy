@@ -183,6 +183,25 @@ class FamilyStudy::DraftTest < ActiveSupport::TestCase
     assert_predicate drafting, :drafting?
   end
 
+  test "stop_or_discard stops a drafting draft and discards a done one" do
+    drafting = family_study_draft
+    drafted = family_study_draft(status: "drafted")
+
+    drafting.stop_or_discard
+    drafted.stop_or_discard
+
+    assert_predicate drafting, :stopped?
+    assert_predicate drafted, :discarded?
+  end
+
+  test "stop_or_discard discards a draft whose job finished after it was read" do
+    draft = family_study_draft
+    FamilyStudy::Draft.where(id: draft.id).update_all(status: "drafted")
+
+    assert draft.stop_or_discard
+    assert_predicate draft, :discarded?
+  end
+
   test "discarding a failed or flagged draft does nothing, so it still doesn't count" do
     drafts = %w[ failed flagged ].map { family_study_draft(status: it) }
 

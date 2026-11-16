@@ -1,27 +1,37 @@
 import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
+// Each draft stream's watch on its connected attribute, until the stream leaves the page.
+const catchUpObservers = new WeakMap()
+
 // Opens and closes the AI panel in place, and fills the prompt from a starter idea. Accepting the terms and drafting
 // are plain form posts inside the panel's Turbo Frame. While drafting, the panel listens on the draft's stream.
 export default class extends Controller {
   static targets = [ "start", "opened", "prompt", "stream" ]
 
-  // Action Cable only delivers what's broadcast after the panel subscribes, and a quick result (a flagged request,
-  // a provider error) can come before. Once subscribed, ask for the result once; anything later arrives on the stream.
+  // Action Cable only delivers what's broadcast while the panel is subscribed, and a quick result (a flagged request,
+  // a provider error) can come before it subscribes, or while a dropped connection comes back. Each time it
+  // subscribes, ask for the result; anything later arrives on the stream.
   streamTargetConnected(stream) {
-    const catchUp = () => {
-      if (!stream.hasAttribute("connected")) return
-      observer.disconnect()
-      this.catchUp(stream.dataset.aiPanelUrlParam)
-    }
-    const observer = new MutationObserver(catchUp)
+    const observer = new MutationObserver(() => this.catchUp(stream))
     observer.observe(stream, { attributes: true, attributeFilter: [ "connected" ] })
-    catchUp()
+    catchUpObservers.set(stream, observer)
+    this.catchUp(stream)
   }
 
-  async catchUp(url) {
-    const response = await fetch(url, { headers: { Accept: "text/vnd.turbo-stream.html" } })
-    if (response.status == 200) Turbo.renderStreamMessage(await response.text())
+  streamTargetDisconnected(stream) {
+    catchUpObservers.get(stream)?.disconnect()
+    catchUpObservers.delete(stream)
+  }
+
+  // An answer that comes once the stream has left the page is out of date: the result came on the stream, and the
+  // person may have discarded it or asked again since.
+  async catchUp(stream) {
+    if (!stream.hasAttribute("connected")) return
+    const response = await fetch(stream.dataset.aiPanelUrlParam, { headers: { Accept: "text/vnd.turbo-stream.html" } })
+    if (response.status != 200) return
+    const html = await response.text()
+    if (stream.isConnected) Turbo.renderStreamMessage(html)
   }
 
   open() {
