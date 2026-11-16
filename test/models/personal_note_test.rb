@@ -137,6 +137,32 @@ class PersonalNoteTest < ActiveSupport::TestCase
     end
   end
 
+  test "color is none by default, and one of the seven" do
+    note = users(:head).personal_notes.new(title: "Untitled")
+    assert note.color_none?
+
+    note.color = "teal"
+    assert_not note.valid?
+    assert note.errors[:color].any?
+
+    note.color = "yellow"
+    assert note.valid?
+    assert_equal "Yellow", note.color_name
+  end
+
+  test "colored(:yellow) finds only the yellow notes" do
+    personal_notes(:head_family_worship).update!(color: :yellow)
+
+    assert_equal [ personal_notes(:head_family_worship) ], PersonalNote.colored(:yellow).to_a
+    assert_equal [ personal_notes(:head_return_visit) ], PersonalNote.colored("green").to_a
+  end
+
+  test "database: a color outside the list raises CheckViolation" do
+    assert_raises(ActiveRecord::CheckViolation) do
+      PersonalNote.insert!({ user_id: users(:head).id, title: "Teal", color: "teal" })
+    end
+  end
+
   test "database: a blank title raises CheckViolation" do
     assert_raises(ActiveRecord::CheckViolation) do
       PersonalNote.insert!({ user_id: users(:head).id, title: "" })

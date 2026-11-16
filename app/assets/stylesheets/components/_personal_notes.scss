@@ -11,3 +11,16 @@
   grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--base-size-128) * 2)), 1fr));
   gap: var(--base-size-16);
 }
+
+// Search, then the color filter beside it (frame notes.png), or under it when there isn't room.
+.personal-notes__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-12) var(--base-size-24);
+  margin-bottom: var(--base-size-16);
+}
+
+.personal-notes__search {
+  flex: 1 1 calc(var(--base-size-128) * 2);
+}

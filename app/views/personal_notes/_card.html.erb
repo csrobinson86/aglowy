@@ -1,9 +1,11 @@
 <%# locals: (personal_note:) %>
-<%# One note in the list (frame notes.png, without colors and pins): its title linking to it, three lines of its body
+<%# One note in the list (frame notes.png, without pins), drawn in its color and naming it for screen readers: its
+    title linking to it, three lines of its body
     as plain text, its tags, then "Collection · N scriptures · date". The body is decrypted in Ruby and escaped like any
     text (Traps). From a preloaded collection, tags and body, so the list asks no query per card. %>
 <% scriptures = personal_note.scripture_references.size %>
-<article class="note-card" aria-labelledby="<%= dom_id(personal_note, :title) %>">
+<article class="note-card note-card--<%= personal_note.drawn_color %>" aria-labelledby="<%= dom_id(personal_note, :title) %>">
+  <%= render "personal_notes/color_name", personal_note: %>
   <h3 class="note-card__title" id="<%= dom_id(personal_note, :title) %>">
     <%= render(Primer::Beta::Link.new(href: household_personal_note_path(id: personal_note), scheme: :primary)) { personal_note.title } %>
   </h3>

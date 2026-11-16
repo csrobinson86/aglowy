@@ -1,0 +1,53 @@
+// The color filter beside Notes' search (PersonalNotes::ColorFilterForm, frame notes.png): a round Primer Button per
+// color, the pressed one ringed. Each names itself to screen readers ("Only yellow notes"), so its label is visually
+// hidden. Chained, to outrank Primer's .Button colors and hover.
+// Closer together on a touch screen, so seven 44px swatches fit a phone's row.
+.note-color-filter {
+  flex-wrap: wrap;
+  align-items: center;
+
+  @media (pointer: coarse) {
+    column-gap: var(--base-size-4);
+  }
+}
+
+// Lower than the chained rule below, so each color's modifier can replace it.
+.note-color-filter__button {
+  --note-color-filter-swatch: var(--bgColor-default);
+}
+
+.note-color-filter__button.Button {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive) {
+    width: var(--control-small-size);
+    height: var(--control-small-size);
+    padding: 0;
+    background-color: var(--note-color-filter-swatch);
+    border-color: var(--borderColor-default);
+    border-radius: var(--borderRadius-full);
+
+    @media (pointer: coarse) {
+      width: var(--control-minTarget-coarse);
+      height: var(--control-minTarget-coarse);
+    }
+  }
+
+  &[aria-pressed="true"] {
+    box-shadow: 0 0 0 var(--base-size-2) var(--bgColor-default), 0 0 0 var(--base-size-4) var(--fgColor-default);
+  }
+
+  .Button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+  .note-color-filter__button--#{$color} {
+    --note-color-filter-swatch: var(--display-#{$color}-borderColor-emphasis);
+  }
+}

@@ -1,15 +1,29 @@
 // One note on Notes' list (frame notes.png): the title, three lines of the body, its tags, then a muted line with
-// its collection, scriptures and date at the bottom, however long the rest is. Colors come with the next story, as
-// modifiers (docs/design/notes.md, Colors).
+// its collection, scriptures and date at the bottom, however long the rest is. A note's page draws its note card the
+// same way (frame note.png).
 .note-card {
+  --note-card-bgColor: var(--bgColor-default);
+  --note-card-borderColor: var(--borderColor-default);
+  --note-card-barColor: var(--borderColor-default);
+
   display: flex;
   flex-direction: column;
   min-width: 0;
   padding: var(--base-size-16);
-  background-color: var(--bgColor-default);
-  border: var(--borderWidth-thin) solid var(--borderColor-default);
-  border-left-width: var(--base-size-4);
+  background-color: var(--note-card-bgColor);
+  border: var(--borderWidth-thin) solid var(--note-card-borderColor);
+  border-left: var(--base-size-4) solid var(--note-card-barColor);
   border-radius: var(--borderRadius-medium);
+}
+
+// A modifier per color, from Primer's display color primitives, so they follow light and dark mode
+// (docs/design/notes.md, Colors). none keeps the defaults above.
+@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+  .note-card--#{$color} {
+    --note-card-bgColor: var(--display-#{$color}-bgColor-muted);
+    --note-card-borderColor: var(--display-#{$color}-borderColor-muted);
+    --note-card-barColor: var(--display-#{$color}-borderColor-emphasis);
+  }
 }
 
 .note-card__title {

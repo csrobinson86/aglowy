@@ -1,11 +1,12 @@
 # The search box above the list of studies, and above Notes' list too. It keeps the collection and tag the list is
-# narrowed to, and says what it searches: study notes and note bodies are encrypted, so it can't read them
-# (docs/design/personal-study.md and docs/design/notes.md, Traps).
+# narrowed to (and on Notes, the color), and says what it searches: study notes and note bodies are encrypted, so it
+# can't read them (docs/design/personal-study.md and docs/design/notes.md, Traps).
 class PersonalStudies::SearchForm < ApplicationForm
-  def initialize(query:, collection:, tag:)
+  def initialize(query:, collection:, tag:, color: nil)
     @query = query
     @collection = collection
     @tag = tag
+    @color = color
   end
 
   form do |f|
@@ -13,5 +14,6 @@ class PersonalStudies::SearchForm < ApplicationForm
                  placeholder: "Search titles, collections and tags", full_width: true, leading_visual: { icon: :search })
     f.hidden(name: :collection, value: @collection) if @collection
     f.hidden(name: :tag, value: @tag) if @tag
+    f.hidden(name: :color, value: @color) if @color
   end
 end

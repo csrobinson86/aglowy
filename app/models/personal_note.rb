@@ -9,12 +9,31 @@ class PersonalNote < ApplicationRecord
   has_rich_text :body, encrypted: true
   scripture_linkable :body
 
+  # Like JW Library's (docs/design/notes.md, Colors). Prefixed and without enum scopes: a none scope would clash with
+  # Active Record's.
+  enum :color, %w[ none yellow green blue purple pink orange ].index_with(&:itself), default: "none", prefix: true,
+                scopes: false, validate: true
+
+  # The colors Notes' list can be filtered by: all but none, which is "Any color" (docs/design/notes.md, Colors).
+  FILTER_COLORS = colors.keys - %w[ none ]
+
   normalizes :title, with: -> { it.squish }
 
   validates :title, presence: true, length: { maximum: 120 }
 
   scope :preloaded, -> { includes(:collection, :tags, :rich_text_body) }
   scope :recent_first, -> { order(updated_at: :desc, id: :desc) }
+  scope :colored, ->(color) { where(color:) }
+
+  # The color the note is drawn in: the one chosen, or the saved one while a refused save holds one outside the list,
+  # so a class name is only ever built from the list (Traps).
+  def drawn_color
+    self.class.colors.key?(color) ? color : color_in_database
+  end
+
+  def color_name
+    drawn_color.humanize
+  end
 
   # The scriptures linked in the body, in order and once each, for "Scriptures in this note". Read from the
   # decrypted body, never the database (Traps).
