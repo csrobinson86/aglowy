@@ -350,10 +350,14 @@ end
 
 ## AI Integration (RubyLLM)
 
+- Read `docs/design/ai.md` before any AI work. Its safety measures apply to every AI feature.
 - AI features are model methods, not service objects.
 - Use `acts_as_chat` and `acts_as_message` ActiveRecord mixins.
+- Each feature runs under an `Ai::Purpose` (fixed instructions, output schema, limits) and calls the AI only through `Chat#ask_within_purpose`. Never call `RubyLLM.chat` directly.
+- The AI searches only jw.org and wol.jw.org, and Aglowy shows only titles and links from those sites, never their text. Never fetch jw.org or wol.jw.org from Aglowy (their terms of use).
+- AI output is untrusted text: escape it, never `html_safe`.
 - Streaming responses via RubyLLM's built-in streaming support.
-- AI configuration in `config/initializers/ruby_llm.rb`.
+- AI configuration in `config/initializers/ruby_llm.rb`. Tests never call a provider.
 
 ---
 

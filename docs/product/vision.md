@@ -30,7 +30,7 @@ This document is what the project manager checks every story against. If a story
 - Billing or paid plans
 - Public profiles, social feeds or sharing outside a household (guests see only the sessions they're invited to)
 - A public JSON API or a native mobile app
-- Content from outside approved sources: study material is quoted and linked from jw.org and wol.jw.org
+- Content from outside approved sources: study material is linked from jw.org and wol.jw.org, never copied into Aglowy (their terms of use; see `docs/design/ai.md`)
 
 ## Roadmap
 
@@ -48,6 +48,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 8 | Production on AWS: EC2 + Docker Compose, SES, bounce handler | Stack decided |
 | 9 | **KIDS-01** Today's meeting: meeting times, the right note for everyone, and the meeting helper for children (marks, drawing, sharing with the family) | Design done |
 | 10 | **SCRIPT-01** Scripture links in notes: a book, chapter and verse picker, typed references linked on save, links to jw.org only | Design done |
+| 11 | **AI-01** AI foundation and family study drafts: one job per feature, search limited to jw.org and wol.jw.org, links never copies, 10 drafts per household a day | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 
@@ -56,7 +57,7 @@ Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 Not planned. Each needs a design pass and Casey's go-ahead before it becomes an epic.
 
 - Audio versions of personal study, to listen to while exercising
-- AI-assisted study material (outlines, diagrams) drawn only from jw.org and wol.jw.org, quoted and linked, kept within the family
+- Personal study: ask AI questions while researching, answered only from jw.org and wol.jw.org with links (builds on `docs/design/ai.md`)
 - Age-appropriate versions of a family study for children
 - Weekly planning drafted by a background job for parents to review
 - A wider family-support area (fitness, meal planning)
