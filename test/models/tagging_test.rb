@@ -15,6 +15,16 @@ class TaggingTest < ActiveSupport::TestCase
     assert_includes tagging.errors[:taggable], "isn't yours to tag"
   end
 
+  test "a note can be tagged by its owner only" do
+    note = personal_notes(:head_return_visit)
+
+    assert Tagging.create!(tag: tags(:head_ministry), taggable: note)
+
+    tagging = Tagging.new(tag: tags(:spouse_ministry), taggable: note)
+    assert_not tagging.valid?
+    assert_includes tagging.errors[:taggable], "isn't yours to tag"
+  end
+
   test "the 11th tag on one note is invalid" do
     note = meeting_notes(:head_midweek)
     9.times { note.tag_with("tag-#{it}", by: users(:head)) }

@@ -1,0 +1,5 @@
+// A note's scriptures and details are a Primer Layout sidebar inside the app shell's Layout, hidden below md by the
+// shell's descendant selector like Notes' collections (_personal_notes.scss). This shows them again, under the note.
+.personal-note.Layout > .personal-note__sidebar.Layout-sidebar {
+  display: block;
+}

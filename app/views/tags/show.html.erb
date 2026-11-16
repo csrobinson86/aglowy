@@ -17,14 +17,17 @@
 <% if @personal_studies.any? %>
   <%= render "tags/group", id: "personal-studies", heading: "Personal studies", records: @personal_studies, row: "tags/personal_study" %>
 <% end %>
+<% if @personal_notes.any? %>
+  <%= render "tags/group", id: "personal-notes", heading: "Notes", records: @personal_notes, row: "tags/personal_note" %>
+<% end %>
 <% if @goals.any? %>
   <%= render "tags/group", id: "my-goals", heading: "My goals", records: @goals, row: "tags/goal" %>
 <% end %>
 
-<% if @meeting_notes.none? && @personal_studies.none? && @goals.none? %>
+<% if @meeting_notes.none? && @personal_studies.none? && @personal_notes.none? && @goals.none? %>
   <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :tag) %>
     <% blankslate.with_heading(tag: :h2) { "Nothing tagged ##{@tag.name}" } %>
-    <% blankslate.with_description { "Add it from a meeting note, a personal study or a personal goal, under its title." } %>
+    <% blankslate.with_description { "Add it from a meeting note, a personal study, a note or a personal goal." } %>
   <% end %>
 <% end %>

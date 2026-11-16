@@ -1,14 +1,15 @@
-<%# locals: (form:, label: "Notes", hidden_label: nil, placeholder: nil, tall: false, visually_hidden: false) %>
+<%# locals: (form:, label: "Notes", hidden_label: nil, placeholder: nil, tall: false, visually_hidden: false, attribute: :notes) %>
 <%# The approved hand-built form piece (CLAUDE.md, Forms): Primer's FormControl markup around Lexxy,
     which reads its accessible name from the label. Several editors share the page, so each gets
     its id from the part's fields_for index, and hidden_label tells their labels apart for screen readers.
     tall is for notes taken through a whole talk. visually_hidden keeps the label for screen readers only, under a heading
     that already names the notes. A class replaces Lexxy's own lexxy-content, so it's kept.
-    The notes take scripture links and nothing else (scripture_notes_options). %>
+    The notes take scripture links and nothing else (scripture_notes_options). attribute is the rich text's name: a
+    note's is body. %>
 <div class="FormControl width-full FormControl--fullWidth">
-  <%= form.label :notes, class: class_names("FormControl-label", "sr-only": visually_hidden) do %><%= label %><% if hidden_label %><span class="sr-only"> <%= hidden_label %></span><% end %><% end %>
-  <%= form.rich_text_area :notes, placeholder: placeholder, class: class_names("lexxy-content", "meeting-note-editor meeting-note-editor--tall": tall),
-        **scripture_notes_options(form) %>
-  <%= render "scriptures/notes_validation", form: %>
+  <%= form.label attribute, class: class_names("FormControl-label", "sr-only": visually_hidden) do %><%= label %><% if hidden_label %><span class="sr-only"> <%= hidden_label %></span><% end %><% end %>
+  <%= form.rich_text_area attribute, placeholder: placeholder, class: class_names("lexxy-content", "meeting-note-editor meeting-note-editor--tall": tall),
+        **scripture_notes_options(form, attribute) %>
+  <%= render "scriptures/notes_validation", form:, attribute: %>
   <% content_for :scripture_picker, render(ScripturePickerComponent.new) unless content_for?(:scripture_picker) %>
 </div>

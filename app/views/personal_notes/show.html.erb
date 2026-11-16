@@ -1,0 +1,32 @@
+<% content_for :title, @personal_note.title_in_database %>
+<% collection = Current.user.collections.find_by(id: @personal_note.collection_id_in_database) %>
+
+<%# The breadcrumb, then the note open for editing, with its scriptures and details beside it (frame note.png), or
+    under it on a phone. The breadcrumb and heading name the saved note, so a refused save doesn't show its title or
+    collection as saved. %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 3)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
+  <% if collection %>
+    <% breadcrumbs.with_item(href: household_personal_notes_path(collection: collection.id)) { collection.name } %>
+  <% end %>
+<% end %>
+<h1 class="sr-only"><%= @personal_note.title_in_database %></h1>
+
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>
+  <% layout.with_main do %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% box.with_body do %>
+        <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_note_path(id: @personal_note) %>
+      <% end %>
+      <%# Tags save as they're added, outside the note's form, as a form can't hold another. %>
+      <% box.with_footer do %>
+        <%= render TagEditorComponent.new(taggable: @personal_note, user: Current.user, household: Current.household) %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-note__sidebar") do %>
+    <%= render "personal_notes/scriptures", personal_note: @personal_note %>
+    <%= render "personal_notes/details", personal_note: @personal_note %>
+  <% end %>
+<% end %>

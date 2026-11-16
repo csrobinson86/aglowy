@@ -32,6 +32,16 @@ class CollectionsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-stream[action=replace][target=new_collection] template", text: /Name has already been taken/
   end
 
+  test "a name I already have, from Notes, comes back with Notes' choices" do
+    post household_collections_path(household_id: @home), params: { section: "notes", collection: { name: "Bible questions", used_in: "notes" } }, as: :turbo_stream
+
+    assert_response :unprocessable_content
+    assert_select "turbo-stream[action=replace][target=new_collection] template" do
+      assert_select "label", text: "Notes only"
+      assert_select "input[type=hidden][name=section][value=notes]"
+    end
+  end
+
   test "update: rename, and change where it's used" do
     collection = collections(:head_bible_questions)
 

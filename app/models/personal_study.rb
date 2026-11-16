@@ -1,12 +1,11 @@
 # One person's research on one topic: their questions to the AI, in the study's own chat, and their notes
 # (docs/design/personal-study.md, PersonalStudy). Personal: it belongs to the person and follows them between households.
 class PersonalStudy < ApplicationRecord
-  include ScriptureLinkable, Taggable
+  include Collectable, ScriptureLinkable, Taggable
 
   PURPOSE = "personal_study".freeze
 
   belongs_to :user
-  belongs_to :collection, optional: true
   # Made with the study, outside any household, and deleted with it. The database deletes its questions.
   belongs_to :chat, dependent: :destroy, default: -> { Chat.new(user: user, purpose: PURPOSE) }
 
@@ -18,21 +17,9 @@ class PersonalStudy < ApplicationRecord
   normalizes :title, with: -> { it.squish }
 
   validates :title, presence: true, length: { maximum: 120 }
-  validate :collection_for_studies
 
   scope :preloaded, -> { includes(:collection, :tags, :rich_text_notes) }
   scope :recent_first, -> { order(arel_table[:last_asked_at].desc.nulls_last, updated_at: :desc, id: :desc) }
-
-  # Titles, collection names and tag names. Notes are encrypted, so search can't read them (Traps). "#Talk Prep"
-  # finds the talk-prep tag, as Tag.normalize makes it; % and _ are plain characters.
-  scope :matching, ->(text) do
-    term, tag_name = "%#{sanitize_sql_like(text.squish)}%", Tag.normalize(text)
-    found = where(arel_table[:title].matches(term)).or(where(collection: Collection.where(Collection.arel_table[:name].matches(term))))
-    next found if tag_name.empty?
-
-    tags = Tag.where(Tag.arel_table[:name].matches("%#{sanitize_sql_like(tag_name)}%"))
-    found.or(where(id: Tagging.where(taggable_type: "PersonalStudy", tag: tags).select(:taggable_id)))
-  end
 
   # The question, asking, with its use, then answered in the background; or an unsaved question with errors: :limit
   # once the person has asked the day's questions, :not_allowed for anyone but the study's owner or without AI access
@@ -82,12 +69,8 @@ class PersonalStudy < ApplicationRecord
     child.present? && ChildStudyPolicy.new(membership, child).show?
   end
 
-  # The database can't check either across tables (docs/design/personal-study.md, Collection).
-  def collection_for_studies
-    if collection && collection.user_id != user_id
-      errors.add(:collection, "isn't one of yours")
-    elsif collection && !collection.for_studies?
-      errors.add(:collection, "is only used in Notes")
-    end
+  # A notes-only collection isn't on Personal study's list (Collectable).
+  def collection_refusal
+    "is only used in Notes" unless collection.for_studies?
   end
 end

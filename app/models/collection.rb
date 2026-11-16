@@ -2,21 +2,24 @@
 # Collection). Each page lists only the collections it uses. Personal: it belongs to the person, never a household.
 class Collection < ApplicationRecord
   belongs_to :user
-  # The database takes deleted collections' studies out of the folder (on_delete: :nullify), keeping them.
+  # The database takes deleted collections' studies and notes out of the folder (on_delete: :nullify), keeping them.
   has_many :personal_studies
+  has_many :personal_notes
 
   enum :used_in, %w[ both studies notes ].index_by(&:itself), prefix: :used_in, scopes: false, validate: true
 
   normalizes :name, with: -> { it.squish }
 
   validates :name, presence: true, length: { maximum: 40 }, uniqueness: { scope: :user_id }
-  validate :studies_moved_first, on: :update
+  validate :studies_moved_first, :notes_moved_first, on: :update
 
   scope :for_studies, -> { where(used_in: %w[ both studies ]) }
   scope :for_notes, -> { where(used_in: %w[ both notes ]) }
   scope :positioned, -> { order(:position) }
   # Each collection with how many studies are in it, as personal_studies_count, for Personal study's list.
   scope :with_personal_studies_count, -> { left_joins(:personal_studies).group(:id).select("collections.*", "COUNT(personal_studies.id) AS personal_studies_count") }
+  # The same for Notes' list, as personal_notes_count.
+  scope :with_personal_notes_count, -> { left_joins(:personal_notes).group(:id).select("collections.*", "COUNT(personal_notes.id) AS personal_notes_count") }
 
   # Called on a person's collections: user.collections.add(name: "Convention 2027"). Last in their list. Two adds of
   # the same name at once both pass the uniqueness check; the unique index stops the second, which gets the same error.
@@ -39,6 +42,7 @@ class Collection < ApplicationRecord
   end
 
   def for_studies? = !used_in_notes?
+  def for_notes? = !used_in_studies?
 
   private
 
@@ -48,5 +52,13 @@ class Collection < ApplicationRecord
 
     count = personal_studies.count
     errors.add(:base, "#{count} #{count == 1 ? "study is" : "studies are"} in this collection. Move #{count == 1 ? "it" : "them"} first.") if count.positive?
+  end
+
+  # "3 notes are in this collection. Move them first." Taking it out of Notes would hide them.
+  def notes_moved_first
+    return unless used_in_changed? && !for_notes?
+
+    count = personal_notes.count
+    errors.add(:base, "#{count} #{count == 1 ? "note is" : "notes are"} in this collection. Move #{count == 1 ? "it" : "them"} first.") if count.positive?
   end
 end

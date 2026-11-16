@@ -45,6 +45,10 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_personal_studies_path(household_id: household.id)
   end
 
+  def personal_notes_path
+    household_personal_notes_path(household_id: household.id)
+  end
+
   def my_goals_path
     household_my_goals_path(household_id: household.id)
   end

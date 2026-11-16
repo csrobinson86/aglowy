@@ -1,0 +1,18 @@
+<%# locals: (personal_note:) %>
+<%# One note in the list (frame notes.png, without colors and pins): its title linking to it, three lines of its body
+    as plain text, its tags, then "Collection · N scriptures · date". The body is decrypted in Ruby and escaped like any
+    text (Traps). From a preloaded collection, tags and body, so the list asks no query per card. %>
+<% scriptures = personal_note.scripture_references.size %>
+<article class="note-card" aria-labelledby="<%= dom_id(personal_note, :title) %>">
+  <h3 class="note-card__title" id="<%= dom_id(personal_note, :title) %>">
+    <%= render(Primer::Beta::Link.new(href: household_personal_note_path(id: personal_note), scheme: :primary)) { personal_note.title } %>
+  </h3>
+  <% if (preview = personal_note.body.to_plain_text.squish.truncate(240)).present? %>
+    <p class="note-card__preview"><%= preview %></p>
+  <% end %>
+  <div class="note-card__tags"><%= render "tags/labels", taggable: personal_note %></div>
+  <p class="note-card__meta">
+    <%= personal_note.collection&.name || "No collection" %><% if scriptures.positive? %> · <%= pluralize(scriptures, "scripture") %><% end %>
+    · <%= render(Primer::Beta::RelativeTime.new(datetime: personal_note.updated_at, tense: :past)) %>
+  </p>
+</article>

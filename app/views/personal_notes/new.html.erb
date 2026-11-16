@@ -1,0 +1,18 @@
+<% content_for :title, "New note" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
+  <% breadcrumbs.with_item(href: new_household_personal_note_path) { "New note" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "New note" } %>
+<% end %>
+
+<%# Tags come once it's saved, on the note's page: the tag editor adds them to a saved note. %>
+<div class="container-md ml-0">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_body do %>
+      <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_notes_path %>
+    <% end %>
+  <% end %>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_190100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -410,6 +410,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_180000) do
     t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
+  create_table "personal_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "collection_id"
+    t.string "title", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["collection_id"], name: "index_personal_notes_on_collection_id"
+    t.index ["user_id"], name: "index_personal_notes_on_user_id"
+    t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 120", name: "personal_notes_title_length_check"
+  end
+
   create_table "personal_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "collection_id"
@@ -606,7 +617,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_180000) do
     t.datetime "created_at", null: false
     t.index ["tag_id", "taggable_type", "taggable_id"], name: "index_taggings_on_tag_id_and_taggable_type_and_taggable_id", unique: true
     t.index ["taggable_type", "taggable_id"], name: "index_taggings_on_taggable"
-    t.check_constraint "taggable_type::text = ANY (ARRAY['MeetingNote'::character varying, 'Goal'::character varying, 'PersonalStudy'::character varying]::text[])", name: "taggings_taggable_type_check"
+    t.check_constraint "taggable_type::text = ANY (ARRAY['MeetingNote'::character varying, 'Goal'::character varying, 'PersonalStudy'::character varying, 'PersonalNote'::character varying]::text[])", name: "taggings_taggable_type_check"
   end
 
   create_table "tags", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -677,6 +688,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_180000) do
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "personal_notes", "collections", on_delete: :nullify
+  add_foreign_key "personal_notes", "users"
   add_foreign_key "personal_studies", "chats"
   add_foreign_key "personal_studies", "collections", on_delete: :nullify
   add_foreign_key "personal_studies", "users"

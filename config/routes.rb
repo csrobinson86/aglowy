@@ -125,6 +125,10 @@ Rails.application.routes.draw do
         resource :note_saving, only: :create
       end
     end
+    # The signed-in person's own notes at /notes, found through Current.user (docs/design/notes.md, Pages and routes).
+    resources :personal_notes, path: "notes", only: %i[ index new create show update destroy ] do
+      resources :taggings, only: %i[ create destroy ], module: :personal_notes
+    end
     # The person's folders, shared between Personal study and Notes.
     resources :collections, only: %i[ create update destroy ]
     # The signed-in person's own tags, found by name through Current.user, so another person's is a 404 (docs/design/tags.md).

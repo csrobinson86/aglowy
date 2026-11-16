@@ -49,6 +49,17 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby=personal-studies] .Box-row a[href=?]", household_personal_study_path(household_id: @home, id: study), text: study.title
   end
 
+  test "show lists a tagged note under Notes" do
+    note = personal_notes(:head_daniel)
+    note.tag_with("ministry", by: users(:head))
+    personal_notes(:spouse_grieving).tag_with("ministry", by: users(:spouse))
+
+    get household_tag_path(household_id: @home, name: "ministry")
+
+    assert_select "h2", text: /Notes\s+1/
+    assert_select "section[aria-labelledby=personal-notes] .Box-row a[href=?]", household_personal_note_path(household_id: @home, id: note), text: note.title
+  end
+
   test "an unknown name, or another person's tag name: 404" do
     get household_tag_path(household_id: @home, name: "prayer")
     assert_response :not_found
