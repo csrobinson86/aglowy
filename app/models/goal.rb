@@ -2,7 +2,7 @@
 # database checks it (docs/design/goals.md, gotcha 9). Completing and archiving are records, so a
 # finished goal is kept to look back on.
 class Goal < ApplicationRecord
-  include Shareable
+  include Shareable, Taggable
 
   belongs_to :household, optional: true
   belongs_to :user, optional: true
@@ -49,6 +49,11 @@ class Goal < ApplicationRecord
 
   def personal?
     user_id.present?
+  end
+
+  # Family goals are the household's, so only a personal goal takes its owner's tags (docs/design/tags.md, Traps).
+  def taggable_by?(user)
+    personal? && super
   end
 
   # Dates on a family goal read in its household's time zone. A personal goal is the same in every household,

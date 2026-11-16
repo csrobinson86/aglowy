@@ -1,0 +1,8 @@
+# Tags belong to one person; two people can each have a tag with the same name (docs/design/tags.md).
+head_ministry:
+  user: head
+  name: ministry
+
+spouse_ministry:
+  user: spouse
+  name: ministry

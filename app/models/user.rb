@@ -6,6 +6,8 @@ class User < ApplicationRecord
   # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
   has_many :goals, dependent: :destroy
   has_many :chats, dependent: :destroy
+  # The database deletes their taggings with them (on_delete: :cascade).
+  has_many :tags, dependent: :delete_all
   has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all
   has_many :ai_acceptances, class_name: "Ai::Acceptance", dependent: :delete_all
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
