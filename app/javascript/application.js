@@ -17,6 +17,8 @@ import AppShellController from "../components/app_shell_component_controller"
 application.register("app-shell", AppShellController)
 import FileDropController from "../components/file_drop_component_controller"
 application.register("file-drop", FileDropController)
+import AiPanelController from "../components/family_studies/ai_panel_component_controller"
+application.register("ai-panel", AiPanelController)
 import GoalStepController from "../components/goal_step_component_controller"
 application.register("goal-step", GoalStepController)
 import ScripturePickerController from "../components/scripture_picker_component_controller"

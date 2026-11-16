@@ -134,4 +134,20 @@ class UserTest < ActiveSupport::TestCase
       users(:head).update_column(:appearance, "sepia")
     end
   end
+
+  test "accepted_ai_terms? is false with no acceptance" do
+    assert_not users(:head).accepted_ai_terms?
+  end
+
+  test "accepted_ai_terms? is false with only an older version accepted" do
+    Ai::Acceptance.create!(user: users(:head), version: Rails.configuration.x.ai.terms_version - 1, understood: "1")
+
+    assert_not users(:head).accepted_ai_terms?
+  end
+
+  test "accepted_ai_terms? is true at the current version" do
+    Ai::Acceptance.create!(user: users(:head), version: Rails.configuration.x.ai.terms_version, understood: "1")
+
+    assert_predicate users(:head), :accepted_ai_terms?
+  end
 end

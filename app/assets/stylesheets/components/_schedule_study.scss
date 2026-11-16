@@ -1,0 +1,6 @@
+// The Schedule form with the AI panel beside it is a Primer Layout inside the app shell's Layout. Below md the shell
+// hides its own sidebar with a descendant selector, which hides the panel too (see _household_home.scss). This shows
+// it again under the form: the same specificity, and this file loads after Primer's.
+.schedule-study.Layout > .schedule-study__ai.Layout-sidebar {
+  display: block;
+}

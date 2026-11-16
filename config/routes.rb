@@ -36,6 +36,8 @@ Rails.application.routes.draw do
   # (docs/design/invitations.md, Child logins). A query parameter for the same reason as the invitation's token.
   resource :password_setup, only: %i[ edit update ], path_names: { edit: "" }
   resources :households, only: %i[ index new create ]
+  # Turning on AI drafts, for the person wherever they are: acceptance is theirs, not a household's (docs/design/ai.md).
+  resource :ai_acceptance, only: :create
   # A scripture link for the notes editor, /scriptures/19:37:8-9, signed on the server (docs/design/scripture-links.md, Pieces).
   # No household: a Bible reference isn't anyone's record.
   resources :scriptures, only: :show
@@ -68,6 +70,10 @@ Rails.application.routes.draw do
       resource :role, only: :update, module: :members
     end
     resources :invitations, only: %i[ new create update destroy ]
+    # Drafting a study with AI, from the panel beside the Schedule form (docs/design/family-studies.md, AI helper).
+    scope "family_studies", module: :family_studies, as: :family_study do
+      resources :drafts, only: :create
+    end
     resources :family_studies, only: %i[ index new create ] do
       resources :sessions, only: %i[ show edit update ], module: :family_studies do
         resource :notes, only: %i[ edit update ], module: :sessions
