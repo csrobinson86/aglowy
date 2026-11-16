@@ -1,0 +1,19 @@
+<%# locals: (draft:) -%>
+<%# The checked result, broadcast once the draft is written. The panel's states and styling come with its views
+    (docs/design/family-studies.md, The panel). %>
+<div id="<%= dom_id(draft) %>">
+  <% case draft.status %>
+  <% when "drafted" %>
+    <h3><%= draft.outline["title"] %></h3>
+    <%= render "family_studies/drafts/notes", outline: draft.outline %>
+    <ul>
+      <% draft.sources.each do |source| %>
+        <li><%= link_to source["title"] || source["url"], source["url"] %></li>
+      <% end %>
+    </ul>
+  <% when "off_topic", "flagged" %>
+    <p>This helper only plans family studies.</p>
+  <% else %>
+    <p>Couldn't make a draft this time. Try again.</p>
+  <% end %>
+</div>

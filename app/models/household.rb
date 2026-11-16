@@ -14,6 +14,13 @@ class Household < ApplicationRecord
   has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
   has_one :meeting_helper, dependent: :delete
   has_many :chats, dependent: :destroy
+  # Their chats take them first (on_delete: :cascade).
+  has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all do
+    # The drafts that use one of today's, since midnight where the household lives (docs/design/ai.md, Traps).
+    def counted_today
+      counted.where(created_at: proxy_association.owner.today.in_time_zone(proxy_association.owner.time_zone)..)
+    end
+  end
 
   MEETING_KINDS = %w[ midweek weekend ].freeze
   MEETING_TIME_ATTRIBUTES = %i[ midweek_meeting_wday midweek_meeting_time weekend_meeting_wday weekend_meeting_time ].freeze

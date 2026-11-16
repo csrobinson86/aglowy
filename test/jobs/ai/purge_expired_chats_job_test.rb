@@ -13,6 +13,14 @@ class Ai::PurgeExpiredChatsJobTest < ActiveJob::TestCase
     assert_equal 1, recent.messages.count
   end
 
+  test "a draft goes when its chat is purged" do
+    draft = travel_to(8.days.ago) { family_study_draft(status: "drafted") }
+
+    Ai::PurgeExpiredChatsJob.perform_now
+
+    assert_not FamilyStudy::Draft.exists?(draft.id)
+  end
+
   private
     def chat_created(at)
       travel_to(at) do

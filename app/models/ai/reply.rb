@@ -27,6 +27,11 @@ class Ai::Reply
     end
   end
 
+  # [{ url:, title: }] for each page the search itself returned: the only pages a feature may link (Ai::SourceLink).
+  def search_results
+    @message.web_sources.map { { url: it.url, title: it.title } }
+  end
+
   private
     def citations = @message.citations
 
