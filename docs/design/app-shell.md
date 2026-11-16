@@ -48,7 +48,9 @@ Every layout sets the theme on `<body>`:
 Primer's components and primitives follow `data-color-mode`, so nothing else
 changes when it does.
 
-- **The mode is the signed-in person's choice.** Account settings has an
+- **The mode is the signed-in person's choice.** (Since SETTINGS-01 the
+  Appearance section is its own page in Settings, `docs/design/settings.md`,
+  and saves to `PATCH /:household_id/settings/appearance`.) Account settings has an
   Appearance section, between Profile and Signing in (frames
   `docs/design/invitations/account-settings.png`, Match my device, and
   `account-settings-dark.png`, Dark). It holds a radio group "Theme" and a
@@ -72,13 +74,15 @@ changes when it does.
 - **Two layouts don't use it.** `meeting_helper` stays `dark` whatever the
   child chose (`docs/design/meeting-helper.md`). `design_system`, a
   development page, stays `auto`.
-- **Saving.** `PATCH /account/appearance`
-  (`Accounts::AppearancesController#update`, from
-  `resource :appearance, only: :update, module: :accounts` inside
-  `resource :account`). It authorizes `@user` with `UserPolicy#update?`, saves
-  with `@user.update(appearance:)` and redirects to account settings with the
-  notice "Your appearance is saved.", keeping `return_to`. The form is
-  `Accounts::AppearanceForm`, a Primer form class with `radio_button_group`.
+- **Saving.** From a household, `PATCH /:household_id/settings/appearance`
+  (`Settings::AppearancesController#update`, `docs/design/settings.md`). It
+  authorizes `@user` with `UserPolicy#update?`, saves with
+  `@user.update(appearance:)` and redirects to Settings → Appearance with the
+  notice "Your appearance is saved." There's no `return_to`. A person with no
+  household saves on `/account` instead: `PATCH /account/appearance`
+  (`Accounts::AppearancesController#update`), which returns to `/account`.
+  Both use the same form, `Settings::AppearanceForm` (formerly
+  `Accounts::AppearanceForm`), a Primer form class with `radio_button_group`.
   The redirect renders a new `<body>`, so the page changes theme as soon as
   it's saved. There's no live preview and no JavaScript.
 
@@ -129,7 +133,7 @@ changes when it does.
 │   ⚑ My goals          │                                              │
 │                       │                                              │
 │ ───────────────────── │                                              │
-│   ⚙ Household settings│                                              │
+│   ⚙ Settings          │                                              │
 │ (M) Maria R. [Sign out]│                                             │
 └───────────────────────┴──────────────────────────────────────────────┘
 ```
@@ -140,7 +144,7 @@ changes when it does.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
 3. **Household group:** Home, Family studies, Members, Family goals.
 4. **Mine group:** Today's meeting, Meeting notes, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
-5. **Footer:** Household settings (heads and adults; adults see only its Meetings and Children sections, `docs/design/meeting-helper.md`), then the person's initial and name with a Sign out button.
+5. **Footer:** Settings, for everyone (`docs/design/settings.md`; it replaced Household settings and the link on the person's name in SETTINGS-01), then the person's initial and name with a Sign out button.
 
 **Main**
 
@@ -174,7 +178,7 @@ example the switcher button's two-line label), with BEM names and primitives
 
 - **An item appears only when its page exists.** At the end of UI-01 that is Home and Members. Family studies, Family goals, Meeting notes, My goals and Household settings each join the list in the story that builds their page.
 - **Which item is selected:** each item's `selected_by_ids` is its controller's name (`:dashboards`, `:members`), and the shell passes `controller_name.to_sym` as `selected_item_id`. Nested pages (`members#new`) keep their section selected.
-- **Hiding a link is not authorization.** Every role-gated item or button also has the matching policy check in its controller. The sidebar shows Household settings to heads and adults, and the settings controller still authorizes each section.
+- **Hiding a link is not authorization.** Every role-gated item or button also has the matching policy check in its controller. Settings shows each person only the sections their role allows, and each section's controller still authorizes.
 
 ## Phone (below `md`, 768px)
 

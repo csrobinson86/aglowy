@@ -52,6 +52,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 12 | **TAGS-01** Personal tags on meeting notes, personal goals and personal studies, with a page per tag | Design done |
 | 13 | **PSTUDY-01** Personal study: topics with an AI conversation from jw.org and wol.jw.org, notes, collections; AI for children when a head allows it | Design done |
 | 14 | **NOTES-01** Notes: a title and body with scripture links, JW Library-style colors, collections shared with Personal study, tags, pins, pinned notes on Home | Design done |
+| 15 | **SETTINGS-01** One Settings page, a page per section: the person's own settings, tags and collections, then the household's | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 

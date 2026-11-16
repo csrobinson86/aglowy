@@ -96,6 +96,8 @@ Showing an invitation and joining both look it up with `Invitation.find_acceptab
 
 ## Account settings
 
+> Since SETTINGS-01, these sections live in Settings, a page per section under `/:household_id/settings` (`docs/design/settings.md`). `/account` stays only for a person with no household. The fields and rules below still hold.
+
 At `/account` (outside any household, focused layout, frames `account-settings.png`, `leave-household.png`). Reached from the person's name in the sidebar footer. A "Back to <household>" link returns to the last household.
 
 | Section | Route | Fields | Rules |
@@ -108,6 +110,8 @@ At `/account` (outside any household, focused layout, frames `account-settings.p
 Leaving runs the existing `Membership#deactivate`, including the steps other epics add to it (meeting-note and goal sharings deleted, open goal steps released). After leaving the household you were in, go to the households page.
 
 ## Household settings (heads)
+
+> Since SETTINGS-01, these are the Household, Meetings, Children and Members and roles sections of Settings (`docs/design/settings.md`). The rules below still hold.
 
 > Since KIDS-01, adults also open this page, to see only its Meetings section (meeting times) and Children section (the meeting helper switch). Everything below stays heads-only. See `docs/design/meeting-helper.md`.
 
