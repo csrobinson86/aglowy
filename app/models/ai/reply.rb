@@ -1,12 +1,18 @@
 # What Chat#ask_within_purpose returns: the reply's fields and the pages its web search used
 # (docs/design/ai.md, Conversations). Untrusted text, still to go through the checks before anyone sees it.
 class Ai::Reply
+  class Malformed < StandardError; end
+
   def initialize(message)
     @message = message
   end
 
+  # A reply that isn't one JSON object (cut off at the token limit, say) raises, rather than passing as on topic.
+  # The message names no reply text, which is the provider's and may quote a page.
   def parsed
-    @parsed ||= @message.parsed || {}
+    @parsed ||= (@message.parsed || {}).tap { raise Malformed, "The reply isn't a JSON object" unless it.is_a?(Hash) }
+  rescue JSON::ParserError
+    raise Malformed, "The reply isn't a JSON object"
   end
 
   def off_topic?
