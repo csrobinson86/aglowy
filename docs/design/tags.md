@@ -7,7 +7,7 @@ Frames in `docs/design/personal-study/`: tags on the list of studies (`personal-
 ## Decisions (Casey, 16 Nov)
 
 - **Tags belong to the person.** Nobody else sees them, even on a meeting note or goal they've shared with the household.
-- **Four kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), their personal studies (`docs/design/personal-study.md`) and their notes (`docs/design/notes.md`, added by NOTES-01).
+- **Four kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), their personal studies (`docs/design/personal-study.md`) and their notes (`docs/design/notes.md`, added by NOTES-01). BOOKMARKS-01 adds a fifth, bookmarks (`docs/design/bookmarks.md`), with a "Bookmarks" group on a tag's page.
 - **Tags and collections both exist.** Collections are folders for personal studies and notes (`Collection` in `docs/design/personal-study.md`); tags work across all four kinds. They don't replace each other.
 
 ## Models
@@ -52,7 +52,7 @@ Included in `MeetingNote`, `Goal`, `PersonalStudy` and `PersonalNote` (the last 
 | --- | --- | --- |
 | Add a tag | `POST /:household_id/meeting_notes/:meeting_note_id/taggings`, and the same under `goals`, `personal_studies` and `notes` (`Taggings::…Controller`, one per parent, sharing a `Tagging` controller concern) | Body: `name`. The parent is found through `Current.user`, so someone else's note is a 404. Responds with a Turbo Stream that replaces the tag editor |
 | Remove a tag | `DELETE …/taggings/:id` | The same lookup |
-| My tags | `GET /:household_id/tags` (`TagsController#index`) | Each tag with how many things carry it. Rename and delete here |
+| My tags | Settings → Tags and collections (`docs/design/settings.md`); was `GET /:household_id/tags` until SETTINGS-01, when `household_tags_path` is removed and its callers use `household_settings_tags_path` | Each tag with how many things carry it. Rename and delete here |
 | A tag | `GET /:household_id/tags/:name` (`TagsController#show`) | Everything the person tagged with it, grouped as Meeting notes, Personal studies, Notes and My goals (frame `personal-study-tag.png`). No sidebar item is selected |
 | Rename | `PATCH /:household_id/tags/:name` | Renaming to a name the person already has fails with "You already have #name." No merging |
 | Delete | `DELETE /:household_id/tags/:name` | Removes the tag from everything. Asks first with a Primer dialog |

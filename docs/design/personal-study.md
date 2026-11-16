@@ -9,7 +9,7 @@ Frames in `docs/design/personal-study/` (README there). Mockups are in the "Pers
 - **A study holds a conversation and notes**, grouped into **collections** (folders), with the person's **tags** on top (`docs/design/tags.md`).
 - **Studies are kept until the person deletes them.** The 7-day deletion in `docs/design/ai.md` stays for family study drafts only.
 - **30 questions per person per day**, from midnight in the person's own time zone (`users.time_zone`). When they haven't set one, `user.limit_time_zone` falls back to a stable choice that doesn't change with the household they're asking from: the time zone of the household of their oldest active membership, or UTC if they have none. So switching households can't restart the day.
-- **Older children can use AI if a head allows it,** with a switch per child in Household settings. Heads who allow it can read everything in that child's personal studies, and the child is told so.
+- **Older children can use AI if a head allows it,** with a switch per child in Settings → Children. Heads who allow it can read everything in that child's personal studies, and the child is told so.
 - **Answers follow `docs/design/ai.md`:**
   - only jw.org and wol.jw.org
   - the AI's own words, with titles and links, never copied text
@@ -116,7 +116,7 @@ State as a record: `membership_id` (FK, unique, `on_delete: :cascade`) and `gran
   - `POST /:household_id/memberships/:membership_id/study_ai_grant`
   - `DELETE` the same path
 
-  It lives in Household settings → Children → "Personal study with AI". The frame draws a switch; each child's row has a Primer "Turn on" or "Turn off" button instead, because turning it on and off are a create and a destroy, and Primer's ToggleSwitch posts to one URL (as the meeting helper's check box, `docs/design/meeting-helper.md`).
+  It lives in Settings → Children → "Personal study with AI" (`docs/design/settings.md`), and saving returns there.
 - **Turning it off** stops new questions. The child keeps their studies, notes and answers. Heads stop seeing them.
 - **What heads see.** A head of a household where the child has a grant can read the child's studies, read-only: the list, each conversation with its answers and sources, the notes and the tags.
   - `GET /:household_id/members/:member_id/personal_studies` and `…/personal_studies/:id` (`Members::PersonalStudiesController`)
@@ -157,6 +157,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 - **Ask box.** "Ask a follow-up", with the line "Answers use only jw.org and wol.jw.org, in the AI's own words, with links. N of 30 questions left today." Without AI access, the line explains why and the box is disabled. Without accepted terms, the first-use notice from `ai.md` appears instead.
 - **My notes.** The Lexxy editor with the Scripture button (`docs/design/scripture-links.md`), saved with "Save notes".
 - **Sources in this study.** Every page linked across the study's answers, without duplicates, with the line "Titles and links only. Open a page to read it on jw.org."
+- **Bookmarks** (BOOKMARKS-01, `docs/design/bookmarks.md`): a bookmark button beside each page in "Pages used" and "Sources in this study", and a "Scriptures in this study" box with a button on each scripture.
 
 ### Save to notes
 
