@@ -41,7 +41,7 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 - `include Taggable`. Add `Bookmark` to the `taggings.taggable_type` check and `taggable_by?`.
 - `belongs_to :source, polymorphic: true, optional: true`. `PersonalStudy` and `PersonalNote` each get `has_many :bookmarks, as: :source, dependent: :nullify`, so deleting the study or note keeps its bookmarks.
 - At most 2,000 bookmarks per person (validation, like the 200-tag limit).
-- Scopes: `pages`, `scriptures`, `recent_first`, and `matching(text)` on title, comment, the scripture's book name, collection name and tag name. Nothing here is encrypted, so search runs in SQL.
+- Scopes: `pages`, `scriptures`, `recent_first`, and `matching(text)` on title, comment, collection name and tag name, plus the scripture's book: when `Bible::Book.match(text)` finds books, it adds `scripture LIKE '<book number>:%'` for each. Nothing here is encrypted, so search runs in SQL.
 - `kind`: `:page` or `:scripture`.
 
 ### `User`
