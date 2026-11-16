@@ -205,14 +205,15 @@ export default class extends Controller {
     this.matchDescriptionTarget.textContent = reference?.description ?? ""
   }
 
-  // The selection: a book, a chapter and verses, each optional from the end. Grids are rebuilt only for a new book or
+  // The selection: a book, a chapter and verses, each optional from the end. Invalid verses typed after "+" leave no
+  // reference to insert. Grids are rebuilt only for a new book or
   // chapter, so a tap never removes the button it landed on.
-  #choose({ book = null, chapter = null, firstVerse = null, lastVerse = null, ranged = false }) {
+  #choose({ book = null, chapter = null, firstVerse = null, lastVerse = null, ranged = false, invalid = false }) {
     if (book !== this.book) this.#fillGrid(this.chaptersTarget, book ? 1 : 0, book?.verses.length ?? 0, "pickChapter")
     if (book !== this.book || chapter !== this.chapter) {
       this.#fillGrid(this.versesTarget, chapter ? book.first_verses?.[chapter] ?? 1 : 0, chapter ? book.verses[chapter - 1] : 0, "pickVerse")
     }
-    Object.assign(this, { book, chapter, firstVerse, lastVerse, ranged })
+    Object.assign(this, { book, chapter, firstVerse, lastVerse, ranged, invalid })
 
     for (const option of this.booksTarget.children) option.setAttribute("aria-selected", Number(option.dataset.number) === book?.number)
     this.#press(this.chaptersTarget, number => number === chapter)
@@ -229,7 +230,7 @@ export default class extends Controller {
   }
 
   get #reference() {
-    return this.chapter ? new Reference(this.book, this.chapter, this.firstVerse, this.lastVerse) : null
+    return this.chapter && !this.invalid ? new Reference(this.book, this.chapter, this.firstVerse, this.lastVerse) : null
   }
 
   #endSession({ restoreFocus }) {
@@ -241,6 +242,7 @@ export default class extends Controller {
 
   #hide() {
     this.#cancelLookup()
+    this.#activate(null)
     this.element.hidden = true
   }
 
@@ -269,10 +271,19 @@ export default class extends Controller {
     return [ ...this.booksTarget.children ].filter(option => !option.hidden)
   }
 
-  // The book Enter picks while focus stays in the editor.
+  // The book Enter picks while focus stays in the editor, which points screen readers at it, as Lexxy's prompt does.
   #activate(option) {
     for (const other of this.booksTarget.children) other.classList.toggle("scripture-picker__book--active", other === option)
     option?.scrollIntoView({ block: "nearest" })
+
+    const editable = this.#editableArea
+    if (option) {
+      editable.setAttribute("aria-controls", this.booksTarget.id)
+      editable.setAttribute("aria-activedescendant", option.id)
+    } else {
+      editable.removeAttribute("aria-controls")
+      editable.removeAttribute("aria-activedescendant")
+    }
   }
 
   #bookOption(book) {

@@ -21,7 +21,8 @@ export default class Reference {
 
   // What the text after a "+" chooses so far, by the same rules as Bible::Reference.parse: the books it could
   // start, then the book it names exactly once a chapter or a space follows, and the chapter and verses that exist.
-  // Null when the text can't be the start of a reference.
+  // Verses typed that Bible::Reference.parse would refuse ("37:200", "37:8, 10") make it invalid, so it's never taken
+  // for the whole chapter. Null when the text can't be the start of a reference.
   static typed(canon, text) {
     const parts = text.match(TYPED)?.groups
     const books = parts ? this.books(canon, parts.book) : []
@@ -32,16 +33,16 @@ export default class Reference {
     const chapter = Number(parts.chapter)
     if (!book?.verses[chapter - 1]) return { books, book }
 
+    if (!parts.firstVerse) return { books, book, chapter }
+
     return { books, book, chapter, ...this.#verses(book, chapter, parts) }
   }
 
-  // Verses only once they exist, and a comma only for two verses in a row.
+  // Verses only if they exist, and a comma only for two verses in a row.
   static #verses(book, chapter, { firstVerse, joiner, lastVerse }) {
-    if (!firstVerse) return {}
-
     const [ first, last ] = [ Number(firstVerse), Number(lastVerse || firstVerse) ]
     const existing = first >= (book.first_verses?.[chapter] ?? 1) && last >= first && last <= book.verses[chapter - 1]
-    if (!existing || (joiner === "," && lastVerse && last !== first + 1)) return {}
+    if (!existing || (joiner === "," && lastVerse && last !== first + 1)) return { invalid: true }
 
     return { firstVerse: first, lastVerse: last }
   }

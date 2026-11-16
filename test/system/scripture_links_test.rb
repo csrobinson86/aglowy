@@ -284,6 +284,8 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     assert_selector "#{PICKER} .scripture-picker__book--active", text: "Psalms"
     type_notes TALK, :down
     assert_selector "#{PICKER} .scripture-picker__book--active", text: "Proverbs"
+    assert_equal find("#{PICKER} .scripture-picker__book--active")[:id], find("#{TALK} [contenteditable='true']")["aria-activedescendant"]
+    assert_accessible
     type_notes TALK, :enter
 
     assert_picker "Choose a chapter of Proverbs"
@@ -307,6 +309,20 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     assert_no_selector "#{TALK} .scripture-link"
     assert_selector "#{TALK} [contenteditable] p", text: "Next"
     assert_match(/\+ps 37:8\nNext\z/, find("#{TALK} [contenteditable='true']").text)
+  end
+
+  test "verses Bible::Reference.parse refuses, as in +ps 37:8, 10, leave nothing to insert, and Enter inserts nothing" do
+    edit_meeting_note
+    write_notes TALK, " +ps 37:8, 10"
+
+    assert_picker "Choose verses in Psalm 37"
+    assert_no_selector "#{PICKER} .scripture-picker__match"
+    assert_equal "", find("#{PICKER} [aria-live=polite]", visible: :all).text(:all)
+    assert_button "Insert", disabled: true
+    type_notes TALK, :enter
+
+    assert_no_selector "#{TALK} .scripture-link"
+    assert_match(/\+ps 37:8, 10/, editor_text(TALK))
   end
 
   test "a space after a + that matches no book, or a click outside, closes the picker and leaves the text" do
