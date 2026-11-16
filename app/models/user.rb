@@ -6,6 +6,7 @@ class User < ApplicationRecord
   # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
   has_many :goals, dependent: :destroy
   has_many :chats, dependent: :destroy
+  has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 

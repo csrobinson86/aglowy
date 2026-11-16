@@ -1,0 +1,22 @@
+<%# locals: (outline:) -%>
+<% opening = outline["opening"] || {} %>
+<p><strong>Opening</strong></p>
+<% if opening["scripture"].present? %><p>Read <%= opening["scripture"] %>.</p><% end %>
+<% if opening["question"].present? %><p>Ask: <%= opening["question"] %></p><% end %>
+<ol>
+  <% outline["points"].each do |point| %>
+    <li>
+      <% if point["heading"].present? %><p><strong><%= point["heading"] %></strong></p><% end %>
+      <% if point["scripture"].present? %><p>Read <%= point["scripture"] %>.</p><% end %>
+      <% if point["question"].present? %><p>Ask: <%= point["question"] %></p><% end %>
+    </li>
+  <% end %>
+</ol>
+<% if outline["children"].present? %>
+  <p><strong>For young children</strong></p>
+  <p><%= outline["children"] %></p>
+<% end %>
+<% if outline["closing"].present? %>
+  <p><strong>Closing</strong></p>
+  <p><%= outline["closing"] %></p>
+<% end %>

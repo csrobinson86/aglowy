@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_041142) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -90,6 +90,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_041142) do
     t.check_constraint "frequency::text <> 'monthly'::text OR week_of_month IS NOT NULL", name: "family_studies_monthly_week_of_month_check"
     t.check_constraint "frequency::text = ANY (ARRAY['once'::character varying, 'daily'::character varying, 'weekly'::character varying, 'monthly'::character varying]::text[])", name: "family_studies_frequency_check"
     t.check_constraint "week_of_month = ANY (ARRAY[1, 2, 3, 4, 5, '-1'::integer])", name: "family_studies_week_of_month_check"
+  end
+
+  create_table "family_study_drafts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "chat_id", null: false
+    t.text "prompt", null: false
+    t.integer "length_minutes", null: false
+    t.boolean "young_children", default: false, null: false
+    t.string "status", default: "drafting", null: false
+    t.jsonb "outline"
+    t.jsonb "sources", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_family_study_drafts_on_chat_id", unique: true
+    t.index ["household_id", "created_at"], name: "index_family_study_drafts_on_household_id_and_created_at"
+    t.index ["user_id"], name: "index_family_study_drafts_on_user_id"
+    t.check_constraint "length_minutes = ANY (ARRAY[30, 45, 60])", name: "family_study_drafts_length_minutes_check"
+    t.check_constraint "status::text = ANY (ARRAY['drafting'::character varying, 'drafted'::character varying, 'off_topic'::character varying, 'flagged'::character varying, 'failed'::character varying, 'stopped'::character varying, 'discarded'::character varying]::text[])", name: "family_study_drafts_status_check"
   end
 
   create_table "family_study_resources", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -527,6 +546,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_041142) do
   add_foreign_key "chats", "users"
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"
+  add_foreign_key "family_study_drafts", "chats", on_delete: :cascade
+  add_foreign_key "family_study_drafts", "households"
+  add_foreign_key "family_study_drafts", "users"
   add_foreign_key "family_study_resources", "family_study_sessions", column: "session_id"
   add_foreign_key "family_study_sessions", "family_studies"
   add_foreign_key "family_study_sessions", "users", column: "conductor_id"
