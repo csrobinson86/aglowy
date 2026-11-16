@@ -587,6 +587,26 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_no_ticking_or_step_editing(goal)
   end
 
+  test "the owner's goal page has the tag editor; a member reading it shared sees no tags, nor does a family goal have one" do
+    goal = goals(:spouse_bible_reading)
+    goal.tag_with("ministry", by: users(:spouse))
+    goal.share_with(households(:home))
+    sign_in identities(:spouse)
+
+    get household_goal_path(household_id: households(:home), id: goal)
+    assert_select "main #tag_editor_goal_#{goal.id} a.Label", text: "#ministry"
+
+    get household_goal_path(household_id: households(:home), id: goals(:gospels))
+    assert_select "main [id^=tag_editor]", count: 0
+
+    sign_in identities(:head)
+    get household_goal_path(household_id: households(:home), id: goal)
+
+    assert_response :success
+    assert_select "main [id^=tag_editor]", count: 0
+    assert_not_includes response.body, "#ministry"
+  end
+
   private
     def completion_path(goal)
       household_goal_completion_path(household_id: goal.household, goal_id: goal)

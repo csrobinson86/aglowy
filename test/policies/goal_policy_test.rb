@@ -82,6 +82,20 @@ class GoalPolicyTest < ActiveSupport::TestCase
     assert_not GoalPolicy.new(nil, users(:spouse).goals.new).create?
   end
 
+  test "only the owner tags a personal goal, through an active membership; nobody tags a family goal" do
+    assert GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading)).tag?
+
+    goals(:spouse_bible_reading).share_with(households(:home))
+    [ memberships(:head_in_home), memberships(:child_in_home), memberships(:outsider_in_other), nil ].each do |membership|
+      assert_not GoalPolicy.new(membership, goals(:spouse_bible_reading)).tag?, "expected #{membership.inspect} to be refused"
+    end
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      assert_not GoalPolicy.new(memberships(membership), goals(:gospels)).tag?, "expected #{membership} to be refused a family goal"
+    end
+    memberships(:spouse_in_home).update_column(:active, false)
+    assert_not GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading)).tag?
+  end
+
   test "personal goal: only the owner can share it, through an active membership" do
     assert GoalPolicy.new(memberships(:spouse_in_home), goals(:spouse_bible_reading)).share?
 

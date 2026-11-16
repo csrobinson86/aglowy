@@ -1,7 +1,11 @@
-<%# locals: (status:, can_create:, mine: false) %>
+<%# locals: (status:, can_create:, mine: false, tag: nil) %>
+<%# tag: the tag My goals is filtered by, which nothing on this tab carries. %>
 <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
   <% blankslate.with_visual_icon(icon: mine ? :flag : :goal) %>
-  <% case status %>
+  <% case tag ? "tagged" : status %>
+  <% when "tagged" %>
+    <% blankslate.with_heading(tag: :h2) { "No goals tagged ##{tag}" } %>
+    <% blankslate.with_description { "Add a tag from a goal's page, under its title." } %>
   <% when "active" %>
     <% if mine %>
       <% blankslate.with_heading(tag: :h2) { "No goals of your own yet" } %>

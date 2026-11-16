@@ -87,6 +87,8 @@ Rails.application.routes.draw do
     resource :todays_meeting, only: %i[ show create ]
     resources :meeting_notes, only: %i[ index create show edit update ] do
       resource :sharing, only: %i[ create destroy ], module: :meeting_notes
+      # The owner's own tags on it; :id is the tag's (docs/design/tags.md, Pages and routes).
+      resources :taggings, only: %i[ create destroy ], module: :meeting_notes
       # The meeting helper's steps, one at a time; :id is the step's key (MeetingNote::HelperSteps).
       resources :steps, only: :show, module: :meeting_notes do
         resource :mark, only: %i[ create destroy ], module: :steps
@@ -103,6 +105,8 @@ Rails.application.routes.draw do
       resource :completion, only: %i[ create destroy ], module: :goals
       resource :archival, only: %i[ create destroy ], module: :goals
       resource :sharing, only: %i[ create destroy ], module: :goals
+      # A personal goal's owner's tags; a family goal is a 404 (docs/design/tags.md, Traps).
+      resources :taggings, only: %i[ create destroy ], module: :goals
       resources :steps, only: %i[ create update destroy ], module: :goals do
         resources :completions, only: %i[ create destroy ], module: :steps
       end

@@ -4,15 +4,23 @@
 # MeetingNote.shared_with(Current.household), read-only.
 class MeetingNotesController < ApplicationController
   include HouseholdScoped
+  include TagFiltered
 
   before_action :set_editable_meeting_note, only: %i[ edit update ]
 
+  # Filtered by a tag, the list holds every week's tagged notes, this week's too, in place of the This week cards.
   def index
     authorize MeetingNote
-    @week_of = Current.membership.this_week
-    @this_week = Current.user.meeting_notes_for_week(@week_of)
     @shared_count = MeetingNote.shared_with(Current.household).count
-    @earlier = Page.new(Current.user.meeting_notes.includes(:sharings).where(week_of: ...@week_of).newest_first, number: params[:page])
+    notes = Current.user.meeting_notes.includes(:sharings, :tags).newest_first
+
+    if @tag_name
+      @earlier = Page.new(tagged(notes), number: params[:page])
+    else
+      @week_of = Current.membership.this_week
+      @this_week = Current.user.meeting_notes_for_week(@week_of)
+      @earlier = Page.new(notes.where(week_of: ...@week_of), number: params[:page])
+    end
   end
 
   # Finds the note for that meeting and week, or starts it, so a second click lands on the same note.

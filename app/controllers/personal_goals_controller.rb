@@ -4,14 +4,15 @@
 # personal goals others shared into this household.
 class PersonalGoalsController < ApplicationController
   include HouseholdScoped
+  include TagFiltered
 
   STATUSES = Goal::STATUSES + %w[ shared ]
 
   def index
     authorize Goal
     @status = params[:status].presence_in(STATUSES) || "active"
-    @goals = goals_with_status(@status).preloaded
-    @counts = STATUSES.index_with { goals_with_status(it).count }
+    @goals = tagged(goals_with_status(@status)).preloaded.includes(:tags)
+    @counts = STATUSES.index_with { tagged(goals_with_status(it)).count }
   end
 
   def new

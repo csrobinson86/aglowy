@@ -23,3 +23,5 @@ import GoalStepController from "../components/goal_step_component_controller"
 application.register("goal-step", GoalStepController)
 import ScripturePickerController from "../components/scripture_picker_component_controller"
 application.register("scripture-picker", ScripturePickerController)
+import TagEditorController from "../components/tag_editor_component_controller"
+application.register("tag-editor", TagEditorController)

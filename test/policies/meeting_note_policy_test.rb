@@ -71,6 +71,19 @@ class MeetingNotePolicyTest < ActiveSupport::TestCase
     assert_not MeetingNotePolicy.new(nil, meeting_notes(:head_midweek)).share?
   end
 
+  test "only the author tags a note, through any household they're active in; nobody else, whatever their role, nor a nil membership" do
+    %i[ head_in_home head_in_parents ].each do |membership|
+      assert MeetingNotePolicy.new(memberships(membership), meeting_notes(:head_midweek)).tag?, "expected #{membership} to let the author tag"
+    end
+    meeting_notes(:head_midweek).share_with(households(:home))
+    %i[ spouse_in_home child_in_home grandparent_in_parents outsider_in_other ].each do |membership|
+      assert_not MeetingNotePolicy.new(memberships(membership), meeting_notes(:head_midweek)).tag?, "expected #{membership} to be refused"
+    end
+    assert_not MeetingNotePolicy.new(nil, meeting_notes(:head_midweek)).tag?
+    memberships(:head_in_home).update_column(:active, false)
+    assert_not MeetingNotePolicy.new(memberships(:head_in_home), meeting_notes(:head_midweek)).tag?
+  end
+
   test "the author through an inactive membership can't share" do
     memberships(:head_in_home).update_column(:active, false)
 

@@ -6,9 +6,13 @@ class Tag < ApplicationRecord
   # The database deletes them with the tag (on_delete: :cascade).
   has_many :taggings
 
-  validates :name, format: { with: /\A[a-z0-9][a-z0-9-]{0,29}\z/ }
+  # Normalizing leaves only letters, numbers and hyphens, so the one name it can't make valid is an empty one.
+  validates :name, format: { with: /\A[a-z0-9][a-z0-9-]{0,29}\z/, message: "needs at least one letter or number" }
   # A name the person already has doesn't count, so a create that races another to it reaches the unique index.
   validate(on: :create) { errors.add(:base, "You already have #{LIMIT} tags, the most you can have") if user && user.tags.where.not(name: name).count >= LIMIT }
+
+  # Each tag with how many things carry it, as taggings_count, for the tag editor's suggestions.
+  scope :with_taggings_count, -> { left_joins(:taggings).group(:id).select("tags.*", "COUNT(taggings.id) AS taggings_count") }
 
   # "Talk Prep", "#talk_prep" and " talk-prep " are all talk-prep. "###" is "", which is invalid.
   def self.normalize(text)

@@ -8,6 +8,7 @@ class GoalPolicy < ApplicationPolicy
   def update?  = create?
   def destroy? = create?
   def share?   = record.personal? && owner?
+  def tag?     = share?
 
   private
 
