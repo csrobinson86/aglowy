@@ -73,6 +73,9 @@ module Aglowy
 
     # Every email's sender, Devise's included (config/initializers/devise.rb).
     config.x.mail_from = ENV.fetch("MAIL_FROM", "Aglowy <hello@localhost>")
+
+    # The AI notice's version (docs/design/ai.md, Ai::Acceptance). Raising it shows the notice again to everyone.
+    config.x.ai.terms_version = 1
   end
 end
 

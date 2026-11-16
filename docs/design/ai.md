@@ -49,6 +49,12 @@ A PORO per purpose in `app/models/ai/purpose/`, for example `Ai::Purpose::Family
   - that RubyLLM 2.2 passes the allowed domains through to the provider's search tool. If it doesn't, the story passes the provider's tool definition directly
   - that the provider's citations carry an excerpt (`cited_text`) the copy check can compare against. Anthropic's web search documents excerpts of up to 150 characters per citation
 
+What the first story (#180) found:
+
+- **Allowed domains: confirmed, RubyLLM passes them through.** `with_provider_tools(web_search: { allowed_domains:, max_uses: })` deep-merges the options into RubyLLM's Anthropic tool, so the request carries `{ type: "web_search_20260318", name: "web_search", allowed_callers: ["direct"], allowed_domains: ["www.jw.org", "jw.org", "wol.jw.org"], max_uses: 5 }`. `test/models/chat/ask_within_purpose_test.rb` checks the payload RubyLLM actually renders. The options are in Anthropic's vocabulary (`Ai::Purpose#web_search`), so `AI_MODEL` must be an Anthropic model.
+- **`cited_text`: not yet confirmed against a live reply.** The run had no working `ANTHROPIC_API_KEY`, so `test/fixtures/files/ai/family_study_draft.json` is hand-built in the shape Anthropic documents (`web_search_tool_result` blocks, and text blocks whose `web_search_result_location` citations carry `cited_text`), not recorded. RubyLLM 2.2 reads `cited_text` from that shape into `Citation#cited_text`. Still open: whether Anthropic returns citations when web search and a JSON schema (`output_config.format`) are in the same request. Record one reply (`test/fixtures/files/ai/README.md`) before the copy-check story starts. If it has no `cited_text`, stop and decide with Casey.
+- **Nothing from the search is stored.** `messages` has no `citations`, `server_tool_calls`, `raw_content` or `raw_reasoning` columns (RubyLLM skips a column a table doesn't have), so search results and `cited_text` live only in memory, in the `Ai::Reply`.
+
 ### Links the AI used: `Ai::SourceLink`
 
 A PORO that decides which links a feature may show. A link is kept only if:

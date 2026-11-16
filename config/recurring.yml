@@ -16,3 +16,6 @@ production:
   extend_family_study_sessions:
     class: FamilyStudies::ExtendSessionsJob
     schedule: every day at 3am
+  purge_expired_ai_chats:
+    class: Ai::PurgeExpiredChatsJob
+    schedule: every day at 4am

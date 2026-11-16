@@ -52,6 +52,12 @@ Rails.application.configure do
   # Fixtures for encrypted columns (meeting note titles, rich text bodies) are stored encrypted, as the app would.
   config.active_record.encryption.encrypt_fixtures = true
 
+  # Fake AI keys and the model the ruby_llm_models fixture holds, so tests and CI need no real ones. Tests never
+  # call a provider (docs/design/ai.md, Traps). Set before config/initializers/ruby_llm.rb reads them.
+  ENV["AI_MODEL"] = "claude-sonnet-5-5"
+  ENV["ANTHROPIC_API_KEY"] = "test-anthropic-key-not-a-secret"
+  ENV["OPENAI_API_KEY"] = "test-openai-key-not-a-secret"
+
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 

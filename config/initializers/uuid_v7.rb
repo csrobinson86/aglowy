@@ -5,3 +5,8 @@
     before_create { self.id ||= SecureRandom.uuid_v7 }
   end
 end
+
+# RubyLLM's own records (models, usage, tool calls) have their own base class.
+ActiveSupport.on_load(:active_record) do
+  RubyLLM::ActiveRecord::Record.before_create { self.id ||= SecureRandom.uuid_v7 }
+end

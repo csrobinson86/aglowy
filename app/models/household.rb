@@ -13,6 +13,7 @@ class Household < ApplicationRecord
   has_many :invitations, dependent: :delete_all
   has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
   has_one :meeting_helper, dependent: :delete
+  has_many :chats, dependent: :destroy
 
   MEETING_KINDS = %w[ midweek weekend ].freeze
   MEETING_TIME_ATTRIBUTES = %i[ midweek_meeting_wday midweek_meeting_time weekend_meeting_wday weekend_meeting_time ].freeze
