@@ -63,7 +63,8 @@ export default class extends Controller {
     const page = new DOMParser().parseFromString(await response.text(), "text/html")
     if (!watched.isConnected) return
     const finished = page.getElementById(question.id)
-    if (!finished || finished.querySelector("turbo-cable-stream-source")) return
+    // Still asking there, or a card without Save to notes either, which would only look again.
+    if (!finished || finished.querySelector("turbo-cable-stream-source, [data-study-ask-target~=unscoped]")) return
 
     for (const fresh of [ finished, ...page.querySelectorAll("[data-study-ask-catch-up]") ]) {
       document.getElementById(fresh.id)?.replaceWith(document.importNode(fresh, true))

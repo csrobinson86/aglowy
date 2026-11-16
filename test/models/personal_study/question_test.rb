@@ -265,11 +265,15 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
   end
 
   test "references become scripture links after save" do
+    study = @question.personal_study
+    study.update!(notes: "<p>Start with Job 1:9.</p>")
+    study.link_scriptures
+    study.save!
     saved_answer(paragraphs: [ "Jehovah never causes suffering. Read James 1:13." ])
 
     @question.save_to_notes
 
-    assert_equal [ Bible::Reference.find("59:1:13") ], @question.personal_study.reload.notes.body.attachables
+    assert_equal [ Bible::Reference.find("18:1:9"), Bible::Reference.find("59:1:13") ], study.reload.notes.body.attachables
   end
 
   test "escapes <script>" do

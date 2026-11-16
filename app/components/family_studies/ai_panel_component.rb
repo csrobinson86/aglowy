@@ -8,12 +8,12 @@ class FamilyStudies::AiPanelComponent < ApplicationComponent
 
   attr_reader :household, :user, :draft
 
-  # draft: a saved one shows its state; an unsaved one fills Describe (its errors and text show). open: show the
-  # opened panel, not Start.
-  def initialize(household:, user:, draft: nil, open: false)
+  # draft: a saved one shows its state; an unsaved one fills Describe (its errors and text show). prompt: what
+  # Describe starts with when there's no draft. open: show the opened panel, not Start.
+  def initialize(household:, user:, draft: nil, prompt: nil, open: false)
     @household = household
     @user = user
-    @draft = draft || FamilyStudy::Draft.new(length_minutes: DEFAULT_LENGTH)
+    @draft = draft || FamilyStudy::Draft.new(length_minutes: DEFAULT_LENGTH, prompt:)
     @open = open
   end
 
