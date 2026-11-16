@@ -157,6 +157,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 - **Ask box.** "Ask a follow-up", with the line "Answers use only jw.org and wol.jw.org, in the AI's own words, with links. N of 30 questions left today." Without AI access, the line explains why and the box is disabled. Without accepted terms, the first-use notice from `ai.md` appears instead.
 - **My notes.** The Lexxy editor with the Scripture button (`docs/design/scripture-links.md`), saved with "Save notes".
 - **Sources in this study.** Every page linked across the study's answers, without duplicates, with the line "Titles and links only. Open a page to read it on jw.org."
+- **Bookmarks** (BOOKMARKS-01, `docs/design/bookmarks.md`): a bookmark button beside each page in "Pages used" and "Sources in this study", and a "Scriptures in this study" box with a button on each scripture.
 
 ### Save to notes
 
