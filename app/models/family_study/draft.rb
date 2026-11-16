@@ -5,6 +5,7 @@ class FamilyStudy::Draft < ApplicationRecord
 
   PURPOSE = "family_study_draft".freeze
   LENGTHS = [ 30, 45, 60 ].freeze
+  PROMPT_MAX = 500
   # The ones that use one of the household's drafts for the day (docs/design/ai.md, safety measure 9).
   COUNTED_STATUSES = %w[ drafting drafted off_topic stopped discarded ].freeze
 
@@ -17,7 +18,7 @@ class FamilyStudy::Draft < ApplicationRecord
 
   encrypts :prompt, :outline
 
-  validates :prompt, presence: true, length: { maximum: 500 }
+  validates :prompt, presence: true, length: { maximum: PROMPT_MAX }
   validates :length_minutes, inclusion: { in: LENGTHS }
 
   scope :counted, -> { where(status: COUNTED_STATUSES) }

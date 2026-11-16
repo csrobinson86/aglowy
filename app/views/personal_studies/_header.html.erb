@@ -1,6 +1,6 @@
 <%# locals: (personal_study:) %>
-<%# The study's header (frame personal-study.png): the breadcrumb, the title, when it started, the tag editor, and the
-    "…" menu with Rename, Move to collection and Delete, each in a Primer Dialog.
+<%# The study's header (frame personal-study.png): the breadcrumb, the title, when it started, the tag editor,
+    "Plan a family study from this", and the "…" menu with Rename, Move to collection and Delete, each in a Primer Dialog.
     Names come from the database, so a refused rename doesn't show its title as saved. %>
 <% collection = personal_study.collection %>
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
@@ -11,7 +11,11 @@
 <% end %>
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { personal_study.title_in_database } %>
-  <% subhead.with_actions do %>
+  <% subhead.with_actions(display: :flex, align_items: :center) do %>
+    <%# Heads and adults here, who can plan a family study (docs/design/personal-study.md, Plan a family study from this). %>
+    <% if policy(FamilyStudy).create? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_family_study_path(from_study: personal_study.id), mr: 2)) { "Plan a family study from this" } %>
+    <% end %>
     <%= render "personal_studies/menu", personal_study: %>
   <% end %>
   <% subhead.with_description do %>

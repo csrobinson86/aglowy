@@ -1,0 +1,22 @@
+<%# locals: (personal_study:) %>
+<%# My notes beside the conversation (frame personal-study.png). Save to notes on an answer card replaces it with the
+    answer appended (PersonalStudies::NoteSavingsController). %>
+<section id="<%= dom_id(personal_study, :notes) %>" aria-labelledby="my-notes" class="mb-3">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_header(display: :flex, align_items: :center) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, flex: :auto, id: "my-notes")) { "My notes" } %>
+      <% if personal_study.notes&.persisted? %>
+        <span class="f6 color-fg-muted">Saved <%= render(Primer::Beta::RelativeTime.new(datetime: personal_study.notes.updated_at, tense: :past)) %></span>
+      <% end %>
+    <% end %>
+    <% box.with_body do %>
+      <%= primer_form_with(model: personal_study, url: household_personal_study_path(id: personal_study), method: :patch) do |f| %>
+        <div class="mb-3">
+          <%= render "meeting_notes/notes_field", form: f, label: "Notes", visually_hidden: true,
+                placeholder: "What you're learning, scriptures to remember, questions to look into." %>
+        </div>
+        <%= render PersonalStudies::NotesForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>

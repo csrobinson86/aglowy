@@ -18,7 +18,7 @@ class FamilyStudies::DraftForm < ApplicationForm
   form do |f|
     case @section
     when :prompt
-      f.text_area(name: :prompt, label: "What should the study be about?", required: true, character_limit: 500, rows: 4, full_width: true,
+      f.text_area(name: :prompt, label: "What should the study be about?", required: true, character_limit: FamilyStudy::Draft::PROMPT_MAX, rows: 4, full_width: true,
                   disabled: @disabled, data: { ai_panel_target: "prompt" })
     when :ideas
       # Plain buttons: the ai-panel Stimulus controller fills the box instead of submitting.

@@ -75,7 +75,9 @@
         data: { controller: "ai-draft", ai_draft_resource_links_outlet: "#schedule-resources", action: "lexxy:change->ai-draft#notesEdited" })) do |layout| %>
     <% layout.with_main { schedule_form } %>
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "schedule-study__ai") do %>
-      <%= render FamilyStudies::AiPanelComponent.new(household: Current.household, user: Current.user, open: params[:ai_panel] == "open") %>
+      <%# From a personal study, the panel opens on Describe with the study filled in, and nothing sent yet. %>
+      <%= render FamilyStudies::AiPanelComponent.new(household: Current.household, user: Current.user, open: params[:ai_panel] == "open" || @from_study.present?,
+            draft: (FamilyStudy::Draft.new(length_minutes: FamilyStudies::AiPanelComponent::DEFAULT_LENGTH, prompt: @from_study.family_study_prompt) if @from_study)) %>
     <% end %>
   <% end %>
 <% else %>

@@ -29,7 +29,7 @@ class PersonalStudies::NoteSavingsControllerTest < ActionDispatch::IntegrationTe
     save_to_notes question, study: personal_studies(:spouse_ransom)
 
     assert_response :not_found
-    assert_nil personal_studies(:spouse_ransom).reload.notes
+    assert_not_predicate personal_studies(:spouse_ransom).reload.notes, :persisted?
   end
 
   test "another person's question under my own study: 404" do
@@ -48,7 +48,7 @@ class PersonalStudies::NoteSavingsControllerTest < ActionDispatch::IntegrationTe
     save_to_notes question
 
     assert_response :unprocessable_content
-    assert_nil @study.reload.notes
+    assert_not_predicate @study.reload.notes, :persisted?
   end
 
   test "a non-member of the household: 404" do

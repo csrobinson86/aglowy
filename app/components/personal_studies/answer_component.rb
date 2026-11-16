@@ -8,7 +8,7 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
 
   attr_reader :question, :household
 
-  # household: where Stop posts, while the question is asking.
+  # household: where Stop and Save to notes post. The job's broadcast has none.
   def initialize(question:, household:)
     @question = question
     @household = household
@@ -27,6 +27,10 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
   # Escaped first, so the reply's own markup is only ever text; then its references become scripture links.
   def linked(paragraph)
     helpers.render_action_text_content(Bible::Linker.new(ActionText::Content.new(ERB::Util.html_escape(paragraph))).link)
+  end
+
+  def note_saving_path
+    household_personal_study_question_note_saving_path(household_id: household, personal_study_id: question.personal_study_id, question_id: question)
   end
 
   def stop_path

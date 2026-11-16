@@ -288,7 +288,7 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
     @question.update!(status: "stopped")
 
     assert_raises(PersonalStudy::Question::NotAnswered) { @question.save_to_notes }
-    assert_nil @question.personal_study.reload.notes
+    assert_not_predicate @question.personal_study.reload.notes, :persisted?
   end
 
   test "database: a status of done raises CheckViolation" do

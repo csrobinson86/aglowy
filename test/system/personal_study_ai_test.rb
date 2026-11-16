@@ -38,6 +38,8 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
       assert_text "The Issue Raised in Eden · wol.jw.org"
       assert_text "Check each point against its page."
       assert_no_button "Stop"
+      # The broadcast can't know the page's household; the page's own card brings Save to notes.
+      assert_button "Save to notes"
     end
     within("section[aria-labelledby=study-sources]") { assert_selector "li", count: 3 }
     assert_text "1 question · 3 pages linked"
@@ -154,6 +156,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
   test "plan a family study and see the prefilled box" do
     personal_study_question(@study, prompt: "How does the ransom fit in?")
     visit household_personal_study_url(household_id: households(:home), id: @study)
+    capture_screens("personal-study-plan-button")
 
     click_on "Plan a family study from this"
 
