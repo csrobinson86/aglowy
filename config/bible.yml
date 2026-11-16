@@ -7,7 +7,9 @@
 # - verses: the verse count of each chapter, so its length is the chapter count. Counts follow the
 #   New World Translation's numbering: a verse it leaves out but keeps the number of (Matthew 17:21)
 #   still counts. Where it drops the numbers too, the chapter is shorter: John 7 ends at verse 52 and
-#   Mark 16 at verse 8. John 8 starts at verse 12 in the NWT, but a count can't say so, so it is 59.
+#   Mark 16 at verse 8.
+# - first_verses: a chapter that doesn't start at verse 1, and the verse it starts at. Only John 8,
+#   which starts at verse 12 in the NWT. Its count is still its last verse, 59.
 
 - number: 1
   name: Genesis
@@ -266,6 +268,7 @@
   single: John
   abbreviations: [jn, joh]
   verses: [51, 25, 36, 54, 47, 71, 52, 59, 41, 42, 57, 50, 38, 31, 27, 33, 26, 40, 42, 31, 25]
+  first_verses: { 8: 12 }
 
 - number: 44
   name: Acts

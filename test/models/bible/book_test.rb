@@ -79,6 +79,11 @@ class Bible::BookTest < ActiveSupport::TestCase
     assert_equal 8, Bible::Book.find(41).verses_in(16)
   end
 
+  test "a chapter starts where the NWT's verse numbers start" do
+    assert_equal 12, Bible::Book.find(43).first_verse_in(8)
+    assert_equal 1, Bible::Book.find(43).first_verse_in(7)
+  end
+
   test "find raises RecordNotFound for a number that isn't a book" do
     assert_raises(ActiveRecord::RecordNotFound) { Bible::Book.find(67) }
     assert_raises(ActiveRecord::RecordNotFound) { Bible::Book.find(0) }

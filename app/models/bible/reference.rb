@@ -43,7 +43,7 @@ Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
 
   def exists?
     verses = book.verses_in(chapter)
-    verses.present? && (first_verse.nil? || (first_verse.between?(1, last_verse) && last_verse <= verses))
+    verses.present? && (first_verse.nil? || (first_verse.between?(book.first_verse_in(chapter), last_verse) && last_verse <= verses))
   end
 
   def id
@@ -61,9 +61,9 @@ Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
   end
 
   # The passage in the New World Translation (Study Edition), in the format JW Library's share links use.
-  # A whole chapter runs from verse 1 to its last verse.
+  # A whole chapter runs from its first verse to its last.
   def jw_url
-    verses = [ first_verse || 1, last_verse || book.verses_in(chapter) ].uniq
+    verses = [ first_verse || book.first_verse_in(chapter), last_verse || book.verses_in(chapter) ].uniq
     "https://www.jw.org/finder?wtlocale=E&pub=nwtsty&bible=#{verses.map { bible_code(it) }.join("-")}"
   end
 

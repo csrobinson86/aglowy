@@ -1,6 +1,7 @@
 # One of the 66 books of the Bible, read once from config/bible.yml (docs/design/scripture-links.md, The canon data).
-# A book's verses hold the verse count of each chapter, so their length is its chapter count.
-Bible::Book = Data.define(:number, :name, :single, :abbreviations, :verses) do
+# A book's verses hold the verse count of each chapter, so their length is its chapter count. Its first_verses
+# hold the few chapters that don't start at verse 1.
+Bible::Book = Data.define(:number, :name, :single, :abbreviations, :verses, :first_verses) do
   class << self
     def all
       @all ||= YAML.load_file(Rails.root.join("config/bible.yml"), freeze: true).map { new(**it.symbolize_keys) }.freeze
@@ -21,12 +22,21 @@ Bible::Book = Data.define(:number, :name, :single, :abbreviations, :verses) do
     end
   end
 
+  def initialize(first_verses: {}.freeze, **)
+    super
+  end
+
   def chapters
     verses.size
   end
 
   def verses_in(chapter)
     verses[chapter - 1] if chapter.between?(1, chapters)
+  end
+
+  # John 8 starts at verse 12 in the NWT; every other chapter starts at verse 1.
+  def first_verse_in(chapter)
+    first_verses.fetch(chapter, 1)
   end
 
   # Whether the text starts this book's name or one of its abbreviations: "1 cor", "1cor." and "1Co" all start

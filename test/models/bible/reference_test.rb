@@ -54,6 +54,18 @@ class Bible::ReferenceTest < ActiveSupport::TestCase
     end
   end
 
+  test "John 8 starts at verse 12, as the NWT numbers it" do
+    assert_nil Bible::Reference.parse("John 8:11")
+    assert_nil Bible::Reference.parse("John 8:3-12")
+    assert_equal reference(43, 8, 12, 12), Bible::Reference.parse("John 8:12")
+    assert_raises(ActiveRecord::RecordNotFound) { Bible::Reference.find("43:8:11") }
+    assert_equal reference(43, 8, 12, 12), Bible::Reference.find("43:8:12")
+  end
+
+  test "jw_url for a whole chapter starts at the chapter's first verse" do
+    assert_equal "https://www.jw.org/finder?wtlocale=E&pub=nwtsty&bible=43008012-43008059", reference(43, 8).jw_url
+  end
+
   test "find round-trips the id" do
     [ reference(19, 37, 8, 9), reference(19, 23), reference(40, 24, 14, 14) ].each do |reference|
       assert_equal reference, Bible::Reference.find(reference.id)
