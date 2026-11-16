@@ -1,0 +1,17 @@
+<% content_for :title, "New study" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_personal_studies_path) { "Personal study" } %>
+  <% breadcrumbs.with_item(href: new_household_personal_study_path) { "New study" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "New study" } %>
+<% end %>
+
+<div class="container-md ml-0">
+  <%= render "personal_studies/errors", personal_study: @personal_study %>
+  <%= primer_form_with(model: @personal_study, url: household_personal_studies_path) do |f| %>
+    <%= render PersonalStudies::StudyForm.new(f, submit_label: "Start study", collections: Current.user.collections.for_studies.positioned,
+                                                 cancel_path: household_personal_studies_path) %>
+  <% end %>
+</div>

@@ -1,0 +1,21 @@
+<%# locals: (personal_study:) %>
+<%# The study's header (frame personal-study.png): the breadcrumb, the title, when it started, the tag editor, and the
+    "…" menu with Rename, Move to collection and Delete, each in a Primer Dialog. Question counts come with the conversation.
+    Names come from the database, so a refused rename doesn't show its title as saved. %>
+<% collection = personal_study.collection %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_personal_studies_path) { "Personal study" } %>
+  <% if collection %>
+    <% breadcrumbs.with_item(href: household_personal_studies_path(collection: collection.id)) { collection.name } %>
+  <% end %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { personal_study.title_in_database } %>
+  <% subhead.with_actions do %>
+    <%= render "personal_studies/menu", personal_study: %>
+  <% end %>
+  <% subhead.with_description do %>
+    Started <%= l(personal_study.created_at.to_date, format: :long) %>
+    <%= render TagEditorComponent.new(taggable: personal_study, user: Current.user, household: Current.household) %>
+  <% end %>
+<% end %>

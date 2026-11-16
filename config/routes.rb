@@ -111,6 +111,12 @@ Rails.application.routes.draw do
         resources :completions, only: %i[ create destroy ], module: :steps
       end
     end
+    # The signed-in person's own studies, found through Current.user (docs/design/personal-study.md, Pages and routes).
+    resources :personal_studies, only: %i[ index new create show update destroy ] do
+      resources :taggings, only: %i[ create destroy ], module: :personal_studies
+    end
+    # The person's folders, shared between Personal study and Notes.
+    resources :collections, only: %i[ create update destroy ]
     # The signed-in person's own tags, found by name through Current.user, so another person's is a 404 (docs/design/tags.md).
     resources :tags, only: %i[ index show update destroy ], param: :name
     resources :direct_uploads, only: :create

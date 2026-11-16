@@ -1,0 +1,24 @@
+# Each person's own folders, shared between Personal study and Notes or used in one (docs/design/personal-study.md, Collection).
+head_bible_questions:
+  user: head
+  name: Bible questions
+  used_in: both
+  position: 1
+
+head_talks:
+  user: head
+  name: Preparing a talk
+  used_in: studies
+  position: 2
+
+head_quick_references:
+  user: head
+  name: Quick references
+  used_in: notes
+  position: 3
+
+spouse_ministry:
+  user: spouse
+  name: Ministry
+  used_in: both
+  position: 1

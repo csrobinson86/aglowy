@@ -66,7 +66,7 @@ class TagTest < ActiveSupport::TestCase
     assert_equal "ministry", tags(:head_ministry).reload.name
   end
 
-  test "meeting notes and goals carrying it, newest first; no personal studies before PSTUDY-01" do
+  test "meeting notes, goals and personal studies carrying it, newest first" do
     tag = tags(:head_ministry)
     meeting_notes(:head_weekend).tag_with("ministry", by: users(:head))
     older = users(:head).goals.create!(title: "Read the Psalms", target_on: Date.new(2027, 2, 28), set_by: users(:head))
@@ -75,7 +75,10 @@ class TagTest < ActiveSupport::TestCase
 
     assert_equal [ meeting_notes(:head_weekend), meeting_notes(:head_midweek) ], tag.meeting_notes.to_a
     assert_equal [ newer, older ], tag.goals.to_a
-    assert_empty tag.personal_studies
+
+    personal_studies(:head_daniel, :head_suffering).each { it.tag_with("ministry", by: users(:head)) }
+    personal_studies(:head_daniel).touch
+    assert_equal personal_studies(:head_daniel, :head_suffering), tag.personal_studies.to_a
   end
 
   test "database: a name that isn't normalized raises CheckViolation" do

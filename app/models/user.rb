@@ -5,6 +5,9 @@ class User < ApplicationRecord
   has_many :meeting_notes, dependent: :destroy
   # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
   has_many :goals, dependent: :destroy
+  # Destroyed one by one, so their notes and taggings go too; before collections, whose studies the database would keep.
+  has_many :personal_studies, dependent: :destroy
+  has_many :collections, dependent: :delete_all
   has_many :chats, dependent: :destroy
   # The database deletes their taggings with them (on_delete: :cascade).
   has_many :tags, dependent: :delete_all

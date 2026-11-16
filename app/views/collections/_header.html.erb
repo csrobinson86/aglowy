@@ -1,0 +1,23 @@
+<%# locals: (collection:) %>
+<%# Above the list when it's narrowed to one collection: its name, then Edit and Delete, each in a Primer Dialog. %>
+<div class="d-flex flex-items-center flex-wrap mb-3">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, flex: :auto, mr: 2, classes: "wb-break-word")) { collection.name_in_database } %>
+  <%= render(Primer::Alpha::Dialog.new(id: "edit-collection-dialog", title: "Edit collection")) do |dialog| %>
+    <% dialog.with_show_button(size: :small, mr: 2) { "Edit collection" } %>
+    <% dialog.with_body(pb: 3) do %>
+      <%= render "collections/edit_form", collection: %>
+    <% end %>
+  <% end %>
+  <%= render(Primer::Alpha::Dialog.new(id: "delete-collection-dialog", title: "Delete #{collection.name_in_database}?")) do |dialog| %>
+    <% dialog.with_show_button(size: :small, scheme: :danger) { "Delete collection" } %>
+    <% dialog.with_body do %>
+      Its studies are kept. They just leave the collection.
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-collection-dialog" })) { "Cancel" } %>
+      <%= primer_form_with(url: household_collection_path(id: collection), method: :delete) do |f| %>
+        <%= render Collections::DeleteForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

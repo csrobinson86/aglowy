@@ -1,0 +1,5 @@
+<%# locals: (personal_study:) %>
+<%# Why the last change was refused. A Rename or Move Dialog closes as it submits, so its reason shows here. %>
+<% if personal_study.errors.any? %>
+  <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { personal_study.errors.full_messages.to_sentence } %>
+<% end %>
