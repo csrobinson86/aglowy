@@ -19,3 +19,6 @@ production:
   purge_expired_ai_chats:
     class: Ai::PurgeExpiredChatsJob
     schedule: every day at 4am
+  purge_expired_ai_uses:
+    class: Ai::PurgeExpiredUsesJob
+    schedule: every day at 4:30am

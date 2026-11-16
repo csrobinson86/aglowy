@@ -1,0 +1,10 @@
+<%# locals: (question:) -%>
+<%# A question once its job is done, as its result broadcast replaces it. Every field is escaped; the conversation's
+    answer card (docs/design/personal-study.md, The study page) comes with the page that shows it. %>
+<div id="<%= dom_id(question) %>">
+  <p><%= question.prompt %></p>
+  <% if question.answered? %>
+    <% if question.answer["not_found"] %><p class="color-fg-muted"><%= question.answer["not_found_note"] %></p><% end %>
+    <% question.answer["paragraphs"].each do |paragraph| %><p><%= paragraph %></p><% end %>
+  <% end %>
+</div>

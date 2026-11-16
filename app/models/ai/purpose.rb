@@ -4,25 +4,33 @@ class Ai::Purpose
   class Unknown < StandardError; end
 
   ALLOWED_HOSTS = %w[ www.jw.org jw.org wol.jw.org ].freeze
-  # The marked block the person's text goes in (safety measure 3). The instructions name it.
-  USER_BLOCK = "family_request".freeze
+  # Each purpose's name, as chats and ai_uses store it, and its class.
+  # Keep in step with the chats_purpose_check and ai_uses_purpose_check constraints.
+  CLASSES = { "family_study_draft" => "Ai::Purpose::FamilyStudyDraft", "personal_study" => "Ai::Purpose::PersonalStudyAnswer" }.freeze
 
-  # Keep in step with the chats_purpose_check constraint.
-  def self.names = %w[ family_study_draft ]
+  def self.names = CLASSES.keys
 
   def self.find(name)
     raise Unknown, "No AI purpose called #{name.inspect}" unless name.in?(names)
 
-    "Ai::Purpose::#{name.camelize}".constantize.new
+    CLASSES[name].constantize.new
   end
 
-  def name = self.class.name.demodulize.underscore
+  def self.all = names.map { find(it) }
+
+  def name = CLASSES.key(self.class.name)
 
   def instructions
     @instructions ||= Rails.root.join("config/ai/#{name}.md").read
   end
 
   def allowed_hosts = ALLOWED_HOSTS
+
+  # How long its chats are kept, or nil for until the person deletes them (safety measure 10).
+  def keep_for = nil
+
+  # The most earlier questions and replies sent with a new one, or nil for the whole chat.
+  def context_exchanges = nil
 
   # The copy check's policy values (safety measure 5), Casey's to tune: as many words in a row shared with a source
   # as make a sentence a copy, and the most words a quotation may hold.
@@ -37,6 +45,6 @@ class Ai::Purpose
   # The person's text as data inside the marked block. Every < and > goes, so no tag in it can close the block,
   # however it's spelled or nested.
   def user_message(text)
-    "<#{USER_BLOCK}>\n#{text.to_s.delete("<>")}\n</#{USER_BLOCK}>"
+    "<#{user_block}>\n#{text.to_s.delete("<>")}\n</#{user_block}>"
   end
 end

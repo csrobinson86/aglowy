@@ -73,6 +73,7 @@ One question and its answer.
 | `personal_study_id` | uuid | FK, not null, `on_delete: :cascade` | |
 | `user_id` | uuid | FK → users, not null | Who asked; the daily limit is per person |
 | `prompt` | text | not null, encrypted, 1 to 1,000 characters | |
+| `young_reader` | boolean | not null, default false | Asks for simpler wording; the job reads it, as jobs take ids only |
 | `status` | string | not null, check in (`asking`, `answered`, `off_topic`, `flagged`, `failed`, `stopped`) | |
 | `answer` | jsonb | encrypted, nullable until answered | The checked reply fields |
 | `sources` | jsonb | not null, default `[]` | `[{url, title}]` that passed `Ai::SourceLink` |

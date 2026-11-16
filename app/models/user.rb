@@ -13,6 +13,7 @@ class User < ApplicationRecord
   has_many :tags, dependent: :delete_all
   has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all
   has_many :ai_acceptances, class_name: "Ai::Acceptance", dependent: :delete_all
+  has_many :ai_uses, class_name: "Ai::Use", dependent: :delete_all
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 
@@ -60,6 +61,25 @@ class User < ApplicationRecord
   # The acceptance, or an unsaved one with an error when the box wasn't ticked. Accepting again finds the first one.
   def accept_ai_terms(understood:)
     ai_acceptances.create_or_find_by(version: Rails.configuration.x.ai.terms_version) { it.understood = understood }
+  end
+
+  # Head or adult in any active household: personal study is the person's, not one household's
+  # (docs/design/personal-study.md, Who can do what). Children get it with a head's grant, in a later story.
+  def may_ask_study_ai?
+    memberships.active.where(role: %w[ head adult ]).exists?
+  end
+
+  # Where midnight is for their per-person AI limits: their own time zone, else their oldest active membership's
+  # household's, else UTC. Never the household of the current request, so switching households can't restart the day.
+  def limit_time_zone
+    time_zone || memberships.active.order(:created_at, :id).first&.household&.time_zone || "UTC"
+  end
+
+  # Today's personal study questions left, counted from their uses, never their questions, so deleting a study can't
+  # give any back (docs/design/personal-study.md, Traps).
+  def study_questions_left_today
+    used = ai_uses.personal_study.since(Time.current.in_time_zone(limit_time_zone).beginning_of_day).count
+    [ PersonalStudy::Question.daily_limit - used, 0 ].max
   end
 
   def active_households

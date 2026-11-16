@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_170200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -61,6 +61,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
     t.index ["user_id", "version"], name: "index_ai_acceptances_on_user_id_and_version", unique: true
   end
 
+  create_table "ai_uses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "purpose", null: false
+    t.uuid "question_id"
+    t.datetime "created_at", null: false
+    t.index ["created_at"], name: "index_ai_uses_on_created_at"
+    t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
+    t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying]::text[])", name: "ai_uses_purpose_check"
+  end
+
   create_table "chats", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "ruby_llm_model_id", null: false
     t.uuid "user_id", null: false
@@ -76,7 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
     t.index ["household_id"], name: "index_chats_on_household_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
-    t.check_constraint "purpose::text = 'family_study_draft'::text", name: "chats_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying]::text[])", name: "chats_purpose_check"
   end
 
   create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -397,9 +408,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
     t.datetime "last_asked_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "chat_id", null: false
+    t.index ["chat_id"], name: "index_personal_studies_on_chat_id", unique: true
     t.index ["collection_id"], name: "index_personal_studies_on_collection_id"
     t.index ["user_id"], name: "index_personal_studies_on_user_id"
     t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 120", name: "personal_studies_title_length_check"
+  end
+
+  create_table "personal_study_questions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "personal_study_id", null: false
+    t.uuid "user_id", null: false
+    t.text "prompt", null: false
+    t.boolean "young_reader", default: false, null: false
+    t.string "status", default: "asking", null: false
+    t.jsonb "answer"
+    t.jsonb "sources", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["personal_study_id", "created_at"], name: "index_personal_study_questions_on_study_and_created_at"
+    t.index ["user_id"], name: "index_personal_study_questions_on_user_id"
+    t.check_constraint "status::text = ANY (ARRAY['asking'::character varying, 'answered'::character varying, 'off_topic'::character varying, 'flagged'::character varying, 'failed'::character varying, 'stopped'::character varying]::text[])", name: "personal_study_questions_status_check"
   end
 
   create_table "ruby_llm_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -593,6 +621,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_acceptances", "users"
+  add_foreign_key "ai_uses", "personal_study_questions", column: "question_id", on_delete: :nullify
+  add_foreign_key "ai_uses", "users"
   add_foreign_key "chats", "households"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "chats", "users"
@@ -636,8 +666,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "personal_studies", "chats"
   add_foreign_key "personal_studies", "collections", on_delete: :nullify
   add_foreign_key "personal_studies", "users"
+  add_foreign_key "personal_study_questions", "personal_studies", on_delete: :cascade
+  add_foreign_key "personal_study_questions", "users"
   add_foreign_key "taggings", "tags", on_delete: :cascade
   add_foreign_key "tags", "users"
 end

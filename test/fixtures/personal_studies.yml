@@ -1,19 +1,23 @@
 # Each person's own research (docs/design/personal-study.md, PersonalStudy). Notes are made in the tests that need them.
 head_suffering:
   user: head
+  chat: head_suffering_chat
   collection: head_bible_questions
   title: Why does Jehovah allow suffering?
 
 head_kindness:
   user: head
+  chat: head_kindness_chat
   collection: head_talks
   title: "Talk: Showing kindness"
 
 head_daniel:
   user: head
+  chat: head_daniel_chat
   title: The meaning of Daniel 2
 
 spouse_ransom:
   user: spouse
+  chat: spouse_ransom_chat
   collection: spouse_ministry
   title: The ransom

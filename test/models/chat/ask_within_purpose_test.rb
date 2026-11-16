@@ -54,11 +54,25 @@ class Chat::AskWithinPurposeTest < ActiveSupport::TestCase
     assert_empty reply.sources
   end
 
-  test "a model from another provider is refused before anything is sent" do
-    chat = Chat.create!(user: users(:head), purpose: "family_study_draft", model: ruby_llm_models(:openai_model))
+  test "an AI_MODEL from another provider is refused before anything is sent" do
+    chat = Chat.create!(user: users(:head), purpose: "family_study_draft")
 
-    assert_raises(Chat::UnsupportedProvider) { chat.ask_within_purpose("Prayer as a family") }
+    RubyLLM.config.stub(:default_model, ruby_llm_models(:openai_model).model_id) do
+      assert_raises(Chat::UnsupportedProvider) { chat.ask_within_purpose("Prayer as a family") }
+    end
     assert_empty chat.messages
+  end
+
+  test "a chat made under another model asks under the one AI_MODEL names now" do
+    @chat = Chat.create!(user: users(:head), purpose: "personal_study", model: ruby_llm_models(:openai_model))
+
+    asked_with = nil
+    ask = ->(*) { asked_with = @chat.to_llm.model.id
+                  RubyLLM::Message.new(role: :assistant, content: "{}") }
+    @chat.stub(:ask, ask) { @chat.ask_within_purpose("Why does Jehovah allow suffering?") }
+
+    assert_equal "claude-sonnet-5-5", asked_with
+    assert_equal ruby_llm_models(:test_model), @chat.reload.model
   end
 
   test "streaming hands chunks to the block" do
@@ -75,6 +89,25 @@ class Chat::AskWithinPurposeTest < ActiveSupport::TestCase
 
     assert_equal words, chunks
     assert_predicate reply, :off_topic?
+  end
+
+  test "context: an 11-exchange study sends only the last 10" do
+    @chat = personal_studies(:head_suffering).chat
+    @chat.messages.create!(role: "system", content: Ai::Purpose.find("personal_study").instructions)
+    1.upto(11) do |n|
+      @chat.messages.create!(role: "user", content: "Question #{n}")
+      @chat.messages.create!(role: "assistant", content: { off_topic: false, paragraphs: [ "Answer #{n}" ] }.to_json)
+    end
+
+    sent = reply_with("off_topic") { @chat.ask_within_purpose("Question 12") }
+
+    texts = sent[:messages].map { it[:content].pluck(:text).join }
+    assert_equal 21, texts.size
+    assert_equal "Question 2", texts.first
+    assert_includes texts.second, "Answer 2"
+    assert_equal "<study_question>\nQuestion 12\n</study_question>", texts.last
+    assert_equal [ Ai::Purpose.find("personal_study").instructions ], sent[:system].pluck(:text)
+    assert_equal 24, @chat.messages.where.not(role: "system").count
   end
 
   private
