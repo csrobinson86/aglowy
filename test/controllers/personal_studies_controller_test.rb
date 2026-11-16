@@ -160,6 +160,7 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#tag_editor_personal_study_#{@study.id} a.Label", "#ministry"
     assert_select "nav[aria-label='Main'] a[aria-current='page']", "Personal study"
     assert_select "form[action=?] lexxy-editor[name='personal_study[notes]'][value*='Rebellion in Eden']", household_personal_study_path(household_id: @home, id: @study)
+    assert_select "label.sr-only[for=personal_study_notes]", "Notes"
     assert_select "button[type=submit]", "Save notes"
     assert_select "dialog#delete-personal-study"
   end

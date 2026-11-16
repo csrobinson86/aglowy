@@ -18,9 +18,15 @@ class Collection < ApplicationRecord
   # Each collection with how many studies are in it, as personal_studies_count, for Personal study's list.
   scope :with_personal_studies_count, -> { left_joins(:personal_studies).group(:id).select("collections.*", "COUNT(personal_studies.id) AS personal_studies_count") }
 
-  # Called on a person's collections: user.collections.add(name: "Convention 2027"). Last in their list.
+  # Called on a person's collections: user.collections.add(name: "Convention 2027"). Last in their list. Two adds of
+  # the same name at once both pass the uniqueness check; the unique index stops the second, which gets the same error.
   def self.add(attributes)
-    create(attributes.merge(position: maximum(:position).to_i + 1))
+    collection = new(attributes.merge(position: maximum(:position).to_i + 1))
+    collection.save
+    collection
+  rescue ActiveRecord::RecordNotUnique
+    collection.errors.add(:name, :taken)
+    collection
   end
 
   def for_studies? = !used_in_notes?

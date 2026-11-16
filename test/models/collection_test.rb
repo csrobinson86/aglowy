@@ -30,6 +30,16 @@ class CollectionTest < ActiveSupport::TestCase
     assert users(:outsider).collections.new(name: "Bible questions").valid?
   end
 
+  test "an add that races another to the same name reaches the unique index and fails with the same error" do
+    uniqueness = Collection.validators_on(:name).grep(ActiveRecord::Validations::UniquenessValidator).sole
+
+    # As if the other request took the name after this one checked it.
+    collection = uniqueness.stub(:validate_each, nil) { users(:head).collections.add(name: "Bible questions") }
+
+    assert_not collection.persisted?
+    assert_equal [ "Name has already been taken" ], collection.errors.full_messages
+  end
+
   test "used_in is both, studies or notes" do
     collection = collections(:head_talks)
 
@@ -97,6 +107,12 @@ class CollectionTest < ActiveSupport::TestCase
   test "database: a name over 40 characters raises CheckViolation" do
     assert_raises(ActiveRecord::CheckViolation) do
       collections(:head_talks).update_column(:name, "x" * 41)
+    end
+  end
+
+  test "database: a collection needs a person" do
+    assert_raises(ActiveRecord::NotNullViolation) do
+      Collection.insert!({ user_id: nil, name: "Ministry", position: 1 })
     end
   end
 

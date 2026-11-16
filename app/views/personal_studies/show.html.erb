@@ -15,7 +15,7 @@
     <% box.with_body do %>
       <%= primer_form_with(model: @personal_study, url: household_personal_study_path(id: @personal_study), method: :patch) do |f| %>
         <div class="mb-3">
-          <%= render "meeting_notes/notes_field", form: f, label: "Notes", hidden_label: "for #{@personal_study.title_in_database}",
+          <%= render "meeting_notes/notes_field", form: f, label: "Notes", visually_hidden: true,
                 placeholder: "What you're learning, scriptures to remember, questions to look into." %>
         </div>
         <%= render PersonalStudies::NotesForm.new(f) %>
