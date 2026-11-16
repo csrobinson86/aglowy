@@ -5,15 +5,15 @@ class CollectionsController < ApplicationController
 
   before_action :set_collection, only: %i[ update destroy ]
 
-  # A refused name comes back in the dialog, which stays open with the reason.
+  # A refused name comes back in the dialog, which stays open with the reason. One made on Notes goes back there.
   def create
     authorize Collection
     @collection = Current.user.collections.add(collection_params)
 
     if @collection.persisted?
-      redirect_to household_personal_studies_path(collection: @collection.id), notice: "Collection created."
+      redirect_to notes? ? household_personal_notes_path(collection: @collection.id) : household_personal_studies_path(collection: @collection.id), notice: "Collection created."
     else
-      render_form :new
+      render_form :new, section: notes? ? "notes" : "studies"
     end
   end
 
@@ -43,9 +43,14 @@ class CollectionsController < ApplicationController
     params.expect(collection: %i[ name used_in ])
   end
 
+  # Which section's New collection dialog it came from: section=notes from Notes, else Personal study.
+  def notes?
+    params[:section] == "notes"
+  end
+
   # :new or :edit, whose form partial has the id new_collection or edit_collection_<id>.
-  def render_form(action)
-    render turbo_stream: turbo_stream.replace(helpers.dom_id(@collection, action), partial: "collections/#{action}_form", locals: { collection: @collection }),
+  def render_form(action, **locals)
+    render turbo_stream: turbo_stream.replace(helpers.dom_id(@collection, action), partial: "collections/#{action}_form", locals: { collection: @collection, **locals }),
            status: :unprocessable_content
   end
 end

@@ -5,7 +5,7 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
 
-      assert_equal [ "Today's meeting", "Meeting notes", "Personal study", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4), "for #{membership}"
+      assert_equal [ "Today's meeting", "Meeting notes", "Personal study", "Notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(5), "for #{membership}"
       assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/todays_meeting'] svg.octicon-sun"
     end
   end

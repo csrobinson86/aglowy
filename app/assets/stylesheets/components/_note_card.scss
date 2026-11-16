@@ -1,0 +1,41 @@
+// One note on Notes' list (frame notes.png): the title, three lines of the body, its tags, then a muted line with
+// its collection, scriptures and date at the bottom, however long the rest is. Colors come with the next story, as
+// modifiers (docs/design/notes.md, Colors).
+.note-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--base-size-16);
+  background-color: var(--bgColor-default);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-left-width: var(--base-size-4);
+  border-radius: var(--borderRadius-medium);
+}
+
+.note-card__title {
+  margin-bottom: var(--base-size-8);
+  font-size: var(--text-title-size-small);
+  overflow-wrap: anywhere;
+}
+
+.note-card__preview {
+  display: -webkit-box;
+  margin-bottom: var(--base-size-8);
+  overflow: hidden;
+  color: var(--fgColor-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow-wrap: anywhere;
+}
+
+.note-card__tags {
+  margin-bottom: var(--base-size-8);
+}
+
+.note-card__meta {
+  margin-top: auto;
+  margin-bottom: 0;
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+}

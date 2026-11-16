@@ -1,0 +1,30 @@
+<%# locals: (collections:, selected:, total_count:, tag:) %>
+<%# The person's collections for Notes, each with how many notes are in it. A shared one carries an icon labelled
+    "Shared with Personal study", explained under the list (docs/design/notes.md, The list). %>
+<h2 class="f5 mb-1 color-fg-muted">Collections</h2>
+<%= render(Primer::Beta::NavList.new(aria: { label: "Collections" }, selected_item_id: selected ? dom_id(selected) : :all_notes, mb: 2)) do |list| %>
+  <% list.with_item(label: "All notes", href: household_personal_notes_path(tag:), selected_by_ids: :all_notes) do |item| %>
+    <% item.with_trailing_visual_counter(count: total_count, scheme: :secondary) %>
+  <% end %>
+  <% collections.each do |collection| %>
+    <% list.with_item(label: collection.name, href: household_personal_notes_path(collection: collection.id, tag:), selected_by_ids: dom_id(collection), truncate_label: true) do |item| %>
+      <% item.with_trailing_visual_text(safe_join([ (render(Primer::Beta::Octicon.new(:duplicate, mr: 1, "aria-label": "Shared with Personal study")) if collection.used_in_both?), collection.personal_notes_count ])) %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if collections.any?(&:used_in_both?) %>
+  <p class="f6 color-fg-muted mb-2 px-2">
+    <%= render(Primer::Beta::Octicon.new(:duplicate, size: :xsmall, mr: 1)) %>Also used in Personal study
+  </p>
+<% end %>
+
+<%= render(Primer::Alpha::Dialog.new(id: "new-collection-dialog", title: "New collection")) do |dialog| %>
+  <% dialog.with_show_button(scheme: :invisible, mb: 4) do |button| %>
+    <% button.with_leading_visual_icon(icon: :plus) %>
+    New collection
+  <% end %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= render "collections/new_form", collection: Collection.new, section: "notes" %>
+  <% end %>
+<% end %>

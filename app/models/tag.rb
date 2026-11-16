@@ -1,4 +1,4 @@
-# One person's tag for their own meeting notes, personal goals and personal studies. Nobody else ever sees it (docs/design/tags.md).
+# One person's tag for their own meeting notes, personal goals, personal studies and notes. Nobody else ever sees it (docs/design/tags.md).
 class Tag < ApplicationRecord
   LIMIT = 200
 
@@ -9,6 +9,7 @@ class Tag < ApplicationRecord
   has_many :meeting_notes, -> { newest_first }, through: :taggings, source: :taggable, source_type: "MeetingNote"
   has_many :goals, -> { order(created_at: :desc, id: :desc) }, through: :taggings, source: :taggable, source_type: "Goal"
   has_many :personal_studies, -> { recent_first }, through: :taggings, source: :taggable, source_type: "PersonalStudy"
+  has_many :personal_notes, -> { recent_first }, through: :taggings, source: :taggable, source_type: "PersonalNote"
 
   # Normalizing leaves only letters, numbers and hyphens, so the one name it can't make valid is an empty one.
   validates :name, format: { with: /\A[a-z0-9][a-z0-9-]{0,29}\z/, message: "needs at least one letter or number" }

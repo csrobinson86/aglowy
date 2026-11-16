@@ -14,6 +14,7 @@ class TagsController < ApplicationController
   def show
     @meeting_notes = @tag.meeting_notes
     @personal_studies = @tag.personal_studies
+    @personal_notes = @tag.personal_notes
     @goals = @tag.goals.preloaded
   end
 

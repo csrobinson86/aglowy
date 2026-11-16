@@ -1,0 +1,59 @@
+<% content_for :title, "Notes" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Notes" } %>
+  <% subhead.with_description { "Your own notes to come back to. Only you can see them." } %>
+  <% subhead.with_actions do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_note_path(collection: @collection&.id), scheme: :primary)) { "New note" } %>
+  <% end %>
+<% end %>
+
+<%# Collections and my tags beside the cards (frame notes.png). On a phone they're above them, behind
+    "Collections and tags"; from md up the open-from-md controller keeps them open, with the summary hidden. %>
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-notes")) do |layout| %>
+  <% layout.with_sidebar(width: :narrow, row_placement: :start, classes: "personal-notes__sidebar") do %>
+    <%= render(Primer::Beta::Details.new(data: { controller: "open-from-md" })) do |details| %>
+      <% details.with_summary(block: true, mb: 3, display: [ nil, nil, :none ]) { "Collections and tags" } %>
+      <% details.with_body do %>
+        <%= render "personal_notes/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
+        <%= render "personal_notes/tags", tags: @tags, selected: @tag_name, collection: @collection %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% layout.with_main do %>
+    <%# Personal study's search box: the same three fields, and the same reason it can't read bodies (Traps). %>
+    <%= primer_form_with(url: household_personal_notes_path, method: :get, class: "mb-3") do |f| %>
+      <%= render PersonalStudies::SearchForm.new(f, query: @query, collection: @collection_id, tag: @tag_name) %>
+    <% end %>
+
+    <% if @tag_name %>
+      <%= render "tags/filter", name: @tag_name, clear_path: household_personal_notes_path(collection: @collection_id, q: @query) %>
+    <% end %>
+
+    <% if @personal_notes.any? %>
+      <section aria-labelledby="all-notes">
+        <h2 id="all-notes" class="f5 color-fg-muted mb-2"><%= @collection&.name || "All notes" %></h2>
+        <div class="personal-notes__cards">
+          <% @personal_notes.each do |personal_note| %>
+            <%= render "personal_notes/card", personal_note: %>
+          <% end %>
+        </div>
+      </section>
+    <% elsif @total_count.zero? %>
+      <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :pencil) %>
+        <% blankslate.with_heading(tag: :h2) { "No notes yet." } %>
+        <% blankslate.with_description { "Write one to come back to." } %>
+        <% blankslate.with_primary_action(href: new_household_personal_note_path) { "New note" } %>
+      <% end %>
+    <% else %>
+      <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :search) %>
+        <% blankslate.with_heading(tag: :h2) { "No notes match" } %>
+        <% blankslate.with_description { "Search titles, collections and tags, or show all notes." } %>
+        <% blankslate.with_secondary_action(href: household_personal_notes_path) { "All notes" } %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

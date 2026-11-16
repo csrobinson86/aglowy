@@ -81,6 +81,15 @@ class CollectionTest < ActiveSupport::TestCase
     assert collections(:head_talks).update(used_in: "notes")
   end
 
+  test "changing used_in to studies is refused while a note is in it" do
+    collection = collections(:head_bible_questions)
+    personal_notes(:head_return_visit).update!(collection:)
+
+    assert_not collection.update(used_in: "studies")
+    assert_equal [ "1 note is in this collection. Move it first." ], collection.errors.full_messages
+    assert collection.reload.used_in_both?
+  end
+
   test "renaming a collection that has studies in it is fine" do
     assert collections(:head_talks).update(name: "Talks")
   end

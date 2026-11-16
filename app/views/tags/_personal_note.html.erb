@@ -1,0 +1,5 @@
+<%# locals: (record:) %>
+<%= render(Primer::Beta::Octicon.new(:pencil, color: :muted, mr: 2, mt: 1, flex_shrink: 0)) %>
+<div class="min-width-0">
+  <%= render(Primer::Beta::Link.new(href: household_personal_note_path(id: record), font_weight: :bold, classes: "wb-break-word")) { record.title } %>
+</div>

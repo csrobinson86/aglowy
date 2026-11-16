@@ -1,0 +1,18 @@
+# Each person's own notes (docs/design/notes.md, PersonalNote). Bodies are made in the tests that need them.
+head_return_visit:
+  user: head
+  title: Questions for my return visit
+
+head_daniel:
+  user: head
+  collection: head_quick_references
+  title: "Daniel 2 image: quick reference"
+
+head_family_worship:
+  user: head
+  title: Ideas for family worship
+
+spouse_grieving:
+  user: spouse
+  collection: spouse_ministry
+  title: Comfort for someone grieving

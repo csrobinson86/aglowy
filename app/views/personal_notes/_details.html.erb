@@ -1,0 +1,24 @@
+<%# locals: (personal_note:) %>
+<%# When the note was made and last edited, and Delete note, which asks first in a Primer Dialog (frame note.png). %>
+<section aria-labelledby="note-details">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_body do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 1, id: "note-details")) { "Details" } %>
+      <p class="f6 color-fg-muted mb-2">
+        Created <%= l(personal_note.created_at.to_date, format: :long) %> · Edited <%= render(Primer::Beta::RelativeTime.new(datetime: personal_note.updated_at_in_database, tense: :past)) %>
+      </p>
+      <%= render(Primer::Alpha::Dialog.new(id: "delete-personal-note", title: "Delete this note?")) do |dialog| %>
+        <% dialog.with_show_button(scheme: :danger, size: :small) { "Delete note" } %>
+        <% dialog.with_body do %>
+          Its tags come off too. This can't be undone.
+        <% end %>
+        <% dialog.with_footer do %>
+          <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-personal-note" })) { "Cancel" } %>
+          <%= primer_form_with(url: household_personal_note_path(id: personal_note), method: :delete) do |f| %>
+            <%= render PersonalNotes::DeleteForm.new(f) %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>

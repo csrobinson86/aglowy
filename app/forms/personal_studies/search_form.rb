@@ -1,5 +1,6 @@
-# The search box above the list of studies. It keeps the collection and tag the list is narrowed to, and says
-# what it searches: notes are encrypted, so it can't read them (docs/design/personal-study.md, Traps).
+# The search box above the list of studies, and above Notes' list too. It keeps the collection and tag the list is
+# narrowed to, and says what it searches: study notes and note bodies are encrypted, so it can't read them
+# (docs/design/personal-study.md and docs/design/notes.md, Traps).
 class PersonalStudies::SearchForm < ApplicationForm
   def initialize(query:, collection:, tag:)
     @query = query
