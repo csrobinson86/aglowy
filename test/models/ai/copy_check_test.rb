@@ -67,6 +67,13 @@ class Ai::CopyCheckTest < ActiveSupport::TestCase
     assert_equal({ "closing" => "Sing." }, fields)
   end
 
+  test "keeps a sentence whose shortened year and possessive hold no quotation, but not a quotation opening with a number" do
+    closing = "Remember the '90s when all of our dear parents' prayers helped us. In ‘05 our grandparents’ faith grew."
+    fields, = clean("closing" => closing, "question" => "Read '1 Corinthians 13:4 love is patient and kind.' Then ‘144,000 will rule with Christ in heaven.’ Pray.")
+
+    assert_equal({ "closing" => closing, "question" => "Pray." }, fields)
+  end
+
   private
     def clean(fields)
       Ai::CopyCheck.clean(fields, citations: CITATIONS, overlap_words: 8, quote_max_words: 5)

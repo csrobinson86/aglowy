@@ -5,8 +5,8 @@ class Ai::CopyCheck
   # A sentence runs to its stop (and any closing quotation mark or bracket), or to the end of the text.
   SENTENCE = /\S.*?(?:[.!?]+["”'’)\]]*(?=\s|\z)|\z)/m
   # In double quotation marks, where one left open runs to the end of the text; or in single ones, which only open
-  # and close outside a word, so the apostrophe in "don’t" or "let's" is neither.
-  QUOTATION = /["“][^"”]*(?:["”]|\z)|(?<![[:alnum:]])['‘](?=\S).*?(?<=\S)['’](?![[:alnum:]])/m
+  # and close outside a word, so the apostrophe in "don’t" or "let's" is neither, nor the one shortening a year ('90s).
+  QUOTATION = /["“][^"”]*(?:["”]|\z)|(?<![[:alnum:]])['‘](?![[:digit:]]{2}s?(?![[:alnum:]]))(?=\S).*?(?<=\S)['’](?![[:alnum:]])/m
 
   # [fields, removed]: the fields (nested hashes and arrays) with those sentences gone from every string, and
   # whether any were. citations are hashes whose cited_text is an excerpt or a list of them, as Ai::Reply#sources.
