@@ -24,7 +24,8 @@ module FamilyStudy::Draft::Writable
     return unless self.class.drafting.exists?(id)
     return finish("flagged") if Ai::Moderation.flagged?(prompt)
 
-    progress :searching
+    # The panel already shows Searching. Broadcasting it too could land after Writing: Action Cable sends each
+    # broadcast on its own worker thread, so two in quick succession can arrive in either order.
     reply = catch(:stopped) { chat.ask_within_purpose(request, stream: ->(chunk) { streamed(chunk) }) }
     return unless reply
 

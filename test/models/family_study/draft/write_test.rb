@@ -139,7 +139,7 @@ class FamilyStudy::Draft::WriteTest < ActiveSupport::TestCase
 
     write(ask)
 
-    assert_equal [ "Searching jw.org and wol.jw.org…", "Writing the outline…" ], during.map { it.at("template strong").text }
+    assert_equal [ "Writing the outline…" ], during.map { it.at("template strong").text }
     assert during.all? { it["action"] == "update" && it["target"] == "progress_family_study_draft_#{@draft.id}" }
     assert_equal "Checking scriptures, links and wording…", streamed("update").last.at("template strong").text
     assert_includes streamed("update").last.at("template").text, "Searched jw.org and wol.jw.org · 2 pages found"
