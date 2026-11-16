@@ -3,7 +3,7 @@
 <div class="scripture-picker" role="dialog" aria-label="Choose a book" hidden
      data-controller="scripture-picker" data-scripture-picker-url-value="<%= url %>"
      data-scripture-picker-step-value="book"
-     data-action="scripture-picker:open@document->scripture-picker#open scripture-picker:end@document->scripture-picker#end click@document->scripture-picker#closeOutside keydown.esc@document->scripture-picker#close resize@window->scripture-picker#position">
+     data-action="scripture-picker:open@document->scripture-picker#open scripture-picker:end@document->scripture-picker#end scripture-picker:key@document->scripture-picker#key click@document->scripture-picker#closeOutside keydown.esc@document->scripture-picker#close resize@window->scripture-picker#position">
   <script type="application/json" data-scripture-picker-target="canon"><%= canon.to_json.html_safe %></script>
 
   <div class="scripture-picker__header">
@@ -13,6 +13,17 @@
     <p class="scripture-picker__title" data-scripture-picker-target="title">Book</p>
     <%= render(Primer::Beta::IconButton.new(icon: :x, "aria-label": "Close", scheme: :invisible, show_tooltip: false,
           data: { action: "scripture-picker#close" })) %>
+  </div>
+
+  <%# A reference typed after "+", from 768px, which Enter inserts (frame desktop-typed.png). %>
+  <div class="scripture-picker__match" hidden data-scripture-picker-target="match">
+    <%= render(Primer::Beta::Octicon.new(icon: :book, color: :accent)) %>
+    <p class="scripture-picker__match-text">
+      <strong data-scripture-picker-target="matchReference"></strong>
+      <span aria-hidden="true">·</span>
+      <span class="scripture-picker__match-description" data-scripture-picker-target="matchDescription"></span>
+    </p>
+    <kbd>Enter</kbd>
   </div>
 
   <div class="scripture-picker__regions">

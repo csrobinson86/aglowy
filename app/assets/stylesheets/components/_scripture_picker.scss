@@ -53,6 +53,33 @@
   font-weight: var(--base-text-weight-semibold);
 }
 
+// A reference typed after "+", from md up, with Enter to insert it (frame desktop-typed.png).
+.scripture-picker__match {
+  display: none;
+  padding: var(--base-size-12) var(--base-size-16);
+  align-items: center;
+  gap: var(--base-size-8);
+  background-color: var(--bgColor-muted);
+  border-bottom: var(--borderWidth-default) solid var(--borderColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: flex;
+  }
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.scripture-picker__match-text {
+  margin: 0 auto 0 0;
+  font-size: var(--text-body-size-large);
+}
+
+.scripture-picker__match-description {
+  color: var(--fgColor-muted);
+}
+
 .scripture-picker__regions {
   display: flex;
   min-height: 0;
@@ -135,6 +162,16 @@
   &[aria-selected="true"] {
     background-color: var(--control-transparent-bgColor-selected);
     font-weight: var(--base-text-weight-semibold);
+  }
+
+  // The book Enter picks while a query is typed.
+  &--active {
+    background-color: var(--control-transparent-bgColor-selected);
+  }
+
+  // Books a typed query doesn't start.
+  &[hidden] {
+    display: none;
   }
 
   &[aria-disabled="true"] {
@@ -289,4 +326,13 @@
   padding-inline: var(--base-size-8);
   align-items: center;
   gap: var(--base-size-6);
+}
+
+// The "+" that opens the picker as you type, from md up.
+.scripture-picker-button__hint {
+  display: none;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: inline-block;
+  }
 }

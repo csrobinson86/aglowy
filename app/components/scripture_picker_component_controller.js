@@ -2,12 +2,15 @@ import { Controller } from "@hotwired/stimulus"
 import Reference from "../javascript/bible/reference"
 
 // The scripture picker (ScripturePickerComponent, docs/design/scripture-links.md, The picker). The Lexxy extension
-// opens it on an editor with scripture-picker:open { session }. A book, then a chapter, then verses: one tap picks
-// a verse, a second makes a range and a third starts again; Insert with no verse is the whole chapter. Insert asks
-// the server for the reference's sgid and hands it back with scripture-picker:insert { session, sgid, html,
-// reference }. Close, Cancel, Esc and a click outside end the session with scripture-picker:close { session }.
+// opens it on an editor with scripture-picker:open { session, query }, and opens it again with the same session as a
+// query typed after "+" changes. A book, then a chapter, then verses: one tap picks a verse, a second makes a range
+// and a third starts again; Insert with no verse is the whole chapter. A query chooses the same way as you type it
+// (Typing a reference), and the keys the editor hands over with scripture-picker:key move through the books and
+// pick or insert. Insert asks the server for the reference's sgid and hands it back with scripture-picker:insert
+// { session, sgid, html, reference, query }. Close, Cancel, Esc, a click outside, and a space after a query that
+// can't be a reference end the session with scripture-picker:close { session }.
 export default class extends Controller {
-  static targets = [ "canon", "title", "books", "chaptersHeading", "chapters", "versesHeading", "verses", "reference", "insert", "bookTemplate", "numberTemplate" ]
+  static targets = [ "canon", "title", "match", "matchReference", "matchDescription", "books", "chaptersHeading", "chapters", "versesHeading", "verses", "reference", "insert", "bookTemplate", "numberTemplate" ]
   static values = { url: String, step: String, session: Number, reference: String }
 
   connect() {
@@ -15,16 +18,49 @@ export default class extends Controller {
     this.booksTarget.replaceChildren(...this.canon.map(book => this.#bookOption(book)))
   }
 
-  open({ target: editor, detail: { session } }) {
+  // From "+" the editor keeps focus, so the person can go on typing.
+  open({ target: editor, detail: { session, query } }) {
+    if (session === this.sessionValue && !this.element.hidden) return this.#type(query)
+
     this.#cancelLookup()
     this.editor = editor
     this.sessionValue = session
+    this.query = query
     this.#choose({})
     this.stepValue = "book"
     this.element.hidden = false
     this.#saveCaret()
     this.position()
-    this.#focus(this.booksTarget)
+
+    if (query) {
+      this.#type(query)
+    } else {
+      this.#filter(this.canon)
+      this.#focus(this.booksTarget)
+    }
+  }
+
+  // Enter, Esc and the arrows from the editor while a query is typed. Cancelling the event tells the editor the key
+  // was used here.
+  key(event) {
+    const { session, key } = event.detail
+    if (session !== this.sessionValue || this.element.hidden) return
+
+    const options = this.#visibleOptions
+    const active = options.findIndex(option => option.classList.contains("scripture-picker__book--active"))
+
+    if (key === "Escape") {
+      this.close()
+    } else if (key === "Enter" && this.#reference) {
+      this.insert()
+    } else if (key === "Enter" && this.stepValue === "book" && active >= 0) {
+      options[active].click()
+    } else if (key.startsWith("Arrow") && this.stepValue === "book" && options.length) {
+      this.#activate(options[Math.min(Math.max(active + (key === "ArrowDown" ? 1 : -1), 0), options.length - 1)])
+    } else {
+      return
+    }
+    event.preventDefault()
   }
 
   // The extension ends a session when its editor goes away.
@@ -79,7 +115,7 @@ export default class extends Controller {
     const reference = this.#reference
     if (!reference || this.request) return
 
-    const request = { session: this.sessionValue, reference: reference.id, abort: new AbortController() }
+    const request = { session: this.sessionValue, reference: reference.id, query: this.query, abort: new AbortController() }
     this.request = request
     this.#busy(true)
 
@@ -90,7 +126,7 @@ export default class extends Controller {
       const { sgid, html } = await response.json()
       if (this.request !== request) return
 
-      this.dispatch("insert", { detail: { session: request.session, sgid, html, reference: request.reference } })
+      this.dispatch("insert", { detail: { session: request.session, sgid, html, reference: request.reference, query: request.query } })
       this.#hide()
     } catch {
       // Aborted, or the network dropped: Insert can be pressed again.
@@ -146,6 +182,29 @@ export default class extends Controller {
     this.element.setAttribute("aria-label", label)
   }
 
+  // What the query after "+" chooses, as it's typed: the books it could start, the first of them active, then the
+  // book, chapter and verses it names, and on desktop a match row for a reference (frame desktop-typed.png). A lookup
+  // for the query before is dropped (Sessions). A query that can't be a reference is left alone until a space
+  // follows it, which ends the session.
+  #type(query) {
+    this.query = query
+    this.#cancelLookup()
+
+    const text = query.slice(1)
+    const typed = text ? Reference.typed(this.canon, text) : { books: this.canon }
+    if (!typed && /\s/.test(text)) return this.#endSession({ restoreFocus: false })
+
+    this.#filter(typed?.books ?? [])
+    this.#activate(this.#visibleOptions[0])
+    this.#choose({ ...typed, ranged: typed?.firstVerse !== typed?.lastVerse })
+    this.stepValue = typed?.chapter ? "verses" : typed?.book ? "chapter" : "book"
+
+    const reference = this.#reference
+    this.matchTarget.hidden = !reference
+    this.matchReferenceTarget.textContent = reference?.toString() ?? ""
+    this.matchDescriptionTarget.textContent = reference?.description ?? ""
+  }
+
   // The selection: a book, a chapter and verses, each optional from the end. Grids are rebuilt only for a new book or
   // chapter, so a tap never removes the button it landed on.
   #choose({ book = null, chapter = null, firstVerse = null, lastVerse = null, ranged = false }) {
@@ -162,6 +221,7 @@ export default class extends Controller {
     this.versesHeadingTarget.textContent = chapter ? `${book.single} ${chapter} · Verses` : "Verses"
 
     const reference = this.#reference
+    this.matchTarget.hidden = true
     this.referenceTarget.textContent = reference?.toString() ?? ""
     this.referenceValue = reference?.id ?? ""
     this.insertTarget.disabled = !reference
@@ -196,6 +256,23 @@ export default class extends Controller {
     this.insertTarget.disabled = busy || !this.#reference
     for (const button of this.element.querySelectorAll(".scripture-picker__number")) button.disabled = busy
     for (const option of this.booksTarget.children) option.setAttribute("aria-disabled", busy)
+  }
+
+  // Only the books given show in the list.
+  #filter(books) {
+    const numbers = new Set(books.map(book => book.number))
+    for (const option of this.booksTarget.children) option.hidden = !numbers.has(Number(option.dataset.number))
+    this.#activate(null)
+  }
+
+  get #visibleOptions() {
+    return [ ...this.booksTarget.children ].filter(option => !option.hidden)
+  }
+
+  // The book Enter picks while focus stays in the editor.
+  #activate(option) {
+    for (const other of this.booksTarget.children) other.classList.toggle("scripture-picker__book--active", other === option)
+    option?.scrollIntoView({ block: "nearest" })
   }
 
   #bookOption(book) {
