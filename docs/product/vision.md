@@ -49,6 +49,8 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 9 | **KIDS-01** Today's meeting: meeting times, the right note for everyone, and the meeting helper for children (marks, drawing, sharing with the family) | Design done |
 | 10 | **SCRIPT-01** Scripture links in notes: a book, chapter and verse picker, typed references linked on save, links to jw.org only | Design done |
 | 11 | **AI-01** AI foundation and family study drafts: one job per feature, search limited to jw.org and wol.jw.org, links never copies, 10 drafts per household a day | Design done |
+| 12 | **TAGS-01** Personal tags on meeting notes, personal goals and personal studies, with a page per tag | Design done |
+| 13 | **PSTUDY-01** Personal study: topics with an AI conversation from jw.org and wol.jw.org, notes, collections; AI for children when a head allows it | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 
@@ -57,7 +59,6 @@ Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 Not planned. Each needs a design pass and Casey's go-ahead before it becomes an epic.
 
 - Audio versions of personal study, to listen to while exercising
-- Personal study: ask AI questions while researching, answered only from jw.org and wol.jw.org with links (builds on `docs/design/ai.md`)
 - Age-appropriate versions of a family study for children
 - Weekly planning drafted by a background job for parents to review
 - A wider family-support area (fitness, meal planning)

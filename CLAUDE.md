@@ -453,6 +453,7 @@ These are explicitly forbidden in this codebase:
 | Missing `authorize` calls | Every controller action must authorize via Pundit |
 | Cypress / Playwright | We use Capybara + Selenium for system tests |
 | Views without landmarks | All page content must be in `<main>`, `<nav>`, etc. |
+| `record.tags` in a view | Tags are private: `tags_for(Current.user)` (`docs/design/tags.md`) |
 
 ---
 

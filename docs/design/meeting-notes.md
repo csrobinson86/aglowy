@@ -148,3 +148,7 @@ All under `/:household_id` in the app shell, with "Meeting notes" (`note` icon) 
 - Private, shared, shared then the author left the household, left and rejoined
 - Viewer: author, another adult, a child, a non-member (404)
 - Desktop and phone; light and dark
+
+## Tags
+
+The owner can tag a meeting note with their own private tags (TAGS-01, `docs/design/tags.md`). Tags never show on shared views.
