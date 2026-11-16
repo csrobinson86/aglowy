@@ -10,9 +10,13 @@ module FamilyStudy::Draft::Writable
   MINIMUM_POINTS = 2
 
   # A job the queue refused would leave the draft drafting with nothing to write it, using one of the day's drafts.
-  # perform_later returns false then (Active Job rescues the EnqueueError), so the draft fails and doesn't count.
+  # perform_later returns false when an adapter raises ActiveJob::EnqueueError, but Solid Queue raises its own
+  # SolidQueue::Job::EnqueueError, which Active Job doesn't rescue. Either way the draft fails and doesn't count.
   def write_later
     finish "failed" unless FamilyStudy::WriteDraftJob.perform_later(id)
+  rescue SolidQueue::Job::EnqueueError => error
+    Rails.error.report(error)
+    finish "failed"
   end
 
   # A draft stopped while its job waited, or finished already, never reaches moderation or the AI.

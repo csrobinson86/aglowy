@@ -102,6 +102,15 @@ class FamilyStudy::DraftTest < ActiveSupport::TestCase
     assert_equal 0, @household.family_study_drafts.counted_today.count
   end
 
+  test "start marks the draft failed when Solid Queue can't insert its job, so it doesn't use one of the day's drafts" do
+    refuse = ->(*) { raise SolidQueue::Job::EnqueueError, "ActiveRecord::ConnectionNotEstablished: queue database is down" }
+    draft = FamilyStudy::WriteDraftJob.stub(:perform_later, refuse) { start }
+
+    assert_predicate draft, :failed?
+    assert_predicate draft.reload, :failed?
+    assert_equal 0, @household.family_study_drafts.counted_today.count
+  end
+
   test "start refuses the 11th draft of the day with a :limit error and creates nothing" do
     10.times { family_study_draft(status: "drafted") }
 
