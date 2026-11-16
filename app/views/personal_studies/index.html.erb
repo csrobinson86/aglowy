@@ -2,11 +2,13 @@
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Personal study" } %>
-  <% subhead.with_description { "Your own research, with notes, collections and tags. Only you can see it." } %>
+  <% subhead.with_description { "Your own research, with notes, collections and tags.#{" Only you can see it." unless Current.user.personal_study_read_by_heads?}" } %>
   <% subhead.with_actions do %>
     <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_study_path(collection: @collection&.id), scheme: :primary)) { "New study" } %>
   <% end %>
 <% end %>
+
+<%= render "personal_studies/read_by_heads" %>
 
 <%# Collections and my tags beside the list (frame personal-studies.png); under it on a phone, so the list comes first. %>
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-studies")) do |layout| %>

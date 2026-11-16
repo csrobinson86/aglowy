@@ -1,6 +1,8 @@
 class Membership < ApplicationRecord
   belongs_to :household
   belongs_to :user
+  # The database deletes it with the seat (on_delete: :cascade).
+  has_one :study_ai_grant, dependent: :delete
 
   enum :role, %i[ head adult child ].index_by(&:itself), default: :adult, validate: true
 
@@ -8,6 +10,7 @@ class Membership < ApplicationRecord
   scope :preloaded, -> { includes(user: :identity) }
   scope :by_role, -> { in_order_of(:role, roles.keys).order(:created_at) }
   scope :by_household_name, -> { includes(:household).order("households.name") }
+  scope :with_study_ai_grant, -> { where(id: Membership::StudyAiGrant.select(:membership_id)) }
 
   def sole_head?
     head? && active? && household.memberships.active.head.where.not(id: id).none?
@@ -34,8 +37,9 @@ class Membership < ApplicationRecord
   end
 
   # Leaving ends the person's meeting-note and goal shares here for good, so rejoining never brings them back
-  # (docs/design/meeting-notes.md, "Leaving ends a share for good"), and takes them off the steps not yet
-  # done in the household's goals (docs/design/goals.md, "Leaving a household").
+  # (docs/design/meeting-notes.md, "Leaving ends a share for good"), takes them off the steps not yet
+  # done in the household's goals (docs/design/goals.md, "Leaving a household"), and ends a child's study AI grant
+  # (docs/design/personal-study.md, Children).
   def deactivate
     without_losing_last_head(leaves_headship: true) do
       update(active: false).tap do |deactivated|
@@ -43,13 +47,33 @@ class Membership < ApplicationRecord
           user.stop_sharing_meeting_notes_with(household)
           user.stop_sharing_goals_with(household)
           user.leave_open_goal_steps_in(household)
+          revoke_study_ai
         end
       end
     end
   end
 
   def change_role(role)
-    without_losing_last_head(leaves_headship: role.to_s != "head") { update(role: role) }
+    without_losing_last_head(leaves_headship: role.to_s != "head") do
+      update(role: role).tap { |changed| revoke_study_ai if changed && !child? }
+    end
+  end
+
+  # Personal study with AI for this child, from Household settings → Children (docs/design/personal-study.md,
+  # Children). The grant, or an unsaved one with the reason when the seat isn't an active child's with a login.
+  # Turning it on twice finds the first grant: the unique index settles two heads at once.
+  def grant_study_ai(by:)
+    Membership::StudyAiGrant.create_with(granted_by: by).create_or_find_by(membership: self).tap { reset_study_ai_grant }
+  end
+
+  # Stops new questions and ends heads' view; the child keeps their studies.
+  def revoke_study_ai
+    Membership::StudyAiGrant.where(membership: self).delete_all
+    reset_study_ai_grant
+  end
+
+  def study_ai_grant?
+    study_ai_grant.present?
   end
 
   private

@@ -75,6 +75,13 @@ class PersonalStudy < ApplicationRecord
 
   private
 
+  # A head who can read the child's studies sees their tags on them (ChildStudyPolicy). Never the child's meeting
+  # notes or goals, whose tags stay owner-only (docs/design/personal-study.md, Traps).
+  def tags_readable_by?(membership)
+    child = membership && user.memberships.find_by(household_id: membership.household_id)
+    child.present? && ChildStudyPolicy.new(membership, child).show?
+  end
+
   # The database can't check either across tables (docs/design/personal-study.md, Collection).
   def collection_for_studies
     if collection && collection.user_id != user_id

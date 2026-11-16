@@ -1,11 +1,12 @@
 # Household settings: the household's name and time zone and its members' roles for heads, and the meeting times and
 # the meeting helper for heads and adults (docs/design/invitations.md, Household settings; docs/design/meeting-helper.md,
 # Trap 10). Roles and removing are Members::RolesController and MembersController; meeting times
-# Households::MeetingTimesController; the meeting helper Households::MeetingHelpersController.
+# Households::MeetingTimesController; the meeting helper Households::MeetingHelpersController; personal study with AI
+# for each child Memberships::StudyAiGrantsController.
 class Households::SettingsController < ApplicationController
   include HouseholdScoped
 
-  before_action { @memberships = Current.household.memberships.active.preloaded.by_role }
+  before_action { @memberships = Current.household.memberships.active.preloaded.includes(study_ai_grant: :granted_by).by_role }
 
   def edit
     authorize Current.household

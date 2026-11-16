@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_170200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -372,6 +372,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_170200) do
     t.check_constraint "kind::text = ANY (ARRAY['midweek'::character varying, 'weekend'::character varying]::text[])", name: "meeting_notes_kind_check"
   end
 
+  create_table "membership_study_ai_grants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "membership_id", null: false
+    t.uuid "granted_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["granted_by_id"], name: "index_membership_study_ai_grants_on_granted_by_id"
+    t.index ["membership_id"], name: "index_membership_study_ai_grants_on_membership_id", unique: true
+  end
+
   create_table "memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "household_id", null: false
     t.uuid "user_id", null: false
@@ -663,6 +672,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_170200) do
   add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
+  add_foreign_key "membership_study_ai_grants", "memberships", on_delete: :cascade
+  add_foreign_key "membership_study_ai_grants", "users", column: "granted_by_id"
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"

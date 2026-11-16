@@ -68,6 +68,12 @@ Rails.application.routes.draw do
       resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }
       resource :password_link, only: :create, module: :members
       resource :role, only: :update, module: :members
+      # A head's read-only view of a child's personal studies, under a study AI grant (docs/design/personal-study.md, Children).
+      resources :personal_studies, only: %i[ index show ], module: :members
+    end
+    # Turning personal study with AI on or off for a child, from the settings page's Children section; heads only.
+    resources :memberships, only: [] do
+      resource :study_ai_grant, only: %i[ create destroy ], module: :memberships
     end
     resources :invitations, only: %i[ new create update destroy ]
     # Drafting a study with AI, from the panel beside the Schedule form (docs/design/family-studies.md, AI helper).

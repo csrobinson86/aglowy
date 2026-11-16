@@ -1,0 +1,44 @@
+<%# locals: (children:, head:) %>
+<%# Children → "Personal study with AI": one row per child (frame child-study-ai-setting.png). Heads turn it on or off;
+    adults see the state; a child without a login needs one first (docs/design/personal-study.md, Children). %>
+<section id="study-ai" aria-labelledby="study-ai-heading">
+  <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, id: "study-ai-heading", mb: 1)) { "Personal study with AI" } %>
+  <p class="color-fg-muted">
+    Lets a child ask questions in their personal study. Answers come only from jw.org and wol.jw.org, written simply,
+    with links. Heads can open the child's personal studies to read their questions, the answers and their notes.
+    The child is told this.
+  </p>
+  <% if children.any? %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% children.each do |child| %>
+        <% grant = child.study_ai_grant %>
+        <% box.with_row(display: :flex, align_items: :center) do %>
+          <span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-3 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= child.user.name.first %></span>
+          <div class="flex-1 min-width-0">
+            <div class="text-bold css-truncate css-truncate-overflow"><%= child.user.name %></div>
+            <div class="text-small color-fg-muted">
+              <% if child.user.identity.nil? %>
+                Needs a login first
+              <% elsif grant %>
+                Turned on by <%= grant.granted_by.first_name %> on <%= grant.created_at.in_time_zone(Current.household.time_zone).strftime("%B %-d") %>
+              <% end %>
+            </div>
+          </div>
+          <% if child.user.identity %>
+            <%= render(Primer::Beta::Label.new(scheme: grant ? :success : :secondary, ml: 2)) { grant ? "On" : "Off" } %>
+            <% if head %>
+              <%= primer_form_with(url: household_membership_study_ai_grant_path(membership_id: child), method: grant ? :delete : :post, class: "ml-2") do |f| %>
+                <%= render Memberships::StudyAiGrantForm.new(f, name: child.user.name, granted: grant.present?) %>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% else %>
+    <p class="color-fg-muted mb-0">Children in the household show here.</p>
+  <% end %>
+  <% unless head %>
+    <p class="f6 color-fg-muted mt-2 mb-0">Only a head can turn this on.</p>
+  <% end %>
+</section>

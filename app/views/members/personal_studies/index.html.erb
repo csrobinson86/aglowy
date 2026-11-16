@@ -1,0 +1,34 @@
+<% content_for :title, "#{@child.user.name}'s personal study" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_members_path) { "Members" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { "#{@child.user.name}'s personal study" } %>
+  <% subhead.with_description { "Read-only. #{@child.user.first_name} is told that heads can read their personal study." } %>
+<% end %>
+
+<% if @personal_studies.any? %>
+  <%= render Primer::Beta::BorderBox.new do |box| %>
+    <% @personal_studies.each do |personal_study| %>
+      <% box.with_row do %>
+        <div class="d-flex flex-wrap flex-items-center">
+          <%= render(Primer::Beta::Link.new(href: household_member_personal_study_path(member_id: @child, id: personal_study), font_weight: :bold, mr: 2, classes: "wb-break-word")) { personal_study.title } %>
+          <% if personal_study.collection %>
+            <%= render(Primer::Beta::Label.new(mr: 1, classes: "css-truncate css-truncate-overflow")) { personal_study.collection.name } %>
+          <% end %>
+          <%= render "members/personal_studies/tags", personal_study: %>
+        </div>
+        <div class="f6 color-fg-muted mt-1">
+          Updated <%= render(Primer::Beta::RelativeTime.new(datetime: personal_study.updated_at, tense: :past)) %><% if personal_study.notes.present? %> · notes<% end %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :search) %>
+    <% blankslate.with_heading(tag: :h2) { "No studies yet" } %>
+    <% blankslate.with_description { "#{@child.user.first_name}'s studies show here once they start one." } %>
+  <% end %>
+<% end %>

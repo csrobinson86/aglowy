@@ -1,6 +1,8 @@
 <%= render(Primer::Beta::BorderBox.new(mb: 3, classes: "study-answer")) do |box| %>
   <% box.with_body do %>
-    <% if question.asking? %>
+    <% if question.asking? && read_only? %>
+      <p class="color-fg-muted mb-0">Answering…</p>
+    <% elsif question.asking? %>
       <%# Progress lines come on the question's own signed stream until the checked result replaces the question
           (docs/design/ai.md, Traps). %>
       <%= helpers.turbo_stream_from question, data: { study_ask_target: "stream" } %>
@@ -36,7 +38,7 @@
           </ul>
         </div>
       <% end %>
-      <% if next_questions.any? %>
+      <% if next_questions.any? && !read_only? %>
         <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mt: 3, mb: 2, id: dom_id(question, :next))) { "Keep digging" } %>
         <%# Plain buttons: the study-ask controller puts the question in the ask box for the person to send. %>
         <div class="study-answer__chips" role="group" aria-labelledby="<%= dom_id(question, :next) %>">
@@ -46,7 +48,8 @@
         </div>
       <% end %>
       <div class="d-flex flex-wrap flex-items-center mt-3">
-        <% if household %>
+        <% if read_only? %>
+        <% elsif household %>
           <%= primer_form_with(url: note_saving_path, class: "mr-3") do |f| %>
             <%= render PersonalStudies::NoteSavingForm.new(f) %>
           <% end %>
@@ -62,9 +65,11 @@
       <%= render(Primer::Alpha::Banner.new(icon: :info)) { REFUSAL } %>
     <% elsif question.failed? %>
       <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't answer right now. Try again." } %>
-      <%= render(Primer::Beta::Button.new(size: :small, data: { action: "study-ask#fill", study_ask_text_param: question.prompt })) { "Ask it again" } %>
+      <% unless read_only? %>
+        <%= render(Primer::Beta::Button.new(size: :small, data: { action: "study-ask#fill", study_ask_text_param: question.prompt })) { "Ask it again" } %>
+      <% end %>
     <% else %>
-      <p class="color-fg-muted mb-0">You stopped this answer.</p>
+      <p class="color-fg-muted mb-0"><%= read_only? ? "This answer was stopped." : "You stopped this answer." %></p>
     <% end %>
   <% end %>
 <% end %>

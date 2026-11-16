@@ -8,11 +8,15 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
 
   attr_reader :question, :household
 
-  # household: where Stop and Save to notes post. The job's broadcast has none.
-  def initialize(question:, household:)
+  # household: where Stop and Save to notes post. The job's broadcast has none. read_only: a head reading a child's
+  # study (Members::PersonalStudiesController), with nothing to press and no stream.
+  def initialize(question:, household:, read_only: false)
     @question = question
     @household = household
+    @read_only = read_only
   end
+
+  def read_only? = @read_only
 
   def answer = question.answer || {}
 

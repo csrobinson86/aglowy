@@ -35,9 +35,15 @@ module Taggable
     user.present? && user_id == user.id
   end
 
-  # All of them for the owner, none for anyone else. The membership is for PSTUDY-01, where a head can read
-  # a child's personal study under a study AI grant.
+  # All of them for the owner, or for a viewer the thing lets read its tags; none for anyone else.
   def tags_for(user, membership: Current.membership)
-    taggable_by?(user) ? tags : Tag.none
+    taggable_by?(user) || tags_readable_by?(membership) ? tags : Tag.none
+  end
+
+  private
+
+  # Nobody but the owner, unless a taggable says otherwise.
+  def tags_readable_by?(membership)
+    false
   end
 end

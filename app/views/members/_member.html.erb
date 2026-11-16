@@ -7,6 +7,11 @@
   <% end %>
 </div>
 <%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary, ml: 2)) { membership.role.humanize } %>
+<%# A head here can read a child's personal studies while the child has a study AI grant (docs/design/personal-study.md, Children). %>
+<% if ChildStudyPolicy.new(Current.membership, membership).show? %>
+  <%= render(Primer::Beta::Button.new(tag: :a, href: household_member_personal_studies_path(member_id: membership), ml: 2,
+                                      aria: { label: "Read #{membership.user.name}'s personal study" })) { "Personal study" } %>
+<% end %>
 <% if policy(membership).give_login? %>
   <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_login_path(member_id: membership), ml: 2,
                                       aria: { label: "Give a login to #{membership.user.name}" })) { "Give a login" } %>

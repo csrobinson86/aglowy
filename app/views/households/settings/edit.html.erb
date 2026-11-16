@@ -47,6 +47,9 @@
       </p>
     <% end %>
   <% end %>
+  <% box.with_row do %>
+    <%= render "households/settings/study_ai", children: @memberships.select(&:child?), head: %>
+  <% end %>
 <% end %>
 
 <% if head %>

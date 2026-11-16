@@ -1,0 +1,47 @@
+<% content_for :title, @personal_study.title %>
+
+<%# A child's study, read-only, for a head here (docs/design/personal-study.md, Children): the conversation with its
+    answers and sources, the notes and the tags. No forms, no stream. %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_members_path) { "Members" } %>
+  <% breadcrumbs.with_item(href: household_member_personal_studies_path(member_id: @child)) { "#{@child.user.name}'s personal study" } %>
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { @personal_study.title } %>
+  <% subhead.with_description do %>
+    Started <%= l(@personal_study.created_at.to_date, format: :long) %><%= render "personal_studies/counts", personal_study: @personal_study %>
+    <div class="mt-2"><%= render "members/personal_studies/tags", personal_study: @personal_study %></div>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-study")) do |layout| %>
+  <% layout.with_main do %>
+    <section aria-labelledby="study-conversation" class="mb-3">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, classes: "sr-only", id: "study-conversation")) { "Conversation" } %>
+      <% @personal_study.conversation.each do |question| %>
+        <%= render "personal_studies/questions/question", question:, read_only: true %>
+      <% end %>
+      <% if @personal_study.conversation.none? %>
+        <p class="color-fg-muted">No questions yet.</p>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-study__sidebar") do %>
+    <section id="study-notes" aria-labelledby="study-notes-heading" class="mb-3">
+      <%= render(Primer::Beta::BorderBox.new) do |box| %>
+        <% box.with_header do %>
+          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-notes-heading")) { "Notes" } %>
+        <% end %>
+        <% box.with_body do %>
+          <% if @personal_study.notes.present? %>
+            <%= @personal_study.notes %>
+          <% else %>
+            <p class="color-fg-muted mb-0">No notes yet.</p>
+          <% end %>
+        <% end %>
+      <% end %>
+    </section>
+    <%= render "personal_studies/sources", personal_study: @personal_study %>
+  <% end %>
+<% end %>
