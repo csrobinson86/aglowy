@@ -74,6 +74,12 @@ class Ai::CopyCheckTest < ActiveSupport::TestCase
     assert_equal({ "closing" => closing, "question" => "Pray." }, fields)
   end
 
+  test "removes a sentence whose quotation opens with two digits and closes after a stop" do
+    fields, = clean("question" => "Read '12 men went out and preached good news.' In ‘05 our grandparents’ faith grew. Pray.")
+
+    assert_equal({ "question" => "In ‘05 our grandparents’ faith grew. Pray." }, fields)
+  end
+
   private
     def clean(fields)
       Ai::CopyCheck.clean(fields, citations: CITATIONS, overlap_words: 8, quote_max_words: 5)
