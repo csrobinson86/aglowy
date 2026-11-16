@@ -62,6 +62,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     assert_text "28 of 30 questions left today."
     assert_accessible
     capture_screens("personal-study")
+    capture_screens("personal-study-ask", scroll_to: "#study-ask")
   end
 
   test "at 30, the box is disabled with the message" do
@@ -73,6 +74,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     assert_button "Ask", disabled: true
     assert_text "You've asked 30 questions today. You can ask again after midnight."
     assert_accessible
+    capture_screens("personal-study-limit", scroll_to: "#study-ask")
   end
 
   test "on a phone notes and sources come under the conversation, and the answer's buttons are 44px" do
@@ -102,6 +104,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     assert_no_field "Ask a question"
     assert_selector "h2", text: "Before you use AI"
     assert_accessible
+    capture_screens("personal-study-terms", scroll_to: "#study-ask")
     check "I understand how AI drafts work"
     click_on "Turn on AI drafts"
 
