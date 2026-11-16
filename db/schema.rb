@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -538,6 +538,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_200000) do
     t.check_constraint "status::text = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])"
   end
 
+  create_table "taggings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "tag_id", null: false
+    t.string "taggable_type", null: false
+    t.uuid "taggable_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["tag_id", "taggable_type", "taggable_id"], name: "index_taggings_on_tag_id_and_taggable_type_and_taggable_id", unique: true
+    t.index ["taggable_type", "taggable_id"], name: "index_taggings_on_taggable"
+    t.check_constraint "taggable_type::text = ANY (ARRAY['MeetingNote'::character varying, 'Goal'::character varying, 'PersonalStudy'::character varying]::text[])", name: "taggings_taggable_type_check"
+  end
+
+  create_table "tags", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "name"], name: "index_tags_on_user_id_and_name", unique: true
+    t.check_constraint "name::text ~ '^[a-z0-9][a-z0-9-]{0,29}$'::text", name: "tags_name_check"
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "time_zone"
@@ -592,4 +611,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_200000) do
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "taggings", "tags", on_delete: :cascade
+  add_foreign_key "tags", "users"
 end

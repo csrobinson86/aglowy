@@ -1,7 +1,7 @@
 # One person's notes from one meeting in one week, part by part on the meeting's outline.
 # Personal content: it belongs to its author, never to a household (docs/design/meeting-notes.md).
 class MeetingNote < ApplicationRecord
-  include Shareable
+  include Shareable, Taggable
 
   PROGRAM_URL = "https://wol.jw.org/en/wol/meetings/r1/lp-e"
 
