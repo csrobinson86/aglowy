@@ -1,0 +1,13 @@
+// A scripture link in a note (bible/references/_reference), and the same text in the notes editor
+// (bible/references/_editor), where it isn't clickable. Frames phone-saved.png and desktop-saved.png.
+.scripture-link {
+  color: var(--fgColor-accent);
+  font-weight: var(--base-text-weight-semibold);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.scripture-link__icon {
+  margin-left: var(--base-size-4);
+  vertical-align: text-top;
+}

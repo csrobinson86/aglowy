@@ -1,0 +1,6 @@
+<%# locals: (reference:, in_gallery: false) -%>
+<%# A scripture link in a note: the passage on jw.org, in a new tab that never gets this page as its opener (docs/design/scripture-links.md). %>
+<%# Action Text passes in_gallery to every attachment it renders; a reference is never in a gallery. %>
+<%= render(Primer::Beta::Link.new(href: reference.jw_url, target: "_blank", rel: "noopener", classes: "scripture-link")) do %>
+  <%= reference.text %><%= render(Primer::Beta::Octicon.new(:"link-external", size: :xsmall, classes: "scripture-link__icon")) %>
+<% end %>
