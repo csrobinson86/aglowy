@@ -53,12 +53,14 @@ module Aglowy
     # links, so take the media tags back: nobody can post an <embed> or <video> that everyone in
     # the household then loads. Ordered after Lexxy's, which sets the list after boot too.
     # A scripture link (bible/references/_reference) is rendered before the note is sanitized, so
-    # keep its target and rel, and it opens jw.org in a new tab that never gets this page as its
-    # opener. Its icon is an <svg>, which stays out of user content: CSS draws it instead.
+    # RichTextScrubber sanitizes with these lists plus the link's target="_blank" and rel="noopener".
+    # It's app code, so it's found at the first render rather than at boot; it scrubs bottom up, as
+    # Rails' own PermitScrubber does. The link's icon is an <svg>, which stays out of user content:
+    # CSS draws it instead.
     initializer "aglowy.action_text_sanitizer", after: "lexxy.sanitization" do |app|
       app.config.after_initialize do
         ActionText::ContentHelper.allowed_tags -= %w[ embed video audio source ]
-        ActionText::ContentHelper.allowed_attributes += %w[ target rel ]
+        ActionText::ContentHelper.scrubber = Loofah::Scrubber.new(direction: :bottom_up) { RichTextScrubber.instance.scrub(it) }
       end
     end
 

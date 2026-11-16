@@ -883,6 +883,21 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal before, part.reload.notes.body.to_html
   end
 
+  test "links written in a note keep only target=_blank and rel=noopener, so none opens with this page as its opener" do
+    meeting_note_parts(:head_talk).update!(notes: <<~HTML)
+      <p><a href="https://example.com/named" target="named" rel="opener">Named</a>
+      <a href="https://example.com/blank" target="_blank" rel="opener">Blank</a>
+      <a href="https://example.com/plain" target="_blank" rel="noopener">Plain</a></p>
+    HTML
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_select "main a[href='https://example.com/named']:not([target]):not([rel])", "Named"
+    assert_select "main a[href='https://example.com/blank'][target=_blank]:not([rel])", "Blank"
+    assert_select "main a[href='https://example.com/plain'][target=_blank][rel=noopener]", "Plain"
+  end
+
   test "a member reading a shared helper note sees its scripture links" do
     note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
     note.mark("talk")

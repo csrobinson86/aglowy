@@ -259,4 +259,14 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
     assert_not session.valid?
     assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
   end
+
+  test "notes are checked only when they change, so a session with older stored notes can still be cancelled" do
+    session = family_study_sessions(:weekly_next)
+    ActionText::EncryptedRichText.create!(record: session, name: "notes", body: "<p>#{foreign_attachment(households(:other))}</p>")
+    session = FamilyStudy::Session.find(session.id)
+
+    assert_queries_count(0, include_schema: false) { assert session.valid? }
+    session.update!(canceled_at: Time.current)
+    assert session.reload.canceled?
+  end
 end

@@ -59,6 +59,9 @@ class MeetingNotesTest < ApplicationSystemTestCase
     editor = find("lexxy-editor#meeting_note_parts_attributes_0_notes")
     assert_selector "##{editor[:id]} .scripture-link", text: "Psalm 37:8, 9"
     capture_screens("meeting-note-scripture-link-editor", scroll_to: "##{editor[:id]}")
+    # In the editor the link is styled as one but isn't clickable: clicking it opens no tab.
+    find("##{editor[:id]} .scripture-link").ancestor("action-text-attachment").click
+    assert_equal 1, windows.size
     click_on "Save notes"
 
     assert_text "Notes saved."
