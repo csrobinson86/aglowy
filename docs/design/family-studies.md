@@ -152,7 +152,7 @@ Built in the **AI-01** epic, on the shared rules in `docs/design/ai.md` (read th
 | Start | `schedule-form-with-ai.png` | What the helper does, that it searches only jw.org and wol.jw.org, and "Draft with AI" |
 | First use | `ai-terms.png` | "Before you use AI": what's sent, where it looks, what it does, check its work, the daily limit. "I understand how AI drafts work" and "Turn on AI drafts" (`docs/design/ai.md`, `Ai::Acceptance`) |
 | Describe | `ai-describe.png` | "What should the study be about?" (required, 500 characters at most), three starter chips that fill the box, Length (30, 45 or 60 minutes), "Keep it easy for young children to follow", the privacy note, "Draft outline", and "8 of 10 drafts left today for the Rivera household" |
-| Drafting | `ai-searching.png` | Progress lines ("Searched jw.org and wol.jw.org · 3 pages found", "Writing the outline…"), the outline streaming in, and Stop |
+| Drafting | `ai-searching.png` | Progress lines only ("Searched jw.org and wol.jw.org · 3 pages found", "Writing the outline…", "Checking scriptures, links and wording") and Stop. No reply text appears until the checks pass (`docs/design/ai.md`, Traps) |
 | Draft | `ai-draft.png` | The outline, the pages it found (title and host only, as links), the "AI can get things wrong" warning, "Use this draft", "Try again" and "Discard" |
 | Added | `ai-draft-added.png` | "Draft added", with the topic, notes and links now in the form |
 | Limit reached | `ai-limit.png` | "You've used today's 10 drafts", when it resets, and that the form still works. The prompt is disabled |
@@ -170,13 +170,18 @@ If the provider fails, the panel goes back to Describe with their text kept and 
 | `prompt` | text | not null, encrypted | What they typed |
 | `length_minutes` | integer | not null, check in (30, 45, 60) | |
 | `young_children` | boolean | not null, default false | An input to the AI, not state |
-| `status` | string | not null, check in (`drafting`, `drafted`, `off_topic`, `flagged`, `failed`, `stopped`) | Where the request got to |
+| `status` | string | not null, check in (`drafting`, `drafted`, `off_topic`, `flagged`, `failed`, `stopped`, `discarded`) | Where the request got to |
 | `outline` | jsonb | encrypted, nullable until drafted | The reply's fields, after the checks in `docs/design/ai.md` |
 | `sources` | jsonb | not null, default `[]` | `[{url, title}]` that passed `Ai::SourceLink` |
 
-- `household.family_study_drafts.counted_today` counts `drafting`, `drafted`, `off_topic` and `stopped` drafts created since midnight in the household's time zone. `failed` and `flagged` don't count.
+- `household.family_study_drafts.counted_today` counts `drafting`, `drafted`, `off_topic`, `stopped` and `discarded` drafts created since midnight in the household's time zone. `failed` and `flagged` don't count. Discarding never deletes a draft, so it can't give back a used draft; the 7-day purge deletes it.
 - The reply schema: `off_topic` (boolean), `title`, `opening` (`scripture`, `question`), `points` (2 to 4, each `heading`, `scripture`, `question`), `children` (one activity, only when `young_children`), `closing`. All strings, each 300 characters at most.
-- `draft.write_later` enqueues `FamilyStudy::WriteDraftJob`, which calls `draft.write_now`: moderation, then `chat.ask_within_purpose` streaming into the panel, then the checks, then `drafted` (or `off_topic`, `flagged`, `failed`). Stop sets `stopped`; the job checks between chunks and ends.
+- `draft.write_later` enqueues `FamilyStudy::WriteDraftJob`, which calls `draft.write_now`:
+  1. moderation (`flagged` if it fails)
+  2. `chat.ask_within_purpose`, broadcasting **progress lines only** to the draft's stream, and returning early if the draft was `stopped`
+  3. the checks in `docs/design/ai.md` (off topic, scriptures, copy check, source links)
+  4. the final status (`drafted`, `off_topic` or `failed`) and the outline, written with a conditional update that applies only while the draft is still `drafting`. A draft stopped during the checks stays `stopped` and is never shown
+  5. only then, one broadcast that replaces the panel with the checked draft (or the refusal, or the failure)
 - `draft.notes_html` builds the Notes from our own ERB partial with escaped fields. Scripture references go in as plain text, and `link_scriptures` turns them into scripture links when the study is saved (`docs/design/scripture-links.md`).
 
 ### Routes
@@ -185,7 +190,7 @@ If the provider fails, the panel goes back to Describe with their text kept and 
 | --- | --- | --- |
 | Start a draft | `POST /:household_id/family_studies/drafts` (`FamilyStudies::DraftsController#create`) | Checks the person accepted the AI terms, the policy and the limit inside the household lock, then creates the draft and its chat and calls `write_later`. Responds with a Turbo Stream that shows the Drafting state |
 | The panel for a draft | `GET /:household_id/family_studies/drafts/:id` | Found through `Current.user.family_study_drafts` in `Current.household`, so someone else's draft is a 404. For a reload while drafting |
-| Stop or discard | `DELETE /:household_id/family_studies/drafts/:id` | Drafting: sets `stopped`. Otherwise: destroys the draft and its chat. Shows the Describe state |
+| Stop or discard | `DELETE /:household_id/family_studies/drafts/:id` | Drafting: sets `stopped`. Otherwise: sets `discarded` (never deletes, so the day's count holds). Shows the Describe state |
 | Accept the AI terms | `POST /ai_acceptance` | `docs/design/ai.md` |
 
 "Try again" is a new `create` with the same text, so it uses one of the day's drafts. "Change" on the draft goes back to Describe with the text kept.

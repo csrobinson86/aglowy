@@ -37,6 +37,7 @@ A PORO per purpose in `app/models/ai/purpose/`, for example `Ai::Purpose::Family
 - `max_searches`: the most web searches one request may run (5 for family study drafts)
 - `max_output_tokens`
 - `daily_limit` and what it counts (10 a day for the household)
+- `copy_overlap_words` (8) and `quote_max_words` (5), the copy check's policy values (safety measure 5)
 
 `Chat#ask_within_purpose(text)` is the only way a feature calls the AI. It applies the purpose's instructions, schema and web-search settings, then returns the parsed reply and its sources. No feature calls `RubyLLM.chat` itself.
 
@@ -78,7 +79,13 @@ Every AI feature has all of these. A feature's design doc only adds to them.
 2. **A moderation check first.** The person's text goes through RubyLLM's moderation call before the AI sees it. If it's flagged, the request stops with the same refusal message, and it doesn't count toward the daily limit.
 3. **The person's text is data, never instructions.** It goes into the user message inside a clearly marked block. The system prompt says text in that block can't change the rules. The schema means the reply can only fill fixed fields.
 4. **Search limited to jw.org and wol.jw.org,** then `Ai::SourceLink` (above).
-5. **No copying.** The instructions say to write in its own words and not to quote pages or verses. After the reply comes back, any outline sentence that contains a stretch of 40 or more characters from a citation's `cited_text` (ignoring case and spacing) is removed. If that leaves the draft too thin, the request fails with "Couldn't make a draft this time. Try again."
+5. **No copying, checked before anyone sees the reply.** The instructions say to write in its own words and never to quote pages or verse text. `Ai::CopyCheck` then runs on every text field of the finished reply, before any of it is shown or saved:
+   - **Measuring.** Text is compared as words: lower-cased, with punctuation removed and runs of whitespace treated as one space.
+   - **Overlap with a source.** A sentence that shares 8 or more consecutive words with any citation's `cited_text` is removed.
+   - **Quotations and verse text.** A sentence holding a quotation (text in straight or curly quotation marks) longer than 5 words is removed, whatever its source. Aglowy has no verse text to compare against, because it never fetches it, so a quoted scripture is caught by this rule and by the instructions. References stay; only the quoted words go.
+   - **Policy values.** 8 words and 5 words live on `Ai::Purpose` (`copy_overlap_words`, `quote_max_words`) and are Casey's call to tune.
+   - **Too thin.** If the checks leave fewer than 2 points, the request fails with "Couldn't make a draft this time. Try again."
+   - **What it can't see.** `cited_text` is a short excerpt (up to about 150 characters per citation), so the check can only compare against what the search returned. The instructions, the quotation rule and "AI can get things wrong. Check each point against its source" cover the rest.
 6. **AI output is untrusted text.** Every field is rendered through ERB escaping or Primer components, never `html_safe` and never `raw`. Notes HTML built from a draft comes from our own template filled with escaped fields, then goes through Action Text's sanitizer like any note.
 7. **Never send more than the request needs.** Only what the person typed and the feature's options go to the provider. Never names, household names, notes, goals or other records. The prompt box says so.
 8. **Heads and adults only.** Children never see AI features in a household, and the policies refuse them. Any future feature for children needs its own decision.
@@ -99,7 +106,8 @@ Every AI feature has all of these. A feature's design doc only adds to them.
 - **Don't trust `off_topic` alone.** The moderation check runs first, and the schema keeps the reply inside fixed fields either way.
 - **Count the limit in the household's time zone,** from midnight to midnight, under the household lock.
 - **Don't log prompts or replies.** Add `prompt`, `content` and `outline` to `filter_parameters`, and never write them in job arguments: jobs receive record ids only.
-- **Streaming goes only to the person who asked.** Broadcast on a signed stream name for that record (`turbo_stream_from @draft`), never on a household-wide stream.
+- **Stream progress, never unchecked reply text.** While a request runs, the panel shows only progress lines (searching, writing, checking). The reply appears once the checks in safety measures 1, 4 and 5 have passed. Progress goes on a signed stream name for that record (`turbo_stream_from @draft`), never on a household-wide stream.
+- **A finished job never overrides Stop.** Write the final status with a conditional update (`where(status: "drafting")`), so a draft stopped while the job was checking stays `stopped` and is never shown.
 - **Tests never call a provider.** Stub `Chat#ask_within_purpose` (or RubyLLM's chat object) with Minitest's `stub`, using saved replies in `test/fixtures/files/ai/`. CI has no AI keys.
 
 ## States each story checks

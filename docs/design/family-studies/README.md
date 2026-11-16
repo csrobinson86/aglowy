@@ -8,7 +8,7 @@ Rendered at 2× from the approved mockup. `docs/design/family-studies.md` says w
 | `schedule-form-with-ai.png` | The same form with the "Plan it with AI" panel beside it | AI-01 |
 | `ai-terms.png` | First use: what AI drafts do, and turning them on | AI-01 |
 | `ai-describe.png` | Describing the study, with the drafts left today | AI-01 |
-| `ai-searching.png` | Searching jw.org and wol.jw.org, the outline streaming in | AI-01 |
+| `ai-searching.png` | Drafting: progress lines only, no reply text until it's checked | AI-01 |
 | `ai-draft.png` | The AI draft to review, with the pages it found | AI-01 |
 | `ai-draft-added.png` | The draft copied into the form | AI-01 |
 | `ai-limit.png` | Today's 10 drafts used | AI-01 |
