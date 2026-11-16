@@ -13,7 +13,7 @@ Frames in `docs/design/bookmarks/` (README there). Mockups are in the "Bookmarks
 
 ## What a bookmark is
 
-Either a **page** (a jw.org or wol.jw.org link with its title) or a **scripture** (a `Bible::Reference`, which opens on jw.org, or in JW Library if it's installed). A scripture is whatever reference the study or note shows: one verse, two or more verses, or a whole chapter ("Psalm 23"), since answers and notes cite all three. Each one has:
+Either a **page** (a jw.org or wol.jw.org link with its title) or a **scripture** (a `Bible::Reference`, which opens on jw.org, or in JW Library if it's installed). A scripture is whatever reference the study or note links: one verse or several, or a whole chapter where a note links one (see `PersonalStudy#scripture_references`). Each one has:
 - an optional comment of the person's own, up to 280 characters
 - one collection, or none
 - tags
@@ -60,7 +60,10 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 
 ### `PersonalStudy#scripture_references`
 
-The references in the study's answered paragraphs, in order and without duplicates, found with `Bible::Linker`'s parsing. It's the list for "Scriptures in this study", and what a scripture bookmark saved from a study is checked against.
+The references `Bible::Linker` links in the study's answered paragraphs, in order and without duplicates: exactly the scripture links the answers show. It's the list for "Scriptures in this study", and what a scripture bookmark saved from a study is checked against.
+
+- `Bible::Linker` links only a chapter and verse (`docs/design/scripture-links.md`, Traps 5), so a chapter alone in an answer ("Psalm 23") stays text and isn't in this list. That's on purpose: the list matches what's linked, and the in-text rule doesn't change.
+- A note's `scripture_references` (`docs/design/notes.md`) come from its scripture link attachments, which can be a whole chapter inserted with the picker. So a whole chapter can be bookmarked from a note, and from a study only once it's in the study's notes.
 
 ## Pages and routes
 
