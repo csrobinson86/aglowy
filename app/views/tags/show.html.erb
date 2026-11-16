@@ -1,0 +1,30 @@
+<% content_for :title, "##{@tag.name}" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_tags_path) { "My tags" } %>
+  <% breadcrumbs.with_item(href: household_tag_path(name: @tag.name)) { "##{@tag.name}" } %>
+<% end %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { "##{@tag.name}" } %>
+  <% subhead.with_description { "Everything you've tagged ##{@tag.name}. Only you can see your tags." } %>
+<% end %>
+
+<%# Each group only when it has something (frame personal-study-tag.png). %>
+<% if @meeting_notes.any? %>
+  <%= render "tags/group", id: "meeting-notes", heading: "Meeting notes", records: @meeting_notes, row: "tags/meeting_note" %>
+<% end %>
+<% if @personal_studies.any? %>
+  <%= render "tags/group", id: "personal-studies", heading: "Personal studies", records: @personal_studies, row: "tags/personal_study" %>
+<% end %>
+<% if @goals.any? %>
+  <%= render "tags/group", id: "my-goals", heading: "My goals", records: @goals, row: "tags/goal" %>
+<% end %>
+
+<% if @meeting_notes.none? && @personal_studies.none? && @goals.none? %>
+  <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :tag) %>
+    <% blankslate.with_heading(tag: :h2) { "Nothing tagged ##{@tag.name}" } %>
+    <% blankslate.with_description { "Add it from a meeting note or a personal goal, under its title." } %>
+  <% end %>
+<% end %>

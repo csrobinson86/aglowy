@@ -14,15 +14,15 @@ class TagEditorComponentTest < ViewComponent::TestCase
     assert_selector "label.sr-only", text: "Add a tag"
   end
 
-  test "two tags: each a Label linking to the list filtered by it, with its remove button" do
+  test "two tags: each a Label linking to its tag page, with its remove button" do
     @note.tag_with("ministry", by: users(:head))
     @note.tag_with("Talk Prep", by: users(:head))
 
     render_inline(TagEditorComponent.new(taggable: @note, user: users(:head), household: households(:home)))
 
     assert_selector ".Label", count: 2
-    assert_selector "a.Label[href='/#{households(:home).id}/meeting_notes?tag=ministry']", text: "#ministry"
-    assert_selector "a.Label[href='/#{households(:home).id}/meeting_notes?tag=talk-prep']", text: "#talk-prep"
+    assert_selector "a.Label[href='/#{households(:home).id}/tags/ministry']", text: "#ministry"
+    assert_selector "a.Label[href='/#{households(:home).id}/tags/talk-prep']", text: "#talk-prep"
     talk_prep = users(:head).tags.find_by!(name: "talk-prep")
     assert_selector "form[action='#{taggings_path}/#{talk_prep.id}'] button[type=submit][aria-label='Remove tag talk-prep']"
     assert_selector "button[aria-label='Remove tag ministry']"
@@ -62,13 +62,13 @@ class TagEditorComponentTest < ViewComponent::TestCase
     assert_no_selector "*"
   end
 
-  test "on a personal goal, Labels filter My goals and the forms post to the goal's taggings" do
+  test "on a personal goal, Labels link to the tag page and the forms post to the goal's taggings" do
     goal = goals(:spouse_bible_reading)
     goal.tag_with("ministry", by: users(:spouse))
 
     render_inline(TagEditorComponent.new(taggable: goal, user: users(:spouse), household: households(:home)))
 
-    assert_selector "a.Label[href='/#{households(:home).id}/my_goals?tag=ministry']", text: "#ministry"
+    assert_selector "a.Label[href='/#{households(:home).id}/tags/ministry']", text: "#ministry"
     assert_selector "form[action='/#{households(:home).id}/goals/#{goal.id}/taggings']"
   end
 

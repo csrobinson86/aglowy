@@ -1,0 +1,6 @@
+<%# locals: (tag:) %>
+<%# A refused rename comes back as this form by Turbo Stream, so the Dialog stays open with the reason. The URL keeps
+    the name the tag still has. ::Tags, because Tags in a view is ActionView::Helpers::Tags. %>
+<%= primer_form_with(model: tag, url: household_tag_path(name: tag.name_was), method: :patch, id: dom_id(tag, :rename), namespace: dom_id(tag, :rename)) do |f| %>
+  <%= render ::Tags::RenameForm.new(f, error: tag.errors.full_messages.to_sentence.presence) %>
+<% end %>

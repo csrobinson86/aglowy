@@ -29,9 +29,8 @@ class TagsTest < ApplicationSystemTestCase
     assert_accessible
     capture_screens("tag-editor")
 
-    click_on "#ministry"
+    visit household_meeting_notes_url(household_id: households(:home), tag: "ministry")
 
-    assert_current_path household_meeting_notes_path(household_id: households(:home), tag: "ministry")
     assert_selector "a[aria-label='Remove filter #ministry']"
     assert_selector "main .Box-row", count: 2
     assert_accessible
@@ -43,6 +42,64 @@ class TagsTest < ApplicationSystemTestCase
     within("#tag_editor_meeting_note_#{note.id}") { assert_no_selector "a.Label" }
     assert_equal "Add a tag", page.evaluate_script("document.activeElement.labels[0].textContent").strip
     assert_empty note.tags.reload
+  end
+
+  test "open #ministry from a note's Label and see the note and a goal" do
+    goal = users(:head).goals.create!(title: "Start a Bible study by the end of the year", target_on: Date.new(2026, 12, 31), set_by: users(:head))
+    goal.tag_with("ministry", by: users(:head))
+    sign_in identities(:head)
+    visit household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
+
+    within("#tag_editor_meeting_note_#{meeting_notes(:head_midweek).id}") { click_on "#ministry" }
+
+    assert_current_path household_tag_path(household_id: households(:home), name: "ministry")
+    assert_selector "h1", text: "#ministry"
+    within("section", text: "Meeting notes") { assert_link "Life and Ministry" }
+    within("section", text: "My goals") { assert_link goal.title }
+    assert_no_selector "aside nav [aria-current=page]"
+    assert_accessible
+    capture_screens("tag-page")
+
+    click_on goal.title
+    assert_current_path household_goal_path(household_id: households(:home), id: goal)
+  end
+
+  test "My tags: rename a tag, refused for a name I have, then delete it" do
+    users(:head).tags.create!(name: "prayer")
+    sign_in identities(:head)
+    visit household_tags_url(household_id: households(:home))
+
+    assert_selector "main .Box-row", count: 2
+    assert_no_selector "aside nav [aria-current=page]"
+    assert_accessible
+    capture_screens("my-tags")
+
+    find("button[aria-label='Rename #ministry']").click
+    within("dialog[open]") do
+      fill_in "Name", with: "Prayer"
+      click_on "Rename"
+      assert_text "You already have #prayer."
+    end
+    assert_equal find("dialog[open]").find_field("Name")[:id], page.evaluate_script("document.activeElement.id")
+    wait_for_transitions # the pointer rests on the new Rename button, whose colour fades in
+    assert_accessible
+    capture_screens("tag-rename-taken", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
+
+    within("dialog[open]") do
+      fill_in "Name", with: "Field service"
+      click_on "Rename"
+    end
+    assert_selector ".flash", text: "Renamed to #field-service."
+    assert_selector "main a.Label", text: "#field-service"
+
+    find("button[aria-label='Delete #field-service']").click
+    within("dialog[open]") do
+      assert_text "It comes off 1 item."
+      click_on "Delete tag"
+    end
+    assert_selector ".flash", text: "Deleted #field-service."
+    assert_no_selector "main a.Label", text: "#field-service"
+    assert_empty meeting_notes(:head_midweek).tags.reload
   end
 
   test "create a new tag from the suggestions" do

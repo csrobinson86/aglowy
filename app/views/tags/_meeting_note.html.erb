@@ -1,0 +1,6 @@
+<%# locals: (record:) %>
+<%= render(Primer::Beta::Octicon.new(:note, color: :muted, mr: 2, mt: 1, flex_shrink: 0)) %>
+<div class="min-width-0">
+  <%= render(Primer::Beta::Link.new(href: household_meeting_note_path(id: record), font_weight: :bold)) { meeting_note_title(record) } %>
+  <div class="color-fg-muted"><%= record.display_week %></div>
+</div>
