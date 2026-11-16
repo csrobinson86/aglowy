@@ -7,7 +7,7 @@ Frames in `docs/design/personal-study/`: tags on the list of studies (`personal-
 ## Decisions (Casey, 16 Nov)
 
 - **Tags belong to the person.** Nobody else sees them, even on a meeting note or goal they've shared with the household.
-- **Four kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), their personal studies (`docs/design/personal-study.md`) and their notes (`docs/design/notes.md`, added by NOTES-01).
+- **Four kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), their personal studies (`docs/design/personal-study.md`) and their notes (`docs/design/notes.md`, added by NOTES-01). BOOKMARKS-01 adds a fifth, bookmarks (`docs/design/bookmarks.md`), with a "Bookmarks" group on a tag's page.
 - **Tags and collections both exist.** Collections are folders for personal studies and notes (`Collection` in `docs/design/personal-study.md`); tags work across all four kinds. They don't replace each other.
 
 ## Models

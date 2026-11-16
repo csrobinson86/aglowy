@@ -4,6 +4,8 @@ Each person's own notes to come back to: a title, a body with scripture links, a
 
 Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on the design canvas.
 
+> Since BOOKMARKS-01, Notes has two tabs, Notes and Bookmarks, and "Scriptures in this note" has a bookmark button on each scripture (`docs/design/bookmarks.md`).
+
 ## Decisions (Casey, 16 Nov)
 
 - **A note has a title and a body**, with scripture links in the body (`docs/design/scripture-links.md`), tags (`docs/design/tags.md`) and one collection.
