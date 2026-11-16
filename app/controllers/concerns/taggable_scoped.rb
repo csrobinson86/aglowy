@@ -8,18 +8,20 @@ module TaggableScoped
     before_action :set_taggable
   end
 
-  # Body: name. A name that normalizes to nothing, or an 11th tag, shows its message in the editor.
+  # Body: name. A name that normalizes to nothing (a blank one too), or an 11th tag, shows its message in the editor.
+  # Not params.require, which raises on a blank name instead of reaching the validation.
   def create
-    @taggable.tag_with(params.require(:name), by: Current.user)
+    @taggable.tag_with(params.fetch(:name, ""), by: Current.user)
     render_tag_editor focus: true
   rescue ActiveRecord::RecordInvalid => error
     render_tag_editor focus: true, error: error.record.errors.full_messages.to_sentence, status: :unprocessable_content
   end
 
   # The tag is looked up through Current.user.tags, never trusted from the URL (docs/design/tags.md, Traps).
+  # The focused remove button goes with the tag, so focus moves to the input.
   def destroy
     @taggable.untag(Current.user.tags.find(params[:id]))
-    render_tag_editor
+    render_tag_editor focus: true
   end
 
   private

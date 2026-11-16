@@ -42,6 +42,7 @@ class MeetingNotes::TaggingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-stream template a.Label", text: "#prayer"
     assert_select "turbo-stream template a.Label", text: "#ministry", count: 0
     assert tags(:head_ministry).reload, "the tag stays for the person's other things"
+    assert_select "turbo-stream template [data-tag-editor-focus-value=true]"
   end
 
   test "another person's note: 404" do
@@ -93,6 +94,20 @@ class MeetingNotes::TaggingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_content
     assert_includes response.body, "Name needs at least one letter or number"
+  end
+
+  test "a blank or whitespace-only name: an error in the editor" do
+    sign_in identities(:head)
+
+    [ "", "   " ].each do |name|
+      assert_no_difference -> { Tag.count } do
+        post taggings_path(@note), params: { name: name }, as: :turbo_stream
+      end
+
+      assert_response :unprocessable_content
+      assert_select "turbo-stream[action=replace][target='tag_editor_meeting_note_#{@note.id}']"
+      assert_includes response.body, "Name needs at least one letter or number"
+    end
   end
 
   private

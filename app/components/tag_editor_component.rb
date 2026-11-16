@@ -7,7 +7,7 @@
 class TagEditorComponent < ApplicationComponent
   attr_reader :taggable, :user, :household, :error
 
-  # error: why the last tag couldn't be added, shown with the input. focus: put focus back in the input, after adding.
+  # error: why the last tag couldn't be added, shown with the input. focus: put focus in the input, after adding or removing.
   def initialize(taggable:, user:, household:, error: nil, focus: false)
     @taggable = taggable
     @user = user

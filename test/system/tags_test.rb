@@ -41,6 +41,7 @@ class TagsTest < ApplicationSystemTestCase
     find("button[aria-label='Remove tag ministry']").click
 
     within("#tag_editor_meeting_note_#{note.id}") { assert_no_selector "a.Label" }
+    assert_equal "Add a tag", page.evaluate_script("document.activeElement.labels[0].textContent").strip
     assert_empty note.tags.reload
   end
 
@@ -53,6 +54,16 @@ class TagsTest < ApplicationSystemTestCase
     find("[role=option]", text: 'Create "#talk-prep"').click
 
     within("#tag_editor_meeting_note_#{note.id}") { assert_selector "a.Label", text: "#talk-prep" }
+  end
+
+  test "a nonbreaking space is dropped, as the server drops it, not made a hyphen" do
+    note = meeting_notes(:head_weekend)
+    sign_in identities(:head)
+    visit household_meeting_note_url(household_id: households(:home), id: note)
+
+    find_field("Add a tag").send_keys("talk\u00A0prep")
+
+    assert_selector "[role=option]", text: 'Create "#talkprep"'
   end
 
   test "My goals filtered by a tag, and by one nothing carries" do

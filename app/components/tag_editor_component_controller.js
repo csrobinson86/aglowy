@@ -9,7 +9,7 @@ export default class extends Controller {
 
   connect() {
     this.autocomplete.fetchResult = async (url) => this.results(url.searchParams.get("q"))
-    // After adding, the editor is replaced; focus goes back to the input for the next tag.
+    // After adding or removing, the editor is replaced; focus goes back to the input for the next tag.
     if (this.focusValue) this.input.focus()
   }
 
@@ -46,7 +46,8 @@ export default class extends Controller {
   }
 }
 
-// The same as Tag.normalize: "Talk Prep" and "#talk_prep" are both talk-prep.
+// The same as Tag.normalize: "Talk Prep" and "#talk_prep" are both talk-prep. Ruby's strip and \s mean only ASCII
+// whitespace (strip takes null too), where JavaScript's trim and \s include a nonbreaking space, so they're spelled out.
 function normalize(text) {
-  return text.trim().replace(/^#/, "").toLowerCase().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/^-+/, "").slice(0, 30)
+  return text.replace(/^[\0\t\n\v\f\r ]+|[\0\t\n\v\f\r ]+$/g, "").replace(/^#/, "").toLowerCase().replace(/[\t\n\v\f\r _]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/^-+/, "").slice(0, 30)
 }

@@ -5,6 +5,10 @@ class TagTest < ActiveSupport::TestCase
     assert_equal %w[ talk-prep ] * 3, [ "Talk Prep", "#talk_prep", "  talk-prep " ].map { Tag.normalize(it) }
   end
 
+  test "a nonbreaking space isn't whitespace to Ruby, so it's dropped, not made a hyphen" do
+    assert_equal "talkprep", Tag.normalize("talk\u00A0prep")
+  end
+
   test "a name that normalizes to nothing is invalid" do
     assert_equal "", Tag.normalize("###")
 
