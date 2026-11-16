@@ -37,6 +37,8 @@
   <% subhead.with_description do %>
     <%# A personal goal is always set by its owner, so it doesn't say so. %>
     <%= [ "Target #{@goal.target_on.strftime("%B %-d, %Y")}", ("Set by #{@goal.set_by.name}" if @goal.family?) ].compact.join(" · ") %>
+    <%# The owner's own tags on a personal goal; nothing on a family goal or for a member reading it shared. %>
+    <%= render TagEditorComponent.new(taggable: @goal, user: Current.user, household: Current.household) %>
   <% end %>
 <% end %>
 <% if @goal.body.present? %>

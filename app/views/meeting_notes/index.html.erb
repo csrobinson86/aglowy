@@ -5,16 +5,21 @@
   <% subhead.with_description { "Private to you, wherever you go. Share a note with your household when you want to." } %>
 <% end %>
 
-<%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2)) { "This week" } %>
-<div class="d-md-flex gutter-md-condensed mb-4">
-  <% @this_week.each do |note| %>
-    <div class="col-md-6 mb-3">
-      <%= render "meeting_notes/this_week_card", note: %>
-    </div>
-  <% end %>
-</div>
+<% if @tag_name %>
+  <%= render "meeting_notes/tabs", selected: :mine, shared_count: @shared_count %>
+  <%= render "tags/filter", name: @tag_name, clear_path: household_meeting_notes_path %>
+<% else %>
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2)) { "This week" } %>
+  <div class="d-md-flex gutter-md-condensed mb-4">
+    <% @this_week.each do |note| %>
+      <div class="col-md-6 mb-3">
+        <%= render "meeting_notes/this_week_card", note: %>
+      </div>
+    <% end %>
+  </div>
 
-<%= render "meeting_notes/tabs", selected: :mine, shared_count: @shared_count %>
+  <%= render "meeting_notes/tabs", selected: :mine, shared_count: @shared_count %>
+<% end %>
 
 <%= render Primer::Beta::BorderBox.new do |box| %>
   <% if @earlier.records.any? %>
@@ -25,17 +30,26 @@
           <%= render(Primer::Beta::Link.new(href: household_meeting_note_path(id: note), scheme: :primary, font_weight: :bold, mr: 3)) { meeting_note_title(note) } %>
           <div class="color-fg-muted"><%= note.display_week %></div>
         </div>
-        <% if note.sharings.any? %>
-          <%= render(Primer::Beta::Label.new(ml: :auto)) { "Shared" } %>
-        <% end %>
+        <div class="d-flex flex-wrap flex-items-center flex-justify-end ml-auto">
+          <%= render "tags/labels", taggable: note %>
+          <% if note.sharings.any? %>
+            <%= render(Primer::Beta::Label.new) { "Shared" } %>
+          <% end %>
+        </div>
       <% end %>
     <% end %>
   <% else %>
     <% box.with_body do %>
       <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
-        <% blankslate.with_visual_icon(icon: :note) %>
-        <% blankslate.with_heading(tag: :h2) { "No earlier notes" } %>
-        <% blankslate.with_description { "Notes from earlier weeks will show here." } %>
+        <% if @tag_name %>
+          <% blankslate.with_visual_icon(icon: :tag) %>
+          <% blankslate.with_heading(tag: :h2) { "No notes tagged ##{@tag_name}" } %>
+          <% blankslate.with_description { "Add a tag from a note's page, under its title." } %>
+        <% else %>
+          <% blankslate.with_visual_icon(icon: :note) %>
+          <% blankslate.with_heading(tag: :h2) { "No earlier notes" } %>
+          <% blankslate.with_description { "Notes from earlier weeks will show here." } %>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
@@ -44,10 +58,10 @@
 <% if @earlier.previous? || @earlier.next? %>
   <div class="d-flex flex-justify-between mt-3">
     <% if @earlier.previous? %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number - 1))) { "Newer notes" } %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number - 1, tag: @tag_name))) { "Newer notes" } %>
     <% end %>
     <% if @earlier.next? %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number + 1), ml: :auto)) { "Older notes" } %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number + 1, tag: @tag_name), ml: :auto)) { "Older notes" } %>
     <% end %>
   </div>
 <% end %>

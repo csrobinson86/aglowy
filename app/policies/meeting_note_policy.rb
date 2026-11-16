@@ -8,6 +8,7 @@ class MeetingNotePolicy < ApplicationPolicy
   def update?  = author?
   def destroy? = author?
   def share?   = author?
+  def tag?     = author?
 
   private
 

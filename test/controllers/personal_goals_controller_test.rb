@@ -138,6 +138,26 @@ class PersonalGoalsControllerTest < ActionDispatch::IntegrationTest
     assert_not step.reload.done?
   end
 
+  test "?tag= lists only the person's goals with that tag, with a removable filter and each row's tags" do
+    tagged = goals(:spouse_bible_reading)
+    tagged.tag_with("ministry", by: users(:spouse))
+    users(:spouse).goals.create!(title: "Pray every morning", target_on: Date.new(2027, 2, 28), set_by: users(:spouse))
+    sign_in identities(:spouse)
+
+    get household_my_goals_path(household_id: households(:home), tag: "ministry")
+
+    assert_response :success
+    assert_select "main a[href='#{household_my_goals_path(household_id: households(:home))}'][aria-label='Remove filter #ministry']"
+    assert_select "nav[aria-label='Goals'] a[aria-current='page'][href*='tag=ministry']", text: /Active\s*1/
+    assert_select "main .Box-row", count: 1
+    assert_select "main .Box-row a.Label[href='#{household_my_goals_path(household_id: households(:home), tag: "ministry")}']", text: "#ministry"
+
+    get household_my_goals_path(household_id: households(:home), tag: "unknown")
+
+    assert_select "main .Box-row", count: 0
+    assert_select ".blankslate h2", "No goals tagged #unknown"
+  end
+
   test "a non-member gets 404" do
     sign_in identities(:outsider)
     get household_my_goals_path(household_id: households(:home))

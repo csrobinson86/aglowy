@@ -926,6 +926,61 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a.scripture-link[href=?]", Bible::Reference.find("40:24:14").jw_url, text: "Matthew 24:14"
   end
 
+  test "?tag=ministry lists only my notes with that tag, with a removable filter and each row's tags" do
+    earlier = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    earlier.tag_with("Ministry", by: users(:head))
+    earlier.tag_with("prayer", by: users(:head))
+    untagged = users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), tag: "#Ministry")
+
+    assert_response :success
+    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home))}'][aria-label='Remove filter #ministry']", text: "#ministry"
+    assert_select "main a[href='#{note_path(earlier)}']", count: 1
+    assert_select "main a[href='#{note_path(meeting_notes(:head_midweek))}']", count: 1
+    assert_select "main a[href='#{note_path(meeting_notes(:head_weekend))}']", count: 0
+    assert_select "main a[href='#{note_path(untagged)}']", count: 0
+    assert_select "main .Box-row", text: /#ministry.*#prayer/m
+    assert_select "main a.Label[href='#{household_meeting_notes_path(household_id: households(:home), tag: "prayer")}']", text: "#prayer"
+  end
+
+  test "an unknown tag shows the empty filter state" do
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), tag: "nothing-here")
+
+    assert_response :success
+    assert_select "main a[aria-label='Remove filter #nothing-here']"
+    assert_select "main h2", text: "No notes tagged #nothing-here"
+    assert_select "main a[href='#{note_path(meeting_notes(:head_midweek))}']", count: 0
+  end
+
+  test "someone else's tag name filters nothing of theirs into my list" do
+    users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9)).tag_with("spouse-only", by: users(:spouse))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), tag: "spouse-only")
+
+    assert_select "main h2", text: "No notes tagged #spouse-only"
+  end
+
+  test "the owner's note page has the tag editor; a member reading it shared sees no tags" do
+    meeting_notes(:head_midweek).share_with(households(:home))
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_select "main #tag_editor_meeting_note_#{meeting_notes(:head_midweek).id} a.Label", text: "#ministry"
+
+    sign_in identities(:spouse)
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_response :success
+    assert_select "main [id^=tag_editor]", count: 0
+    assert_not_includes response.body, "#ministry"
+  end
+
   private
     def note_path(note, household = households(:home))
       household_meeting_note_path(household_id: household, id: note)

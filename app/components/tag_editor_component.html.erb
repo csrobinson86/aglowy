@@ -1,0 +1,28 @@
+<%= tag.div(id:, class: "d-flex flex-wrap flex-items-center mt-2",
+            data: { controller: "tag-editor", tag_editor_focus_value: focus?, tag_editor_current_value: tags.map(&:name).to_json, action: "auto-complete-change->tag-editor#commit" }) do %>
+  <span class="color-fg-muted mr-2">Tags</span>
+  <% tags.each do |tag| %>
+    <span class="d-inline-flex flex-items-center mr-1">
+      <%= render(Primer::Beta::Label.new(tag: :a, href: filtered_list_path(tag), scheme: :accent)) { "##{tag.name}" } %>
+      <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
+      <%= primer_form_with(url: tagging_path(tag), method: :delete) do %>
+        <%= render(Primer::Beta::IconButton.new(icon: :x, type: :submit, scheme: :invisible, size: :small, show_tooltip: false, "aria-label": "Remove tag #{tag.name}")) %>
+      <% end %>
+    </span>
+  <% end %>
+  <%= primer_form_with(url: taggings_path, namespace: id) do |f| %>
+    <%= render Taggings::AddForm.new(f, src: taggings_path, error:) %>
+  <% end %>
+  <%# The suggestions the tag-editor controller filters as the person types, and the "Create" option it fills in. %>
+  <template data-tag-editor-target="suggestions">
+    <% suggestions.each do |suggestion| %>
+      <%= render(Primer::Beta::AutoComplete::Item.new(value: suggestion.name)) do |item| %>
+        <% item.with_trailing_visual_counter(count: suggestion.taggings_count) %>
+        #<%= suggestion.name %>
+      <% end %>
+    <% end %>
+  </template>
+  <template data-tag-editor-target="create">
+    <%= render(Primer::Beta::AutoComplete::Item.new(value: "", color: :accent)) { "Create" } %>
+  </template>
+<% end %>

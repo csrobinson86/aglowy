@@ -8,7 +8,10 @@
   <% end %>
 <% end %>
 
-<%= render "goals/tabs", status: @status, counts: @counts, mine: true %>
+<%= render "goals/tabs", status: @status, counts: @counts, mine: true, tag: @tag_name %>
+<% if @tag_name %>
+  <%= render "tags/filter", name: @tag_name, clear_path: household_my_goals_path(status: (@status unless @status == "active")) %>
+<% end %>
 
 <% if @goals.present? %>
   <%= render Primer::Beta::BorderBox.new do |box| %>
@@ -17,5 +20,5 @@
     <% end %>
   <% end %>
 <% else %>
-  <%= render "goals/blankslate", status: @status, can_create: true, mine: true %>
+  <%= render "goals/blankslate", status: @status, can_create: true, mine: true, tag: @tag_name %>
 <% end %>

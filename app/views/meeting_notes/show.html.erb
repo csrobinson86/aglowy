@@ -1,6 +1,6 @@
 <% content_for :title, meeting_note_title(@meeting_note) %>
 
-<%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: true %>
+<%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: true, tags: true %>
 <% reader = !policy(@meeting_note).update? %>
 
 <% if reader %>

@@ -1,0 +1,9 @@
+<%# locals: (name:, clear_path:) %>
+<%# The tag a list is filtered by, removed by going back to the whole list (docs/design/tags.md, Filtering lists). %>
+<div class="d-flex flex-items-center mb-3">
+  <span class="color-fg-muted mr-2">Tagged</span>
+  <%= render(Primer::Beta::Button.new(tag: :a, href: clear_path, size: :small, "aria-label": "Remove filter ##{name}")) do |button| %>
+    <% button.with_trailing_visual_icon(icon: :x) %>
+    #<%= name %>
+  <% end %>
+</div>
