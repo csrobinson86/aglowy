@@ -19,6 +19,15 @@
 <% end %>
 
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h2) { "Appearance" } } %>
+  <% box.with_body do %>
+    <%= primer_form_with(model: @user, url: account_appearance_path(return_to_params), method: :patch) do |f| %>
+      <%= render Accounts::AppearanceForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
   <% box.with_header { |header| header.with_title(tag: :h2) { "Signing in" } } %>
   <% box.with_body do %>
     <% if @identity.pending_reconfirmation? %>

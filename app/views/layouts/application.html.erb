@@ -4,7 +4,7 @@
     <%= render "layouts/head" %>
   </head>
 
-  <body data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+  <body data-color-mode="<%= color_mode %>" data-light-theme="light" data-dark-theme="dark">
     <%= render "shared/header" if Current.user %>
 
     <main>

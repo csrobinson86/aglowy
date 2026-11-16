@@ -26,6 +26,18 @@ class UserTest < ActiveSupport::TestCase
     assert_includes user.errors[:time_zone], "is not included in the list"
   end
 
+  test "a new user's appearance is auto" do
+    assert_equal "auto", User.new(name: "Ann").appearance
+    assert_equal "auto", User.create!(name: "Ann").reload.appearance
+  end
+
+  test "appearance sepia is invalid" do
+    user = User.new(name: "Ann", appearance: "sepia")
+
+    assert_not user.valid?
+    assert_includes user.errors[:appearance], "is not included in the list"
+  end
+
   test "active_household finds one of the person's active households by id, and nothing else" do
     assert_equal households(:home), users(:head).active_household(households(:home).id)
     assert_nil users(:former).active_household(households(:home).id)
@@ -114,6 +126,12 @@ class UserTest < ActiveSupport::TestCase
   test "database: a user without a name raises NotNullViolation" do
     assert_raises ActiveRecord::NotNullViolation do
       User.insert!({ name: nil })
+    end
+  end
+
+  test "database: an appearance other than auto, light or dark raises CheckViolation" do
+    assert_raises ActiveRecord::CheckViolation do
+      users(:head).update_column(:appearance, "sepia")
     end
   end
 end

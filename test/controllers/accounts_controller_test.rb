@@ -41,7 +41,18 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Hannah Head", users(:head).reload.name
   end
 
-  test "the page shows both sections in the focused layout" do
+  test "when the profile is refused, the Appearance form still shows the saved choice" do
+    users(:head).update!(appearance: "light")
+    sign_in identities(:head)
+
+    patch account_path, params: { user: { name: " " } }
+
+    assert_response :unprocessable_content
+    assert_select "input[type=radio][name='user[appearance]'][value=light][checked]"
+    assert_select "input[type=radio][name='user[appearance]'][checked]", count: 1
+  end
+
+  test "the page shows its sections in the focused layout, Appearance between Profile and Signing in" do
     users(:head).update!(time_zone: "London")
     sign_in identities(:head)
 
@@ -53,7 +64,9 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Main']", count: 0
     assert_select "form[action='/account'] #user_name[value='Hannah Head']"
     assert_select "#user_time_zone option[selected][value='London']"
+    assert_select "form[action='/account/appearance'] input[type=radio][name='user[appearance]'][value=auto][checked]"
     assert_select "form[action='/account/sign_in'] #identity_email[value='head@example.com']"
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households" ], css_select("main .Box-header h2").map { it.text.strip }
   end
 
   test "Back to the household the person came from, kept through saving" do

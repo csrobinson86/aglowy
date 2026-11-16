@@ -40,9 +40,10 @@ Rails.application.routes.draw do
   # No household: a Bible reference isn't anyone's record.
   resources :scriptures, only: :show
   # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
-  # The sign-in details form on the same page posts to /account/sign_in; leaving a household deletes
-  # /account/memberships/:id, one of the person's own active seats.
+  # The appearance and sign-in details forms on the same page post to /account/appearance and /account/sign_in;
+  # leaving a household deletes /account/memberships/:id, one of the person's own active seats.
   resource :account, only: %i[ edit update ], path_names: { edit: "" } do
+    resource :appearance, only: :update, module: :accounts
     resource :sign_in, only: %i[ edit update ], module: :accounts, path_names: { edit: "" }
     resources :memberships, only: :destroy, module: :accounts
   end
