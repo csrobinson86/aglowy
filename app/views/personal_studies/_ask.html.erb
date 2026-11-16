@@ -7,13 +7,15 @@
 <% left = user.study_questions_left_today %>
 <% label = personal_study.conversation.any? ? "Ask a follow-up" : "Ask a question" %>
 <% limit = PersonalStudy::Question.daily_limit %>
-<%= render(Primer::Beta::BorderBox.new(id: "study-ask", classes: "study-ask")) do |box| %>
+<% terms = user.may_ask_study_ai? && !user.accepted_ai_terms? %>
+<%# The first-use notice is too tall to stay at the bottom of a phone screen, so it stays where it is. %>
+<%= render(Primer::Beta::BorderBox.new(id: "study-ask", classes: class_names("study-ask": !terms))) do |box| %>
   <% box.with_body do %>
     <% if !user.may_ask_study_ai? %>
       <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
         <%= render PersonalStudies::QuestionForm.new(f, label:, caption: "Ask a head to turn on AI for your personal study.", disabled: true) %>
       <% end %>
-    <% elsif !user.accepted_ai_terms? %>
+    <% elsif terms %>
       <%= render "personal_studies/ai_terms", personal_study: %>
     <% elsif left.zero? %>
       <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>

@@ -94,6 +94,17 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
     capture_screens("phone-personal-study")
   end
 
+  test "without the AI terms, the first-use notice stays in the page, with its checkbox labelled" do
+    users(:head).ai_acceptances.delete_all
+    visit study_url
+
+    assert_selector "h2", text: "Before you use AI"
+    assert_no_selector "#study-ask.study-ask"
+    check "I understand how AI drafts work"
+    click_on "Turn on AI drafts"
+    assert_field "Ask a question"
+  end
+
   test "the header keeps a back link and the title, and the tag editor and actions are in the \"…\" menu" do
     visit study_url
 

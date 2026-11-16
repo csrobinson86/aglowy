@@ -43,5 +43,5 @@ application.register("resource-links", ResourceLinksController)
 import StudyAskController from "./study_ask_controller"
 application.register("study-ask", StudyAskController)
 
-import StudyTagsController from "./study_tags_controller"
-application.register("study-tags", StudyTagsController)
+import StudyLayoutController from "./study_layout_controller"
+application.register("study-layout", StudyLayoutController)

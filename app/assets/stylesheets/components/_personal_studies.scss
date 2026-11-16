@@ -72,8 +72,10 @@
 }
 
 // The ask box on a phone: across the bottom of the screen, the input beside Ask, both 44px, with one short line
-// under them (frame phone-personal-study.png). The label and the visible character count are for screen readers
-// only there; the input's placeholder says what the label does.
+// under them (frame phone-personal-study.png). The label is for screen readers only there, and the input's
+// placeholder says what it does. The visible character count goes; Primer's own status region still announces it.
+// Story #204 asks for this layout, which Primer forms can't give at one breakpoint only, so it relies on Primer's
+// FormControl class names: check it when Primer is upgraded.
 @media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
   .study-ask.Box {
     position: sticky;
