@@ -1,6 +1,8 @@
 require "application_system_test_case"
 
 class MeetingNotesTest < ApplicationSystemTestCase
+  END_OF_TEXT = RUBY_PLATFORM.include?("darwin") ? [ :command, :down ] : [ :control, :end ]
+
   test "start this week's Life and Ministry note from the list and land on it" do
     travel_to Time.utc(2026, 11, 25, 12) # a week with no notes yet
     sign_in identities(:head)
@@ -70,6 +72,21 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_equal "_blank", link[:target]
     assert_accessible
     capture_screens("meeting-note-scripture-link", scroll_to: "main a.scripture-link")
+  end
+
+  test "a reference typed in a part's notes is linked when the note is saved" do
+    sign_in identities(:head)
+    visit edit_household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
+    editor = find("lexxy-editor#meeting_note_parts_attributes_0_notes [contenteditable='true']")
+    editor.click
+    editor.send_keys(END_OF_TEXT, :enter, "Keep on the watch, matt 24:14")
+    click_on "Save notes"
+
+    assert_text "Notes saved."
+    link = find("main a.scripture-link", text: "Matthew 24:14")
+    assert_equal Bible::Reference.find("40:24:14").jw_url, link[:href]
+    assert_accessible
+    capture_screens("scripture-linked-on-save", scroll_to: "main a.scripture-link")
   end
 
   test "the notes editor has no upload buttons, and starts no upload even for the one attachment type it permits" do

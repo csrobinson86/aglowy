@@ -6,9 +6,12 @@ class FamilyStudies::Sessions::NotesController < ApplicationController
   def edit
   end
 
-  # Notes with anything but scripture links show the form again with the message.
+  # References typed by hand are linked. Notes with anything but scripture links show the form again with the message.
   def update
-    if @study_session.update(notes_params)
+    @study_session.assign_attributes(notes_params)
+    @study_session.link_scriptures
+
+    if @study_session.save
       redirect_to household_family_study_session_path(family_study_id: @family_study, id: @study_session), notice: "Notes saved."
     else
       render :edit, status: :unprocessable_content

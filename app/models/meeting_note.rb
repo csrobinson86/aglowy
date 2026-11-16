@@ -89,9 +89,11 @@ class MeetingNote < ApplicationRecord
 
   # Saves the edit form: titles and notes, with Living as Christians parts and gems added and removed.
   # A part added in the form is always a Living as Christians part, numbered after the others; a new
-  # gem is numbered after the other gems. Keys and positions never come from the form.
+  # gem is numbered after the other gems. Keys and positions never come from the form. A block is given the note
+  # once the form's values are in, before saving.
   def revise!(attributes)
     assign_attributes(attributes)
+    yield self if block_given?
     number_new(parts) { |part, position| part.assign_attributes(key: "living_part", position: position) }
     number_new(gems) { |gem, position| gem.position = position }
     save!

@@ -33,9 +33,9 @@ class MeetingNotesController < ApplicationController
   end
 
   # A part or gem id from any other note isn't among this note's, so nested attributes raise RecordNotFound (404).
-  # A bad reference shows the form again with everything that was typed.
+  # References typed in each part's notes are linked. A bad reference shows the form again with everything that was typed.
   def update
-    @meeting_note.revise!(note_params)
+    @meeting_note.revise!(note_params) { it.parts.each(&:link_scriptures) }
     redirect_to household_meeting_note_path(id: @meeting_note), notice: "Notes saved."
   rescue ActiveRecord::RecordInvalid
     render :edit, status: :unprocessable_content

@@ -82,6 +82,19 @@ class FamilyStudies::Sessions::NotesControllerTest < ActionDispatch::Integration
     assert_select "main a.scripture-link[href=?][target=_blank][rel=noopener]", ruth.jw_url, text: "Ruth 1:16"
   end
 
+  test "saving a typed matt 24:14 links it, and the session page renders the Matthew 24:14 link to jw.org" do
+    study_session = family_study_sessions(:weekly_next)
+    matthew = Bible::Reference.find("40:24:14")
+    sign_in identities(:head)
+
+    patch notes_path(study_session), params: { family_study_session: { notes: "<p>Keep on the watch, matt 24:14</p>" } }
+
+    assert_redirected_to household_family_study_session_path(household_id: households(:home), family_study_id: study_session.family_study, id: study_session)
+    assert_equal [ matthew ], study_session.reload.notes.body.attachables
+    follow_redirect!
+    assert_select "main a.scripture-link[href=?][target=_blank][rel=noopener]", matthew.jw_url, text: "Matthew 24:14"
+  end
+
   test "saving notes with a foreign attachment is refused with the message" do
     study_session = family_study_sessions(:weekly_next)
     sign_in identities(:head)

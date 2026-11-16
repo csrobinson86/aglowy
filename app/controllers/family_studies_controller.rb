@@ -17,6 +17,7 @@ class FamilyStudiesController < ApplicationController
 
   def create
     @scheduling = FamilyStudy::Scheduling.new(household: Current.household, **scheduling_params)
+    @scheduling.link_scriptures
 
     if @scheduling.save
       if @goal_step
