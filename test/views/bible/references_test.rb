@@ -11,6 +11,8 @@ class Bible::ReferencesTest < ActionView::TestCase
     end
   end
 
+  # Only the link and its text: Action Text's sanitizer drops target, rel and the icon from a saved note, which the
+  # story that renders saved notes has to settle.
   test "a note renders its scripture attachment as the link" do
     content = ActionText::Content.new(%(<action-text-attachment sgid="#{@psalm.attachable_sgid}"></action-text-attachment>))
 

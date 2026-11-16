@@ -17,6 +17,11 @@ class Bible::ReferenceTest < ActiveSupport::TestCase
     assert_equal reference(1, 1, 1, 1), Bible::Reference.parse("Gen. 1:1")
   end
 
+  test "new leaves out the verses of a whole chapter, and one verse is a range of one" do
+    assert_equal "Psalm 23", Bible::Reference.new(book: Bible::Book.find(19), chapter: 23).to_s
+    assert_equal "Matthew 24:14", Bible::Reference.new(Bible::Book.find(40), 24, 14, nil).to_s
+  end
+
   test "to_s writes the reference our way" do
     assert_equal "Psalm 37:8, 9", reference(19, 37, 8, 9).to_s
     assert_equal "Psalm 37:8-11", reference(19, 37, 8, 11).to_s
@@ -93,6 +98,15 @@ class Bible::ReferenceTest < ActiveSupport::TestCase
 
     assert_equal [ psalm ], content.attachables
     assert_equal "Read Psalm 37:8, 9", content.to_plain_text
+  end
+
+  test "an editor's copy of the attachment uses the editor partial" do
+    psalm = reference(19, 37, 8, 9)
+    content = ActionText::Content.new(%(<action-text-attachment sgid="#{psalm.attachable_sgid}"></action-text-attachment>))
+
+    editor_html = JSON.parse(Nokogiri::HTML5.fragment(content.to_trix_html).at("figure")["data-trix-attachment"])["content"]
+
+    assert_includes editor_html, %(<span class="scripture-link">)
   end
 
   private

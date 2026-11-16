@@ -4,6 +4,7 @@
 Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
   include GlobalID::Identification
   include ActionText::Attachable
+  extend ActiveModel::Naming
 
   # "psalms 37:8,9", "Ps 37:8-9", "ps 37 8" or "Psalm 23": a book, a chapter, then a verse or two.
   self::PATTERN = /\A\s*(?<book>\d?\s*[[:alpha:]][[:alpha:].\s]*?)\s*(?<chapter>\d+)(?:\s*[:\s]\s*(?<first_verse>\d+)(?:\s*(?<joiner>[-–,])\s*(?<last_verse>\d+))?)?\s*\z/
@@ -28,14 +29,21 @@ Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
     end
 
     private
-      # The reference, if its chapter and verses are in the book. One verse is a range of one.
+      # The reference, if its chapter and verses are in the book.
       def existing(book, chapter, first_verse, last_verse)
-        chapter, first_verse = chapter.to_i, first_verse&.to_i
-        last_verse = last_verse&.to_i || first_verse
-        verses = book.verses_in(chapter)
-
-        new(book, chapter, first_verse, last_verse) if verses && (first_verse.nil? || (first_verse.between?(1, last_verse) && last_verse <= verses))
+        reference = new(book, chapter.to_i, first_verse&.to_i, last_verse&.to_i)
+        reference if reference.exists?
       end
+  end
+
+  # A whole chapter has no verses, and one verse is a range of one.
+  def initialize(book:, chapter:, first_verse: nil, last_verse: nil)
+    super(book:, chapter:, first_verse:, last_verse: last_verse || first_verse)
+  end
+
+  def exists?
+    verses = book.verses_in(chapter)
+    verses.present? && (first_verse.nil? || (first_verse.between?(1, last_verse) && last_verse <= verses))
   end
 
   def id
@@ -67,9 +75,14 @@ Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
     "bible/references/reference"
   end
 
-  # Action Text's hook for the attachment as an editor shows it.
+  # Action Text renders an attachment with this for an editor (ActionText::Content#to_trix_html).
   def to_trix_content_attachment_partial_path
     "bible/references/editor"
+  end
+
+  # Action Text names the partial's local after this: "reference".
+  def model_name
+    self.class.model_name
   end
 
   # So plain-text exports and search read "Psalm 37:8, 9".
