@@ -36,6 +36,14 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_no_selector "turbo-cable-stream-source", visible: :all
   end
 
+  test "answered: on a phone, how many pages with See sources, which opens the Sources tab, in place of the list" do
+    render_answered
+
+    assert_selector "p.d-md-none", text: "1 page used ·"
+    assert_selector "p.d-md-none button[data-action='study-ask#seeSources']", text: "See sources"
+    assert_selector "div.d-none.d-md-block h3", text: "Pages used"
+  end
+
   test "a <script> in a paragraph renders as text" do
     render_answered(paragraphs: [ "<script>alert('hi')</script> Read Romans 5:12." ])
 
