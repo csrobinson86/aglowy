@@ -629,7 +629,8 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ true, false ], editors.map { it.classes.include?("meeting-note-editor--tall") }
     assert editors.all? { it.classes.include?("lexxy-content") }, "a class mustn't replace Lexxy's own"
 
-    assert_select "main template", count: 0
+    # No part or gem to add; the scripture picker's own templates are for its book rows and number buttons.
+    assert_select "main template:not([data-scripture-picker-target])", count: 0
     assert_select "main button", text: /Add/, count: 0
     assert_select "main button[type=submit]", text: "Save notes"
     assert_select "main", text: /Only you can see this note./

@@ -13,4 +13,5 @@
         placeholder: "Write your own outline, questions to discuss, or anything to remember.",
         **scripture_notes_options(form) %>
   <%= render "scriptures/notes_validation", form: %>
+  <% content_for :scripture_picker, render(ScripturePickerComponent.new) unless content_for?(:scripture_picker) %>
 </div>

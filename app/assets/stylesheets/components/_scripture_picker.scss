@@ -1,0 +1,292 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// The scripture picker (ScripturePickerComponent, docs/design/scripture-links.md, Layout). On a phone one step shows
+// at a time under a header with Back and Close (frames phone-book.png, phone-chapter.png, phone-verses.png); from md
+// up the book list, chapters and verses sit side by side (frame desktop-picker.png). Its Stimulus sidecar sets its
+// place, and its width on a phone.
+.scripture-picker {
+  position: absolute;
+  z-index: var(--zIndex-dropdown);
+  display: flex;
+  max-height: var(--overlay-height-large);
+  margin-top: var(--base-size-8);
+  overflow: hidden;
+  flex-direction: column;
+  background-color: var(--overlay-bgColor);
+  border: var(--borderWidth-default) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  box-shadow: var(--shadow-floating-large);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    // 760px, the frame's width.
+    width: calc(var(--overlay-width-large) + var(--base-size-112) + var(--base-size-8));
+  }
+}
+
+.scripture-picker__header {
+  display: flex;
+  padding: var(--base-size-8) var(--base-size-12);
+  align-items: center;
+  gap: var(--base-size-8);
+  border-bottom: var(--borderWidth-default) solid var(--borderColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: none;
+  }
+}
+
+// The book icon starts the first step; Back starts the others.
+.scripture-picker__icon {
+  margin: 0 var(--base-size-8);
+  color: var(--fgColor-muted);
+}
+
+.scripture-picker[data-scripture-picker-step-value="book"] .scripture-picker__back,
+.scripture-picker:not([data-scripture-picker-step-value="book"]) .scripture-picker__icon {
+  display: none;
+}
+
+.scripture-picker__title {
+  margin: 0 auto 0 0;
+  font-size: var(--text-body-size-large);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+.scripture-picker__regions {
+  display: flex;
+  min-height: 0;
+  flex: auto;
+  flex-direction: column;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: grid;
+    height: var(--overlay-height-small);
+    grid-template-columns: var(--overlay-width-xsmall) minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+// On a phone only the step's own region shows.
+.scripture-picker__books,
+.scripture-picker__chapters,
+.scripture-picker__verses {
+  display: none;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.scripture-picker[data-scripture-picker-step-value="book"] .scripture-picker__books,
+.scripture-picker[data-scripture-picker-step-value="chapter"] .scripture-picker__chapters,
+.scripture-picker[data-scripture-picker-step-value="verses"] .scripture-picker__verses {
+  display: block;
+}
+
+@media (min-width: map.get(primer.$breakpoints, md)) {
+  .scripture-picker .scripture-picker__books,
+  .scripture-picker .scripture-picker__chapters,
+  .scripture-picker .scripture-picker__verses {
+    display: block;
+  }
+
+  .scripture-picker__chapters,
+  .scripture-picker__verses {
+    border-left: var(--borderWidth-default) solid var(--borderColor-muted);
+  }
+}
+
+// Each column's heading, from md up, staying put as its column scrolls; on a phone the header's title says the step.
+.scripture-picker__heading {
+  position: sticky;
+  top: 0;
+  display: none;
+  margin: 0;
+  padding: var(--base-size-12) var(--base-size-12) var(--base-size-4);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-small);
+  font-weight: var(--base-text-weight-semibold);
+  background-color: var(--overlay-bgColor);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: block;
+  }
+}
+
+.scripture-picker__book-list {
+  margin: 0;
+  padding: var(--base-size-8);
+  list-style: none;
+}
+
+// Book rows are 48px on a phone and 32px from md up.
+.scripture-picker__book {
+  display: flex;
+  min-height: var(--base-size-48);
+  padding: 0 var(--base-size-16);
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--borderRadius-medium);
+  font-size: var(--text-body-size-large);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--control-transparent-bgColor-hover);
+  }
+
+  &[aria-selected="true"] {
+    background-color: var(--control-transparent-bgColor-selected);
+    font-weight: var(--base-text-weight-semibold);
+  }
+
+  &[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: calc(var(--base-size-2) * -1);
+  }
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    min-height: var(--control-medium-size);
+    padding: 0 var(--base-size-8);
+    font-size: var(--text-body-size-medium);
+  }
+}
+
+.scripture-picker__book-chapters {
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-medium);
+  font-weight: var(--base-text-weight-normal);
+}
+
+// "150 chapters" on a phone, "150" in the narrow desktop column.
+.scripture-picker__unit {
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: none;
+  }
+}
+
+.scripture-picker__hint {
+  margin: 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-medium);
+}
+
+.scripture-picker__hint--phone {
+  padding: var(--base-size-12) var(--base-size-12) 0;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: none;
+  }
+}
+
+.scripture-picker__hint--desktop {
+  display: none;
+  margin-right: auto;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: block;
+  }
+}
+
+// Number buttons: 44px, 6 per row on a phone; 32px, 7 per row from md up.
+.scripture-picker__grid {
+  display: grid;
+  padding: var(--base-size-8) var(--base-size-12);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--base-size-8);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    padding: var(--base-size-4) var(--base-size-12) var(--base-size-12);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--base-size-6);
+  }
+}
+
+.scripture-picker__number {
+  min-width: 0;
+  height: var(--base-size-44);
+  padding: 0;
+  color: var(--fgColor-default);
+  font-size: var(--text-body-size-large);
+  cursor: pointer;
+  background-color: var(--bgColor-default);
+  border: var(--borderWidth-default) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+
+  &:hover {
+    background-color: var(--control-bgColor-hover);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--outline-focus-offset);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    height: var(--base-size-32);
+    font-size: var(--text-body-size-medium);
+  }
+}
+
+// The chapter is marked; the verses are filled in, as the frames show.
+.scripture-picker__chapters .scripture-picker__number[aria-pressed="true"] {
+  font-weight: var(--base-text-weight-semibold);
+  background-color: var(--bgColor-accent-muted);
+  border-color: var(--borderColor-accent-emphasis);
+}
+
+.scripture-picker__verses .scripture-picker__number[aria-pressed="true"] {
+  color: var(--fgColor-onEmphasis);
+  font-weight: var(--base-text-weight-semibold);
+  background-color: var(--bgColor-accent-emphasis);
+  border-color: var(--borderColor-accent-emphasis);
+}
+
+// On a phone the footer comes with the verses; from md up it's always there, with Cancel.
+.scripture-picker__footer {
+  display: none;
+  padding: var(--base-size-12) var(--base-size-16);
+  align-items: center;
+  gap: var(--base-size-12);
+  border-top: var(--borderWidth-default) solid var(--borderColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: flex;
+  }
+}
+
+.scripture-picker[data-scripture-picker-step-value="verses"] .scripture-picker__footer {
+  display: flex;
+}
+
+.scripture-picker__reference {
+  margin: 0 auto 0 0;
+  font-size: var(--text-body-size-large);
+  font-weight: var(--base-text-weight-semibold);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    margin: 0;
+  }
+}
+
+.scripture-picker__cancel {
+  display: none;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: inline-flex;
+  }
+}
+
+// The Scripture button the Lexxy extension adds to a notes editor's toolbar: the book icon and its label.
+.scripture-picker-button.lexxy-editor__toolbar-button {
+  display: inline-flex;
+  width: auto;
+  padding-inline: var(--base-size-8);
+  align-items: center;
+  gap: var(--base-size-6);
+}

@@ -1,8 +1,11 @@
 // Entry point for the build script in your package.json
 import "@hotwired/turbo-rails"
 import "@primer/view-components"
-// Lexxy, the Action Text editor for session notes. It uploads through Active Storage.
-import "@37signals/lexxy"
+// Lexxy, the Action Text editor for notes. It uploads through Active Storage. Its extensions are configured here,
+// in the module that imports it and before anything awaits, so they're registered before Lexxy defines its elements.
+import * as Lexxy from "@37signals/lexxy"
+import ScripturePicker from "./lexxy/scripture_picker"
+Lexxy.configure({ global: { extensions: [ ScripturePicker ] } })
 import "@rails/activestorage"
 import "./controllers"
 
@@ -16,3 +19,5 @@ import FileDropController from "../components/file_drop_component_controller"
 application.register("file-drop", FileDropController)
 import GoalStepController from "../components/goal_step_component_controller"
 application.register("goal-step", GoalStepController)
+import ScripturePickerController from "../components/scripture_picker_component_controller"
+application.register("scripture-picker", ScripturePickerController)

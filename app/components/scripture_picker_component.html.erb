@@ -1,0 +1,51 @@
+<%# The approved hand-built picker (CLAUDE.md, Forms): Primer has no picker anchored at the caret. Its step is book,
+    chapter or verses; below 768px only that step's region shows, and from 768px all three sit side by side. %>
+<div class="scripture-picker" role="dialog" aria-label="Choose a book" hidden
+     data-controller="scripture-picker" data-scripture-picker-url-value="<%= url %>"
+     data-scripture-picker-step-value="book"
+     data-action="scripture-picker:open@document->scripture-picker#open scripture-picker:end@document->scripture-picker#end click@document->scripture-picker#closeOutside keydown.esc@document->scripture-picker#close resize@window->scripture-picker#position">
+  <script type="application/json" data-scripture-picker-target="canon"><%= canon.to_json.html_safe %></script>
+
+  <div class="scripture-picker__header">
+    <%= render(Primer::Beta::IconButton.new(icon: :"chevron-left", "aria-label": "Back", scheme: :invisible, show_tooltip: false,
+          classes: "scripture-picker__back", data: { action: "scripture-picker#back" })) %>
+    <%= render(Primer::Beta::Octicon.new(icon: :book, classes: "scripture-picker__icon")) %>
+    <p class="scripture-picker__title" data-scripture-picker-target="title">Book</p>
+    <%= render(Primer::Beta::IconButton.new(icon: :x, "aria-label": "Close", scheme: :invisible, show_tooltip: false,
+          data: { action: "scripture-picker#close" })) %>
+  </div>
+
+  <div class="scripture-picker__regions">
+    <div class="scripture-picker__books">
+      <p class="scripture-picker__heading" id="scripture-picker-books-heading">Book</p>
+      <ul class="scripture-picker__book-list" role="listbox" aria-labelledby="scripture-picker-books-heading"
+          data-scripture-picker-target="books" data-action="keydown->scripture-picker#moveThroughBooks"></ul>
+    </div>
+    <div class="scripture-picker__chapters">
+      <p class="scripture-picker__heading" id="scripture-picker-chapters-heading" data-scripture-picker-target="chaptersHeading">Chapter</p>
+      <div class="scripture-picker__grid" role="group" aria-labelledby="scripture-picker-chapters-heading" data-scripture-picker-target="chapters"></div>
+    </div>
+    <div class="scripture-picker__verses">
+      <p class="scripture-picker__heading" id="scripture-picker-verses-heading" data-scripture-picker-target="versesHeading">Verses</p>
+      <p class="scripture-picker__hint scripture-picker__hint--phone">Tap a verse, or tap two to choose a range.</p>
+      <div class="scripture-picker__grid" role="group" aria-labelledby="scripture-picker-verses-heading" data-scripture-picker-target="verses"></div>
+    </div>
+  </div>
+
+  <div class="scripture-picker__footer">
+    <p class="scripture-picker__reference" aria-live="polite" data-scripture-picker-target="reference"></p>
+    <p class="scripture-picker__hint scripture-picker__hint--desktop">Click two verses for a range · Esc to close</p>
+    <%= render(Primer::Beta::Button.new(classes: "scripture-picker__cancel", data: { action: "scripture-picker#close" })) { "Cancel" } %>
+    <%= render(Primer::Beta::Button.new(scheme: :primary, disabled: true, data: { scripture_picker_target: "insert", action: "scripture-picker#insert" })) { "Insert" } %>
+  </div>
+
+  <template data-scripture-picker-target="bookTemplate">
+    <li class="scripture-picker__book" role="option" aria-selected="false" tabindex="-1" data-action="click->scripture-picker#pickBook">
+      <span class="scripture-picker__book-name"></span>
+      <span class="scripture-picker__book-chapters"><span class="scripture-picker__book-count"></span><span class="scripture-picker__unit"></span></span>
+    </li>
+  </template>
+  <template data-scripture-picker-target="numberTemplate">
+    <button type="button" class="scripture-picker__number" aria-pressed="false"></button>
+  </template>
+</div>

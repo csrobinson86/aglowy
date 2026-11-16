@@ -66,6 +66,7 @@ households or roles. The non-negotiables:
 - Devise for authentication
 - Pundit for authorization (household roles on `Membership`; platform staff via `identities.staff`)
 - Hotwire (Turbo + Stimulus) for frontend — no React, no HTMX, no GraphQL
+- Lexxy for the Action Text notes editors. Scripture picker extension: run `test/system/scripture_links_test.rb` before any Lexxy upgrade.
 - Sass via `dartsass-rails` (standalone binary; reads Primer CSS from `node_modules`)
 - ViewComponent for reusable UI components
 - Primer ViewComponents (`primer_view_components`) as the design system
