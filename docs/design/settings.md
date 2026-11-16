@@ -126,7 +126,7 @@ Frame `settings-tags.png`. Built after PSTUDY-01's first story (#199), which add
   - **Edit:** a `Dialog` with a Primer form holding Name and "Use in" (both, Personal study only, Notes only). It posts to `PATCH /:household_id/collections/:id` (from #199), which keeps its rule: moving `used_in` away from a section that still has things in the collection is refused with "3 notes are in this collection. Move them first."
   - **Delete:** a `Dialog` ("Everything in it stays; it just leaves the folder."), then `DELETE /:household_id/collections/:id`.
   - New collections are still made from Personal study or Notes. The line under the list says so.
-- **The tag page's breadcrumb** becomes "Tags and collections", linking here, in place of "My tags".
+- **`household_tags_path` goes away with `TagsController#index`.** The tag page's breadcrumb ("Tags and collections", in place of "My tags") and the redirects after rename and delete in `TagsController` all use `household_settings_tags_path`. Search for any other caller before removing the route.
 - Both lists come from `Current.user`, so another person's tag or collection is a 404.
 
 ## Traps

@@ -74,13 +74,15 @@ changes when it does.
 - **Two layouts don't use it.** `meeting_helper` stays `dark` whatever the
   child chose (`docs/design/meeting-helper.md`). `design_system`, a
   development page, stays `auto`.
-- **Saving.** `PATCH /account/appearance`
-  (`Accounts::AppearancesController#update`, from
-  `resource :appearance, only: :update, module: :accounts` inside
-  `resource :account`). It authorizes `@user` with `UserPolicy#update?`, saves
-  with `@user.update(appearance:)` and redirects to account settings with the
-  notice "Your appearance is saved.", keeping `return_to`. The form is
-  `Accounts::AppearanceForm`, a Primer form class with `radio_button_group`.
+- **Saving.** From a household, `PATCH /:household_id/settings/appearance`
+  (`Settings::AppearancesController#update`, `docs/design/settings.md`). It
+  authorizes `@user` with `UserPolicy#update?`, saves with
+  `@user.update(appearance:)` and redirects to Settings → Appearance with the
+  notice "Your appearance is saved." There's no `return_to`. A person with no
+  household saves on `/account` instead: `PATCH /account/appearance`
+  (`Accounts::AppearancesController#update`), which returns to `/account`.
+  Both use the same form, `Settings::AppearanceForm` (formerly
+  `Accounts::AppearanceForm`), a Primer form class with `radio_button_group`.
   The redirect renders a new `<body>`, so the page changes theme as soon as
   it's saved. There's no live preview and no JavaScript.
 
