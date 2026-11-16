@@ -26,6 +26,13 @@ class TaggingTest < ActiveSupport::TestCase
     assert_includes tagging.errors[:base], "This already has 10 tags, the most it can have"
   end
 
+  test "at the limit, a create that races past the lookup gets the tagging the other request made" do
+    note = meeting_notes(:head_midweek)
+    9.times { note.tag_with("tag-#{it}", by: users(:head)) }
+
+    assert_equal taggings(:head_midweek_ministry), note.taggings.create_or_find_by!(tag: tags(:head_ministry))
+  end
+
   test "database: a taggable_type outside the list raises CheckViolation" do
     assert_raises ActiveRecord::CheckViolation do
       Tagging.insert!({ tag_id: tags(:head_ministry).id, taggable_type: "Household", taggable_id: households(:home).id })

@@ -22,6 +22,12 @@ class TagTest < ActiveSupport::TestCase
     assert_equal tags(:head_ministry), users(:head).tags.find_or_create_by_name!("Ministry")
   end
 
+  test "at the limit, a create that races past the lookup gets the tag the other request made" do
+    Tag.insert_all(Array.new(199) { |n| { user_id: users(:head).id, name: "tag-#{n}" } })
+
+    assert_equal tags(:head_ministry), users(:head).tags.create_or_find_by!(name: "ministry")
+  end
+
   test "database: a name that isn't normalized raises CheckViolation" do
     assert_raises ActiveRecord::CheckViolation do
       Tag.insert!({ user_id: users(:head).id, name: "Talk Prep" })

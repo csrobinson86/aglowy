@@ -7,7 +7,8 @@ class Tag < ApplicationRecord
   has_many :taggings
 
   validates :name, format: { with: /\A[a-z0-9][a-z0-9-]{0,29}\z/ }
-  validate(on: :create) { errors.add(:base, "You already have #{LIMIT} tags, the most you can have") if user && user.tags.count >= LIMIT }
+  # A name the person already has doesn't count, so a create that races another to it reaches the unique index.
+  validate(on: :create) { errors.add(:base, "You already have #{LIMIT} tags, the most you can have") if user && user.tags.where.not(name: name).count >= LIMIT }
 
   # "Talk Prep", "#talk_prep" and " talk-prep " are all talk-prep. "###" is "", which is invalid.
   def self.normalize(text)

@@ -21,6 +21,14 @@ class TaggableTest < ActiveSupport::TestCase
     end
   end
 
+  test "a refused tag_with rescued inside the caller's transaction still leaves no new tag behind" do
+    assert_no_difference -> { Tag.count } do
+      ActiveRecord::Base.transaction do
+        assert_raises(ActiveRecord::RecordInvalid) { meeting_notes(:head_midweek).tag_with("talk prep", by: users(:spouse)) }
+      end
+    end
+  end
+
   test "untag removes it from the note and keeps the tag" do
     note = meeting_notes(:head_midweek)
     note.tags.load

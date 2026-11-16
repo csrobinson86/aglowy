@@ -12,9 +12,10 @@ module Taggable
 
   # Finds or creates the person's tag and adds it; adding one already there does nothing. Raises RecordInvalid
   # for a name that normalizes to nothing, a tag over a limit, or a thing the person doesn't own, and the
-  # transaction takes back a tag it just created. Finding first lets a thing at the limit keep its tags.
+  # savepoint takes back a tag it just created, even when the caller rescues inside its own transaction.
+  # Finding first lets a thing at the limit keep its tags.
   def tag_with(text, by:)
-    tagging = transaction do
+    tagging = transaction(requires_new: true) do
       tag = by.tags.find_or_create_by_name!(text)
       taggings.find_by(tag: tag) || taggings.create_or_find_by!(tag: tag)
     end
