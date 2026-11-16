@@ -17,13 +17,21 @@ export default class extends Controller {
       return
     }
 
+    this.append(url)
+    this.inputTarget.value = ""
+    this.inputTarget.focus()
+  }
+
+  // A link into the list, from "Add link" or an AI draft's pages (the ai-draft controller). Once only: nothing else
+  // stops a study saving the same link twice.
+  append(url) {
+    if ([ ...this.listTarget.querySelectorAll("input") ].some(input => input.value === url)) return
+
     const item = this.templateTarget.content.firstElementChild.cloneNode(true)
     item.querySelector("[data-link-text]").textContent = url
     item.querySelector("input").value = url
     this.listTarget.append(item)
     this.blankTarget.hidden = true
-    this.inputTarget.value = ""
-    this.inputTarget.focus()
   }
 
   resetValidity() {

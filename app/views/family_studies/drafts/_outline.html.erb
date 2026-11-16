@@ -2,7 +2,7 @@
 <%# A checked draft's outline in the AI panel (frame ai-draft.png). Every field is the AI's text, so it's only ever
     escaped by ERB (docs/design/ai.md, safety measure 6). %>
 <% opening = outline["opening"] || {} %>
-<%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 3, mb: 3)) { outline["title"] } %>
+<%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 3, mb: 3, data: { ai_draft_target: "title" })) { outline["title"] } %>
 <%= render(Primer::Beta::Heading.new(tag: :h4, font_size: 5)) { "Opening" } %>
 <%= render "family_studies/drafts/scripture", text: opening["scripture"] %>
 <% if opening["question"].present? %><p class="mb-3"><%= opening["question"] %></p><% end %>

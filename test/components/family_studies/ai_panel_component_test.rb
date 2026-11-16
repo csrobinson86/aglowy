@@ -118,7 +118,12 @@ class FamilyStudies::AiPanelComponentTest < ViewComponent::TestCase
     assert_text "Titles and links only: open each page to read it"
     assert_no_text "No matching pages found"
     assert_selector ".Banner--warning", text: "AI can get things wrong. Check each point against its source before your study."
-    assert_button "Use this draft", disabled: true
+    assert_selector "button[data-action='ai-draft#use']:not([disabled])", text: "Use this draft"
+    assert_selector "template[data-ai-draft-target=template]", visible: :all
+    assert_selector "dialog#ai-draft-topic", text: "Replace the topic?", visible: :all
+    assert_selector "a[data-ai-draft-target=source]", count: 2
+    assert_selector "[data-ai-draft-target=added][hidden]", text: "The topic, notes and 2 links from jw.org and wol.jw.org are now in the form.", visible: :all
+    assert_button "Draft again", visible: :all
     assert_selector "form[action='/#{@household.id}/family_studies/drafts'] input[name='family_study_draft[prompt]'][value='Prayer as a family']", visible: :all
     assert_button "Try again"
     assert_selector "form[action='/#{@household.id}/family_studies/drafts/#{draft.id}'] input[name=_method][value=delete]", visible: :all
@@ -130,6 +135,7 @@ class FamilyStudies::AiPanelComponentTest < ViewComponent::TestCase
 
     assert_text "No matching pages found on jw.org or wol.jw.org."
     assert_no_text "Titles and links only"
+    assert_selector "[data-ai-draft-target=added]", text: "The topic and notes are now in the form. Change anything you like before you schedule.", visible: :all
     assert_selector "a.scripture-link", text: "Philippians 4:6, 7"
     assert_button "Try again"
   end

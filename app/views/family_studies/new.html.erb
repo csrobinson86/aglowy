@@ -9,6 +9,7 @@
   <% subhead.with_description { Current.household.name } %>
 <% end %>
 
+<% ai_drafts = FamilyStudies::DraftPolicy.new(Current.membership, FamilyStudy::Draft).create? %>
 <% schedule_form = capture do %>
 <div class="container-md ml-0" data-controller="repeat-field" data-repeat-field-url-value="<%= new_household_family_study_path %>">
   <%= render "family_studies/storage_warning", household: Current.household %>
@@ -36,7 +37,7 @@
     <% end %>
 
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-      <% box.with_body(data: { controller: "resource-links" }) do %>
+      <% box.with_body(id: "schedule-resources", data: { controller: "resource-links" }) do %>
         <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3)) { "Resources" } %>
         <%= tag.p "No resources yet. Add links from jw.org or wol.jw.org, or your own files.", class: "color-fg-muted mb-3", hidden: @scheduling.link_urls.any?, data: { resource_links_target: "blank" } %>
         <%# Saved on the first session (scheduling rule 1). %>
@@ -56,7 +57,7 @@
 
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
       <% box.with_body do %>
-        <%= render "family_studies/sessions/notes/field", form: f, heading: true %>
+        <%= render "family_studies/sessions/notes/field", form: f, heading: true, ai_draft: ai_drafts %>
       <% end %>
     <% end %>
 
@@ -67,8 +68,10 @@
 
 <%# Heads and adults get "Plan it with AI" beside the form, stacked under it on narrow screens (docs/design/family-studies.md,
     The panel). The form keeps its width either way. %>
-<% if FamilyStudies::DraftPolicy.new(Current.membership, FamilyStudy::Draft).create? %>
-  <%= render(Primer::Alpha::Layout.new(first_in_source: :main, stacking_breakpoint: :lg, classes: "schedule-study")) do |layout| %>
+<%# "Use this draft" fills the form from the panel (the ai-draft controller), so the controller sits around both. %>
+<% if ai_drafts %>
+  <%= render(Primer::Alpha::Layout.new(first_in_source: :main, stacking_breakpoint: :lg, classes: "schedule-study",
+        data: { controller: "ai-draft", ai_draft_resource_links_outlet: "#schedule-resources", action: "lexxy:change->ai-draft#notesEdited" })) do |layout| %>
     <% layout.with_main { schedule_form } %>
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "schedule-study__ai") do %>
       <%= render FamilyStudies::AiPanelComponent.new(household: Current.household, user: Current.user, open: params[:ai_panel] == "open") %>

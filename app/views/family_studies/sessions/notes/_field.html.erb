@@ -1,17 +1,25 @@
-<%# locals: (form:, heading: false) %>
+<%# locals: (form:, heading: false, ai_draft: false) %>
 <%# The approved hand-built form piece (CLAUDE.md, Forms): Primer has no rich-text input, so this is
     Primer's FormControl markup around Lexxy, which reads its accessible name from the label.
     With heading: true the label is the section's h2, as on the Schedule a study frame.
+    With ai_draft: true "Use this draft" can fill it (the ai-draft controller), and a "From an AI draft" label then
+    shows beside the heading until the person edits Notes (docs/design/family-studies.md, Use this draft).
     The notes take scripture links and nothing else (scripture_notes_options): files are resources, uploaded through the drop zone. %>
+<% options = scripture_notes_options(form) %>
+<% options[:data] = options[:data].merge(ai_draft_target: "notes") if ai_draft %>
 <div class="FormControl width-full FormControl--fullWidth">
   <% if heading %>
-    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { form.label(:notes, "Notes") } %>
+    <div class="d-flex flex-items-center flex-justify-between flex-wrap">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { form.label(:notes, "Notes") } %>
+      <% if ai_draft %>
+        <%= render(Primer::Beta::Label.new(scheme: :done, hidden: true, data: { ai_draft_target: "label" })) { "From an AI draft" } %>
+      <% end %>
+    </div>
   <% else %>
     <%= form.label :notes, "Notes", class: "FormControl-label" %>
   <% end %>
   <%= form.rich_text_area :notes,
-        placeholder: "Write your own outline, questions to discuss, or anything to remember.",
-        **scripture_notes_options(form) %>
+        placeholder: "Write your own outline, questions to discuss, or anything to remember.", **options %>
   <%= render "scriptures/notes_validation", form: %>
   <% content_for :scripture_picker, render(ScripturePickerComponent.new) unless content_for?(:scripture_picker) %>
 </div>
