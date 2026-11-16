@@ -51,6 +51,16 @@ class TagTest < ActiveSupport::TestCase
     assert tag.rename("service")
   end
 
+  test "a rename that races another to the same name reaches the unique index and fails with the same message" do
+    users(:head).tags.create!(name: "prayer")
+    tag = tags(:head_ministry)
+
+    # As if the other request took the name after this one checked it.
+    tag.stub(:name_changed?, false) { assert_not tag.rename("Prayer") }
+    assert_equal [ "You already have #prayer." ], tag.errors.full_messages
+    assert_equal "ministry", tag.reload.name
+  end
+
   test "rename to a name that normalizes to nothing fails" do
     assert_not tags(:head_ministry).rename("###")
     assert_equal "ministry", tags(:head_ministry).reload.name

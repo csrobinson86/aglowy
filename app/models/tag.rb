@@ -15,7 +15,7 @@ class Tag < ApplicationRecord
   validate(on: :create) { errors.add(:base, "You already have #{LIMIT} tags, the most you can have") if user && user.tags.where.not(name: name).count >= LIMIT }
 
   # Renaming never merges two tags (docs/design/tags.md, Pages and routes). The unique index backs this up.
-  validate(on: :update) { errors.add(:base, "You already have ##{name}.") if name_changed? && user.tags.where.not(id: id).exists?(name: name) }
+  validate(on: :update) { name_taken if name_changed? && user.tags.where.not(id: id).exists?(name: name) }
 
   # Each tag with how many things carry it, as taggings_count, for the tag editor's suggestions.
   scope :with_taggings_count, -> { left_joins(:taggings).group(:id).select("tags.*", "COUNT(taggings.id) AS taggings_count") }
@@ -32,13 +32,21 @@ class Tag < ApplicationRecord
     find_by(name: name) || create_or_find_by!(name: name)
   end
 
-  # Normalized like a new tag, so "Field Service" becomes field-service.
+  # Normalized like a new tag, so "Field Service" becomes field-service. A rename that races another to the same name
+  # passes the check above and reaches the unique index; the rollback leaves the new name on the tag for the message.
   def rename(text)
     update(name: self.class.normalize(text))
+  rescue ActiveRecord::RecordNotUnique
+    name_taken
+    false
   end
 
   # Personal studies come with PSTUDY-01. Until the class exists there are none, so this page doesn't wait for it.
   def personal_studies
     Object.const_defined?(:PersonalStudy) ? PersonalStudy.tagged_with(self).order(created_at: :desc) : []
   end
+
+  private
+
+  def name_taken = errors.add(:base, "You already have ##{name}.")
 end
