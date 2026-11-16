@@ -10,6 +10,12 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
                 https://www.jw.org/en/bible-teachings/questions/how-to-pray/ ].freeze
   END_OF_TEXT = RUBY_PLATFORM.include?("darwin") ? [ :command, :down ] : [ :control, :end ]
 
+  # Back to the suite's desktop window after a phone test (use_phone).
+  teardown do
+    cdp("Emulation.clearDeviceMetricsOverride")
+    cdp("Emulation.setTouchEmulationEnabled", enabled: false)
+  end
+
   test "a head turns on AI drafts, describes a study and sees Drafting with AI" do
     sign_in identities(:head)
     visit new_household_family_study_url(household_id: households(:home))
@@ -99,6 +105,115 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
       evaluate_script("document.querySelector('#schedule-links').getBoundingClientRect().top")
   ensure
     cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
+  test "on a phone the dialog opens, drafts and shows the footer" do
+    start_draft_on_phone("Trusting Jehovah when we feel anxious")
+    assert_selector "[data-ai-panel-target=start]", text: "Plan it with AI"
+
+    write_draft("family_study_draft")
+
+    within("dialog[open]") do
+      assert_selector "h2", text: "AI draft"
+      assert_selector ".Label", text: "Not saved"
+      assert_selector "h3", text: "Talking to Jehovah as a family"
+      within(".Overlay-footer") do
+        assert_text "AI can get things wrong. Check each point against its source."
+        assert_button "Use this draft"
+        assert_button "Try again"
+        assert_button "Discard"
+      end
+    end
+    # Layout boxes, since the dialog scales in as it opens.
+    use, again, discard, footer = [ "Use this draft", "Try again", "Discard" ].map { find_button(it) }.push(find("dialog[open] .Overlay-footer"))
+      .map { it.evaluate_script("[ this.offsetTop, this.offsetLeft, this.offsetWidth ]") }
+    assert_operator use[2], :>, footer[2] * 0.8
+    assert_equal again[0], discard[0]
+    assert_operator again[0], :>, use[0]
+    assert_equal again[2], discard[2]
+    assert_touch_targets
+    assert_accessible
+    capture_screens("phone-ai-draft", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+  end
+
+  test "on a phone Use this draft closes the dialog and fills the form" do
+    start_draft_on_phone("Talking to Jehovah together")
+    write_draft("family_study_draft")
+
+    within("dialog[open] .Overlay-footer") { click_on "Use this draft" }
+
+    assert_no_selector "dialog[open]"
+    assert_field "What will you study?", with: "Talking to Jehovah as a family"
+    assert_selector "lexxy-editor", text: "Jehovah listens to each of us"
+    assert_selector "#schedule-links li", count: 3
+    assert_equal "Topic", evaluate_script("document.activeElement.textContent").strip
+    assert evaluate_script("document.activeElement.getBoundingClientRect().top >= 0 && document.activeElement.getBoundingClientRect().bottom <= innerHeight")
+    assert_button "Draft with AI"
+  end
+
+  test "on a phone Escape closes the dialog and returns focus to Draft with AI" do
+    start_draft_on_phone("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    assert_selector "dialog[open] h3", text: "Talking to Jehovah as a family"
+
+    page.send_keys(:escape)
+
+    assert_no_selector "dialog[open]"
+    assert_no_text "Talking to Jehovah as a family"
+    assert_equal "Draft with AI", evaluate_script("document.activeElement.textContent").strip
+  end
+
+  test "on a phone a draft that comes after Escape waits for Draft with AI" do
+    start_draft_on_phone("Talking to Jehovah together")
+    page.send_keys(:escape)
+    assert_no_selector "dialog[open]"
+
+    write_draft("family_study_draft")
+
+    assert_selector "[data-ai-panel-target=opened] h3", text: "Talking to Jehovah as a family", visible: :hidden
+    assert_no_selector "dialog[open]"
+
+    click_on "Draft with AI"
+    within("dialog[open]") { assert_selector "h3", text: "Talking to Jehovah as a family" }
+  end
+
+  test "on a phone each state shows in the dialog, with 44px touch targets" do
+    use_phone
+    sign_in identities(:head)
+    visit new_household_family_study_url(household_id: households(:home))
+    assert_operator find_button("Draft with AI").evaluate_script("this.offsetHeight"), :>=, 44
+
+    click_on "Draft with AI"
+    within("dialog[open]") do
+      assert_selector "h2", text: "Before you use AI"
+      check "I understand how AI drafts work"
+      click_on "Turn on AI drafts"
+    end
+    within("dialog[open]") do
+      assert_selector "h2", text: "Draft with AI"
+      assert_field "What should the study be about?"
+    end
+    assert_touch_targets
+
+    within("dialog[open]") { click_on "Cancel" }
+    assert_no_selector "dialog[open]"
+    assert_equal "Draft with AI", evaluate_script("document.activeElement.textContent").strip
+  end
+
+  test "widening with the dialog open shows the panel beside the form" do
+    start_draft_on_phone("Talking to Jehovah together")
+    write_draft("family_study_draft")
+    assert_selector "dialog[open] h3", text: "Talking to Jehovah as a family"
+
+    cdp("Emulation.clearDeviceMetricsOverride")
+
+    assert_no_selector "dialog[open]"
+    within("turbo-frame#ai_panel .Box") do
+      assert_selector "h2", text: "AI draft"
+      assert_selector "h3", text: "Talking to Jehovah as a family"
+      assert_button "Use this draft"
+    end
+    assert_no_button "Draft with AI"
   end
 
   test "progress lines show, then the checked draft replaces them with its links" do
@@ -200,7 +315,7 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
     assert_accessible
     capture_screens("ai-draft-added")
     capture_screens("ai-draft-added-notes", scroll_to: "[data-ai-draft-target=label]")
-    # On a phone the panel stacks under the form.
+    # On a phone the open panel, now showing Draft added, is a full-screen dialog.
     capture_screens("ai-draft-added-panel", scroll_to: "[data-ai-draft-target=added]", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
 
     fill_in "Date", with: 7.days.from_now.to_date
@@ -313,6 +428,44 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
   end
 
   private
+    # The phone frame's size (390 × 844), with touch, so Primer's 44px touch targets apply.
+    def use_phone
+      emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)
+      emulate_touch(true)
+    end
+
+    # On a phone, "Draft with AI" opens the panel as a full-screen dialog; the head describes a study in it.
+    def start_draft_on_phone(prompt)
+      users(:head).accept_ai_terms(understood: "1")
+      use_phone
+      sign_in identities(:head)
+      visit new_household_family_study_url(household_id: households(:home))
+
+      click_on "Draft with AI"
+      within("dialog[open]") do
+        fill_in "What should the study be about?", with: prompt
+        click_on "Draft outline"
+        assert_selector "h2", text: "Drafting with AI"
+      end
+      assert_selector "turbo-cable-stream-source[connected]", visible: :all
+    end
+
+    # Every button and select in the open dialog is at least 44px tall, and its close button 44px wide. A link-styled
+    # button inside a line of text ("Change") is an inline target, which the size rule leaves out. Layout sizes, since
+    # the dialog scales in as it opens.
+    def assert_touch_targets
+      sizes = evaluate_script(<<~JS)
+        [ ...document.querySelectorAll("dialog[open] :is(button, select):not(.Link)") ].filter(target => target.checkVisibility())
+          .map(target => [ target.textContent.trim() || target.getAttribute("aria-label"), target.offsetHeight, target.offsetWidth ])
+      JS
+      assert_not_empty sizes
+      sizes.each do |name, height, _|
+        assert_operator height, :>=, 44, "#{name} is #{height}px tall"
+      end
+      _, _, close_width = sizes.find { |name, *| name == "Close" }
+      assert_operator close_width, :>=, 44
+    end
+
     # A head with AI drafts turned on describes a study, and waits until the panel listens on the draft's stream.
     def start_draft(prompt)
       users(:head).accept_ai_terms(understood: "1")

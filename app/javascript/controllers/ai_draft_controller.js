@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // Resources, as hidden link_urls[]. Nothing is saved until "Schedule study", and nothing records that AI was used.
 // It sits on the element around both the form and the panel; the panel's targets come and go as its state changes.
 export default class extends Controller {
-  static targets = [ "topic", "notes", "label", "title", "template", "source", "review", "added", "topicDialog", "typedTopic" ]
+  static targets = [ "topic", "topicHeading", "notes", "label", "title", "template", "source", "review", "added", "topicDialog", "typedTopic" ]
   static outlets = [ "resource-links" ]
 
   #addedNotes = null
@@ -40,10 +40,13 @@ export default class extends Controller {
     this.#addNotes(this.templateTarget.innerHTML)
     this.sourceTargets.forEach(link => this.resourceLinksOutlet.append(link.href))
 
-    this.reviewTarget.hidden = true
+    this.reviewTargets.forEach(review => review.hidden = true)
     this.addedTarget.hidden = false
-    // "Use this draft" has gone, so focus moves to what replaced it.
-    this.addedTarget.querySelector("h2").focus()
+    // On a phone the AI panel closes its dialog for this, so the filled form shows.
+    this.dispatch("used", { target: this.addedTarget })
+    // "Use this draft" has gone, so focus moves to what replaced it, or on a phone to the top of the filled form.
+    if (this.addedTarget.checkVisibility()) this.addedTarget.querySelector("h2").focus()
+    else this.topicHeadingTarget.focus()
   }
 
   // After what's there, if Notes isn't empty. Lexxy checks the HTML again as it takes it in.

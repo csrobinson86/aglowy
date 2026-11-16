@@ -20,7 +20,8 @@
   <%= primer_form_with(model: @scheduling, url: household_family_studies_path) do |f| %>
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
       <% box.with_body do %>
-        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3)) { "Topic" } %>
+        <%# Where focus goes once "Use this draft" fills the form on a phone. %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 3, tabindex: -1, data: { ai_draft_target: "topicHeading" })) { "Topic" } %>
         <%= render FamilyStudies::ScheduleForm.new(f, section: :topic) %>
       <% end %>
     <% end %>
