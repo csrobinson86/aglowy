@@ -7,6 +7,7 @@ class PersonalStudyPolicy < ApplicationPolicy
   def update?  = owner?
   def destroy? = owner?
   def tag?     = owner?
+  def ask?     = owner?
 
   private
 

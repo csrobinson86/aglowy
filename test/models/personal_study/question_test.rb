@@ -184,13 +184,24 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
     assert streamed("update").none? { it.to_html.include?("suffering") }
   end
 
-  test "a good answer replaces the question once, with the checked result" do
+  # The study's counts and sources first, as the page stops listening once the question it listens on is replaced.
+  test "a good answer replaces the study's counts and sources, then the question once, with the checked result" do
+    study = @question.personal_study
     answer(reply(paragraphs: [ "#{COPIED} Jehovah never causes suffering. Read James 1:13." ]))
 
-    assert_equal 1, streamed("replace").size
-    assert_equal "personal_study_question_#{@question.id}", streamed("replace").first["target"]
-    assert_includes streamed("replace").first.to_html, "Jehovah never causes suffering."
-    assert_not_includes streamed("replace").first.to_html, "issues raised in Eden"
+    assert_equal [ "counts_personal_study_#{study.id}", "sources_personal_study_#{study.id}", "personal_study_question_#{@question.id}" ],
+      streamed("replace").map { it["target"] }
+    assert_includes streamed("replace").first.to_html, "1 question · 2 pages linked"
+    assert_includes streamed("replace").second.to_html, "The End of Suffering"
+    assert_includes streamed("replace").last.to_html, "Jehovah never causes suffering."
+    assert streamed("replace").none? { it.to_html.include?("issues raised in Eden") }
+  end
+
+  test "a refused answer replaces only the question" do
+    answer(reply(off_topic: true, paragraphs: [], next_questions: []))
+
+    assert_equal [ "personal_study_question_#{@question.id}" ], streamed("replace").map { it["target"] }
+    assert_includes streamed("replace").sole.to_html, "That's outside what personal study answers."
   end
 
   test "the job takes an id and calls answer_now" do

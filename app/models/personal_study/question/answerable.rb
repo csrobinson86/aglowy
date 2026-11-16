@@ -92,7 +92,19 @@ module PersonalStudy::Question::Answerable
         end
       end
 
-      broadcast_replace_to self, target: self, partial: "personal_studies/questions/question", locals: { question: self } if written && reload.status == status
+      broadcast_result if written && reload.status == status
+    end
+
+    # An answer's pages join the study's counts and sources first: the page stops listening once the question it
+    # listens on is replaced.
+    def broadcast_result
+      if answered?
+        %w[ counts sources ].each do |part|
+          broadcast_replace_to self, target: [ personal_study, part ],
+            html: ApplicationController.render(partial: "personal_studies/#{part}", locals: { personal_study: })
+        end
+      end
+      broadcast_replace_to self, target: self, partial: "personal_studies/questions/question", locals: { question: self }
     end
 
     # The progress lines, at +step+, to the question's own stream (turbo_stream_from the question), never a household's.

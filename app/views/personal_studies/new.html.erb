@@ -11,7 +11,11 @@
 <div class="container-md ml-0">
   <%= render "personal_studies/errors", personal_study: @personal_study %>
   <%= primer_form_with(model: @personal_study, url: household_personal_studies_path) do |f| %>
-    <%= render PersonalStudies::StudyForm.new(f, submit_label: "Start study", collections: Current.user.collections.for_studies.positioned,
-                                                 cancel_path: household_personal_studies_path) %>
+    <%# A question at the day's limit would only be refused, so none is offered then. %>
+    <% user = Current.user %>
+    <% asks = user.may_ask_study_ai? && user.accepted_ai_terms? && user.study_questions_left_today.positive? %>
+    <%= render PersonalStudies::StudyForm.new(f, submit_label: "Start study", collections: user.collections.for_studies.positioned,
+                                                 fields: asks ? %i[ title collection question ] : %i[ title collection ],
+                                                 first_question: @first_question, cancel_path: household_personal_studies_path) %>
   <% end %>
 </div>

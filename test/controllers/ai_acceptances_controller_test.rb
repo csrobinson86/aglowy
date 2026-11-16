@@ -36,6 +36,18 @@ class AiAcceptancesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select "turbo-stream[action=replace][target=ai_terms]"
     assert_includes response.body, "Tick “I understand how AI drafts work” to turn on AI drafts"
+    assert_includes response.body, "Not now"
+  end
+
+  test "without the box ticked from a personal study, the form comes back without Not now" do
+    study_path = household_personal_study_path(household_id: households(:home), id: personal_studies(:head_suffering))
+    sign_in identities(:head)
+
+    post ai_acceptance_path(return_to: study_path, not_now: false), params: { ai_acceptance: { understood: "0" } }, as: :turbo_stream
+
+    assert_response :unprocessable_content
+    assert_includes response.body, "not_now=false"
+    assert_not_includes response.body, "Not now"
   end
 
   test "signed out redirects to sign in" do

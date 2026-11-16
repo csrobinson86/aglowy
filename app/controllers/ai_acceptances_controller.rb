@@ -12,7 +12,7 @@ class AiAcceptancesController < ApplicationController
     if acceptance.persisted?
       redirect_to return_path, status: :see_other
     else
-      render turbo_stream: turbo_stream.replace(:ai_terms, partial: "ai_acceptances/form", locals: { acceptance:, return_to: return_path }),
+      render turbo_stream: turbo_stream.replace(:ai_terms, partial: "ai_acceptances/form", locals: { acceptance:, return_to: return_path, not_now: params[:not_now] != "false" }),
         status: :unprocessable_content
     end
   end

@@ -121,6 +121,29 @@ class PersonalStudyTest < ActiveSupport::TestCase
     end
   end
 
+  test "sources: every page across the study's answers, once each, never a question still asking or refused" do
+    study = personal_studies(:head_suffering)
+    suffering = { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" }
+    eden = { "url" => "https://wol.jw.org/en/wol/d/r1/lp-e/2017283", "title" => "The Issue Raised in Eden" }
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "One." ] }, sources: [ suffering, eden ])
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "Two." ] }, sources: [ suffering ])
+    personal_study_question(study)
+
+    assert_equal [ suffering, eden ], study.reload.sources
+  end
+
+  test "conversation: the questions asked, oldest first, never one ask refused" do
+    users(:head).accept_ai_terms(understood: true)
+    study = personal_studies(:head_suffering)
+    asked = personal_study_question(study)
+    study.questions.load
+
+    refused = study.ask(" ", by: users(:head))
+
+    assert_not refused.persisted?
+    assert_equal [ asked ], study.conversation
+  end
+
   test "database: a study needs a chat" do
     assert_raises(ActiveRecord::NotNullViolation) { personal_studies(:head_suffering).update_column(:chat_id, nil) }
   end

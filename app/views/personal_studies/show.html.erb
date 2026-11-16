@@ -3,23 +3,41 @@
 <%= render "personal_studies/header", personal_study: @personal_study %>
 <%= render "personal_studies/errors", personal_study: @personal_study %>
 
-<%# The conversation comes with the next story; My notes stand alone until then (frame personal-study.png). %>
-<section aria-labelledby="my-notes" class="container-md ml-0">
-  <%= render(Primer::Beta::BorderBox.new) do |box| %>
-    <% box.with_header(display: :flex, align_items: :center) do %>
-      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, flex: :auto, id: "my-notes")) { "My notes" } %>
-      <% if @personal_study.notes&.persisted? %>
-        <span class="f6 color-fg-muted">Saved <%= render(Primer::Beta::RelativeTime.new(datetime: @personal_study.notes.updated_at, tense: :past)) %></span>
-      <% end %>
+<%# The conversation and the ask box, with My notes and the study's sources beside them (frame personal-study.png);
+    under them on a phone. The study-ask controller fills the box from an answer's next questions. %>
+<div data-controller="study-ask">
+  <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-study")) do |layout| %>
+    <% layout.with_main do %>
+      <section aria-labelledby="study-conversation" class="mb-3">
+        <%= render(Primer::Beta::Heading.new(tag: :h2, classes: "sr-only", id: "study-conversation")) { "Conversation" } %>
+        <% @personal_study.conversation.each do |question| %>
+          <%= render "personal_studies/questions/question", question:, household: Current.household %>
+        <% end %>
+      </section>
+      <%= render "personal_studies/ask", personal_study: @personal_study, question: @question || PersonalStudy::Question.new %>
     <% end %>
-    <% box.with_body do %>
-      <%= primer_form_with(model: @personal_study, url: household_personal_study_path(id: @personal_study), method: :patch) do |f| %>
-        <div class="mb-3">
-          <%= render "meeting_notes/notes_field", form: f, label: "Notes", visually_hidden: true,
-                placeholder: "What you're learning, scriptures to remember, questions to look into." %>
-        </div>
-        <%= render PersonalStudies::NotesForm.new(f) %>
-      <% end %>
+
+    <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-study__sidebar") do %>
+      <section aria-labelledby="my-notes" class="mb-3">
+        <%= render(Primer::Beta::BorderBox.new) do |box| %>
+          <% box.with_header(display: :flex, align_items: :center) do %>
+            <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, flex: :auto, id: "my-notes")) { "My notes" } %>
+            <% if @personal_study.notes&.persisted? %>
+              <span class="f6 color-fg-muted">Saved <%= render(Primer::Beta::RelativeTime.new(datetime: @personal_study.notes.updated_at, tense: :past)) %></span>
+            <% end %>
+          <% end %>
+          <% box.with_body do %>
+            <%= primer_form_with(model: @personal_study, url: household_personal_study_path(id: @personal_study), method: :patch) do |f| %>
+              <div class="mb-3">
+                <%= render "meeting_notes/notes_field", form: f, label: "Notes", visually_hidden: true,
+                      placeholder: "What you're learning, scriptures to remember, questions to look into." %>
+              </div>
+              <%= render PersonalStudies::NotesForm.new(f) %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </section>
+      <%= render "personal_studies/sources", personal_study: @personal_study %>
     <% end %>
   <% end %>
-</section>
+</div>

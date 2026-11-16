@@ -1,0 +1,7 @@
+<%# locals: (personal_study:) %>
+<%# "· 2 questions · 5 pages linked" in the study's header, replaced when an answer adds pages. %>
+<span id="<%= dom_id(personal_study, :counts) %>" data-study-ask-catch-up>
+  <% if personal_study.conversation.any? %>
+    · <%= pluralize(personal_study.conversation.size, "question") %> · <%= pluralize(personal_study.sources.size, "page") %> linked
+  <% end %>
+</span>

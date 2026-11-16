@@ -1,10 +1,9 @@
-<%# locals: (question:) -%>
-<%# A question once its job is done, as its result broadcast replaces it. Every field is escaped; the conversation's
-    answer card (docs/design/personal-study.md, The study page) comes with the page that shows it. %>
-<div id="<%= dom_id(question) %>">
-  <p><%= question.prompt %></p>
-  <% if question.answered? %>
-    <% if question.answer["not_found"] %><p class="color-fg-muted"><%= question.answer["not_found_note"] %></p><% end %>
-    <% question.answer["paragraphs"].each do |paragraph| %><p><%= paragraph %></p><% end %>
-  <% end %>
+<%# locals: (question:, household: nil) -%>
+<%# One question in a study's conversation and its answer card (frame personal-study.png). The job's result broadcast
+    replaces it once the answer is checked; household is only for Stop, which shows only while it's asking. %>
+<div id="<%= dom_id(question) %>" class="study-question">
+  <div class="d-flex flex-justify-end pl-6 mb-3">
+    <p class="color-bg-subtle border rounded-3 px-3 py-2 mb-0 wb-break-word"><%= question.prompt %></p>
+  </div>
+  <%= render PersonalStudies::AnswerComponent.new(question:, household:) %>
 </div>

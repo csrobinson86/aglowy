@@ -1,0 +1,16 @@
+// An answer card's buttons (Stop, the chips, Ask it again) are 44px on a touch screen; with a mouse
+// --control-minTarget-auto is small enough to change nothing.
+.study-answer .Button {
+  min-height: var(--control-minTarget-auto);
+}
+
+// "Keep digging": each next question is a rounded chip that fills the ask box (frame personal-study.png).
+.study-answer__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-8);
+}
+
+.study-answer__chip {
+  border-radius: var(--borderRadius-full);
+}

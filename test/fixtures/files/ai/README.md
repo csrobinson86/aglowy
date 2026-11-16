@@ -7,6 +7,10 @@ hands it to RubyLLM as the HTTP response would arrive.
 - `family_study_draft.json`: a good draft with three search results and citations carrying `cited_text`.
   **Hand-built** in Anthropic's documented shape (story #180 had no working key). Replace it with a recorded reply.
 - `off_topic.json`: a refusal with no search. Hand-built.
+- `personal_study_answer.json`: a personal study answer with three search results, linked references and three next
+  questions. Hand-built, like the draft.
+- `personal_study_not_found.json`: a personal study answer with a `not_found` note, one paragraph and one search
+  result. Hand-built.
 
 ## Recording a reply
 

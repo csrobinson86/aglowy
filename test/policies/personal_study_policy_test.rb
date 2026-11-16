@@ -17,11 +17,11 @@ class PersonalStudyPolicyTest < ActiveSupport::TestCase
     end
   end
 
-  test "the owner can show, change, delete and tag their study from any household they're in" do
+  test "the owner can show, change, delete, tag and ask in their study from any household they're in" do
     [ memberships(:head_in_home), memberships(:head_in_parents) ].each do |membership|
       policy = PersonalStudyPolicy.new(membership, personal_studies(:head_suffering))
 
-      assert policy.show? && policy.update? && policy.destroy? && policy.tag?, "expected #{membership.household.name} to let the owner in"
+      assert policy.show? && policy.update? && policy.destroy? && policy.tag? && policy.ask?, "expected #{membership.household.name} to let the owner in"
     end
   end
 
@@ -29,7 +29,7 @@ class PersonalStudyPolicyTest < ActiveSupport::TestCase
     [ memberships(:spouse_in_home), memberships(:child_in_home), memberships(:former_in_home), nil ].each do |membership|
       policy = PersonalStudyPolicy.new(membership, personal_studies(:head_suffering))
 
-      assert_not policy.show? || policy.update? || policy.destroy? || policy.tag? || policy.create?
+      assert_not policy.show? || policy.update? || policy.destroy? || policy.tag? || policy.ask? || policy.create?
     end
   end
 end

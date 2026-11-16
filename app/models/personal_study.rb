@@ -56,6 +56,17 @@ class PersonalStudy < ApplicationRecord
     question.tap { it.answer_later if it.persisted? }
   end
 
+  # The questions asked, oldest first. A question ask refused is left in the loaded list (has_many_inversing), so
+  # it's never shown as asked.
+  def conversation
+    questions.select(&:persisted?)
+  end
+
+  # Every page linked across the study's answers, once each: [{ "url", "title" }] (The study page, Sources in this study).
+  def sources
+    conversation.select(&:answered?).flat_map(&:sources).uniq { it["url"] }
+  end
+
   private
 
   # The database can't check either across tables (docs/design/personal-study.md, Collection).

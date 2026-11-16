@@ -4,3 +4,8 @@
 .personal-studies.Layout > .personal-studies__sidebar.Layout-sidebar {
   display: block;
 }
+
+// The same for a study's notes and sources, which come under its conversation on a phone.
+.personal-study.Layout > .personal-study__sidebar.Layout-sidebar {
+  display: block;
+}

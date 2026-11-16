@@ -1,0 +1,27 @@
+<%# locals: (personal_study:, question:) %>
+<%# The ask box (docs/design/personal-study.md, The study page). Without AI access it's disabled and says why; without
+    the AI terms the first-use notice shows instead; at the day's limit it's disabled until midnight. %>
+<% user = Current.user %>
+<% left = user.study_questions_left_today %>
+<% label = personal_study.conversation.any? ? "Ask a follow-up" : "Ask a question" %>
+<%= render(Primer::Beta::BorderBox.new(id: "study-ask")) do |box| %>
+  <% box.with_body do %>
+    <% if !user.may_ask_study_ai? %>
+      <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
+        <%= render PersonalStudies::QuestionForm.new(f, label:, caption: "Ask a head to turn on AI for your personal study.", disabled: true) %>
+      <% end %>
+    <% elsif !user.accepted_ai_terms? %>
+      <%= render "personal_studies/ai_terms", personal_study: %>
+    <% elsif left.zero? %>
+      <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
+        <%= render PersonalStudies::QuestionForm.new(f, label:, disabled: true,
+              caption: "You've asked #{PersonalStudy::Question.daily_limit} questions today. You can ask again after midnight.") %>
+      <% end %>
+    <% else %>
+      <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
+        <%= render PersonalStudies::QuestionForm.new(f, label:,
+              caption: "Answers use only jw.org and wol.jw.org, in the AI's own words, with links. #{left} of #{PersonalStudy::Question.daily_limit} questions left today.") %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

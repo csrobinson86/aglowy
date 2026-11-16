@@ -1,0 +1,59 @@
+<%= render(Primer::Beta::BorderBox.new(mb: 3, classes: "study-answer")) do |box| %>
+  <% box.with_body do %>
+    <% if question.asking? %>
+      <%# Progress lines come on the question's own signed stream until the checked result replaces the question
+          (docs/design/ai.md, Traps). %>
+      <%= helpers.turbo_stream_from question, data: { study_ask_target: "stream" } %>
+      <%= tag.ul id: dom_id(question, :progress), class: "list-style-none mb-3", aria: { live: "polite" } do %>
+        <%= render "personal_studies/questions/progress", step: :searching %>
+      <% end %>
+      <%= primer_form_with(url: stop_path, method: :delete) do |f| %>
+        <%= render PersonalStudies::StopForm.new(f) %>
+      <% end %>
+    <% elsif question.answered? %>
+      <% if not_found? %>
+        <div class="d-flex flex-items-baseline color-bg-subtle border rounded-2 p-3 mb-3">
+          <%= render(Primer::Beta::Octicon.new(:info, color: :muted, mr: 2, flex_shrink: 0)) %><span><%= answer["not_found_note"] %></span>
+        </div>
+      <% else %>
+        <p class="d-flex flex-items-center text-small text-bold color-fg-done mb-2">
+          <%= render(Primer::Beta::Octicon.new(:"sparkle-fill", size: :xsmall, mr: 2)) %>From jw.org and wol.jw.org
+        </p>
+      <% end %>
+      <% paragraphs.each do |paragraph| %>
+        <p class="mb-2"><%= linked(paragraph) %></p>
+      <% end %>
+      <% if question.sources.any? %>
+        <div class="border-top pt-3 mt-3">
+          <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mb: 2)) { "Pages used" } %>
+          <ul class="list-style-none" aria-label="Pages used">
+            <% question.sources.each do |source| %>
+              <li class="d-flex flex-items-baseline mb-1">
+                <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
+                <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || helpers.source_host(source["url"]) } %> <span class="color-fg-muted">· <%= helpers.source_host(source["url"]) %></span></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      <% if next_questions.any? %>
+        <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mt: 3, mb: 2, id: dom_id(question, :next))) { "Keep digging" } %>
+        <%# Plain buttons: the study-ask controller puts the question in the ask box for the person to send. %>
+        <div class="study-answer__chips" role="group" aria-labelledby="<%= dom_id(question, :next) %>">
+          <% next_questions.each do |next_question| %>
+            <%= render(Primer::Beta::Button.new(size: :small, classes: "study-answer__chip", data: { action: "study-ask#fill", study_ask_text_param: next_question })) { next_question } %>
+          <% end %>
+        </div>
+      <% end %>
+      <p class="text-small color-fg-muted mt-3 mb-0">Check each point against its page.</p>
+    <% elsif refused? %>
+      <%# The refusal, and nothing else from the reply (docs/design/ai.md, safety measure 1). %>
+      <%= render(Primer::Alpha::Banner.new(icon: :info)) { REFUSAL } %>
+    <% elsif question.failed? %>
+      <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't answer right now. Try again." } %>
+      <%= render(Primer::Beta::Button.new(size: :small, data: { action: "study-ask#fill", study_ask_text_param: question.prompt })) { "Ask it again" } %>
+    <% else %>
+      <p class="color-fg-muted mb-0">You stopped this answer.</p>
+    <% end %>
+  <% end %>
+<% end %>

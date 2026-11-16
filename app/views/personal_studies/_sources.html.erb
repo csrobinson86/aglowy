@@ -1,0 +1,20 @@
+<%# locals: (personal_study:) %>
+<%# Every page linked across the study's answers, once each, as titles and links only (frame personal-study.png).
+    Replaced when an answer adds pages. %>
+<section id="<%= dom_id(personal_study, :sources) %>" aria-labelledby="study-sources" data-study-ask-catch-up>
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_header do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-sources")) { "Sources in this study" } %>
+    <% end %>
+    <% personal_study.sources.each do |source| %>
+      <% box.with_row(display: :flex, align_items: :baseline) do %>
+        <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
+        <%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener", flex: :auto, classes: "wb-break-word")) { source["title"].presence || source_host(source["url"]) } %>
+        <span class="text-small color-fg-muted ml-2"><%= source_host(source["url"]) %></span>
+      <% end %>
+    <% end %>
+    <% box.with_footer(font_size: :small, color: :muted) do %>
+      <% if personal_study.sources.none? %>The pages each answer uses show here. <% end %>Titles and links only. Open a page to read it on jw.org.
+    <% end %>
+  <% end %>
+</section>
