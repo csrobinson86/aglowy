@@ -1,0 +1,10 @@
+<%# locals: (acceptance:, return_to:) -%>
+<%# The First use form, also re-rendered alone when the box wasn't ticked (Primer shows no message on a check box). %>
+<div id="ai_terms">
+  <% if acceptance.errors.any? %>
+    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { acceptance.errors[:understood].to_sentence } %>
+  <% end %>
+  <%= primer_form_with(model: acceptance, url: ai_acceptance_path(return_to: return_to)) do |f| %>
+    <%= render AiAcceptances::AcceptanceForm.new(f) %>
+  <% end %>
+</div>

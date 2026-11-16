@@ -22,15 +22,16 @@ class FamilyStudy::Draft < ApplicationRecord
 
   scope :counted, -> { where(status: COUNTED_STATUSES) }
 
+  # How many drafts a household may make in a day (docs/design/ai.md, safety measure 9).
+  def self.daily_limit = Ai::Purpose.find(PURPOSE).daily_limit
+
   # The draft and its chat, or an unsaved draft with errors: :limit once the household has used the day's drafts.
   # Counted under the household's lock, so two requests at once can't both take the last one.
   def self.start(household:, user:, prompt:, length_minutes:, young_children:)
     draft = household.with_lock do
       new(household:, user:, prompt:, length_minutes:, young_children:, chat: Chat.new(user:, household:, purpose: PURPOSE)).tap do |draft|
-        limit = Ai::Purpose.find(PURPOSE).daily_limit
-
-        if household.family_study_drafts.counted_today.count >= limit
-          draft.errors.add(:base, :limit, message: "You've used today's #{limit} drafts")
+        if household.family_study_drafts.left_today.zero?
+          draft.errors.add(:base, :limit, message: "You've used today's #{daily_limit} drafts")
         else
           draft.save
         end

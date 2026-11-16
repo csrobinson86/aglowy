@@ -7,6 +7,7 @@ class User < ApplicationRecord
   has_many :goals, dependent: :destroy
   has_many :chats, dependent: :destroy
   has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all
+  has_many :ai_acceptances, class_name: "Ai::Acceptance", dependent: :delete_all
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 
@@ -44,6 +45,16 @@ class User < ApplicationRecord
     end
 
     identity
+  end
+
+  # Turned on AI drafts at the current version of the terms (docs/design/ai.md, First use).
+  def accepted_ai_terms?
+    ai_acceptances.exists?(version: Rails.configuration.x.ai.terms_version)
+  end
+
+  # The acceptance, or an unsaved one with an error when the box wasn't ticked. Accepting again finds the first one.
+  def accept_ai_terms(understood:)
+    ai_acceptances.create_or_find_by(version: Rails.configuration.x.ai.terms_version) { it.understood = understood }
   end
 
   def active_households

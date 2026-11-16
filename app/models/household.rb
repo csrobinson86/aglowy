@@ -20,6 +20,10 @@ class Household < ApplicationRecord
     def counted_today
       counted.where(created_at: proxy_association.owner.today.in_time_zone(proxy_association.owner.time_zone)..)
     end
+
+    def left_today
+      [ FamilyStudy::Draft.daily_limit - counted_today.count, 0 ].max
+    end
   end
 
   MEETING_KINDS = %w[ midweek weekend ].freeze
