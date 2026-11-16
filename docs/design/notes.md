@@ -22,7 +22,7 @@ Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on
 | Column | Type | Constraint | Why |
 | --- | --- | --- | --- |
 | `user_id` | uuid | FK → users, not null | Personal; follows the person |
-| `collection_id` | uuid | FK → collections, nullable, `on_delete: :nullify` | Must be `Collection.for_notes` (validation) |
+| `collection_id` | uuid | FK → collections, nullable, `on_delete: :nullify` | Must be `Collection.for_notes` and owned by the note's `user` (validation). Looked up through `Current.user.collections`, so another person's id is a 404 |
 | `title` | string | not null, 1 to 120 characters | |
 | `color` | string | not null, default `none`, check in (`none`, `yellow`, `green`, `blue`, `purple`, `pink`, `orange`) | |
 

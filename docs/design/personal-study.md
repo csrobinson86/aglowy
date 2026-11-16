@@ -57,7 +57,8 @@ Collections are the person's folders, shared between Personal study and Notes (`
 | `position` | integer | not null | Order in the list |
 
 - `scope :for_studies` (`both`, `studies`) and `scope :for_notes` (`both`, `notes`)
-- A study's `collection` must be `for_studies`, and a note's must be `for_notes` (validations)
+- A study's `collection` must be `for_studies`, and a note's must be `for_notes`. Either way it must belong to the same person (validations)
+- On create, move or save, the collection is looked up through `Current.user.collections`, so another person's collection id is a 404, never attached
 - Each page lists only its own collections. A shared one shows a small "shared" icon labelled "Shared with Notes" (or "Shared with Personal study"), and the line under the list reads "Also used in Notes"
 - **New collection** (frame `docs/design/notes/notes-new-collection.png`): Name, then "Use in" with "<this section> and <the other>" (the default) or "<this section> only"
 - **Changing `used_in`** away from a section is refused while that section still has things in the collection: "3 notes are in this collection. Move them first."

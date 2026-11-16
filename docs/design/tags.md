@@ -31,26 +31,26 @@ Frames in `docs/design/personal-study/`: tags on the list of studies (`personal-
 | `taggable_type` | string | not null, check in (`MeetingNote`, `Goal`, `PersonalStudy`, `PersonalNote`) | |
 | `taggable_id` | uuid | not null, unique with `tag_id` and `taggable_type` | |
 
-- The tag's person must own the tagged thing: `MeetingNote#user`, `Goal#user` (a personal goal, so `household_id` is null), or `PersonalStudy#user`. This is a validation; the database can't check across a polymorphic link.
+- The tag's person must own the tagged thing: `MeetingNote#user`, `Goal#user` (a personal goal, so `household_id` is null), `PersonalStudy#user` or `PersonalNote#user`. This is a validation; the database can't check across a polymorphic link.
 - At most 10 tags on one thing (validation).
 
 ### `Taggable` concern
 
-Included in `MeetingNote`, `Goal` and `PersonalStudy`.
+Included in `MeetingNote`, `Goal`, `PersonalStudy` and `PersonalNote` (the last added by NOTES-01).
 
 - `has_many :taggings, as: :taggable, dependent: :delete_all` and `has_many :tags, through: :taggings`
 - `tag_with(text, by: user)` finds or creates the person's tag and adds it; `untag(tag)` removes it
 - `taggable_by?(user)`: true when `user` owns it. For `Goal`, only personal goals
 - `scope :tagged_with, ->(tag) { joins(:taggings).where(taggings: { tag_id: tag.id }) }`
 - `tags_for(user, membership: Current.membership)`: the tags to show. Views call this, never `tags` directly.
-  - `MeetingNote` and `Goal`: all of them for the owner, none for anyone else.
+  - `MeetingNote`, `Goal` and `PersonalNote`: all of them for the owner, none for anyone else.
   - `PersonalStudy`: the same, plus all of them when `ChildStudyPolicy.new(membership, study).show?` is true, which means a head of that household reading a child's study under a study AI grant (`docs/design/personal-study.md`, Children). It never extends to the child's meeting notes or goals.
 
 ## Pages and routes
 
 | What | Route | Notes |
 | --- | --- | --- |
-| Add a tag | `POST /:household_id/meeting_notes/:meeting_note_id/taggings`, and the same under `goals` and `personal_studies` (`Taggings::…Controller`, one per parent, sharing a `Tagging` controller concern) | Body: `name`. The parent is found through `Current.user`, so someone else's note is a 404. Responds with a Turbo Stream that replaces the tag editor |
+| Add a tag | `POST /:household_id/meeting_notes/:meeting_note_id/taggings`, and the same under `goals`, `personal_studies` and `notes` (`Taggings::…Controller`, one per parent, sharing a `Tagging` controller concern) | Body: `name`. The parent is found through `Current.user`, so someone else's note is a 404. Responds with a Turbo Stream that replaces the tag editor |
 | Remove a tag | `DELETE …/taggings/:id` | The same lookup |
 | My tags | `GET /:household_id/tags` (`TagsController#index`) | Each tag with how many things carry it. Rename and delete here |
 | A tag | `GET /:household_id/tags/:name` (`TagsController#show`) | Everything the person tagged with it, grouped as Meeting notes, Personal studies, Notes and My goals (frame `personal-study-tag.png`). No sidebar item is selected |
@@ -61,7 +61,7 @@ Tag pages sit under `/:household_id` only so they use the household layout. The 
 
 ### The tag editor
 
-`TagEditorComponent` sits under a title on a meeting note, a personal goal and a personal study, for the owner only:
+`TagEditorComponent` sits under a title on a meeting note, a personal goal and a personal study, and in the controls of a note (`docs/design/notes.md`), for the owner only. Adding and removing work the same everywhere:
 - each tag as a Primer `Label` linking to its page, with a remove button labelled "Remove tag <name>"
 - an "Add a tag" input built on Primer's `AutoComplete`, suggesting the person's own tags with their counts, plus "Create "#<name>"" when the text is new
 - Enter adds, Escape closes the suggestions, and focus returns to the input after adding
