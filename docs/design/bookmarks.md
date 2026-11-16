@@ -30,8 +30,8 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 | `user_id` | uuid | FK → users, not null | Personal; follows the person |
 | `url` | string | nullable; check `url ~ '^https://(www\.)?(jw\.org\|wol\.jw\.org)/'`; unique with `user_id` | A page |
 | `scripture` | string | nullable; check `scripture ~ '^\d+:\d+(:\d+(-\d+)?)?$'`; unique with `user_id` | A scripture: the `Bible::Reference` id ("19:23:4") |
-| `title` | string | nullable, up to 120 characters | A page's title, from the search result. Scriptures show the reference instead |
-| `comment` | string | nullable, up to 280 characters | |
+| `title` | string | nullable, up to 120 characters, encrypted | A page's title: from the search result when it's saved, and the person can rename it after. Scriptures show the reference instead |
+| `comment` | string | nullable, up to 280 characters, encrypted | Personal text |
 | `collection_id` | uuid | FK → collections, nullable, `on_delete: :nullify` | Must be `Collection.for_notes` and the person's own (validation) |
 | `source_type`, `source_id` | string, uuid | nullable together; check `source_type` in (`PersonalStudy`, `PersonalNote`) | Where it was saved from |
 
@@ -41,7 +41,9 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 - `include Taggable`. Add `Bookmark` to the `taggings.taggable_type` check and `taggable_by?`.
 - `belongs_to :source, polymorphic: true, optional: true`. `PersonalStudy` and `PersonalNote` each get `has_many :bookmarks, as: :source, dependent: :nullify`, so deleting the study or note keeps its bookmarks.
 - At most 2,000 bookmarks per person (validation, like the 200-tag limit).
-- Scopes: `pages`, `scriptures`, `recent_first`, and `matching(text)` on title, comment, collection name and tag name, plus the scripture's book: when `Bible::Book.match(text)` finds books, it adds `scripture LIKE '<book number>:%'` for each. Nothing here is encrypted, so search runs in SQL.
+- `encrypts :title, :comment` (non-deterministic, like `Goal`): a renamed title and a comment are personal text (`docs/product/vision.md`, Private by default).
+- Scopes: `pages`, `scriptures`, `recent_first`.
+- `user.bookmarks.matching(text)`: collection name, tag name and the scripture's book run in SQL (when `Bible::Book.match(text)` finds books, `scripture LIKE '<book number>:%'` for each). Titles and comments are encrypted, so they're matched in Ruby on the decrypted values. A person has at most 2,000 bookmarks, so `matching` loads them (`preloaded`), keeps those that match either way, and the page paginates that list. Never search `title` or `comment` in SQL.
 - `kind`: `:page` or `:scripture`.
 
 ### `User`
@@ -49,7 +51,7 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 - `has_many :bookmarks, dependent: :delete_all`
 - `bookmark_for(url: nil, scripture: nil)`: the person's bookmark for a page or scripture, or nil.
 - `bookmarked`: one query for the keys of everything the person has bookmarked (normalized URLs and scripture ids), as a `Set`. A page with many bookmark buttons loads it once and passes it to each button, so the buttons cost no query each.
-- `bookmark(url: nil, scripture: nil, source:)`: finds or creates the bookmark. For a page, the title comes from the source, never from the form: `source.sources` for a study, matched by normalized URL. A page that isn't in the source's sources is refused, so a bookmark can only hold a link Aglowy showed the person. A scripture must be in the source's `scripture_references`.
+- `bookmark(url: nil, scripture: nil, source:)`: finds or creates the bookmark. For a page, the title comes from the source, never from the form: `PersonalStudy#sources` (every page across the study's answered questions, already built in #223), matched by normalized URL. A page that isn't in the source's sources is refused, so a bookmark can only hold a link Aglowy showed the person. A scripture must be in the source's `scripture_references`.
 
 ### `Collection`
 
@@ -99,7 +101,7 @@ Under `/:household_id`, so they use the household layout. Bookmarks are always f
 
 A Primer `Dialog` "Edit bookmark" from the row's Edit button (frame `bookmark-edit.png`):
 - a muted line: the host (or "Scripture") and "saved from "<source>""
-- `Bookmarks::EditForm` (a Primer form class): Title (pages only; required, up to 120), Comment (optional, up to 280, with the caption "Up to 280 characters."), Collection (`for_notes` plus None)
+- `Bookmarks::EditForm` (a Primer form class): Title (pages only; required, up to 120; the person's own rename of an existing bookmark, which never changes its URL), Comment (optional, up to 280, with the caption "Up to 280 characters."), Collection (`for_notes` plus None)
 - the tag editor (`TagEditorComponent`) for the bookmark
 - footer: "Remove bookmark" (danger) on the left; Cancel and Save on the right
 
@@ -128,7 +130,7 @@ Only the owner of the study or note sees the buttons. A head reading a child's s
 ## Traps
 
 - **Never fetch the page.** A page's title comes from the AI's search result, stored on the study's sources. Nothing in Aglowy requests jw.org (`docs/design/ai.md`, Traps).
-- **Never trust a title or URL from the form.** The title comes from the source record. The URL must be one of that source's sources, normalized by `Ai::SourceLink`.
+- **Never trust a title or URL from the form when saving.** A new bookmark's title comes from the source record, and its URL must be one of that source's sources, normalized by `Ai::SourceLink`. Editing can rename the title only; the URL and scripture never change.
 - **Look up the source through `Current.user`** (`Current.user.personal_studies`, `Current.user.personal_notes`), so another person's study is a 404.
 - **Escape titles and comments.** A title came from a search result: treat it as untrusted text, like any AI output.
 - **Links open in a new tab with `rel="noopener"`**, like other links to jw.org.
