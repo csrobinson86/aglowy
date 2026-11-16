@@ -17,6 +17,7 @@ class TagsTest < ApplicationSystemTestCase
       assert_selector "[role=option]", text: 'Create "#min"'
       assert_no_selector "[role=option]", text: "#prayer"
     end
+    capture_screens("tag-suggestions", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
     input.send_keys(:escape)
     assert_no_selector "[role=listbox]"
 
@@ -52,6 +53,23 @@ class TagsTest < ApplicationSystemTestCase
     find("[role=option]", text: 'Create "#talk-prep"').click
 
     within("#tag_editor_meeting_note_#{note.id}") { assert_selector "a.Label", text: "#talk-prep" }
+  end
+
+  test "My goals filtered by a tag, and by one nothing carries" do
+    goals(:spouse_bible_reading).tag_with("ministry", by: users(:spouse))
+    sign_in identities(:spouse)
+
+    visit household_my_goals_url(household_id: households(:home), tag: "ministry")
+
+    assert_selector "main .Box-row a.Label", text: "#ministry"
+    assert_selector "a[aria-label='Remove filter #ministry']"
+    assert_accessible
+    capture_screens("tag-filter-goals")
+
+    visit household_my_goals_url(household_id: households(:home), tag: "prayer")
+
+    assert_selector ".blankslate h2", text: "No goals tagged #prayer"
+    assert_accessible
   end
 
   test "another household member reading the shared note sees no tags" do

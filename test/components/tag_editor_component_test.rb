@@ -10,7 +10,8 @@ class TagEditorComponentTest < ViewComponent::TestCase
     assert_no_selector ".Label"
     assert_no_selector "button[aria-label^='Remove tag']"
     assert_selector "form[action='#{taggings_path}'][method=post] auto-complete input[name=name]"
-    assert_selector "label", text: "Add a tag"
+    # Hidden visually, still the input's label (Taggings::AddForm), so a Primer upgrade that undoes it fails here.
+    assert_selector "label.sr-only", text: "Add a tag"
   end
 
   test "two tags: each a Label linking to the list filtered by it, with its remove button" do

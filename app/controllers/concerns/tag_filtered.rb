@@ -17,7 +17,7 @@ module TagFiltered
   def tagged(relation)
     return relation unless @tag_name
 
-    tag = Current.user.tags.find_by(name: @tag_name)
-    tag ? relation.tagged_with(tag) : relation.none
+    @tag = Current.user.tags.find_by(name: @tag_name) unless defined?(@tag)
+    @tag ? relation.tagged_with(@tag) : relation.none
   end
 end
