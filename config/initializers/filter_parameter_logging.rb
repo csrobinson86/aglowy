@@ -11,6 +11,8 @@ meeting_note_part_key = /\Ameeting_note[\.\[\]]+parts_attributes[\.\[\]]+(?:[^\.
 
 Rails.application.config.filter_parameters += [
   :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc, :notes, :insight,
+  # AI prompts, chat messages and draft outlines (docs/design/ai.md, Traps).
+  :prompt, :content, :outline,
   meeting_note_part_key,
   # Rails filters a logged query string's keys before decoding them, so decode each one (%73peaker is speaker,
   # %5B is [) and match it again. CGI.unescape leaves a malformed escape alone; Rack rejects that key anyway.

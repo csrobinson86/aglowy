@@ -1,0 +1,22 @@
+_fixture:
+  model_class: RubyLLM::ActiveRecord::Model
+
+# The model AI_MODEL names in test (config/environments/test.rb). With a row here, RubyLLM's registry store isn't
+# empty, so a chat's model resolves to this row instead of copying the whole bundled registry into the table.
+test_model:
+  model_id: claude-sonnet-5-5
+  name: Claude Sonnet 5.5
+  provider: anthropic
+  family: claude-sonnet
+  context_window: 200000
+  max_output_tokens: 64000
+  capabilities: ["function_calling", "structured_output", "citations"]
+  modalities: { "input": ["text"], "output": ["text"] }
+
+# Another provider's model, which AI features refuse.
+openai_model:
+  model_id: gpt-6.1-sol
+  name: GPT-6.1 Sol
+  provider: openai
+  capabilities: ["function_calling", "structured_output"]
+  modalities: { "input": ["text"], "output": ["text"] }

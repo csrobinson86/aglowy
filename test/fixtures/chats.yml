@@ -1,0 +1,5 @@
+head_draft:
+  model: test_model
+  user: head
+  household: home
+  purpose: family_study_draft
