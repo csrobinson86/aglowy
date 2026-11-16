@@ -139,7 +139,7 @@ changes when it does.
 1. **Aglowy mark:** Octicon `sun` in the attention colour, then "Aglowy". Links to the household home.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
 3. **Household group:** Home, Family studies, Members, Family goals.
-4. **Mine group:** Today's meeting, Meeting notes, My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
+4. **Mine group:** Today's meeting, Meeting notes, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
 5. **Footer:** Household settings (heads and adults; adults see only its Meetings and Children sections, `docs/design/meeting-helper.md`), then the person's initial and name with a Sign out button.
 
 **Main**
@@ -202,8 +202,8 @@ System tests can save screenshots of a page at both viewports and in both themes
 
 | Decision | Choice |
 | --- | --- |
-| Personal content on the household home | Shown as drawn: a "Mine" column with my goals and recent meeting notes, once those features exist (the meeting notes and goals epics). Until then Home has no Mine column |
+| Personal content on the household home | Shown as drawn: a "Mine" column with my goals, pinned notes (NOTES-01, `docs/design/notes.md`, frame `docs/design/notes/home-pinned-notes.png`) and recent meeting notes, once those features exist (the meeting notes and goals epics). Until then Home has no Mine column |
 | Who sees "New household" | Whoever `HouseholdPolicy#create?` allows. Children may not (decided 14 Nov, `docs/design/invitations.md`); the menu follows the policy |
-| Household home before family studies exist | The Welcome empty state shows only when there is nothing at all to show: no upcoming session, no active family goal, and none of the person's own active goals or meeting notes (story #142). Otherwise Home shows its two columns, with "No family study scheduled." in Next family study when nothing is scheduled. Heads and adults see "Schedule a study" as the empty state's action and "Add a member" beside it; elsewhere "Schedule a study" sits in the page header |
+| Household home before family studies exist | The Welcome empty state shows only when there is nothing at all to show: no upcoming session, no active family goal, and none of the person's own active goals, meeting notes or pinned notes (story #142; pinned notes added by NOTES-01). Otherwise Home shows its two columns, with "No family study scheduled." in Next family study when nothing is scheduled. Heads and adults see "Schedule a study" as the empty state's action and "Add a member" beside it; elsewhere "Schedule a study" sits in the page header |
 | Phone navigation | A left-side `Primer::Alpha::Dialog` (0.53.5 supports `position: :left` and `position_narrow: :left`) |
 | Icons in the mockup | Hand-drawn stand-ins; the build uses the Octicons listed above |

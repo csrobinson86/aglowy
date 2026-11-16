@@ -206,3 +206,7 @@ All under `/:household_id` in the app shell (`docs/design/app-shell.md`). Primer
 - Tabs: each empty and full
 - A person who left the household while named on an open step
 - Desktop and phone; light and dark
+
+## Tags
+
+The owner can tag a personal goal (never a family goal) with their own private tags (TAGS-01, `docs/design/tags.md`). Tags never show on shared views.

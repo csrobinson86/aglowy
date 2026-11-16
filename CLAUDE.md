@@ -238,14 +238,16 @@ households or roles. The non-negotiables:
   ask Casey before building it by hand.
 - Devise's generated views still use plain `form_for`. Convert them only in a
   story that asks for it.
-- **Four approved exceptions** (decided Nov 2026): the file drop zone (Active
+- **Five approved exceptions** (decided Nov 2026): the file drop zone (Active
   Storage direct upload, Stimulus, BEM Sass from primitives) and the Lexxy notes
   editor (`rich_text_area`), both in `docs/design/family-studies.md`; the
   meeting helper's child screens and drawing canvas (large touch targets in BEM
   Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`;
-  and the scripture picker anchored at the caret in a notes editor (BEM Sass
+  the scripture picker anchored at the caret in a notes editor (BEM Sass
   from primitives, Stimulus, a Lexxy extension), in
-  `docs/design/scripture-links.md`. Primer has none of these. Each keeps a real
+  `docs/design/scripture-links.md`; and the note color picker (a radio group
+  drawn as swatches, BEM Sass from Primer's display color primitives), in
+  `docs/design/notes.md`. Primer has none of these. Each keeps a real
   labelled input inside a Primer form and uses Primer `Button` for buttons;
   nothing else is hand-built.
 
@@ -453,6 +455,7 @@ These are explicitly forbidden in this codebase:
 | Missing `authorize` calls | Every controller action must authorize via Pundit |
 | Cypress / Playwright | We use Capybara + Selenium for system tests |
 | Views without landmarks | All page content must be in `<main>`, `<nav>`, etc. |
+| `record.tags` in a view | Tags are private: `tags_for(Current.user)` (`docs/design/tags.md`) |
 
 ---
 
