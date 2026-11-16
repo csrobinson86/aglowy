@@ -25,8 +25,15 @@
       <% paragraphs.each do |paragraph| %>
         <p class="mb-2"><%= linked(paragraph) %></p>
       <% end %>
+      <% if question.sources.any? && !read_only? %>
+        <%# On a phone the study's Sources tab lists the pages, and this opens it (frame phone-personal-study.png). %>
+        <p class="d-md-none text-small color-fg-muted mt-3 mb-0">
+          <%= pluralize(question.sources.size, "page") %> used ·
+          <%= render(Primer::Beta::Button.new(scheme: :link, font_size: :small, data: { action: "study-ask#seeSources" })) { "See sources" } %>
+        </p>
+      <% end %>
       <% if question.sources.any? %>
-        <div class="border-top pt-3 mt-3">
+        <div class="<%= class_names("border-top pt-3 mt-3", "d-none d-md-block": !read_only?) %>">
           <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mb: 2)) { "Pages used" } %>
           <ul class="list-style-none" aria-label="Pages used">
             <% question.sources.each do |source| %>

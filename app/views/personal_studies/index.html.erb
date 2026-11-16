@@ -10,11 +10,17 @@
 
 <%= render "personal_studies/read_by_heads" %>
 
-<%# Collections and my tags beside the list (frame personal-studies.png); under it on a phone, so the list comes first. %>
+<%# Collections and my tags beside the list (frame personal-studies.png). On a phone they're above it, behind
+    "Collections and tags"; from md up the open-from-md controller keeps them open, with the summary hidden. %>
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-studies")) do |layout| %>
-  <% layout.with_sidebar(width: :narrow, row_placement: :end, classes: "personal-studies__sidebar") do %>
-    <%= render "personal_studies/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
-    <%= render "personal_studies/tags", tags: @tags, selected: @tag_name, collection: @collection %>
+  <% layout.with_sidebar(width: :narrow, row_placement: :start, classes: "personal-studies__sidebar") do %>
+    <%= render(Primer::Beta::Details.new(data: { controller: "open-from-md" })) do |details| %>
+      <% details.with_summary(block: true, mb: 3, display: [ nil, nil, :none ]) { "Collections and tags" } %>
+      <% details.with_body do %>
+        <%= render "personal_studies/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
+        <%= render "personal_studies/tags", tags: @tags, selected: @tag_name, collection: @collection %>
+      <% end %>
+    <% end %>
   <% end %>
 
   <% layout.with_main do %>

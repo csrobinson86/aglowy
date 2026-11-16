@@ -71,6 +71,19 @@ class PersonalStudiesTest < ApplicationSystemTestCase
     assert_no_text "The meaning of Daniel 2"
   end
 
+  test "on a desktop the study's menu opens on Rename from the keyboard, without the phone's items, and the panels aren't tab stops" do
+    visit household_personal_study_url(household_id: households(:home), id: personal_studies(:head_suffering))
+    assert_turbo_idle
+
+    assert_selector "[role=tabpanel][tabindex='-1']", count: 3
+    assert_no_selector "[role=tablist]"
+    find("button[aria-label='Study actions']").send_keys(:enter)
+    assert_selector "[role=menuitem]:focus", text: "Rename…"
+    assert_no_selector "[role=menuitem]", text: "Tags…"
+    assert_no_selector "[role=menuitem]", text: "Plan a family study from this"
+    assert_field "Add a tag"
+  end
+
   test "an empty Personal study" do
     sign_in identities(:eli)
     visit household_personal_studies_url(household_id: households(:home))

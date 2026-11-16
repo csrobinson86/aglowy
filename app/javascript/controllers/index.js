@@ -31,6 +31,9 @@ application.register("meeting-helper--drawing", MeetingHelper__DrawingController
 import NoUploadsController from "./no_uploads_controller"
 application.register("no-uploads", NoUploadsController)
 
+import OpenFromMdController from "./open_from_md_controller"
+application.register("open-from-md", OpenFromMdController)
+
 import RepeatFieldController from "./repeat_field_controller"
 application.register("repeat-field", RepeatFieldController)
 
@@ -39,3 +42,6 @@ application.register("resource-links", ResourceLinksController)
 
 import StudyAskController from "./study_ask_controller"
 application.register("study-ask", StudyAskController)
+
+import StudyLayoutController from "./study_layout_controller"
+application.register("study-layout", StudyLayoutController)

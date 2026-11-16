@@ -1,26 +1,41 @@
 <% content_for :title, @personal_study.title_in_database %>
 
-<%= render "personal_studies/header", personal_study: @personal_study %>
-<%= render "personal_studies/read_by_heads" %>
-<%= render "personal_studies/errors", personal_study: @personal_study %>
+<%# The study-layout controller arranges the header and the tabs for a phone or md up. %>
+<div data-controller="study-layout">
+  <%= render "personal_studies/header", personal_study: @personal_study %>
+  <%= render "personal_studies/read_by_heads" %>
+  <%= render "personal_studies/errors", personal_study: @personal_study %>
 
-<%# The conversation and the ask box, with My notes and the study's sources beside them (frame personal-study.png);
-    under them on a phone. The study-ask controller fills the box from an answer's next questions. %>
-<div data-controller="study-ask">
-  <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-study")) do |layout| %>
-    <% layout.with_main do %>
-      <section aria-labelledby="study-conversation" class="mb-3">
-        <%= render(Primer::Beta::Heading.new(tag: :h2, classes: "sr-only", id: "study-conversation")) { "Conversation" } %>
-        <% @personal_study.conversation.each do |question| %>
-          <%= render "personal_studies/questions/question", question:, household: Current.household %>
+  <%# The conversation and the ask box, with My notes and the study's sources beside them (frame personal-study.png).
+      On a phone they're Conversation, Notes and Sources tabs, with the ask box at the bottom of Conversation (frame
+      phone-personal-study.png); from md up the tabs are hidden and every panel shows (_personal_studies.scss). The
+      study-ask controller fills the box from an answer's next questions, and "See sources" opens the Sources tab. %>
+  <div data-controller="study-ask">
+    <%= render(Primer::Alpha::UnderlinePanels.new(label: "Study", wrapper_arguments: { classes: "personal-study-tabs" }, classes: "personal-study-tabs__nav", mb: 3)) do |panels| %>
+      <% panels.with_tab(id: "study-tab-conversation", selected: true) do |tab| %>
+        <% tab.with_text { "Conversation" } %>
+        <% tab.with_panel(classes: "personal-study-tabs__conversation", data: { study_layout_target: "panel" }) do %>
+          <section aria-labelledby="study-conversation" class="mb-3">
+            <%= render(Primer::Beta::Heading.new(tag: :h2, classes: "sr-only", id: "study-conversation")) { "Conversation" } %>
+            <% @personal_study.conversation.each do |question| %>
+              <%= render "personal_studies/questions/question", question:, household: Current.household %>
+            <% end %>
+          </section>
+          <%= render "personal_studies/ask", personal_study: @personal_study, question: @question || PersonalStudy::Question.new %>
         <% end %>
-      </section>
-      <%= render "personal_studies/ask", personal_study: @personal_study, question: @question || PersonalStudy::Question.new %>
+      <% end %>
+      <% panels.with_tab(id: "study-tab-notes") do |tab| %>
+        <% tab.with_text { "Notes" } %>
+        <% tab.with_panel(classes: "personal-study-tabs__notes", data: { study_layout_target: "panel" }) do %>
+          <%= render "personal_studies/notes", personal_study: @personal_study %>
+        <% end %>
+      <% end %>
+      <% panels.with_tab(id: "study-tab-sources", data: { study_ask_target: "sourcesTab" }) do |tab| %>
+        <% tab.with_text { "Sources" } %>
+        <% tab.with_panel(classes: "personal-study-tabs__sources", data: { study_layout_target: "panel" }) do %>
+          <%= render "personal_studies/sources", personal_study: @personal_study %>
+        <% end %>
+      <% end %>
     <% end %>
-
-    <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-study__sidebar") do %>
-      <%= render "personal_studies/notes", personal_study: @personal_study %>
-      <%= render "personal_studies/sources", personal_study: @personal_study %>
-    <% end %>
-  <% end %>
+  </div>
 </div>

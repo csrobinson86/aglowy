@@ -1,9 +1,10 @@
 require "application_system_test_case"
+require_relative "../support/study_answer_helper"
 
-# Asking in a study's conversation (docs/design/personal-study.md, The study page). The test queue adapter only
-# enqueues the question's job; answer runs it here with the AI stubbed, so nothing calls an AI provider.
+# Asking in a study's conversation (docs/design/personal-study.md, The study page). answer runs the question's job
+# with the AI stubbed (StudyAnswerHelper), so nothing calls an AI provider.
 class PersonalStudyAiTest < ApplicationSystemTestCase
-  include ActiveJob::TestHelper
+  include StudyAnswerHelper
 
   setup do
     users(:head).accept_ai_terms(understood: "1")
@@ -80,7 +81,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     capture_screens("personal-study-limit", scroll_to: "#study-ask")
   end
 
-  test "on a phone notes and sources come under the conversation, and the answer's buttons are 44px" do
+  test "on a phone notes and sources are in their own tabs, and the answer's buttons are 44px" do
     personal_study_question(@study, status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
       answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [ "What did Job learn?" ] })
     personal_study_question(@study, prompt: "How does the ransom fit in?")
@@ -88,8 +89,9 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)
     emulate_touch(true)
 
-    assert_operator find("section[aria-labelledby=study-sources]").evaluate_script("this.getBoundingClientRect().top"), :>,
-      find("#study-ask").evaluate_script("this.getBoundingClientRect().top")
+    assert_selector "#study-ask"
+    assert_no_selector "section[aria-labelledby=study-sources]"
+    assert_selector "[role=tab]", text: "Sources"
     [ find_button("What did Job learn?"), find_button("Stop") ].each do |button|
       assert_operator button.evaluate_script("this.offsetHeight"), :>=, 44, "#{button.text} is too small to tap"
     end
@@ -182,34 +184,4 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Why do we pray?"
     assert_no_link "Plan a family study from this"
   end
-
-  private
-    # A question's card, by its question: an earlier answer's "Keep digging" chip can have the same words.
-    def question_card(prompt)
-      find(".study-question") { it.has_selector?("p", exact_text: prompt, wait: false) }
-    end
-
-    # Runs the question's job here, with moderation passing and Chat#ask_within_purpose standing in for the provider:
-    # it streams the saved reply's text (test/fixtures/files/ai/), calls +midway+ after the first chunk, then answers
-    # with the saved reply as the provider's HTTP response would arrive. No test calls a provider.
-    def answer(name, midway: -> { })
-      question = PersonalStudy::Question.asking.sole
-      chat = question.personal_study.chat
-      ask_for_real = chat.method(:ask_within_purpose)
-      body = JSON.parse(file_fixture("ai/#{name}.json").read)
-      ask = lambda do |text, stream:|
-        body["content"].filter_map { it["text"] }.each_with_index do |chunk, index|
-          stream.call(RubyLLM::Chunk.new(role: :assistant, content: chunk))
-          midway.call if index.zero?
-        end
-        response = Faraday::Response.new(Faraday::Env.from(status: 200, body: body))
-        chat.to_llm.provider.connection.stub(:post, ->(*, **) { response }) { ask_for_real.call(text) }
-      end
-
-      Ai::Moderation.stub(:flagged?, false) do
-        chat.stub(:ask_within_purpose, ask) do
-          PersonalStudy::Question.stub(:find_by, question) { perform_enqueued_jobs }
-        end
-      end
-    end
 end

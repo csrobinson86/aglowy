@@ -1,26 +1,32 @@
 <%# locals: (personal_study:, question:) %>
 <%# The ask box (docs/design/personal-study.md, The study page). Without AI access it's disabled and says why; without
-    the AI terms the first-use notice shows instead; at the day's limit it's disabled until midnight. %>
+    the AI terms the first-use notice shows instead; at the day's limit it's disabled until midnight. On a phone it
+    stays at the bottom of the screen, with the input beside Ask and a shorter line under them (frame
+    phone-personal-study.png, _personal_studies.scss). %>
 <% user = Current.user %>
 <% left = user.study_questions_left_today %>
 <% label = personal_study.conversation.any? ? "Ask a follow-up" : "Ask a question" %>
-<%= render(Primer::Beta::BorderBox.new(id: "study-ask")) do |box| %>
+<% limit = PersonalStudy::Question.daily_limit %>
+<% terms = user.may_ask_study_ai? && !user.accepted_ai_terms? %>
+<%# The first-use notice is too tall to stay at the bottom of a phone screen, so it stays where it is. %>
+<%= render(Primer::Beta::BorderBox.new(id: "study-ask", classes: class_names("study-ask": !terms))) do |box| %>
   <% box.with_body do %>
     <% if !user.may_ask_study_ai? %>
       <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
         <%= render PersonalStudies::QuestionForm.new(f, label:, caption: "Ask a head to turn on AI for your personal study.", disabled: true) %>
       <% end %>
-    <% elsif !user.accepted_ai_terms? %>
+    <% elsif terms %>
       <%= render "personal_studies/ai_terms", personal_study: %>
     <% elsif left.zero? %>
       <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
         <%= render PersonalStudies::QuestionForm.new(f, label:, disabled: true,
-              caption: "You've asked #{PersonalStudy::Question.daily_limit} questions today. You can ask again after midnight.") %>
+              caption: "You've asked #{limit} questions today. You can ask again after midnight.") %>
       <% end %>
     <% else %>
       <%= primer_form_with(model: question, url: household_personal_study_questions_path(personal_study_id: personal_study)) do |f| %>
-        <%= render PersonalStudies::QuestionForm.new(f, label:,
-              caption: "Answers use only jw.org and wol.jw.org, in the AI's own words, with links. #{left} of #{PersonalStudy::Question.daily_limit} questions left today.") %>
+        <%= render PersonalStudies::QuestionForm.new(f, label:, caption: safe_join([
+              tag.span("Answers use only jw.org and wol.jw.org, in the AI's own words, with links. #{left} of #{limit} questions left today.", class: "d-none d-md-inline"),
+              tag.span("jw.org and wol.jw.org only · #{left} of #{limit} left today", class: "d-md-none") ])) %>
       <% end %>
     <% end %>
   <% end %>

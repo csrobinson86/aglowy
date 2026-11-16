@@ -1,25 +1,33 @@
 <%# locals: (personal_study:) %>
 <%# The study's header (frame personal-study.png): the breadcrumb, the title, when it started, the tag editor,
     "Plan a family study from this", and the "…" menu with Rename, Move to collection and Delete, each in a Primer Dialog.
+    On a phone it keeps a back link and the title, and the tag editor and the plan link move into the menu (frame
+    phone-personal-study.png); the page's study-layout controller moves the one tag editor between its two places.
     Names come from the database, so a refused rename doesn't show its title as saved. %>
 <% collection = personal_study.collection %>
-<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
   <% breadcrumbs.with_item(href: household_personal_studies_path) { "Personal study" } %>
   <% if collection %>
     <% breadcrumbs.with_item(href: household_personal_studies_path(collection: collection.id)) { collection.name } %>
   <% end %>
 <% end %>
+<%= render(Primer::Beta::Link.new(href: household_personal_studies_path(collection: collection&.id), display: [ :inline_flex, nil, :none ], align_items: :center, mb: 2)) do %>
+  <%= render Primer::Beta::Octicon.new(:"chevron-left", mr: 1) %>
+  Back to <%= collection&.name || "Personal study" %>
+<% end %>
 <%= render Primer::Beta::Subhead.new do |subhead| %>
-  <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { personal_study.title_in_database } %>
+  <% subhead.with_heading(tag: :h1, flex: 1, classes: "wb-break-word min-width-0") { personal_study.title_in_database } %>
   <% subhead.with_actions(display: :flex, align_items: :center) do %>
     <%# Heads and adults here, who can plan a family study (docs/design/personal-study.md, Plan a family study from this). %>
     <% if policy(FamilyStudy).create? %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_family_study_path(from_study: personal_study.id), mr: 2)) { "Plan a family study from this" } %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_family_study_path(from_study: personal_study.id), mr: 2, display: [ :none, nil, :inline_flex ])) { "Plan a family study from this" } %>
     <% end %>
     <%= render "personal_studies/menu", personal_study: %>
   <% end %>
-  <% subhead.with_description do %>
+  <% subhead.with_description(display: [ :none, nil, :block ]) do %>
     Started <%= l(personal_study.created_at.to_date, format: :long) %><%= render "personal_studies/counts", personal_study: %>
-    <%= render TagEditorComponent.new(taggable: personal_study, user: Current.user, household: Current.household) %>
+    <div data-study-layout-target="inline">
+      <%= render TagEditorComponent.new(taggable: personal_study, user: Current.user, household: Current.household) %>
+    </div>
   <% end %>
 <% end %>
