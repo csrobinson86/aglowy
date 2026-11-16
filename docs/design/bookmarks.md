@@ -13,7 +13,7 @@ Frames in `docs/design/bookmarks/` (README there). Mockups are in the "Bookmarks
 
 ## What a bookmark is
 
-Either a **page** (a jw.org or wol.jw.org link with its title) or a **scripture** (a `Bible::Reference`, which opens on jw.org, or in JW Library if it's installed). Each one has:
+Either a **page** (a jw.org or wol.jw.org link with its title) or a **scripture** (a `Bible::Reference`, which opens on jw.org, or in JW Library if it's installed). A scripture is whatever reference the study or note shows: one verse, two or more verses, or a whole chapter ("Psalm 23"), since answers and notes cite all three. Each one has:
 - an optional comment of the person's own, up to 280 characters
 - one collection, or none
 - tags
