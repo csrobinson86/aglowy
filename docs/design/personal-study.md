@@ -85,7 +85,7 @@ One question and its answer.
 - The reply schema (`Ai::Purpose::PersonalStudyAnswer`):
   - `off_topic` (boolean)
   - `not_found` (boolean) and `not_found_note` (string): "I couldn't find jw.org or wol.jw.org…"
-  - `paragraphs` (0 to 5 strings, each 600 characters at most). Scripture references are written inline as plain text
+  - `paragraphs` (0 to 5 strings, each 1 to 600 characters). Scripture references are written inline as plain text. Blank or whitespace-only paragraphs are removed before any other check
   - **Order of the checks:** `off_topic` comes first. An off-topic reply ends `off_topic`, shows the refusal, keeps its use (it counts, as in `docs/design/ai.md`), and skips the minimum.
   - **Minimum after the checks**, for every other reply: at least one paragraph, or `not_found` with its note. A reply that has neither after the copy check and link checks ends `failed` ("Couldn't answer right now. Try again."), and its use is deleted
   - `next_questions` (0 to 3 strings, each 120 characters at most)

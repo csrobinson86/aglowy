@@ -8,7 +8,7 @@ Frames in `docs/design/personal-study/`: tags on the list of studies (`personal-
 
 - **Tags belong to the person.** Nobody else sees them, even on a meeting note or goal they've shared with the household.
 - **Four kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), their personal studies (`docs/design/personal-study.md`) and their notes (`docs/design/notes.md`, added by NOTES-01).
-- **Tags and collections both exist.** Collections are folders, only for personal studies; tags work across all three kinds. They don't replace each other.
+- **Tags and collections both exist.** Collections are folders for personal studies and notes (`Collection` in `docs/design/personal-study.md`); tags work across all four kinds. They don't replace each other.
 
 ## Models
 
@@ -68,7 +68,7 @@ Tag pages sit under `/:household_id` only so they use the household layout. The 
 
 ### Filtering lists
 
-The meeting notes list, My goals and Personal study each take `?tag=<name>`. When it's set, the page shows a removable "#name" filter and only tagged things. Each list row shows its tags as small Labels.
+The meeting notes list, My goals, Personal study and Notes each take `?tag=<name>`. When it's set, the page shows a removable "#name" filter and only tagged things. Each list row shows its tags as small Labels.
 
 ## Privacy
 
