@@ -12,6 +12,10 @@ class User < ApplicationRecord
   # For personal reminders; a login-less child has none, and account settings can leave it unset.
   normalizes :time_zone, with: -> { it.presence }
 
+  # How Aglowy looks for them, on every device (docs/design/app-shell.md, Theming and appearance).
+  # validate: true makes an unknown value a validation error rather than an ArgumentError.
+  enum :appearance, { auto: "auto", light: "light", dark: "dark" }, prefix: true, validate: true
+
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }, allow_nil: true
 
