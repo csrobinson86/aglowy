@@ -238,9 +238,177 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     dispatch_insert(session:, reference: "19:23")
     assert_no_selector "lexxy-editor .scripture-link"
 
+    dispatch_insert(session:, reference: "19:37:8", query: "+ps 37:8")
+    assert_no_selector "lexxy-editor .scripture-link"
+
     dispatch_insert(session:, reference: "19:37:8")
     assert_selector "#{TALK} .scripture-link", text: "Psalm 37:8", count: 1
     assert_selector "lexxy-editor .scripture-link", count: 1
+  end
+
+  test "desktop: typing +ps 37:8-9 fills the picker, and Enter puts the link in place of the whole query" do
+    edit_meeting_note
+    assert_selector "#{TALK} button[name=scripture] kbd", text: "+"
+    write_notes TALK, " +ps 37:8-9"
+
+    assert_picker "Choose verses in Psalm 37"
+    assert_selector "#{PICKER} .scripture-picker__match", text: "Psalm 37:8, 9 · Psalms, chapter 37, verses 8 to 9"
+    assert_selector "#{PICKER} .scripture-picker__match kbd", text: "Enter"
+    assert_reference "Psalm 37:8, 9"
+    assert_selector "#{PICKER} [role=option][aria-selected=true]", text: "Psalms"
+    assert_selector "#{PICKER} .scripture-picker__chapters button[aria-pressed=true]", text: "37"
+    assert_selector "#{PICKER} .scripture-picker__verses button[aria-pressed=true]", count: 2
+    assert_selector "#{TALK} [contenteditable]:focus"
+    assert_accessible
+    capture_screens("scripture-typed", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
+    type_notes TALK, :enter
+
+    assert_no_selector PICKER
+    assert_selector "#{TALK} .scripture-link", text: "Psalm 37:8, 9"
+    assert_match(/from a distance\. Psalm 37:8, 9\z/, editor_text(TALK))
+    assert_no_match(/\+ps/, editor_text(TALK))
+    click_on "Save notes"
+
+    assert_text "Notes saved."
+    assert_equal "https://www.jw.org/finder?wtlocale=E&pub=nwtsty&bible=19037008-19037009",
+      find("main a.scripture-link", text: "Psalm 37:8, 9")[:href]
+  end
+
+  test "+p lists the books it starts, and ArrowDown then Enter picks Proverbs and shows its chapters" do
+    edit_meeting_note
+    write_notes TALK, " +p"
+
+    assert_picker "Choose a book"
+    assert_equal [ "Psalms", "Proverbs", "Philippians", "Philemon", "1 Peter", "2 Peter" ],
+      all("#{PICKER} [role=option] .scripture-picker__book-name").map(&:text)
+    assert_selector "#{PICKER} .scripture-picker__book--active", text: "Psalms"
+    type_notes TALK, :down
+    assert_selector "#{PICKER} .scripture-picker__book--active", text: "Proverbs"
+    assert_equal find("#{PICKER} .scripture-picker__book--active")[:id], find("#{TALK} [contenteditable='true']")["aria-activedescendant"]
+    assert_accessible
+    type_notes TALK, :enter
+
+    assert_picker "Choose a chapter of Proverbs"
+    assert_selector "#{PICKER} [role=option][aria-selected=true]", text: "Proverbs"
+    assert_selector "#{PICKER} .scripture-picker__chapters button", count: 31
+    assert_match(/from a distance\. \+p\z/, editor_text(TALK))
+  end
+
+  test "Esc after +ps 37 leaves +ps 37 in the note, and Enter goes back to starting a new line" do
+    edit_meeting_note
+    write_notes TALK, " +ps 37"
+    assert_picker "Choose verses in Psalm 37"
+    type_notes TALK, :escape
+
+    assert_no_selector PICKER
+    assert_match(/from a distance\. \+ps 37\z/, editor_text(TALK))
+    assert_selector "#{TALK} [contenteditable]:focus"
+    type_notes TALK, ":8", :enter, "Next"
+
+    assert_no_selector PICKER
+    assert_no_selector "#{TALK} .scripture-link"
+    assert_selector "#{TALK} [contenteditable] p", text: "Next"
+    assert_match(/\+ps 37:8\nNext\z/, find("#{TALK} [contenteditable='true']").text)
+  end
+
+  test "verses Bible::Reference.parse refuses, as in +ps 37:8, 10, leave nothing to insert, and Enter inserts nothing" do
+    edit_meeting_note
+    write_notes TALK, " +ps 37:8, 10"
+
+    assert_picker "Choose verses in Psalm 37"
+    assert_no_selector "#{PICKER} .scripture-picker__match"
+    assert_equal "", find("#{PICKER} [aria-live=polite]", visible: :all).text(:all)
+    assert_button "Insert", disabled: true
+    type_notes TALK, :enter
+
+    assert_no_selector "#{TALK} .scripture-link"
+    assert_match(/\+ps 37:8, 10/, editor_text(TALK))
+  end
+
+  test "a space after a + that matches no book, or a click outside, closes the picker and leaves the text" do
+    edit_meeting_note
+    write_notes TALK, " +xyz"
+    assert_selector PICKER
+    type_notes TALK, " "
+    assert_no_selector PICKER
+
+    type_notes TALK, "+ps"
+    assert_selector PICKER
+    find("h1").click
+    assert_no_selector PICKER
+    assert_match(/from a distance\. \+xyz \+ps\z/, editor_text(TALK))
+  end
+
+  test "changed while waiting: a lookup for 37:8 that answers after -9 is typed inserts nothing" do
+    edit_meeting_note
+    hold_scripture_responses
+    write_notes TALK, " +ps 37:8"
+    assert_reference "Psalm 37:8"
+    type_notes TALK, :enter
+    assert_selector "#{PICKER}[aria-busy=true]"
+    type_notes TALK, "-9"
+
+    assert_reference "Psalm 37:8, 9"
+    release_scripture_responses
+    assert_no_selector "#{TALK} .scripture-link"
+    assert_reference "Psalm 37:8, 9"
+    assert_selector "#{PICKER} .scripture-picker__verses button[aria-pressed=true]", count: 2
+    assert_match(/\+ps 37:8-9\z/, editor_text(TALK))
+
+    type_notes TALK, :enter
+    assert_selector "#{TALK} .scripture-link", text: "Psalm 37:8, 9", count: 1
+    assert_no_match(/\+ps/, editor_text(TALK))
+  end
+
+  test "a + in the middle of a word, as in 2+2, doesn't open the picker" do
+    edit_meeting_note
+    write_notes TALK, " 2+2"
+    assert_no_selector PICKER
+    type_notes TALK, " word+p"
+    assert_no_selector PICKER
+
+    type_notes TALK, " +p"
+    assert_picker "Choose a book"
+  end
+
+  test "phone: +p, then tapping through to Insert, works as the toolbar does" do
+    edit_meeting_note
+    use_phone
+    assert_no_selector "#{TALK} button[name=scripture] kbd"
+    write_notes TALK, " +p"
+
+    assert_picker "Choose a book"
+    assert_selector "#{PICKER} [role=option]", count: 6
+    assert_no_selector "#{PICKER} .scripture-picker__match"
+    assert_accessible
+    capture_screens("scripture-typed-book", viewports: PHONE)
+    use_phone
+    pick_book "Psalms"
+    pick_chapter 37
+    pick_verse 8
+    pick_verse 9
+    click_on "Insert"
+
+    assert_no_selector PICKER
+    assert_selector "#{TALK} .scripture-link", text: "Psalm 37:8, 9"
+    assert_match(/from a distance\. Psalm 37:8, 9\z/, editor_text(TALK))
+    assert_no_match(/\+p/, editor_text(TALK))
+  end
+
+  test "phone: +ps 37 typed, then verses 8 and 9 tapped, replaces the whole query because the caret followed it" do
+    edit_meeting_note
+    use_phone
+    write_notes TALK, " +ps 37"
+
+    assert_picker "Choose verses in Psalm 37"
+    pick_verse 8
+    pick_verse 9
+    click_on "Insert"
+
+    assert_no_selector PICKER
+    assert_selector "#{TALK} .scripture-link", text: "Psalm 37:8, 9"
+    assert_match(/from a distance\. Psalm 37:8, 9\z/, editor_text(TALK))
+    assert_no_match(/\+ps 37/, editor_text(TALK))
   end
 
   private
@@ -255,6 +423,11 @@ class ScriptureLinksTest < ApplicationSystemTestCase
       editable = find("#{editor} [contenteditable='true']")
       editable.click
       editable.send_keys(END_OF_TEXT, text)
+    end
+
+    # Types where the editor's caret already is.
+    def type_notes(editor, *keys)
+      find("#{editor} [contenteditable='true']").send_keys(*keys)
     end
 
     def move_caret_back(editor, characters)
@@ -337,11 +510,11 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     end
 
     # What the picker sends when a lookup comes back, with a real sgid from the server.
-    def dispatch_insert(session:, reference:)
-      page.evaluate_async_script(<<~JS, session, reference)
-        const [ session, reference, done ] = arguments
+    def dispatch_insert(session:, reference:, query: "")
+      page.evaluate_async_script(<<~JS, session, reference, query)
+        const [ session, reference, query, done ] = arguments
         fetch(`/scriptures/${reference}`, { headers: { Accept: "application/json" } }).then(response => response.json()).then(({ sgid, html }) => {
-          document.querySelector("#{PICKER}").dispatchEvent(new CustomEvent("scripture-picker:insert", { bubbles: true, detail: { session, sgid, html, reference } }))
+          document.querySelector("#{PICKER}").dispatchEvent(new CustomEvent("scripture-picker:insert", { bubbles: true, detail: { session, sgid, html, reference, query } }))
           setTimeout(done, 100)
         })
       JS
