@@ -76,7 +76,7 @@
     <% layout.with_main { schedule_form } %>
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "schedule-study__ai") do %>
       <%# From a personal study, the panel opens on Describe with the study filled in, and nothing sent yet. %>
-      <%= render FamilyStudies::AiPanelComponent.new(household: Current.household, user: Current.user, prompt: @from_study&.family_study_prompt,
+      <%= render FamilyStudies::AiPanelComponent.new(household: Current.household, user: Current.user, from_study: @from_study,
             open: params[:ai_panel] == "open" || @from_study.present?) %>
     <% end %>
   <% end %>

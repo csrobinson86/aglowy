@@ -264,6 +264,16 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
     assert_operator notes.to_html.index("My own thoughts first."), :<, notes.to_html.index("Jehovah never causes suffering.")
   end
 
+  test "save_to_notes keeps a not_found answer's note, which may be all it has" do
+    saved_answer(paragraphs: [])
+    @question.answer.update("not_found" => true, "not_found_note" => NOT_FOUND)
+    @question.save!
+
+    @question.save_to_notes
+
+    assert_equal [ NOT_FOUND, "Pages:" ], @question.personal_study.reload.notes.body.fragment.find_all("p").map { it.text.squish }
+  end
+
   test "references become scripture links after save" do
     study = @question.personal_study
     study.update!(notes: "<p>Start with Job 1:9.</p>")

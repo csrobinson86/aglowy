@@ -30,6 +30,9 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     })
 
     within(question_card("Why does Jehovah allow suffering, and will it ever end?")) do
+      # The broadcast can't know the page's household; the page's own card brings Save to notes and takes its place.
+      # Wait for it first, so no link below is read from the card as it's replaced.
+      assert_button "Save to notes"
       assert_text "From jw.org and wol.jw.org"
       assert_text "The publications explain that suffering didn't start with God."
       assert_link "Genesis 3:1-6", href: %r{\Ahttps://www.jw.org/finder}
@@ -38,8 +41,6 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
       assert_text "The Issue Raised in Eden · wol.jw.org"
       assert_text "Check each point against its page."
       assert_no_button "Stop"
-      # The broadcast can't know the page's household; the page's own card brings Save to notes.
-      assert_button "Save to notes"
     end
     within("section[aria-labelledby=study-sources]") { assert_selector "li", count: 3 }
     assert_text "1 question · 3 pages linked"

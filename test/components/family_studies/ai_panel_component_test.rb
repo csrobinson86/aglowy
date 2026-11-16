@@ -35,6 +35,14 @@ class FamilyStudies::AiPanelComponentTest < ViewComponent::TestCase
     assert_no_field "What should the study be about?"
   end
 
+  test "First use from a personal study keeps the study for when the terms are accepted" do
+    study = personal_studies(:head_suffering)
+
+    render_inline(FamilyStudies::AiPanelComponent.new(household: @household, user: @user, from_study: study, open: true))
+
+    assert_selector "#ai_terms form[action='/ai_acceptance?return_to=%2F#{@household.id}%2Ffamily_studies%2Fnew%3Fai_panel%3Dopen%26from_study%3D#{study.id}']"
+  end
+
   test "Describe, with 8 of 10 drafts left today" do
     @user.accept_ai_terms(understood: "1")
     2.times { family_study_draft(household: @household) }

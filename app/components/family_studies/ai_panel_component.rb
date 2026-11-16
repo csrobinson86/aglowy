@@ -6,14 +6,15 @@
 class FamilyStudies::AiPanelComponent < ApplicationComponent
   DEFAULT_LENGTH = 45
 
-  attr_reader :household, :user, :draft
+  attr_reader :household, :user, :draft, :from_study
 
-  # draft: a saved one shows its state; an unsaved one fills Describe (its errors and text show). prompt: what
-  # Describe starts with when there's no draft. open: show the opened panel, not Start.
-  def initialize(household:, user:, draft: nil, prompt: nil, open: false)
+  # draft: a saved one shows its state; an unsaved one fills Describe (its errors and text show). from_study: the
+  # personal study whose prompt Describe starts with when there's no draft. open: show the opened panel, not Start.
+  def initialize(household:, user:, draft: nil, from_study: nil, open: false)
     @household = household
     @user = user
-    @draft = draft || FamilyStudy::Draft.new(length_minutes: DEFAULT_LENGTH, prompt:)
+    @from_study = from_study
+    @draft = draft || FamilyStudy::Draft.new(length_minutes: DEFAULT_LENGTH, prompt: from_study&.family_study_prompt)
     @open = open
   end
 
@@ -70,9 +71,9 @@ class FamilyStudies::AiPanelComponent < ApplicationComponent
     household.time_zone.sub(/ \(.+\)\z/, "")
   end
 
-  # Back to this form with the panel open, after the terms are accepted.
+  # Back to this form with the panel open, and the study still filled in, after the terms are accepted.
   def return_to
-    new_household_family_study_path(household_id: household, ai_panel: "open")
+    new_household_family_study_path(household_id: household, ai_panel: "open", from_study: from_study&.id)
   end
 
   def drafts_path = household_family_study_drafts_path(household_id: household)
