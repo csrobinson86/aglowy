@@ -5,6 +5,8 @@
 - **Most people** land on their own meeting note for that meeting, ready to take notes.
 - **A child, when the household has turned on the meeting helper,** gets the helper instead. It runs on the child's own tablet: one calm, picture-led prompt per part, a big "I heard it!" button, and a page to draw what they saw. It's saved as their own meeting note, and they can show it to their family afterwards.
 
+> Since SETTINGS-01, "Household settings" below means the Meetings and Children sections of Settings (`docs/design/settings.md`).
+
 Read this before touching meeting times on `Household`, `Household::Meeting`, `Household::MeetingHelper`, `MeetingNote::Mark`, `MeetingNote::Drawing`, `MeetingNote::HelperSteps`, `TodaysMeetingsController`, the `meeting_helper` layout, or the Meetings and Children sections of Household settings. Stories live under the **KIDS-01** epic. Mockup frames are in `docs/design/meeting-helper/`.
 
 This builds on these docs:

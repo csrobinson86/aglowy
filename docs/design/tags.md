@@ -52,7 +52,7 @@ Included in `MeetingNote`, `Goal`, `PersonalStudy` and `PersonalNote` (the last 
 | --- | --- | --- |
 | Add a tag | `POST /:household_id/meeting_notes/:meeting_note_id/taggings`, and the same under `goals`, `personal_studies` and `notes` (`Taggings::…Controller`, one per parent, sharing a `Tagging` controller concern) | Body: `name`. The parent is found through `Current.user`, so someone else's note is a 404. Responds with a Turbo Stream that replaces the tag editor |
 | Remove a tag | `DELETE …/taggings/:id` | The same lookup |
-| My tags | `GET /:household_id/tags` (`TagsController#index`) | Each tag with how many things carry it. Rename and delete here |
+| My tags | Settings → Tags and collections (`docs/design/settings.md`); was `GET /:household_id/tags` until SETTINGS-01 | Each tag with how many things carry it. Rename and delete here |
 | A tag | `GET /:household_id/tags/:name` (`TagsController#show`) | Everything the person tagged with it, grouped as Meeting notes, Personal studies, Notes and My goals (frame `personal-study-tag.png`). No sidebar item is selected |
 | Rename | `PATCH /:household_id/tags/:name` | Renaming to a name the person already has fails with "You already have #name." No merging |
 | Delete | `DELETE /:household_id/tags/:name` | Removes the tag from everything. Asks first with a Primer dialog |

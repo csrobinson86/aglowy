@@ -209,6 +209,8 @@ households or roles. The non-negotiables:
 
 - Read `docs/design/app-shell.md` before touching a layout, the sidebar,
   navigation, a page header or an empty state.
+- Read `docs/design/settings.md` before touching Settings. Every setting a
+  person or a household has is a section there; don't add a separate settings page.
 - Household pages use the `household` layout (sidebar + main, via
   `AppShellComponent`); pages outside a household use the `focused` layout.
   The exception is the meeting helper for children, which uses the full-screen
