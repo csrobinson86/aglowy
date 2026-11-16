@@ -302,6 +302,20 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "The hall cleaning", meeting_note_parts(:head_living_part).notes.to_plain_text
   end
 
+  test "saving a typed matt 24:14 links it, and the note renders the Matthew 24:14 link to jw.org" do
+    matthew = Bible::Reference.find("40:24:14")
+    sign_in identities(:head)
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+      "0" => { id: meeting_note_parts(:head_talk).id, notes: "<p>Keep on the watch, matt 24:14</p>" }
+    } } }
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    assert_equal [ matthew ], meeting_note_parts(:head_talk).reload.notes.body.attachables
+    follow_redirect!
+    assert_select "main a.scripture-link[href=?][target=_blank][rel=noopener]", matthew.jw_url, text: "Matthew 24:14"
+  end
+
   test "adding a Living as Christians part makes it a living part, whatever key is sent" do
     sign_in identities(:head)
 

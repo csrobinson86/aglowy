@@ -61,6 +61,13 @@ class FamilyStudy::Scheduling
     @file_blobs ||= files.uniq.filter_map { ActiveStorage::Blob.find_signed(it) }
   end
 
+  # Links the references typed by hand in the notes, as ScriptureLinkable does for a session's (Bible::Linker).
+  # The linked notes are kept apart, so a form that shows again has exactly what was typed: Lexxy can't show an
+  # attachment without the editor's own markup, and it gets linked again on the next save.
+  def link_scriptures
+    @linked_notes = (Bible::Linker.new(ActionText::Content.new(notes)).link.to_html if notes.present?)
+  end
+
   # The study, its first session with the topic, notes, links and files, then the later sessions (scheduling rule 1).
   # Validated behind the lock on the household that Session#add_files takes, so the quota the files
   # were judged against still holds when they're attached. Every goal step write takes that lock too,
@@ -70,7 +77,7 @@ class FamilyStudy::Scheduling
       household.lock!
       next false unless valid?
 
-      @study = household.schedule_family_study(topic: topic.presence, notes: notes.presence, links: links, files: file_blobs, **study_attributes)
+      @study = household.schedule_family_study(topic: topic.presence, notes: (@linked_notes || notes).presence, links: links, files: file_blobs, **study_attributes)
       goal_step&.update!(family_study: study) if study.persisted?
       study.persisted?
     end

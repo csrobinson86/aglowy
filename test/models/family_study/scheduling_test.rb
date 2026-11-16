@@ -158,6 +158,16 @@ class FamilyStudy::SchedulingTest < ActiveSupport::TestCase
     end
   end
 
+  test "notes cleared after linking save as no notes, not the earlier linked ones" do
+    scheduling = new_scheduling(notes: "<p>Read matt 24:14</p>")
+    scheduling.link_scriptures
+    scheduling.notes = ""
+    scheduling.link_scriptures
+
+    assert scheduling.save
+    assert_not scheduling.study.sessions.sole.notes.present?
+  end
+
   test "Does not repeat is the default" do
     assert_equal "once", FamilyStudy::Scheduling.new(household: @household).repeat
   end

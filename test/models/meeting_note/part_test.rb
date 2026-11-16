@@ -93,4 +93,16 @@ class MeetingNote::PartTest < ActiveSupport::TestCase
     assert_equal "Kept Matthew 24:14", part.notes.to_plain_text.strip
     assert_includes MeetingNote::Part.find(part.id).notes.to_plain_text, "Jehovah promises", "nothing is saved"
   end
+
+  test "link_scriptures links the notes and keeps the other formatting" do
+    part = meeting_note_parts(:head_talk)
+    part.notes = "<p><strong>Keep on the watch</strong>: matt 24:14</p><ul><li>Ps 37:8-9</li></ul>"
+
+    part.link_scriptures
+
+    assert_equal %w[ 40:24:14 19:37:8-9 ].map { Bible::Reference.find(it) }, part.notes.body.attachables
+    assert_equal [ "Keep on the watch" ], part.notes.body.fragment.find_all("strong").map(&:text)
+    assert_equal 1, part.notes.body.fragment.find_all("ul li action-text-attachment").size
+    assert part.valid?
+  end
 end

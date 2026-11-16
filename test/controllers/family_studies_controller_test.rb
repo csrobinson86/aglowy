@@ -211,6 +211,29 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ ruth ], FamilyStudy::Session.find_by!(topic: "Loyal love").notes.body.attachables
   end
 
+  test "a typed matt 24:14 in the Schedule a study notes is linked on the first session, in its paragraph" do
+    sign_in identities(:head)
+
+    post household_family_studies_path(household_id: households(:home)),
+         params: { family_study_scheduling: valid_params.merge(topic: "Keep on the watch", notes: "<p>Read matt 24:14 tonight</p>") }
+
+    assert_redirected_to household_family_studies_path(household_id: households(:home))
+    notes = FamilyStudy::Session.find_by!(topic: "Keep on the watch").notes.body
+    assert_equal [ Bible::Reference.find("40:24:14") ], notes.attachables
+    assert_equal "Read Matthew 24:14 tonight", notes.to_plain_text
+    assert_equal 1, notes.fragment.find_all("p").size
+  end
+
+  test "the Schedule a study form shows again with the notes as typed, to be linked on the next save" do
+    sign_in identities(:head)
+
+    post household_family_studies_path(household_id: households(:home)),
+         params: { family_study_scheduling: valid_params.merge(ends_at: "18:00", notes: "<p>Read matt 24:14</p>") }
+
+    assert_response :unprocessable_content
+    assert_select "lexxy-editor[name='family_study_scheduling[notes]'][value='<p>Read matt 24:14</p>']"
+  end
+
   test "the Repeat choices follow the date in the query" do
     sign_in identities(:head)
 
