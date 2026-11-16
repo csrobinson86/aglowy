@@ -63,7 +63,7 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 The references `Bible::Linker` links in the study's answered paragraphs, in order and without duplicates: exactly the scripture links the answers show. It's the list for "Scriptures in this study", and what a scripture bookmark saved from a study is checked against.
 
 - `Bible::Linker` links only a chapter and verse (`docs/design/scripture-links.md`, Traps 5), so a chapter alone in an answer ("Psalm 23") stays text and isn't in this list. That's on purpose: the list matches what's linked, and the in-text rule doesn't change.
-- A note's `scripture_references` (`docs/design/notes.md`) come from its scripture link attachments, which can be a whole chapter inserted with the picker. So a whole chapter can be bookmarked from a note, and from a study only once it's in the study's notes.
+- A note's `scripture_references` (`docs/design/notes.md`) come from its scripture link attachments, which can be a whole chapter inserted with the picker. So a whole chapter can be bookmarked from a note, never from a study. A study's own "My notes" aren't part of this list.
 
 ## Pages and routes
 
