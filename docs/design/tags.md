@@ -42,7 +42,9 @@ Included in `MeetingNote`, `Goal` and `PersonalStudy`.
 - `tag_with(text, by: user)` finds or creates the person's tag and adds it; `untag(tag)` removes it
 - `taggable_by?(user)`: true when `user` owns it. For `Goal`, only personal goals
 - `scope :tagged_with, ->(tag) { joins(:taggings).where(taggings: { tag_id: tag.id }) }`
-- `tags_for(user)`: the tags to show, which is all of them for the owner and none for anyone else. Views call this, never `tags` directly
+- `tags_for(user, membership: Current.membership)`: the tags to show. Views call this, never `tags` directly.
+  - `MeetingNote` and `Goal`: all of them for the owner, none for anyone else.
+  - `PersonalStudy`: the same, plus all of them when `ChildStudyPolicy.new(membership, study).show?` is true, which means a head of that household reading a child's study under a study AI grant (`docs/design/personal-study.md`, Children). It never extends to the child's meeting notes or goals.
 
 ## Pages and routes
 

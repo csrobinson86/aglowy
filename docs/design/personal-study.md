@@ -8,7 +8,7 @@ Frames in `docs/design/personal-study/` (README there). Mockups are in the "Pers
 
 - **A study holds a conversation and notes**, grouped into **collections** (folders), with the person's **tags** on top (`docs/design/tags.md`).
 - **Studies are kept until the person deletes them.** The 7-day deletion in `docs/design/ai.md` stays for family study drafts only.
-- **30 questions per person per day**, from midnight in the person's own time zone (`users.time_zone`).
+- **30 questions per person per day**, from midnight in the person's own time zone (`users.time_zone`). When they haven't set one, the time zone of the household they're asking from (`Current.household.time_zone`), as `Membership` falls back elsewhere.
 - **Older children can use AI if a head allows it,** with a switch per child in Household settings. Heads who allow it can read everything in that child's personal studies, and the child is told so.
 - **Answers follow `docs/design/ai.md`:**
   - only jw.org and wol.jw.org
@@ -62,11 +62,16 @@ One question and its answer.
 | `answer` | jsonb | encrypted, nullable until answered | The checked reply fields |
 | `sources` | jsonb | not null, default `[]` | `[{url, title}]` that passed `Ai::SourceLink` |
 
-- **The daily count reads a usage ledger, not the questions.** `Ai::Use` (`ai_uses`: `user_id` FK not null, `purpose` string not null, `created_at`) gets a row when a question is created. The row is deleted if the question ends `failed` or `flagged`. It has no link to the study, so deleting a study (and its questions) can't give questions back. `user.ai_uses.personal_study.since(midnight in user.time_zone).count` is the count. Rows older than 2 days are purged daily.
+- **The daily count reads a usage ledger, not the questions.** `Ai::Use` (`ai_uses`: `user_id` FK not null, `purpose` string not null, `question_id` FK → personal_study_questions, nullable, unique, `on_delete: :nullify`, `created_at`) gets a row in the same transaction that creates a question.
+  - When the question ends `failed` or `flagged`, `question.use` (found by `question_id`, never by matching person and purpose) is deleted, so it doesn't count.
+  - Deleting a study deletes its questions, and the database nulls their uses' `question_id`, so the rows stay and still count. A use with no question is never deleted except by the purge.
+  - The count is `user.ai_uses.personal_study.where(created_at: midnight..)`, with midnight in the time zone above.
+  - Rows older than 2 days are purged daily.
 - The reply schema (`Ai::Purpose::PersonalStudyAnswer`):
   - `off_topic` (boolean)
   - `not_found` (boolean) and `not_found_note` (string): "I couldn't find jw.org or wol.jw.org…"
-  - `paragraphs` (1 to 5 strings, each 600 characters at most). Scripture references are written inline as plain text
+  - `paragraphs` (0 to 5 strings, each 600 characters at most). Scripture references are written inline as plain text
+  - **Minimum after the checks:** at least one paragraph, or `not_found` with its note. A reply that has neither after the copy check and link checks ends `failed` ("Couldn't answer right now. Try again."), and its use is deleted
   - `next_questions` (0 to 3 strings, each 120 characters at most)
 - After the checks in `docs/design/ai.md`, each paragraph's references are found with `Bible::Linker` and rendered as scripture links.
 
