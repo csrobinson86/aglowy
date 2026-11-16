@@ -1,6 +1,6 @@
 # Describing a study for an AI draft (frame ai-describe.png), rendered one section at a time so the panel can put the
 # starter ideas' heading and the privacy note between them. disabled: true is Limit reached (frame ai-limit.png),
-# which shows only the prompt and the actions.
+# which shows only the prompt and the actions. :again is "Try again" on a draft: a new draft with the same inputs.
 class FamilyStudies::DraftForm < ApplicationForm
   # Each starter idea's button, and what it puts in the box for the person to finish.
   IDEAS = {
@@ -9,7 +9,7 @@ class FamilyStudies::DraftForm < ApplicationForm
     "Something we're facing" => "Something our family is facing: "
   }.freeze
 
-  # section: :prompt, :ideas, :options or :actions.
+  # section: :prompt, :ideas, :options, :actions or :again.
   def initialize(section:, disabled: false)
     @section = section
     @disabled = disabled
@@ -37,6 +37,11 @@ class FamilyStudies::DraftForm < ApplicationForm
         actions.submit(name: :submit, label: "Draft outline", scheme: :primary, disabled: @disabled)
         actions.button(name: :cancel, label: @disabled ? "Close" : "Cancel", data: { action: "ai-panel#close" })
       end
+    when :again
+      f.hidden(name: :prompt)
+      f.hidden(name: :length_minutes)
+      f.hidden(name: :young_children)
+      f.submit(name: :submit, label: "Try again")
     end
   end
 end

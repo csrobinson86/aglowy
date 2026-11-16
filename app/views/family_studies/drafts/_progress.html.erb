@@ -1,0 +1,20 @@
+<%# locals: (step:, pages: nil) -%>
+<%# The progress lines while a draft is written (frame ai-searching.png): those done, the one running, and those to come.
+    Never reply text (docs/design/ai.md, Traps). Each line says what it will do, then what it did. pages: how many the
+    search found, known once the reply is in. %>
+<% lines = { searching: [ "Searching jw.org and wol.jw.org", "Searched jw.org and wol.jw.org" ],
+             writing: [ "Writing the outline", "Wrote the outline" ],
+             checking: [ "Checking scriptures, links and wording", "Checked scriptures, links and wording" ] } %>
+<% running = lines.keys.index(step) %>
+<% lines.values.each_with_index do |(doing, done), index| %>
+  <li class="d-flex flex-items-center mb-2">
+    <% if index < running %>
+      <%= render(Primer::Beta::Octicon.new(:check, color: :success, mr: 2)) %><span><%= done %><%= " · #{pluralize(pages, "page")} found" if index.zero? && pages %></span>
+    <% elsif index == running %>
+      <%# No style: Primer's default is an inline one. The line's own text says what's happening. %>
+      <%= render(Primer::Beta::Spinner.new(size: :small, style: nil, sr_text: nil, color: :done, mr: 2)) %><strong><%= doing %>…</strong>
+    <% else %>
+      <%= render(Primer::Beta::Octicon.new(:circle, color: :muted, mr: 2)) %><span class="color-fg-muted"><%= doing %></span>
+    <% end %>
+  </li>
+<% end %>

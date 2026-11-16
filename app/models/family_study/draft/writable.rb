@@ -24,11 +24,12 @@ module FamilyStudy::Draft::Writable
     return unless self.class.drafting.exists?(id)
     return finish("flagged") if Ai::Moderation.flagged?(prompt)
 
-    progress "Searching jw.org and wol.jw.org…"
+    # The panel already shows Searching. Broadcasting it too could land after Writing: Action Cable sends each
+    # broadcast on its own worker thread, so two in quick succession can arrive in either order.
     reply = catch(:stopped) { chat.ask_within_purpose(request, stream: ->(chunk) { streamed(chunk) }) }
     return unless reply
 
-    progress "Checking scriptures, links and wording…"
+    progress :checking, pages: reply.search_results.size
     reply.off_topic? ? finish("off_topic") : finish_checked(reply)
   rescue *PROVIDER_ERRORS
     finish("failed")
@@ -53,7 +54,7 @@ module FamilyStudy::Draft::Writable
       return if @writing || chunk.content.blank?
 
       @writing = true
-      progress "Writing the outline…"
+      progress :writing
     end
 
     def finish_checked(reply)
@@ -76,11 +77,12 @@ module FamilyStudy::Draft::Writable
     # panel only if this write changed the row and the draft, re-read, still has the status it wrote.
     def finish(status, outline: nil, sources: [])
       written = self.class.drafting.where(id: id).update_all(status: status, outline: outline, sources: sources, updated_at: Time.current) == 1
-      broadcast_replace_to self, partial: "family_studies/drafts/draft", locals: { draft: self } if written && reload.status == status
+      broadcast_replace_to self, target: :ai_panel, renderable: FamilyStudies::AiPanelComponent.new(household:, user:, draft: self, open: true) if written && reload.status == status
     end
 
-    # To the draft's own stream (turbo_stream_from the draft), never a household's.
-    def progress(line)
-      broadcast_update_to self, target: [ self, :progress ], html: ERB::Util.html_escape(line)
+    # The progress lines, at +step+ (with the pages the search found, once known), to the draft's own stream (turbo_stream_from the draft), never a household's.
+    # Rendered here, since a broadcast's partial is also given the draft, which the lines never show.
+    def progress(step, pages: nil)
+      broadcast_update_to self, target: [ self, :progress ], html: ApplicationController.render(partial: "family_studies/drafts/progress", locals: { step:, pages: })
     end
 end
