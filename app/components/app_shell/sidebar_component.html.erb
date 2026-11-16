@@ -33,6 +33,9 @@
       <% group.with_item(label: "Meeting notes", href: meeting_notes_path, selected_by_ids: %i[ meeting_notes shared_meeting_notes ]) do |item| %>
         <% item.with_leading_visual_icon(icon: :note) %>
       <% end %>
+      <% group.with_item(label: "Personal study", href: personal_studies_path, selected_by_ids: :personal_studies) do |item| %>
+        <% item.with_leading_visual_icon(icon: :search) %>
+      <% end %>
       <% group.with_item(label: "My goals", href: my_goals_path, selected_by_ids: :personal_goals) do |item| %>
         <% item.with_leading_visual_icon(icon: :flag) %>
       <% end %>

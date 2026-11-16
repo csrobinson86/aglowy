@@ -1,4 +1,4 @@
-# One person's tag for their own meeting notes and personal goals. Nobody else ever sees it (docs/design/tags.md).
+# One person's tag for their own meeting notes, personal goals and personal studies. Nobody else ever sees it (docs/design/tags.md).
 class Tag < ApplicationRecord
   LIMIT = 200
 
@@ -8,6 +8,7 @@ class Tag < ApplicationRecord
   # What carries it, newest first, for the tag's page. Taggings only ever join the tag's person's own things.
   has_many :meeting_notes, -> { newest_first }, through: :taggings, source: :taggable, source_type: "MeetingNote"
   has_many :goals, -> { order(created_at: :desc, id: :desc) }, through: :taggings, source: :taggable, source_type: "Goal"
+  has_many :personal_studies, -> { recent_first }, through: :taggings, source: :taggable, source_type: "PersonalStudy"
 
   # Normalizing leaves only letters, numbers and hyphens, so the one name it can't make valid is an empty one.
   validates :name, format: { with: /\A[a-z0-9][a-z0-9-]{0,29}\z/, message: "needs at least one letter or number" }
@@ -39,11 +40,6 @@ class Tag < ApplicationRecord
   rescue ActiveRecord::RecordNotUnique
     name_taken
     false
-  end
-
-  # Personal studies come with PSTUDY-01. Until the class exists there are none, so this page doesn't wait for it.
-  def personal_studies
-    Object.const_defined?(:PersonalStudy) ? PersonalStudy.tagged_with(self).order(created_at: :desc) : []
   end
 
   private

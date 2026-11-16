@@ -1,0 +1,129 @@
+require "test_helper"
+
+class PersonalStudyTest < ActiveSupport::TestCase
+  test "title is 1 to 120 characters" do
+    study = users(:head).personal_studies.new
+
+    [ "", "   ", "x" * 121 ].each do |title|
+      study.title = title
+      assert_not study.valid?, "expected #{title.inspect} to be refused"
+      assert study.errors[:title].any?
+    end
+
+    [ "x", "x" * 120 ].each do |title|
+      study.title = title
+      assert study.valid?, "expected a #{title.length}-character title to be valid"
+    end
+  end
+
+  test "a title has its spaces squished" do
+    assert_equal "The ransom", users(:head).personal_studies.new(title: "  The   ransom ").title
+  end
+
+  test "notes are encrypted at rest" do
+    study = personal_studies(:head_suffering)
+    study.update!(notes: "<p>Rebellion in Eden, not God's doing</p>")
+
+    raw = ActionText::RichText.connection.select_value(ActionText::RichText.where(record: study, name: "notes").select(:body).to_sql)
+
+    assert_not_includes raw, "Rebellion in Eden"
+    assert_includes study.reload.notes.to_plain_text, "Rebellion in Eden, not God's doing"
+  end
+
+  test "link_scriptures links the references typed in the notes" do
+    study = personal_studies(:head_suffering)
+    study.notes = "<p>Read Genesis 3:1-6 again</p>"
+
+    study.link_scriptures
+    study.save!
+
+    assert_equal [ Bible::Reference.find("1:3:1-6") ], study.reload.notes.body.attachables
+  end
+
+  test "notes can only hold scripture links" do
+    study = personal_studies(:head_suffering)
+    study.notes = "<p>A cat</p>#{remote_image_attachment}"
+
+    assert_not study.valid?
+    assert_equal [ "can only link scriptures" ], study.errors[:notes]
+  end
+
+  test "matching finds by title, by collection name and by tag, and not by note text" do
+    head = users(:head)
+    suffering, kindness, daniel = personal_studies(:head_suffering, :head_kindness, :head_daniel)
+    daniel.tag_with("Prophecy", by: head)
+    kindness.update!(notes: "<p>The neighborly Samaritan</p>")
+
+    assert_equal [ suffering ], head.personal_studies.matching("suffering").to_a
+    assert_equal [ kindness ], head.personal_studies.matching("preparing a").to_a
+    assert_equal [ daniel ], head.personal_studies.matching("#prophecy").to_a
+    assert_empty head.personal_studies.matching("Samaritan")
+  end
+
+  test "matching treats % and _ as plain characters" do
+    assert_empty users(:head).personal_studies.matching("%")
+    assert_empty users(:head).personal_studies.matching("_")
+  end
+
+  test "recent_first: last asked first, then the most recently updated" do
+    suffering, kindness, daniel = personal_studies(:head_suffering, :head_kindness, :head_daniel)
+    suffering.update_columns(last_asked_at: 1.day.ago, updated_at: 3.days.ago)
+    kindness.update_columns(last_asked_at: nil, updated_at: 1.hour.ago)
+    daniel.update_columns(last_asked_at: nil, updated_at: 2.days.ago)
+
+    assert_equal [ suffering, kindness, daniel ], users(:head).personal_studies.recent_first.to_a
+  end
+
+  test "only its owner can tag it" do
+    study = personal_studies(:head_suffering)
+
+    assert study.taggable_by?(users(:head))
+    assert_not study.taggable_by?(users(:spouse))
+    assert_raises(ActiveRecord::RecordInvalid) { study.tag_with("ministry", by: users(:spouse)) }
+  end
+
+  test "deleting a collection nullifies the studies' collection_id" do
+    study = personal_studies(:head_suffering)
+
+    collections(:head_bible_questions).destroy!
+
+    assert_nil study.reload.collection_id
+  end
+
+  test "deleting a study deletes its taggings and notes" do
+    study = personal_studies(:head_suffering)
+    study.tag_with("ministry", by: users(:head))
+    study.update!(notes: "<p>Gone with it</p>")
+
+    assert_difference -> { Tagging.count } => -1, -> { ActionText::RichText.count } => -1 do
+      study.destroy!
+    end
+  end
+
+  test "deleting the person deletes their studies and collections" do
+    newcomer = users(:newcomer)
+    newcomer.personal_studies.create!(title: "Prayer", collection: newcomer.collections.add(name: "Bible questions"))
+
+    assert_difference -> { PersonalStudy.count } => -1, -> { Collection.count } => -1 do
+      newcomer.destroy!
+    end
+  end
+
+  test "database: a blank title raises CheckViolation" do
+    assert_raises(ActiveRecord::CheckViolation) do
+      PersonalStudy.insert!({ user_id: users(:head).id, title: "" })
+    end
+  end
+
+  test "database: a title over 120 characters raises CheckViolation" do
+    assert_raises(ActiveRecord::CheckViolation) do
+      PersonalStudy.insert!({ user_id: users(:head).id, title: "x" * 121 })
+    end
+  end
+
+  test "database: a study needs a person" do
+    assert_raises(ActiveRecord::NotNullViolation) do
+      PersonalStudy.insert!({ user_id: nil, title: "No one's" })
+    end
+  end
+end

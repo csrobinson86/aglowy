@@ -1,0 +1,13 @@
+<%# locals: (tags:, selected:, collection:) %>
+<%# The person's own tags, each filtering the list, with how many things carry it across meeting notes, studies and goals. %>
+<% if tags.any? %>
+  <h2 class="f5 mb-1 color-fg-muted">My tags</h2>
+  <%= render(Primer::Beta::NavList.new(aria: { label: "My tags" }, selected_item_id: selected, mb: 2)) do |list| %>
+    <% tags.each do |tag| %>
+      <% list.with_item(label: "##{tag.name}", href: household_personal_studies_path(tag: tag.name, collection: collection&.id), selected_by_ids: tag.name, truncate_label: true) do |item| %>
+        <% item.with_trailing_visual_counter(count: tag.taggings_count, scheme: :secondary) %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <p class="f6 color-fg-muted px-2">Tags work across your meeting notes, studies and goals.</p>
+<% end %>

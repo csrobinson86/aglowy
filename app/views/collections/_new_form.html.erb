@@ -1,0 +1,5 @@
+<%# locals: (collection:) %>
+<%# In the New collection Dialog. A refused name comes back as this form by Turbo Stream, so the Dialog stays open. %>
+<%= primer_form_with(model: collection, url: household_collections_path, id: dom_id(collection, :new), namespace: dom_id(collection, :new)) do |f| %>
+  <%= render Collections::CollectionForm.new(f, submit_label: "Create collection", error: collection.errors[:base].to_sentence.presence) %>
+<% end %>

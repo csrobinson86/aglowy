@@ -1,0 +1,6 @@
+// Personal study's collections and tags are a Primer Layout sidebar inside the app shell's Layout. Below md the
+// shell hides its own sidebar with a descendant selector that hides this one too, as on Home
+// (_household_home.scss). This shows it again, under the list: the same specificity, loaded after Primer's.
+.personal-studies.Layout > .personal-studies__sidebar.Layout-sidebar {
+  display: block;
+}

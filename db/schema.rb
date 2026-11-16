@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_160100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -77,6 +77,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000100) do
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
     t.check_constraint "purpose::text = 'family_study_draft'::text", name: "chats_purpose_check"
+  end
+
+  create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "name", null: false
+    t.string "used_in", default: "both", null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "name"], name: "index_collections_on_user_id_and_name", unique: true
+    t.check_constraint "char_length(name::text) >= 1 AND char_length(name::text) <= 40", name: "collections_name_length_check"
+    t.check_constraint "used_in::text = ANY (ARRAY['both'::character varying, 'studies'::character varying, 'notes'::character varying]::text[])", name: "collections_used_in_check"
   end
 
   create_table "family_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -378,6 +390,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000100) do
     t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
+  create_table "personal_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "collection_id"
+    t.string "title", null: false
+    t.datetime "last_asked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["collection_id"], name: "index_personal_studies_on_collection_id"
+    t.index ["user_id"], name: "index_personal_studies_on_user_id"
+    t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 120", name: "personal_studies_title_length_check"
+  end
+
   create_table "ruby_llm_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "provider_batch_id", null: false
     t.string "provider", null: false
@@ -572,6 +596,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000100) do
   add_foreign_key "chats", "households"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "chats", "users"
+  add_foreign_key "collections", "users"
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"
   add_foreign_key "family_study_drafts", "chats", on_delete: :cascade
@@ -611,6 +636,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_000100) do
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "personal_studies", "collections", on_delete: :nullify
+  add_foreign_key "personal_studies", "users"
   add_foreign_key "taggings", "tags", on_delete: :cascade
   add_foreign_key "tags", "users"
 end

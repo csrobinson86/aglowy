@@ -38,6 +38,17 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby=my-goals] .Box-row a[href=?]", household_goal_path(household_id: @home, id: goal), text: "Start a Bible study"
   end
 
+  test "show groups my personal studies tagged with it" do
+    study = personal_studies(:head_daniel)
+    study.tag_with("ministry", by: users(:head))
+    personal_studies(:spouse_ransom).tag_with("ministry", by: users(:spouse))
+
+    get household_tag_path(household_id: @home, name: "ministry")
+
+    assert_select "h2", text: /Personal studies\s+1/
+    assert_select "section[aria-labelledby=personal-studies] .Box-row a[href=?]", household_personal_study_path(household_id: @home, id: study), text: study.title
+  end
+
   test "an unknown name, or another person's tag name: 404" do
     get household_tag_path(household_id: @home, name: "prayer")
     assert_response :not_found

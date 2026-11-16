@@ -1,0 +1,6 @@
+<%# locals: (collection:) %>
+<%# In the Edit collection Dialog. A refused change comes back as this form by Turbo Stream, so the Dialog stays open
+    with the reason. The radio buttons offer Personal study's two choices; the name in the title is the saved one. %>
+<%= primer_form_with(model: collection, url: household_collection_path(id: collection), method: :patch, id: dom_id(collection, :edit), namespace: dom_id(collection, :edit)) do |f| %>
+  <%= render Collections::CollectionForm.new(f, submit_label: "Save collection", error: collection.errors[:base].to_sentence.presence) %>
+<% end %>

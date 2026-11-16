@@ -25,6 +25,6 @@
   <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :tag) %>
     <% blankslate.with_heading(tag: :h2) { "Nothing tagged ##{@tag.name}" } %>
-    <% blankslate.with_description { "Add it from a meeting note or a personal goal, under its title." } %>
+    <% blankslate.with_description { "Add it from a meeting note, a personal study or a personal goal, under its title." } %>
   <% end %>
 <% end %>

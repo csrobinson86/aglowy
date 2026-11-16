@@ -1,0 +1,52 @@
+<% content_for :title, "Personal study" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Personal study" } %>
+  <% subhead.with_description { "Your own research, with notes, collections and tags. Only you can see it." } %>
+  <% subhead.with_actions do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_study_path(collection: @collection&.id), scheme: :primary)) { "New study" } %>
+  <% end %>
+<% end %>
+
+<%# Collections and my tags beside the list (frame personal-studies.png); under it on a phone, so the list comes first. %>
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-studies")) do |layout| %>
+  <% layout.with_sidebar(width: :narrow, row_placement: :end, classes: "personal-studies__sidebar") do %>
+    <%= render "personal_studies/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
+    <%= render "personal_studies/tags", tags: @tags, selected: @tag_name, collection: @collection %>
+  <% end %>
+
+  <% layout.with_main do %>
+    <%= primer_form_with(url: household_personal_studies_path, method: :get, class: "mb-3") do |f| %>
+      <%= render PersonalStudies::SearchForm.new(f, query: @query, collection: @collection_id, tag: @tag_name) %>
+    <% end %>
+
+    <% if @collection %>
+      <%= render "collections/header", collection: @collection %>
+    <% end %>
+    <% if @tag_name %>
+      <%= render "tags/filter", name: @tag_name, clear_path: household_personal_studies_path(collection: @collection_id, q: @query) %>
+    <% end %>
+
+    <% if @personal_studies.any? %>
+      <%= render Primer::Beta::BorderBox.new do |box| %>
+        <% @personal_studies.each do |personal_study| %>
+          <% box.with_row { render "personal_studies/row", personal_study: } %>
+        <% end %>
+      <% end %>
+    <% elsif @total_count.zero? %>
+      <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :search) %>
+        <% blankslate.with_heading(tag: :h2) { "No studies yet." } %>
+        <% blankslate.with_description { "Start one with a question or a topic you'd like to research." } %>
+        <% blankslate.with_primary_action(href: new_household_personal_study_path) { "New study" } %>
+      <% end %>
+    <% else %>
+      <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :search) %>
+        <% blankslate.with_heading(tag: :h2) { "No studies match" } %>
+        <% blankslate.with_description { "Search titles, collections and tags, or show all studies." } %>
+        <% blankslate.with_secondary_action(href: household_personal_studies_path) { "All studies" } %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
