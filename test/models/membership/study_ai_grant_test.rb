@@ -18,6 +18,13 @@ class Membership::StudyAiGrantTest < ActiveSupport::TestCase
     assert_not memberships(:eli_in_home).grant_study_ai(by: users(:head)).persisted?
   end
 
+  test "not from a copy of the seat loaded before the child left" do
+    stale = Membership.find(memberships(:eli_in_home).id)
+    memberships(:eli_in_home).deactivate
+
+    assert_not stale.grant_study_ai(by: users(:head)).persisted?
+  end
+
   test "granting twice finds the first grant" do
     first = memberships(:eli_in_home).grant_study_ai(by: users(:head))
 
@@ -52,6 +59,15 @@ class Membership::StudyAiGrantTest < ActiveSupport::TestCase
 
     assert_difference -> { Membership::StudyAiGrant.count }, -1 do
       Membership.where(id: memberships(:eli_in_home)).delete_all
+    end
+  end
+
+  test "database: deleting the head who granted it deletes the grant" do
+    head = User.create!(name: "Former head")
+    memberships(:eli_in_home).grant_study_ai(by: head)
+
+    assert_difference -> { Membership::StudyAiGrant.count }, -1 do
+      User.where(id: head).delete_all
     end
   end
 

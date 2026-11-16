@@ -61,9 +61,15 @@ class Membership < ApplicationRecord
 
   # Personal study with AI for this child, from Household settings → Children (docs/design/personal-study.md,
   # Children). The grant, or an unsaved one with the reason when the seat isn't an active child's with a login.
-  # Turning it on twice finds the first grant: the unique index settles two heads at once.
+  # Turning it on twice finds the first grant: the unique index settles two heads at once. It takes the household
+  # lock and reads the seat again, as leaving and role changes do, so a copy loaded before the child left can't
+  # leave a grant behind for rejoining to bring back.
   def grant_study_ai(by:)
-    Membership::StudyAiGrant.create_with(granted_by: by).create_or_find_by(membership: self).tap { reset_study_ai_grant }
+    transaction do
+      household.lock!
+      reload
+      Membership::StudyAiGrant.create_with(granted_by: by).create_or_find_by(membership: self)
+    end.tap { reset_study_ai_grant }
   end
 
   # Stops new questions and ends heads' view; the child keeps their studies.

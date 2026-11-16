@@ -673,7 +673,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_180000) do
   add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
   add_foreign_key "membership_study_ai_grants", "memberships", on_delete: :cascade
-  add_foreign_key "membership_study_ai_grants", "users", column: "granted_by_id"
+  add_foreign_key "membership_study_ai_grants", "users", column: "granted_by_id", on_delete: :cascade
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
