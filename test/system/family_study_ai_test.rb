@@ -163,6 +163,20 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
     assert_equal "Draft with AI", evaluate_script("document.activeElement.textContent").strip
   end
 
+  test "on a phone a draft that comes after Escape waits for Draft with AI" do
+    start_draft_on_phone("Talking to Jehovah together")
+    page.send_keys(:escape)
+    assert_no_selector "dialog[open]"
+
+    write_draft("family_study_draft")
+
+    assert_selector "[data-ai-panel-target=opened] h3", text: "Talking to Jehovah as a family", visible: :hidden
+    assert_no_selector "dialog[open]"
+
+    click_on "Draft with AI"
+    within("dialog[open]") { assert_selector "h3", text: "Talking to Jehovah as a family" }
+  end
+
   test "on a phone each state shows in the dialog, with 44px touch targets" do
     use_phone
     sign_in identities(:head)

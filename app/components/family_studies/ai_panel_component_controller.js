@@ -21,9 +21,23 @@ export default class extends Controller {
     narrow.removeEventListener("change", this.place)
   }
 
-  // Each answer replaces the panel, already open: on a phone it goes straight into the dialog.
+  // Each answer replaces the panel, already open: on a phone it goes straight into the dialog, unless the person closed
+  // the dialog since "Draft with AI". A draft that comes after Escape waits under the Start box, not over the form.
   openedTargetConnected() {
+    if (this.dismissed && !this.openedTarget.hidden) {
+      this.openedTarget.hidden = true
+      this.startTarget.classList.remove("d-md-none")
+    }
     this.place()
+  }
+
+  // Each answer replaces the panel's Turbo Frame, so whether the dialog was closed is kept on the element around it.
+  get dismissed() {
+    return this.element.parentElement.hasAttribute("data-ai-panel-dismissed")
+  }
+
+  set dismissed(value) {
+    this.element.parentElement.toggleAttribute("data-ai-panel-dismissed", value)
   }
 
   // Action Cable only delivers what's broadcast while the panel is subscribed, and a quick result (a flagged request,
@@ -52,6 +66,7 @@ export default class extends Controller {
   }
 
   open() {
+    this.dismissed = false
     this.startTarget.classList.add("d-md-none")
     this.openedTarget.hidden = false
     this.place()
@@ -60,6 +75,7 @@ export default class extends Controller {
   }
 
   close({ focus = true } = {}) {
+    this.dismissed = narrow.matches
     this.openedTarget.hidden = true
     this.startTarget.classList.remove("d-md-none")
     this.place()
