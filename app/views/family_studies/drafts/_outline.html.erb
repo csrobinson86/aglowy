@@ -1,0 +1,25 @@
+<%# locals: (outline:) -%>
+<%# A checked draft's outline in the AI panel (frame ai-draft.png). Every field is the AI's text, so it's only ever
+    escaped by ERB (docs/design/ai.md, safety measure 6). %>
+<% opening = outline["opening"] || {} %>
+<%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 3, mb: 3)) { outline["title"] } %>
+<%= render(Primer::Beta::Heading.new(tag: :h4, font_size: 5)) { "Opening" } %>
+<%= render "family_studies/drafts/scripture", text: opening["scripture"] %>
+<% if opening["question"].present? %><p class="mb-3"><%= opening["question"] %></p><% end %>
+<ol class="list-style-none">
+  <% outline["points"].each.with_index(1) do |point, number| %>
+    <li class="border-left pl-3 mb-3">
+      <%= render(Primer::Beta::Heading.new(tag: :h4, font_size: 5)) { "#{number}. #{point["heading"]}" } %>
+      <%= render "family_studies/drafts/scripture", text: point["scripture"] %>
+      <% if point["question"].present? %><p class="color-fg-muted mb-0">Ask: <%= point["question"] %></p><% end %>
+    </li>
+  <% end %>
+</ol>
+<% if outline["children"].present? %>
+  <%= render(Primer::Beta::Heading.new(tag: :h4, font_size: 5)) { "For young children" } %>
+  <p class="mb-3"><%= outline["children"] %></p>
+<% end %>
+<% if outline["closing"].present? %>
+  <%= render(Primer::Beta::Heading.new(tag: :h4, font_size: 5)) { "Closing" } %>
+  <p class="mb-0"><%= outline["closing"] %></p>
+<% end %>

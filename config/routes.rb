@@ -71,8 +71,9 @@ Rails.application.routes.draw do
     end
     resources :invitations, only: %i[ new create update destroy ]
     # Drafting a study with AI, from the panel beside the Schedule form (docs/design/family-studies.md, AI helper).
+    # destroy is Stop while drafting, and Discard after.
     scope "family_studies", module: :family_studies, as: :family_study do
-      resources :drafts, only: :create
+      resources :drafts, only: %i[ create show destroy ]
     end
     resources :family_studies, only: %i[ index new create ] do
       resources :sessions, only: %i[ show edit update ], module: :family_studies do

@@ -1,70 +1,127 @@
 <%= helpers.turbo_frame_tag :ai_panel, data: { controller: "ai-panel" } do %>
-  <% if drafting? %>
-    <%# The next story streams progress and the checked draft into this (docs/design/family-studies.md, Drafting). %>
+  <%= tag.div hidden: open?, data: { ai_panel_target: "start" } do %>
     <%= render(Primer::Beta::BorderBox.new) do |box| %>
-      <% box.with_header { render(Primer::Beta::Heading.new(tag: :h2, font_size: 5)) { "Draft with AI" } } %>
-      <% box.with_body(id: dom_id(draft)) do %>
-        <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 5, mb: 2)) { "Drafting with AI" } %>
-        <%= tag.p "Searching jw.org and wol.jw.org…", id: dom_id(draft, :progress), class: "color-fg-muted mb-0" %>
-      <% end %>
-    <% end %>
-  <% else %>
-    <%= tag.div hidden: open?, data: { ai_panel_target: "start" } do %>
-      <%= render(Primer::Beta::BorderBox.new) do |box| %>
-        <% box.with_body do %>
-          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center)) do %>
-            <%= render(Primer::Beta::Octicon.new(:"sparkle-fill", color: :done, mr: 2)) %>Plan it with AI
-          <% end %>
-          <p>Tell Aglowy what you'd like to study. It searches only jw.org and wol.jw.org, drafts an outline with scriptures and discussion questions, and links every page it used. It never copies their text.</p>
-          <p class="color-fg-muted">Nothing is added until you choose to use the draft.</p>
-          <%= render(Primer::Beta::Button.new(data: { action: "ai-panel#open" })) do |button| %>
-            <% button.with_leading_visual_icon(icon: :"sparkle-fill", color: :done) %>
-            Draft with AI
-          <% end %>
+      <% box.with_body do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center)) do %>
+          <%= render(Primer::Beta::Octicon.new(:"sparkle-fill", color: :done, mr: 2)) %>Plan it with AI
+        <% end %>
+        <p>Tell Aglowy what you'd like to study. It searches only jw.org and wol.jw.org, drafts an outline with scriptures and discussion questions, and links every page it used. It never copies their text.</p>
+        <p class="color-fg-muted">Nothing is added until you choose to use the draft.</p>
+        <%= render(Primer::Beta::Button.new(data: { action: "ai-panel#open" })) do |button| %>
+          <% button.with_leading_visual_icon(icon: :"sparkle-fill", color: :done) %>
+          Draft with AI
         <% end %>
       <% end %>
     <% end %>
+  <% end %>
 
-    <%= tag.div hidden: !open?, data: { ai_panel_target: "opened" } do %>
-      <%= render(Primer::Beta::BorderBox.new) do |box| %>
-        <% box.with_header(display: :flex, align_items: :center, justify_content: :space_between) do %>
-          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5)) { heading } %>
-          <%= render(Primer::Beta::CloseButton.new(data: { action: "ai-panel#close" })) %>
+  <%= tag.div hidden: !open?, data: { ai_panel_target: "opened" } do %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% box.with_header(display: :flex, align_items: :center, justify_content: :space_between) do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, display: :flex, align_items: :center)) do %>
+          <%= heading %>
+          <% if opened_state == :drafted %><%= render(Primer::Beta::Label.new(scheme: :done, ml: 2)) { "Not saved" } %><% end %>
         <% end %>
-        <% box.with_body do %>
-          <% case opened_state %>
-          <% when :terms %>
-            <p>Here's how AI drafts work in Aglowy. You only see this once.</p>
-            <ul class="ml-3 mb-3">
-              <li class="mb-2"><strong>What's sent:</strong> what you type, plus the length and whether young children will join. Never your name, your household, or your notes.</li>
-              <li class="mb-2"><strong>Where it looks:</strong> the AI searches only jw.org and wol.jw.org. It links each page it used and never copies their text into Aglowy.</li>
-              <li class="mb-2"><strong>What it does:</strong> it only plans family studies. It won't answer other questions here.</li>
-              <li class="mb-2"><strong>Check its work:</strong> drafts can be wrong. Read each point against its scripture or source.</li>
-              <li><strong>Daily limit:</strong> your household can make <%= daily_limit %> drafts a day.</li>
-            </ul>
-            <%= render "ai_acceptances/form", acceptance: Ai::Acceptance.new, return_to: return_to %>
-          <% when :limit %>
-            <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3,
-                  description: "The #{household.name} can draft again after midnight, #{time_zone_name}. You can still plan this study yourself in the form.")) do %>
-              <strong>You've used today's <%= daily_limit %> drafts</strong>
-            <% end %>
-            <%= primer_form_with(model: draft, url: household_family_study_drafts_path(household_id: household)) do |f| %>
-              <%= render FamilyStudies::DraftForm.new(f, section: :prompt, disabled: true) %>
-              <div class="mt-3"><%= render FamilyStudies::DraftForm.new(f, section: :actions, disabled: true) %></div>
-            <% end %>
-          <% else %>
-            <%= primer_form_with(model: draft, url: household_family_study_drafts_path(household_id: household)) do |f| %>
-              <%= render FamilyStudies::DraftForm.new(f, section: :prompt) %>
-              <p id="ai-panel-ideas" class="text-small text-bold color-fg-muted mt-3 mb-2">Ideas to start from</p>
-              <%= render FamilyStudies::DraftForm.new(f, section: :ideas) %>
-              <div class="mt-3"><%= render FamilyStudies::DraftForm.new(f, section: :options) %></div>
-              <%= render(Primer::Alpha::Banner.new(icon: :info, my: 3)) do %>
-                What you type here is sent to an AI service to write the draft. Leave out names and private family details. It searches only jw.org and wol.jw.org.
-              <% end %>
-              <%= render FamilyStudies::DraftForm.new(f, section: :actions) %>
-            <% end %>
-            <p class="text-small color-fg-muted mt-3 mb-0"><%= drafts_left %> of <%= daily_limit %> drafts left today for the <%= household.name %></p>
+        <%= render(Primer::Beta::CloseButton.new(data: { action: "ai-panel#close" })) %>
+      <% end %>
+      <% box.with_body do %>
+        <% case opened_state %>
+        <% when :drafting %>
+          <%# Progress lines only, on the draft's own signed stream, until the checked result replaces the panel
+              (docs/design/ai.md, Traps). %>
+          <%= helpers.turbo_stream_from draft, data: { ai_panel_target: "stream", ai_panel_url_param: draft_path } %>
+          <p class="text-small color-fg-muted mb-3"><%= request_summary %></p>
+          <%= tag.ul id: dom_id(draft, :progress), class: "list-style-none mb-3", aria: { live: "polite" } do %>
+            <%= render "family_studies/drafts/progress", step: :searching %>
           <% end %>
+          <%= tag.p "The draft appears here once its scriptures, links and wording have been checked.", id: dom_id(draft), class: "text-small color-fg-muted", aria: { busy: true } %>
+          <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+            <%= render FamilyStudies::DraftActionForm.new(f, label: "Stop") %>
+          <% end %>
+        <% when :drafted %>
+          <div class="d-flex flex-wrap flex-items-baseline text-small color-fg-muted mb-3">
+            <span class="mr-1"><%= request_summary %> ·</span>
+            <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+              <%= render FamilyStudies::DraftActionForm.new(f, label: "Change", scheme: :link) %>
+            <% end %>
+          </div>
+          <%= render "family_studies/drafts/outline", outline: draft.outline %>
+          <div class="border-top pt-3 mt-3">
+            <p class="text-small text-bold color-fg-muted mb-2">Found on jw.org and wol.jw.org</p>
+            <% if draft.sources.any? %>
+              <ul class="list-style-none mb-2">
+                <% draft.sources.each do |source| %>
+                  <li class="d-flex flex-items-baseline mb-1">
+                    <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
+                    <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || host(source["url"]) } %> <span class="color-fg-muted">· <%= host(source["url"]) %></span></span>
+                  </li>
+                <% end %>
+              </ul>
+              <p class="text-small color-fg-muted">Scriptures in the outline link to jw.org. Titles and links only: open each page to read it.</p>
+            <% else %>
+              <p class="color-fg-muted">No matching pages found on jw.org or wol.jw.org.</p>
+            <% end %>
+          </div>
+          <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) do %>
+            AI can get things wrong. Check each point against its source before your study.
+          <% end %>
+          <div class="d-flex flex-wrap flex-items-center">
+            <%# Filling the form is the next story (docs/design/family-studies.md, Use this draft). %>
+            <%= render(Primer::Beta::Button.new(scheme: :primary, disabled: true, mr: 2)) { "Use this draft" } %>
+            <%= primer_form_with(model: draft, url: drafts_path, method: :post, class: "mr-2") do |f| %>
+              <%= render FamilyStudies::DraftForm.new(f, section: :again) %>
+            <% end %>
+            <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+              <%= render FamilyStudies::DraftActionForm.new(f, label: "Discard", scheme: :danger) %>
+            <% end %>
+          </div>
+        <% when :refused %>
+          <%# What they asked and the refusal, and nothing else from the reply (docs/design/ai.md, safety measure 1). %>
+          <p class="text-small color-fg-muted">You asked: “<%= draft.prompt %>”</p>
+          <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 3,
+                description: "Describe a topic, a Bible chapter or something your family is facing, and it will draft a study from jw.org and wol.jw.org.")) do %>
+            <strong>This helper only plans family studies</strong>
+          <% end %>
+          <div class="d-flex">
+            <%= primer_form_with(url: draft_path, method: :delete, class: "mr-2") do |f| %>
+              <%= render FamilyStudies::DraftActionForm.new(f, label: "Describe a study", scheme: :primary) %>
+            <% end %>
+            <%= render(Primer::Beta::Button.new(data: { action: "ai-panel#close" })) { "Close" } %>
+          </div>
+        <% when :terms %>
+          <p>Here's how AI drafts work in Aglowy. You only see this once.</p>
+          <ul class="ml-3 mb-3">
+            <li class="mb-2"><strong>What's sent:</strong> what you type, plus the length and whether young children will join. Never your name, your household, or your notes.</li>
+            <li class="mb-2"><strong>Where it looks:</strong> the AI searches only jw.org and wol.jw.org. It links each page it used and never copies their text into Aglowy.</li>
+            <li class="mb-2"><strong>What it does:</strong> it only plans family studies. It won't answer other questions here.</li>
+            <li class="mb-2"><strong>Check its work:</strong> drafts can be wrong. Read each point against its scripture or source.</li>
+            <li><strong>Daily limit:</strong> your household can make <%= daily_limit %> drafts a day.</li>
+          </ul>
+          <%= render "ai_acceptances/form", acceptance: Ai::Acceptance.new, return_to: return_to %>
+        <% when :limit %>
+          <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3,
+                description: "The #{household.name} can draft again after midnight, #{time_zone_name}. You can still plan this study yourself in the form.")) do %>
+            <strong>You've used today's <%= daily_limit %> drafts</strong>
+          <% end %>
+          <%= primer_form_with(model: draft, url: drafts_path, method: :post) do |f| %>
+            <%= render FamilyStudies::DraftForm.new(f, section: :prompt, disabled: true) %>
+            <div class="mt-3"><%= render FamilyStudies::DraftForm.new(f, section: :actions, disabled: true) %></div>
+          <% end %>
+        <% else %>
+          <% if failed? %>
+            <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't make a draft right now. Try again in a moment." } %>
+          <% end %>
+          <%= primer_form_with(model: draft, url: drafts_path, method: :post) do |f| %>
+            <%= render FamilyStudies::DraftForm.new(f, section: :prompt) %>
+            <p id="ai-panel-ideas" class="text-small text-bold color-fg-muted mt-3 mb-2">Ideas to start from</p>
+            <%= render FamilyStudies::DraftForm.new(f, section: :ideas) %>
+            <div class="mt-3"><%= render FamilyStudies::DraftForm.new(f, section: :options) %></div>
+            <%= render(Primer::Alpha::Banner.new(icon: :info, my: 3)) do %>
+              What you type here is sent to an AI service to write the draft. Leave out names and private family details. It searches only jw.org and wol.jw.org.
+            <% end %>
+            <%= render FamilyStudies::DraftForm.new(f, section: :actions) %>
+          <% end %>
+          <p class="text-small color-fg-muted mt-3 mb-0"><%= drafts_left %> of <%= daily_limit %> drafts left today for the <%= household.name %></p>
         <% end %>
       <% end %>
     <% end %>

@@ -1,0 +1,6 @@
+<%# locals: (text:) -%>
+<%# "Read Philippians 4:6, 7" with the reference as a scripture link. The checks already dropped any that don't parse
+    (docs/design/ai.md, Scripture references). %>
+<% if (reference = Bible::Reference.parse(text)) %>
+  <p class="mb-1">Read <%= render "bible/references/reference", reference: reference %></p>
+<% end %>

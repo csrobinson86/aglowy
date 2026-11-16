@@ -139,9 +139,10 @@ class FamilyStudy::Draft::WriteTest < ActiveSupport::TestCase
 
     write(ask)
 
-    assert_equal [ "Searching jw.org and wol.jw.org…", "Writing the outline…" ], during.map { it.at("template").text }
+    assert_equal [ "Searching jw.org and wol.jw.org…", "Writing the outline…" ], during.map { it.at("template strong").text }
     assert during.all? { it["action"] == "update" && it["target"] == "progress_family_study_draft_#{@draft.id}" }
-    assert_equal "Checking scriptures, links and wording…", streamed("update").last.at("template").text
+    assert_equal "Checking scriptures, links and wording…", streamed("update").last.at("template strong").text
+    assert_includes streamed("update").last.at("template").text, "Searched jw.org and wol.jw.org · 2 pages found"
     assert during.none? { it.to_html.include?("Talking to") || it.to_html.include?("Jehovah") }
   end
 
@@ -149,7 +150,8 @@ class FamilyStudy::Draft::WriteTest < ActiveSupport::TestCase
     write(reply)
 
     assert_equal 1, streamed("replace").size
-    assert_equal "family_study_draft_#{@draft.id}", streamed("replace").first["target"]
+    assert_equal "ai_panel", streamed("replace").first["target"]
+    assert_includes streamed("replace").first.to_html, "AI draft"
     assert_includes streamed("replace").first.to_html, "Talking to Jehovah as a family"
     assert_not_includes streamed("replace").first.to_html, "worries feel lighter"
   end
