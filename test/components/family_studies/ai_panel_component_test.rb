@@ -13,14 +13,18 @@ class FamilyStudies::AiPanelComponentTest < ViewComponent::TestCase
     assert_selector "h2", text: "Plan it with AI"
     assert_text "It searches only jw.org and wol.jw.org"
     assert_button "Draft with AI"
-    assert_no_selector "h2", text: "Before you use AI"
+    assert_no_selector "[data-ai-panel-target=opened]"
     assert_selector "[data-ai-panel-target=opened][hidden]", visible: :all
+    # Below md the open panel is a full-screen dialog; it scales in only when the person opens it.
+    assert_selector "dialog#ai-panel-dialog.Overlay--full-whenNarrow:not(.ai-panel-dialog--open)", visible: :all
+    assert_no_selector "#ai-panel-dialog .Overlay-footer", visible: :all
   end
 
   test "First use" do
     render_inline(FamilyStudies::AiPanelComponent.new(household: @household, user: @user, open: true))
 
-    assert_no_button "Draft with AI"
+    # From md up the Start box gives way to the open panel; below md it stays under the form.
+    assert_selector "[data-ai-panel-target=start].d-md-none"
     assert_selector "h2", text: "Before you use AI"
     assert_text "What's sent:"
     assert_text "Daily limit: your household can make 10 drafts a day."
@@ -118,6 +122,10 @@ class FamilyStudies::AiPanelComponentTest < ViewComponent::TestCase
     assert_text "Titles and links only: open each page to read it"
     assert_no_text "No matching pages found"
     assert_selector ".Banner--warning", text: "AI can get things wrong. Check each point against its source before your study."
+    assert_selector "dialog#ai-panel-dialog.ai-panel-dialog--open h2", text: "AI draft", visible: :all
+    assert_selector "#ai-panel-dialog [data-ai-panel-target=dialogFooter]", visible: :all
+    assert_selector "[data-ai-panel-target=footerHome] > [data-ai-panel-target=footer][data-ai-draft-target=review]",
+      text: "AI can get things wrong. Check each point against its source.", visible: :all
     assert_selector "button[data-action='ai-draft#use']:not([disabled])", text: "Use this draft"
     assert_selector "template[data-ai-draft-target=template]", visible: :all
     assert_selector "dialog#ai-draft-topic", text: "Replace the topic?", visible: :all

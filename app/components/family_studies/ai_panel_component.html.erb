@@ -1,5 +1,6 @@
-<%= helpers.turbo_frame_tag :ai_panel, data: { controller: "ai-panel" } do %>
-  <%= tag.div hidden: open?, data: { ai_panel_target: "start" } do %>
+<%= helpers.turbo_frame_tag :ai_panel, data: { controller: "ai-panel", action: "ai-draft:used->ai-panel#used" } do %>
+  <%# Below md the Start box stays under the form while the panel is open in its dialog. %>
+  <%= tag.div class: class_names("ai-panel-start", "d-md-none" => open?), data: { ai_panel_target: "start" } do %>
     <%= render(Primer::Beta::BorderBox.new) do |box| %>
       <% box.with_body do %>
         <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center)) do %>
@@ -15,21 +16,25 @@
     <% end %>
   <% end %>
 
+  <%# Progress lines come on the draft's own signed stream, until the checked result replaces the panel (docs/design/ai.md,
+      Traps). Outside what moves into the dialog, so moving it never subscribes twice. %>
+  <% if opened_state == :drafting %>
+    <%= helpers.turbo_stream_from draft, data: { ai_panel_target: "stream", ai_panel_url_param: draft_path } %>
+  <% end %>
+
+  <%# On a phone the ai-panel controller moves this into the dialog below, and its header gives way to the dialog's. %>
   <%= tag.div hidden: !open?, data: { ai_panel_target: "opened" } do %>
-    <%= render(Primer::Beta::BorderBox.new(data: { ai_draft_target: ("review" if opened_state == :drafted) })) do |box| %>
-      <% box.with_header(display: :flex, align_items: :center, justify_content: :space_between) do %>
+    <%= render(Primer::Beta::BorderBox.new(classes: "border-0 border-md", data: { ai_draft_target: ("review" if opened_state == :drafted) })) do |box| %>
+      <% box.with_header(display: [ :none, nil, :flex ], align_items: :center, justify_content: :space_between) do %>
         <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, display: :flex, align_items: :center)) do %>
           <%= heading %>
           <% if opened_state == :drafted %><%= render(Primer::Beta::Label.new(scheme: :done, ml: 2)) { "Not saved" } %><% end %>
         <% end %>
         <%= render(Primer::Beta::CloseButton.new(data: { action: "ai-panel#close" })) %>
       <% end %>
-      <% box.with_body do %>
+      <% box.with_body(border_bottom: 0) do %>
         <% case opened_state %>
         <% when :drafting %>
-          <%# Progress lines only, on the draft's own signed stream, until the checked result replaces the panel
-              (docs/design/ai.md, Traps). %>
-          <%= helpers.turbo_stream_from draft, data: { ai_panel_target: "stream", ai_panel_url_param: draft_path } %>
           <p class="text-small color-fg-muted mb-3"><%= request_summary %></p>
           <%= tag.ul id: dom_id(draft, :progress), class: "list-style-none mb-3", aria: { live: "polite" } do %>
             <%= render "family_studies/drafts/progress", step: :searching %>
@@ -74,17 +79,25 @@
               <%= render(Primer::Beta::Button.new(scheme: :primary, data: { action: "ai-draft#replaceTopic" })) { "Replace" } %>
             <% end %>
           <% end %>
-          <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) do %>
-            AI can get things wrong. Check each point against its source before your study.
-          <% end %>
-          <div class="d-flex flex-wrap flex-items-center">
-            <%= render(Primer::Beta::Button.new(scheme: :primary, mr: 2, data: { action: "ai-draft#use" })) { "Use this draft" } %>
-            <%= primer_form_with(model: draft, url: drafts_path, method: :post, class: "mr-2") do |f| %>
-              <%= render FamilyStudies::DraftForm.new(f, section: :again) %>
-            <% end %>
-            <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
-              <%= render FamilyStudies::DraftActionForm.new(f, label: "Discard", scheme: :danger) %>
-            <% end %>
+          <%# On a phone this moves into the dialog's footer, within thumb reach (frame phone-ai-draft.png). %>
+          <div data-ai-panel-target="footerHome">
+            <div data-ai-panel-target="footer" data-ai-draft-target="review">
+              <div class="d-none d-md-block">
+                <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) do %>
+                  AI can get things wrong. Check each point against its source before your study.
+                <% end %>
+              </div>
+              <p class="d-md-none color-fg-muted mb-3">AI can get things wrong. Check each point against its source.</p>
+              <div class="ai-draft-actions">
+                <%= render(Primer::Beta::Button.new(scheme: :primary, classes: "ai-draft-actions__use", data: { action: "ai-draft#use" })) { "Use this draft" } %>
+                <%= primer_form_with(model: draft, url: drafts_path, method: :post) do |f| %>
+                  <%= render FamilyStudies::DraftForm.new(f, section: :again) %>
+                <% end %>
+                <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+                  <%= render FamilyStudies::DraftActionForm.new(f, label: "Discard", scheme: :danger) %>
+                <% end %>
+              </div>
+            </div>
           </div>
         <% when :refused %>
           <%# What they asked and the refusal, and nothing else from the reply (docs/design/ai.md, safety measure 1). %>
@@ -138,8 +151,8 @@
     <% end %>
     <% if opened_state == :drafted %>
       <%# "Use this draft" shows this in place of the draft, with the form filled (frame ai-draft-added.png). %>
-      <%= render(Primer::Beta::BorderBox.new(hidden: true, data: { ai_draft_target: "added" })) do |box| %>
-        <% box.with_body do %>
+      <%= render(Primer::Beta::BorderBox.new(hidden: true, classes: "border-0 border-md", data: { ai_draft_target: "added" })) do |box| %>
+        <% box.with_body(border_bottom: 0) do %>
           <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center, tabindex: -1)) do %>
             <%= render(Primer::Beta::Octicon.new(:check, color: :success, mr: 2)) %>Draft added
           <% end %>
@@ -150,6 +163,23 @@
           <% end %>
         <% end %>
       <% end %>
+    <% end %>
+  <% end %>
+
+  <%# Below md the open panel is this full-screen dialog (docs/design/family-studies.md, The panel). Escape and its close
+      button close the panel. Its title is the panel's name; the state's heading shows as an h2, as it does in place. %>
+  <%= render(Primer::Alpha::Dialog.new(id: "ai-panel-dialog", title: "Plan it with AI", position_narrow: :fullscreen,
+        classes: class_names("ai-panel-dialog", "ai-panel-dialog--open" => open?),
+        data: { ai_panel_target: "dialog", action: "close->ai-panel#dialogClosed" })) do |dialog| %>
+    <% dialog.with_header(show_divider: true, bg: :subtle) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, display: :flex, align_items: :center)) do %>
+        <%= heading %>
+        <% if opened_state == :drafted %><%= render(Primer::Beta::Label.new(scheme: :done, ml: 2)) { "Not saved" } %><% end %>
+      <% end %>
+    <% end %>
+    <% dialog.with_body(p: 0, data: { ai_panel_target: "dialogBody" }) %>
+    <% if opened_state == :drafted %>
+      <% dialog.with_footer(show_divider: true, classes: "ai-panel-dialog__footer", data: { ai_panel_target: "dialogFooter" }) %>
     <% end %>
   <% end %>
 <% end %>
