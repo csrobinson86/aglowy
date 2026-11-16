@@ -8,7 +8,7 @@ Frames in `docs/design/personal-study/` (README there). Mockups are in the "Pers
 
 - **A study holds a conversation and notes**, grouped into **collections** (folders), with the person's **tags** on top (`docs/design/tags.md`).
 - **Studies are kept until the person deletes them.** The 7-day deletion in `docs/design/ai.md` stays for family study drafts only.
-- **30 questions per person per day**, from midnight in the person's own time zone (`users.time_zone`). When they haven't set one, the time zone of the household they're asking from (`Current.household.time_zone`), as `Membership` falls back elsewhere.
+- **30 questions per person per day**, from midnight in the person's own time zone (`users.time_zone`). When they haven't set one, `user.limit_time_zone` falls back to a stable choice that doesn't change with the household they're asking from: the time zone of the household of their oldest active membership, or UTC if they have none. So switching households can't restart the day.
 - **Older children can use AI if a head allows it,** with a switch per child in Household settings. Heads who allow it can read everything in that child's personal studies, and the child is told so.
 - **Answers follow `docs/design/ai.md`:**
   - only jw.org and wol.jw.org
@@ -85,7 +85,8 @@ One question and its answer.
   - `off_topic` (boolean)
   - `not_found` (boolean) and `not_found_note` (string): "I couldn't find jw.org or wol.jw.org…"
   - `paragraphs` (0 to 5 strings, each 600 characters at most). Scripture references are written inline as plain text
-  - **Minimum after the checks:** at least one paragraph, or `not_found` with its note. A reply that has neither after the copy check and link checks ends `failed` ("Couldn't answer right now. Try again."), and its use is deleted
+  - **Order of the checks:** `off_topic` comes first. An off-topic reply ends `off_topic`, shows the refusal, keeps its use (it counts, as in `docs/design/ai.md`), and skips the minimum.
+  - **Minimum after the checks**, for every other reply: at least one paragraph, or `not_found` with its note. A reply that has neither after the copy check and link checks ends `failed` ("Couldn't answer right now. Try again."), and its use is deleted
   - `next_questions` (0 to 3 strings, each 120 characters at most)
 - After the checks in `docs/design/ai.md`, each paragraph's references are found with `Bible::Linker` and rendered as scripture links.
 
