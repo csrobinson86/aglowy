@@ -18,9 +18,13 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
 
+  # The caret is put mid-text, before " Read", because with no saved selection Lexxy inserts at the end of the note.
+  # Before Insert the editor's selection is moved to the start, as a tap on a phone can, so only the saved caret
+  # puts the link in the right place (Traps 3).
   test "desktop: Psalms, 37, 8 and 9 go in where the caret was, and save as a link to jw.org" do
     edit_meeting_note
     write_notes TALK, " Read "
+    move_caret_back TALK, "Read ".length
     open_picker TALK
 
     assert_picker "Choose a book"
@@ -37,11 +41,12 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     assert_selector "#{PICKER} .scripture-picker__verses button[aria-pressed=true]", count: 2
     assert_accessible
     capture_screens("scripture-picker-desktop", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
+    move_selection_to_start TALK
     click_on "Insert"
 
     assert_no_selector PICKER
     assert_selector "#{TALK} .scripture-link", text: "Psalm 37:8, 9"
-    assert_match(/from a distance\. Read Psalm 37:8, 9/, editor_text(TALK))
+    assert_match(/from a distance\. Psalm 37:8, 9 Read\z/, editor_text(TALK))
     assert_selector "#{TALK} [contenteditable]:focus"
     click_on "Save notes"
 
@@ -72,6 +77,7 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     edit_meeting_note
     use_phone
     write_notes TALK, " Read "
+    move_caret_back TALK, "Read ".length
     open_picker TALK
 
     assert_picker "Choose a book"
@@ -106,10 +112,11 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     assert_accessible
     capture_screens("scripture-picker-verses", viewports: PHONE)
     use_phone
+    move_selection_to_start TALK
     click_on "Insert"
 
     assert_no_selector PICKER
-    assert_match(/from a distance\. Read Psalm 37:8, 9/, editor_text(TALK))
+    assert_match(/from a distance\. Psalm 37:8, 9 Read\z/, editor_text(TALK))
   end
 
   test "whole chapter: Insert with no verse gives Psalm 23" do
@@ -178,6 +185,7 @@ class ScriptureLinksTest < ApplicationSystemTestCase
     pick_verse 9
     click_on "Insert"
 
+    assert_selector "lexxy-editor .scripture-link", text: "Psalm 37:8, 9"
     assert_match(/Read chapter 1 and Psalm 37:8, 9/, editor_text("lexxy-editor"))
     click_on "Save notes"
 
@@ -246,6 +254,23 @@ class ScriptureLinksTest < ApplicationSystemTestCase
       editable = find("#{editor} [contenteditable='true']")
       editable.click
       editable.send_keys(END_OF_TEXT, text)
+    end
+
+    def move_caret_back(editor, characters)
+      find("#{editor} [contenteditable='true']").send_keys(*[ :left ] * characters)
+    end
+
+    # Moves the editor's own selection to the start of its text while the picker is open. Lexical follows the
+    # browser's selection, so without the session's saved caret the link would land there.
+    def move_selection_to_start(editor)
+      page.evaluate_async_script(<<~JS, "#{editor} [contenteditable='true']")
+        const [ selector, done ] = arguments
+        const editable = document.querySelector(selector)
+        editable.focus()
+        getSelection().collapse(document.createTreeWalker(editable, NodeFilter.SHOW_TEXT).nextNode(), 0)
+        requestAnimationFrame(() => requestAnimationFrame(done))
+      JS
+      assert_selector PICKER
     end
 
     def open_picker(editor)

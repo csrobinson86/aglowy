@@ -20,18 +20,16 @@ let lastSessionId = 0
 export default class ScripturePicker extends Extension {
   #button
 
-  constructor(editorElement) {
-    super(editorElement)
-    document.addEventListener("scripture-picker:insert", this.#insert)
-    document.addEventListener("scripture-picker:close", this.#close)
-  }
-
   // Only editors that permit scripture links: the notes editors.
   get enabled() {
     return [ this.editorConfig.get("permittedAttachmentTypes") ].flat().join(" ").split(/\s+/).includes(CONTENT_TYPE)
   }
 
+  // Lexxy calls this only for an enabled extension, and disposes only those, so the listeners start here.
   initializeToolbar(toolbar) {
+    document.addEventListener("scripture-picker:insert", this.#insert)
+    document.addEventListener("scripture-picker:close", this.#close)
+
     this.#button = document.createElement("button")
     Object.assign(this.#button, { type: "button", name: "scripture", title: "Scripture", className: "lexxy-editor__toolbar-button scripture-picker-button" })
     this.#button.dataset.scripturePickerOpener = ""

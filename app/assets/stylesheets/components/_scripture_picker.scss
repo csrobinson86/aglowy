@@ -94,14 +94,17 @@
   }
 }
 
-// Each column's heading, from md up; on a phone the header's title says the step.
+// Each column's heading, from md up, staying put as its column scrolls; on a phone the header's title says the step.
 .scripture-picker__heading {
+  position: sticky;
+  top: 0;
   display: none;
   margin: 0;
   padding: var(--base-size-12) var(--base-size-12) var(--base-size-4);
   color: var(--fgColor-muted);
   font-size: var(--text-body-size-small);
   font-weight: var(--base-text-weight-semibold);
+  background-color: var(--overlay-bgColor);
 
   @media (min-width: map.get(primer.$breakpoints, md)) {
     display: block;
