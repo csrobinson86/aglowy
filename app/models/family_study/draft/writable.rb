@@ -9,8 +9,10 @@ module FamilyStudy::Draft::Writable
   OUTLINE_FIELDS = %w[ title opening points children closing ].freeze
   MINIMUM_POINTS = 2
 
+  # A job the queue refused would leave the draft drafting with nothing to write it, using one of the day's drafts.
+  # perform_later returns false then (Active Job rescues the EnqueueError), so the draft fails and doesn't count.
   def write_later
-    FamilyStudy::WriteDraftJob.perform_later(id)
+    finish "failed" unless FamilyStudy::WriteDraftJob.perform_later(id)
   end
 
   # A draft stopped while its job waited, or finished already, never reaches moderation or the AI.

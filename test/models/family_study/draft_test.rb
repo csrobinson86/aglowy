@@ -93,6 +93,15 @@ class FamilyStudy::DraftTest < ActiveSupport::TestCase
     assert_equal [ users(:head), "Prayer as a family", 45, true ], [ draft.user, draft.prompt, draft.length_minutes, draft.young_children ]
   end
 
+  # Active Job rescues the queue's EnqueueError and perform_later returns false, so nothing raises.
+  test "start marks the draft failed when the queue refuses its job, so it doesn't use one of the day's drafts" do
+    draft = FamilyStudy::WriteDraftJob.stub(:perform_later, false) { start }
+
+    assert_predicate draft, :failed?
+    assert_predicate draft.reload, :failed?
+    assert_equal 0, @household.family_study_drafts.counted_today.count
+  end
+
   test "start refuses the 11th draft of the day with a :limit error and creates nothing" do
     10.times { family_study_draft(status: "drafted") }
 
