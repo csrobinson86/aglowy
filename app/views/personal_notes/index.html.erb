@@ -22,13 +22,23 @@
   <% end %>
 
   <% layout.with_main do %>
-    <%# Personal study's search box: the same three fields, and the same reason it can't read bodies (Traps). %>
-    <%= primer_form_with(url: household_personal_notes_path, method: :get, class: "mb-3") do |f| %>
-      <%= render PersonalStudies::SearchForm.new(f, query: @query, collection: @collection_id, tag: @tag_name) %>
-    <% end %>
+    <%# Personal study's search box: the same three fields, and the same reason it can't read bodies (Traps). Then the
+        color filter (frame notes.png), under it on a phone. Each keeps what the other has chosen. %>
+    <div class="personal-notes__filters">
+      <%= primer_form_with(url: household_personal_notes_path, method: :get, class: "personal-notes__search") do |f| %>
+        <%= render PersonalStudies::SearchForm.new(f, query: @query, collection: @collection_id, tag: @tag_name, color: @color) %>
+      <% end %>
+      <div class="d-flex flex-items-center">
+        <%# Only from sm up: on a phone the swatches need the whole row. It still names the group there. %>
+        <span id="note-color-filter-label" class="color-fg-muted mr-3 d-none d-sm-inline">Color</span>
+        <%= primer_form_with(url: household_personal_notes_path, method: :get) do |f| %>
+          <%= render PersonalNotes::ColorFilterForm.new(f, color: @color, query: @query, collection: @collection_id, tag: @tag_name) %>
+        <% end %>
+      </div>
+    </div>
 
     <% if @tag_name %>
-      <%= render "tags/filter", name: @tag_name, clear_path: household_personal_notes_path(collection: @collection_id, q: @query) %>
+      <%= render "tags/filter", name: @tag_name, clear_path: household_personal_notes_path(collection: @collection_id, q: @query, color: @color) %>
     <% end %>
 
     <% if @personal_notes.any? %>

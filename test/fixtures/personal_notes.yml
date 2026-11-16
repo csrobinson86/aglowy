@@ -1,12 +1,15 @@
-# Each person's own notes (docs/design/notes.md, PersonalNote). Bodies are made in the tests that need them.
+# Each person's own notes (docs/design/notes.md, PersonalNote). Bodies are made in the tests that need them. Family
+# worship has no color.
 head_return_visit:
   user: head
   title: Questions for my return visit
+  color: green
 
 head_daniel:
   user: head
   collection: head_quick_references
   title: "Daniel 2 image: quick reference"
+  color: orange
 
 head_family_worship:
   user: head

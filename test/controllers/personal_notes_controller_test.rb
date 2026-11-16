@@ -123,6 +123,47 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=hidden][name=collection][value=?]", collections(:head_quick_references).id
   end
 
+  test "?color=green lists only green notes, with Only green notes pressed" do
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home, color: "green")
+
+    assert_select "main .note-card", count: 1
+    assert_select "main .note-card.note-card--green", text: /Questions for my return visit/ do |card|
+      assert_select card, ".sr-only", "Green note"
+    end
+    assert_select "button[name=color][value=green][aria-pressed=true]", "Only green notes"
+    assert_select "button[name=color][value=''][aria-pressed=false]", "Any color"
+    assert_select "button[aria-pressed=true]", count: 1
+  end
+
+  test "?color=teal is ignored" do
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home, color: "teal")
+
+    assert_select "main .note-card", count: 3
+    assert_select "main .note-card.note-card--orange", text: /Daniel 2 image/
+    assert_select "main .note-card.note-card--none", text: /Ideas for family worship/ do |card|
+      assert_select card, ".sr-only", text: /note\z/, count: 0
+    end
+    assert_select "main [class*=teal]", count: 0
+    assert_select "button[name=color][value=''][aria-pressed=true]", "Any color"
+  end
+
+  test "the color filter keeps the collection, tag and search, and they keep the color" do
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home, color: "orange", q: "daniel", collection: collections(:head_quick_references).id, tag: "ministry")
+
+    assert_select "form:has(button[name=color])" do
+      assert_select "input[type=hidden][name=q][value=daniel]"
+      assert_select "input[type=hidden][name=collection][value=?]", collections(:head_quick_references).id
+      assert_select "input[type=hidden][name=tag][value=ministry]"
+    end
+    assert_select "form:has(input[name=q][type=search]) input[type=hidden][name=color][value=orange]"
+  end
+
   test "new, with the collection I was looking at chosen" do
     sign_in identities(:head)
 
@@ -193,10 +234,13 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]", household_personal_note_path(household_id: @home, id: @note) do
       assert_select "input[name='personal_note[title]'][value=?]", @note.title
       assert_select "select[name='personal_note[collection_id]'] option[selected]", text: "Quick references"
+      assert_select "fieldset legend", "Color"
+      assert_select "input[type=radio][name='personal_note[color]'][value=orange][checked]"
       assert_select "lexxy-editor[name='personal_note[body]']"
       assert_select "button[type=submit]", "Save note"
     end
     assert_select "main", text: /Saved/
+    assert_select "main .note-card.note-card--orange .sr-only", "Orange note"
     assert_select "#tag_editor_personal_note_#{@note.id} a.Label", "#ministry"
     assert_select "section[aria-labelledby=note-scriptures]" do
       assert_select "a.scripture-link", count: 2
@@ -224,6 +268,20 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
 
     patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { collection_id: "" } }
     assert_nil @note.reload.collection
+
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { color: "purple" } }
+    assert @note.reload.color_purple?
+  end
+
+  test "update: a color outside the list shows the page again" do
+    sign_in identities(:head)
+
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { color: "teal" } }
+
+    assert_response :unprocessable_content
+    assert_select "main", text: /Color is not included in the list/
+    assert @note.reload.color_orange?
+    assert_select "main .note-card.note-card--orange"
   end
 
   test "update: a title too long, or a body with more than scripture links, shows the page again" do

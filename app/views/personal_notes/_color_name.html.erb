@@ -1,0 +1,5 @@
+<%# locals: (personal_note:) %>
+<%# "Yellow note" for screen readers, so color is never the only signal (docs/design/notes.md, Colors). None has none. %>
+<% unless personal_note.drawn_color == "none" %>
+  <span class="sr-only"><%= personal_note.color_name %> note</span>
+<% end %>

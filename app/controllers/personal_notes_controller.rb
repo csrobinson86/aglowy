@@ -7,14 +7,16 @@ class PersonalNotesController < ApplicationController
 
   before_action :set_personal_note, only: %i[ show update destroy ]
 
-  # ?collection= and ?tag= narrow the list, and ?q= searches titles, collection names and tag names. A collection
-  # that isn't one of the person's for notes, like an unknown tag, filters the list to nothing.
+  # ?collection=, ?tag= and ?color= narrow the list, and ?q= searches titles, collection names and tag names. A
+  # collection that isn't one of the person's for notes, like an unknown tag, filters the list to nothing; a color
+  # that isn't on the filter is ignored.
   def index
     authorize PersonalNote
     @collections = Current.user.collections.for_notes.with_personal_notes_count.positioned
     @tags = Current.user.tags.with_taggings_count.order(:name)
     @query = params[:q].to_s.squish.presence
     @collection_id = params[:collection].presence
+    @color = params[:color].presence_in(PersonalNote::FILTER_COLORS)
     @collection = @collections.find { it.id == @collection_id } if @collection_id
     @personal_notes = tagged(filtered(Current.user.personal_notes)).preloaded.recent_first
     @total_count = Current.user.personal_notes.count
@@ -41,7 +43,7 @@ class PersonalNotesController < ApplicationController
   def show
   end
 
-  # Title, collection and body. Anything refused shows the page again with the reason.
+  # Title, color, collection and body. Anything refused shows the page again with the reason.
   def update
     @personal_note.assign_attributes(note_attributes)
     @personal_note.link_scriptures
@@ -67,12 +69,13 @@ class PersonalNotesController < ApplicationController
 
   def filtered(notes)
     notes = @collection ? notes.where(collection: @collection) : notes.none if @collection_id
+    notes = notes.colored(@color) if @color
     @query ? notes.matching(@query) : notes
   end
 
   # A blank collection_id takes the note out of any collection.
   def note_attributes
-    attributes = params.expect(personal_note: %i[ title collection_id body ]).to_h
+    attributes = params.expect(personal_note: %i[ title color collection_id body ]).to_h
     if attributes.key?(:collection_id)
       collection_id = attributes.delete(:collection_id)
       attributes[:collection] = collection_id.presence && Current.user.collections.find(collection_id)

@@ -65,6 +65,46 @@ class PersonalNotesTest < ApplicationSystemTestCase
     capture_screens("notes")
   end
 
+  test "pick Yellow with the keyboard, save, see a yellow card and filter by it, in light and dark" do
+    visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
+
+    within("fieldset", text: "Color") do
+      assert_selector ".note-color-picker__chosen", text: "None"
+      find("input[type=radio][value=none]", visible: :all).send_keys(:right)
+      assert_selector ".note-color-picker__chosen", text: "Yellow"
+    end
+    assert find_field("Yellow", visible: :all).checked?
+    click_on "Save note"
+
+    assert_text "Note saved."
+    assert_selector "main .note-card.note-card--yellow", text: "Yellow note"
+    assert find_field("Yellow", visible: :all).checked?
+    assert_accessible
+    capture_screens("note-colors")
+
+    visit household_personal_notes_url(household_id: households(:home))
+    assert_selector "main .note-card.note-card--yellow", text: "Ideas for family worship"
+    click_on "Only yellow notes"
+    assert_selector "button[aria-pressed=true]", text: "Only yellow notes"
+    assert_selector "main .note-card", count: 1
+    assert_selector "main .note-card", text: "Ideas for family worship"
+    assert_accessible
+
+    click_on "Any color"
+    assert_selector "main .note-card", count: 3
+    assert_selector "main .note-card.note-card--green", text: "Questions for my return visit"
+    assert_selector "main .note-card.note-card--orange", text: "Daniel 2 image: quick reference"
+    capture_screens("notes-colors")
+
+    users(:head).update!(appearance: "dark")
+    visit household_personal_notes_url(household_id: households(:home))
+    assert_selector "body[data-color-mode=dark]"
+    assert_accessible
+    visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
+    assert_selector "main .note-card.note-card--yellow"
+    assert_accessible
+  end
+
   test "delete a note after the dialog, on a phone, where the details come under the note" do
     visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
     emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)

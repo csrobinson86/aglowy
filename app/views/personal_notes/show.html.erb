@@ -14,15 +14,15 @@
 
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>
   <% layout.with_main do %>
-    <%= render(Primer::Beta::BorderBox.new) do |box| %>
-      <% box.with_body do %>
-        <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_note_path(id: @personal_note) %>
-      <% end %>
+    <%# The note card, drawn in the note's color like its card on the list. %>
+    <div class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4">
+      <%= render "personal_notes/color_name", personal_note: @personal_note %>
+      <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_note_path(id: @personal_note) %>
       <%# Tags save as they're added, outside the note's form, as a form can't hold another. %>
-      <% box.with_footer do %>
+      <div class="mt-3">
         <%= render TagEditorComponent.new(taggable: @personal_note, user: Current.user, household: Current.household) %>
-      <% end %>
-    <% end %>
+      </div>
+    </div>
   <% end %>
 
   <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-note__sidebar") do %>

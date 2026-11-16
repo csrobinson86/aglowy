@@ -52,7 +52,7 @@ Colors come from Primer's display color primitives, so they follow light and dar
 | yellow | `--display-yellow-bgColor-muted` | `--display-yellow-borderColor-muted` | `--display-yellow-borderColor-emphasis` |
 | green, blue, purple, pink, orange | the same three primitives with that color's name | | |
 
-The first story checks each primitive exists in the pinned `@primer/primitives` and records any substitute here.
+The first story checks each primitive exists in the pinned `@primer/primitives` and records any substitute here. Checked in #208 against `@primer/primitives` 11.10.0: all eighteen exist in light and dark, so there are no substitutes.
 
 - **Color is never the only signal.** Each card has a visually hidden "Yellow note" (or the color's name). Each swatch is a labelled radio ("Yellow"), and the picker shows the chosen color's name beside it.
 - **The color picker** (frame `note.png`) is a radio group drawn as swatches: real `<input type="radio">` elements inside a Primer form, with a `<fieldset>` and the legend "Color". It's the fifth approved forms exception in `CLAUDE.md`.

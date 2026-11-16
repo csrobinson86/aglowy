@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_190100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -416,9 +416,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_190100) do
     t.string "title", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "color", default: "none", null: false
     t.index ["collection_id"], name: "index_personal_notes_on_collection_id"
     t.index ["user_id"], name: "index_personal_notes_on_user_id"
     t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 120", name: "personal_notes_title_length_check"
+    t.check_constraint "color::text = ANY (ARRAY['none'::character varying, 'yellow'::character varying, 'green'::character varying, 'blue'::character varying, 'purple'::character varying, 'pink'::character varying, 'orange'::character varying]::text[])", name: "personal_notes_color_check"
   end
 
   create_table "personal_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
