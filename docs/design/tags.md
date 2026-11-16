@@ -1,13 +1,13 @@
 # Tags
 
-Each person can tag their own meeting notes, personal goals and personal studies, then find everything with a tag in one place. Stories live under the **TAGS-01** epic.
+Each person can tag their own meeting notes, personal goals, personal studies and notes, then find everything with a tag in one place. Stories live under the **TAGS-01** epic.
 
 Frames in `docs/design/personal-study/`: tags on the list of studies (`personal-studies.png`), adding a tag (`personal-study.png`, under the title) and a tag's page (`personal-study-tag.png`).
 
 ## Decisions (Casey, 16 Nov)
 
 - **Tags belong to the person.** Nobody else sees them, even on a meeting note or goal they've shared with the household.
-- **Three kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), and their personal studies (`docs/design/personal-study.md`).
+- **Four kinds of thing can be tagged:** the person's meeting notes, their personal goals (not family goals), their personal studies (`docs/design/personal-study.md`) and their notes (`docs/design/notes.md`, added by NOTES-01).
 - **Tags and collections both exist.** Collections are folders, only for personal studies; tags work across all three kinds. They don't replace each other.
 
 ## Models
@@ -28,7 +28,7 @@ Frames in `docs/design/personal-study/`: tags on the list of studies (`personal-
 | Column | Type | Constraint | Why |
 | --- | --- | --- | --- |
 | `tag_id` | uuid | FK → tags, not null, `on_delete: :cascade` | |
-| `taggable_type` | string | not null, check in (`MeetingNote`, `Goal`, `PersonalStudy`) | |
+| `taggable_type` | string | not null, check in (`MeetingNote`, `Goal`, `PersonalStudy`, `PersonalNote`) | |
 | `taggable_id` | uuid | not null, unique with `tag_id` and `taggable_type` | |
 
 - The tag's person must own the tagged thing: `MeetingNote#user`, `Goal#user` (a personal goal, so `household_id` is null), or `PersonalStudy#user`. This is a validation; the database can't check across a polymorphic link.
@@ -53,7 +53,7 @@ Included in `MeetingNote`, `Goal` and `PersonalStudy`.
 | Add a tag | `POST /:household_id/meeting_notes/:meeting_note_id/taggings`, and the same under `goals` and `personal_studies` (`Taggings::…Controller`, one per parent, sharing a `Tagging` controller concern) | Body: `name`. The parent is found through `Current.user`, so someone else's note is a 404. Responds with a Turbo Stream that replaces the tag editor |
 | Remove a tag | `DELETE …/taggings/:id` | The same lookup |
 | My tags | `GET /:household_id/tags` (`TagsController#index`) | Each tag with how many things carry it. Rename and delete here |
-| A tag | `GET /:household_id/tags/:name` (`TagsController#show`) | Everything the person tagged with it, grouped as Meeting notes, Personal studies and My goals (frame `personal-study-tag.png`). No sidebar item is selected |
+| A tag | `GET /:household_id/tags/:name` (`TagsController#show`) | Everything the person tagged with it, grouped as Meeting notes, Personal studies, Notes and My goals (frame `personal-study-tag.png`). No sidebar item is selected |
 | Rename | `PATCH /:household_id/tags/:name` | Renaming to a name the person already has fails with "You already have #name." No merging |
 | Delete | `DELETE /:household_id/tags/:name` | Removes the tag from everything. Asks first with a Primer dialog |
 

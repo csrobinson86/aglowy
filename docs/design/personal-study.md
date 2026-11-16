@@ -34,7 +34,7 @@ The AI needs the person's own acceptance of the AI terms (`Ai::Acceptance`, `doc
 | Column | Type | Constraint | Why |
 | --- | --- | --- | --- |
 | `user_id` | uuid | FK → users, not null | Personal; follows the person |
-| `collection_id` | uuid | FK → personal_study_collections, nullable, `on_delete: :nullify` | One folder, or none |
+| `collection_id` | uuid | FK → collections, nullable, `on_delete: :nullify` | One folder, or none. Must be a collection used in personal study |
 | `chat_id` | uuid | FK → chats, not null, unique | The conversation (`purpose: personal_study`) |
 | `title` | string | not null, 1 to 120 characters | |
 | `last_asked_at` | datetime | nullable | For sorting the list |
@@ -45,9 +45,23 @@ The AI needs the person's own acceptance of the AI terms (`Ai::Acceptance`, `doc
 - `scope :recent_first` (by `last_asked_at`, then `updated_at`)
 - `scope :matching(text)` matches the title, the collection's name or a tag name. Notes and conversations are encrypted, so search can't look inside them. The search box says "Search titles, collections and tags"
 
-### `PersonalStudy::Collection`
+### `Collection` (shared with Notes)
 
-`user_id` (FK, not null), `name` (not null, 1 to 40 characters, unique per person), `position`. Deleting a collection keeps its studies; they just leave the folder.
+Collections are the person's folders, shared between Personal study and Notes (`docs/design/notes.md`). Casey's decision (16 Nov): a base set of collections used by both, plus collections that belong to just one.
+
+| Column | Type | Constraint | Why |
+| --- | --- | --- | --- |
+| `user_id` | uuid | FK → users, not null | Personal |
+| `name` | string | not null, 1 to 40 characters, unique with `user_id` | |
+| `used_in` | string | not null, default `both`, check in (`both`, `studies`, `notes`) | Where it appears |
+| `position` | integer | not null | Order in the list |
+
+- `scope :for_studies` (`both`, `studies`) and `scope :for_notes` (`both`, `notes`)
+- A study's `collection` must be `for_studies`, and a note's must be `for_notes` (validations)
+- Each page lists only its own collections. A shared one shows a small "shared" icon labelled "Shared with Notes" (or "Shared with Personal study"), and the line under the list reads "Also used in Notes"
+- **New collection** (frame `docs/design/notes/notes-new-collection.png`): Name, then "Use in" with "<this section> and <the other>" (the default) or "<this section> only"
+- **Changing `used_in`** away from a section is refused while that section still has things in the collection: "3 notes are in this collection. Move them first."
+- **Deleting a collection** keeps everything in it; they just leave the folder
 
 ### `PersonalStudy::Question`
 
@@ -119,7 +133,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 | A study | `GET /:household_id/personal_studies/:id` | `personal-study.png` |
 | Rename, move, edit notes | `PATCH /:household_id/personal_studies/:id` | |
 | Delete | `DELETE /:household_id/personal_studies/:id`, after a Primer dialog | |
-| Collections | `resources :personal_study_collections, only: %i[ create update destroy ]` | |
+| Collections | `resources :collections, only: %i[ create update destroy ]` (shared with Notes) | |
 | Ask | `POST /:household_id/personal_studies/:id/questions` | |
 | Stop | `DELETE /:household_id/personal_studies/:id/questions/:question_id` (sets `stopped` while asking) | |
 | Save an answer to notes | `POST …/questions/:question_id/note_saving` (`resource :note_saving, only: :create`) | |
@@ -133,7 +147,7 @@ Under `/:household_id` for the household layout. The data is always found throug
   - "From jw.org and wol.jw.org"
   - the paragraphs with linked references
   - "Pages used" with each page as a link (title and host)
-  - "Save to notes"
+  - "Save to notes", and "Save as a note", which makes a new note in Notes (`docs/design/notes.md`, added by NOTES-01)
   - "Check each point against its page."
 
   A `not_found` answer opens with its note in a muted box. "Keep digging" shows the next questions as chips that fill the ask box.
