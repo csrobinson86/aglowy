@@ -52,6 +52,21 @@ class Ai::CopyCheckTest < ActiveSupport::TestCase
     assert_equal({ "closing" => "Kneel together. Sing.", "children" => "" }, fields)
   end
 
+  test "removes a sentence quoting 6 words in single quotes, not stopping at an apostrophe" do
+    fields, = clean(
+      "question" => "Jesus said ‘don’t be anxious over anything at all.’ Why? He said 'keep on asking, and it will be given.' Pray.",
+      "closing" => "Let’s ‘talk to Jehovah’ and don't stop. It's the parents’ ‘time to pray.’"
+    )
+
+    assert_equal({ "question" => "Why? Pray.", "closing" => "Let’s ‘talk to Jehovah’ and don't stop. It's the parents’ ‘time to pray.’" }, fields)
+  end
+
+  test "removes a copied run that removing a sentence between its halves brings together" do
+    fields, = clean("closing" => "When a family prays. Say “one two three four five six”. Together each one learns. Sing.")
+
+    assert_equal({ "closing" => "Sing." }, fields)
+  end
+
   private
     def clean(fields)
       Ai::CopyCheck.clean(fields, citations: CITATIONS, overlap_words: 8, quote_max_words: 5)

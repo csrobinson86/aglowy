@@ -1,12 +1,12 @@
 # Removes, before anyone sees a reply, every sentence that copies a page (docs/design/ai.md, safety measure 5): one
 # sharing overlap_words or more words in a row with a citation's excerpt, and one holding a quotation longer than
 # quote_max_words. Words are compared lower-cased, without punctuation, whatever the spacing.
-# Single quotation marks aren't counted: ’ is also an apostrophe.
 class Ai::CopyCheck
   # A sentence runs to its stop (and any closing quotation mark or bracket), or to the end of the text.
-  SENTENCE = /\S.*?(?:[.!?]+["”’)\]]*(?=\s|\z)|\z)/m
-  # A quotation left open runs to the end of the text.
-  QUOTATION = /["“][^"”]*(?:["”]|\z)/
+  SENTENCE = /\S.*?(?:[.!?]+["”'’)\]]*(?=\s|\z)|\z)/m
+  # In double quotation marks, where one left open runs to the end of the text; or in single ones, which only open
+  # and close outside a word, so the apostrophe in "don’t" or "let's" is neither.
+  QUOTATION = /["“][^"”]*(?:["”]|\z)|(?<![[:alnum:]])['‘](?=\S).*?(?<=\S)['’](?![[:alnum:]])/m
 
   # [fields, removed]: the fields (nested hashes and arrays) with those sentences gone from every string, and
   # whether any were. citations are hashes whose cited_text is an excerpt or a list of them, as Ai::Reply#sources.
@@ -34,12 +34,13 @@ class Ai::CopyCheck
       end
     end
 
+    # Checked again once sentences are gone, as the ones either side of them may now copy a run together.
     def without_copies(text)
       sentences = matches(text, SENTENCE)
       copied = quoted(text, sentences) | overlapping(sentences)
       return text if copied.none?
 
-      sentences.values_at(*(sentences.each_index.to_a - copied)).map(&:first).join(" ")
+      without_copies(sentences.values_at(*(sentences.each_index.to_a - copied)).map(&:first).join(" "))
     end
 
     # The sentences a quotation longer than quote_max_words touches, however many it spans.
