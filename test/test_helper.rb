@@ -37,6 +37,26 @@ module ActiveSupport
     def use_home_storage(bytes)
       active_storage_blobs(:study_guide).update_column(:byte_size, bytes)
     end
+
+    # Attachments in notes HTML, as Lexxy saves them (docs/design/scripture-links.md, ScriptureLinkable).
+    def scripture_attachment(id)
+      reference = Bible::Reference.find(id)
+      %(<action-text-attachment sgid="#{reference.attachable_sgid}" content-type="#{reference.attachable_content_type}"></action-text-attachment>)
+    end
+
+    # Another record's sgid, signed for attachments: a forged scripture link.
+    def foreign_attachment(record)
+      %(<action-text-attachment sgid="#{record.to_sgid(for: ActionText::Attachable::LOCATOR_NAME)}" content-type="application/vnd.actiontext.scripture"></action-text-attachment>)
+    end
+
+    def remote_image_attachment
+      %(<action-text-attachment url="https://example.com/cat.png" content-type="image/png"></action-text-attachment>)
+    end
+
+    # A plain image, no attachment at all, as a crafted request could send.
+    def image_tag_html
+      %(<img src="https://example.com/cat.png">)
+    end
   end
 end
 

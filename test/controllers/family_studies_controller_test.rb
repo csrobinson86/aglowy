@@ -197,6 +197,20 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "lexxy-editor[name='family_study_scheduling[notes]'][value='<p>Questions to discuss</p>']"
   end
 
+  test "the Schedule a study notes take scripture links, and the first session keeps them" do
+    ruth = Bible::Reference.find("8:1:16")
+    sign_in identities(:head)
+
+    get new_household_family_study_path(household_id: households(:home))
+    assert_select "lexxy-editor[name='family_study_scheduling[notes]'][permitted-attachment-types='application/vnd.actiontext.scripture'][remote-images=false][data-controller=no-uploads]"
+
+    post household_family_studies_path(household_id: households(:home)),
+         params: { family_study_scheduling: valid_params.merge(topic: "Loyal love", notes: "<p>#{scripture_attachment(ruth.id)}</p>") }
+
+    assert_redirected_to household_family_studies_path(household_id: households(:home))
+    assert_equal [ ruth ], FamilyStudy::Session.find_by!(topic: "Loyal love").notes.body.attachables
+  end
+
   test "the Repeat choices follow the date in the query" do
     sign_in identities(:head)
 

@@ -60,6 +60,41 @@ class FamilyStudies::Sessions::NotesControllerTest < ActionDispatch::Integration
     assert_predicate outsiders_session.reload.notes.body, :blank?
   end
 
+  test "the editor accepts scripture links and nothing else, with uploads off" do
+    sign_in identities(:head)
+
+    get edit_notes_path(family_study_sessions(:weekly_next))
+
+    assert_select "lexxy-editor#family_study_session_notes[permitted-attachment-types='application/vnd.actiontext.scripture'][remote-images=false][data-controller=no-uploads]"
+    assert_select "lexxy-editor[attachments]", count: 0
+  end
+
+  test "saving notes with a scripture attachment keeps it, and the session page links it to jw.org" do
+    study_session = family_study_sessions(:weekly_next)
+    ruth = Bible::Reference.find("8:1:16")
+    sign_in identities(:head)
+
+    patch notes_path(study_session), params: { family_study_session: { notes: "<p>Loyal love. #{scripture_attachment(ruth.id)}</p>" } }
+
+    assert_redirected_to household_family_study_session_path(household_id: households(:home), family_study_id: study_session.family_study, id: study_session)
+    assert_equal [ ruth ], study_session.reload.notes.body.attachables
+    follow_redirect!
+    assert_select "main a.scripture-link[href=?][target=_blank][rel=noopener]", ruth.jw_url, text: "Ruth 1:16"
+  end
+
+  test "saving notes with a foreign attachment is refused with the message" do
+    study_session = family_study_sessions(:weekly_next)
+    sign_in identities(:head)
+
+    patch notes_path(study_session), params: { family_study_session: { notes: "<p>#{foreign_attachment(households(:other))}</p>" } }
+
+    assert_response :unprocessable_content
+    assert_select "h1", "Edit notes"
+    assert_select "lexxy-editor#family_study_session_notes[aria-invalid=true][aria-describedby=family_study_session_notes_validation]"
+    assert_select ".FormControl-inlineValidation#family_study_session_notes_validation", text: "Notes can only link scriptures"
+    assert_predicate study_session.reload.notes.body, :blank?
+  end
+
   private
     def notes_path(study_session)
       household_family_study_session_notes_path(household_id: households(:home), family_study_id: study_session.family_study, session_id: study_session)

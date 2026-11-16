@@ -25,14 +25,14 @@ class FamilyStudies::SessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "notes are shown through Action Text, sanitized" do
     study_session = family_study_sessions(:weekly_next)
-    study_session.update!(notes: %(<p>Read <strong>Ruth 1</strong></p><script>alert("hi")</script><embed src="https://example.com/x.html"><video src="https://example.com/v.mp4"></video>))
+    study_session.notes.update!(body: %(<p>Read <strong>Ruth 1</strong></p><script>alert("hi")</script><embed src="https://example.com/x.html"><video src="https://example.com/v.mp4"></video><img src="https://example.com/cat.png">))
     sign_in identities(:spouse)
 
     get session_path(study_session)
 
     assert_select "main .lexxy-content strong", "Ruth 1"
     assert_select "main script", text: /alert/, count: 0
-    assert_select "main embed, main video", count: 0
+    assert_select "main embed, main video, main img", count: 0
     assert_select "main .blankslate", text: /No notes yet/, count: 0
   end
 

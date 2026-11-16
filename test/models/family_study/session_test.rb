@@ -236,4 +236,47 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
       FamilyStudy::Session.transaction { family_study_sessions(:weekly_next).add_files([ pdf.signed_id, photo.signed_id ]) }
     end
   end
+
+  test "notes with a scripture attachment are valid" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>Read #{scripture_attachment("8:1:16")}</p>"
+
+    assert session.valid?
+  end
+
+  test "notes with an attachment for another record are invalid" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>#{foreign_attachment(households(:other))}</p>"
+
+    assert_not session.valid?
+    assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
+  end
+
+  test "notes with a remote image attachment are invalid" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>#{remote_image_attachment}</p>"
+
+    assert_not session.valid?
+    assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
+  end
+
+  test "notes with a plain image are invalid, and the image leaves the unsaved notes" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>Read #{scripture_attachment("40:24:14")}</p>#{image_tag_html}"
+
+    assert_not session.valid?
+    assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
+    assert_empty session.notes.body.fragment.find_all("img")
+    assert_equal [ Bible::Reference.find("40:24:14") ], session.notes.body.attachables
+  end
+
+  test "notes are checked only when they change, so a session with older stored notes can still be cancelled" do
+    session = family_study_sessions(:weekly_next)
+    ActionText::EncryptedRichText.create!(record: session, name: "notes", body: "<p>#{foreign_attachment(households(:other))}</p>")
+    session = FamilyStudy::Session.find(session.id)
+
+    assert_queries_count(0, include_schema: false) { assert session.valid? }
+    session.update!(canceled_at: Time.current)
+    assert session.reload.canceled?
+  end
 end

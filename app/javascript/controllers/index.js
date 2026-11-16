@@ -25,6 +25,9 @@ application.register("living-parts", LivingPartsController)
 import MeetingHelper__DrawingController from "./meeting_helper/drawing_controller"
 application.register("meeting-helper--drawing", MeetingHelper__DrawingController)
 
+import NoUploadsController from "./no_uploads_controller"
+application.register("no-uploads", NoUploadsController)
+
 import RepeatFieldController from "./repeat_field_controller"
 application.register("repeat-field", RepeatFieldController)
 

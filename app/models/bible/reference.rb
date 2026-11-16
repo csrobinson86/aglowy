@@ -8,6 +8,8 @@ Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
 
   # "psalms 37:8,9", "Ps 37:8-9", "ps 37 8" or "Psalm 23": a book, a chapter, then a verse or two.
   self::PATTERN = /\A\s*(?<book>\d?\s*[[:alpha:]][[:alpha:].\s]*?)\s*(?<chapter>\d+)(?:\s*[:\s]\s*(?<first_verse>\d+)(?:\s*(?<joiner>[-–,])\s*(?<last_verse>\d+))?)?\s*\z/
+  # Lexxy's default for a prompt named "scripture", and the one attachment type a notes editor permits.
+  self::CONTENT_TYPE = "application/vnd.actiontext.scripture"
   self::ID = /\A(?<book>\d+):(?<chapter>\d+)(?::(?<first_verse>\d+)(?:-(?<last_verse>\d+))?)?\z/
 
   class << self
@@ -68,7 +70,7 @@ Bible::Reference = Data.define(:book, :chapter, :first_verse, :last_verse) do
   end
 
   def attachable_content_type
-    "application/vnd.actiontext.scripture"
+    self.class::CONTENT_TYPE
   end
 
   def to_attachable_partial_path

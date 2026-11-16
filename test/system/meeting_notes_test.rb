@@ -48,4 +48,44 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_accessible
     capture_screens("meeting-note")
   end
+
+  test "a note saved with a scripture link shows the link" do
+    psalm = Bible::Reference.find("19:37:8-9")
+    meeting_note_parts(:head_talk).update!(notes: "<p>Let go of anger, even when it feels justified. #{scripture_attachment(psalm.id)}</p>")
+    sign_in identities(:head)
+
+    # Lexxy loads the link into the editor, and saving sends it back.
+    visit edit_household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
+    editor = find("lexxy-editor#meeting_note_parts_attributes_0_notes")
+    assert_selector "##{editor[:id]} .scripture-link", text: "Psalm 37:8, 9"
+    capture_screens("meeting-note-scripture-link-editor", scroll_to: "##{editor[:id]}")
+    # In the editor the link is styled as one but isn't clickable: clicking it opens no tab.
+    find("##{editor[:id]} .scripture-link").ancestor("action-text-attachment").click
+    assert_equal 1, windows.size
+    click_on "Save notes"
+
+    assert_text "Notes saved."
+    link = find("main a.scripture-link", text: "Psalm 37:8, 9")
+    assert_equal psalm.jw_url, link[:href]
+    assert_equal "_blank", link[:target]
+    assert_accessible
+    capture_screens("meeting-note-scripture-link", scroll_to: "main a.scripture-link")
+  end
+
+  test "the notes editor has no upload buttons, and starts no upload even for the one attachment type it permits" do
+    sign_in identities(:head)
+    visit edit_household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
+    assert_selector "lexxy-editor[connected]", minimum: 1
+    assert_selector "lexxy-toolbar button[name=bold]", minimum: 1
+    assert_no_selector "lexxy-toolbar button[name=image]"
+    assert_no_selector "lexxy-toolbar button[name=file]"
+
+    accepted = page.evaluate_script(<<~JS)
+      document.querySelector("lexxy-editor").dispatchEvent(new CustomEvent("lexxy:file-accept", {
+        cancelable: true, detail: { file: new File([ "x" ], "x", { type: "application/vnd.actiontext.scripture" }) }
+      }))
+    JS
+
+    assert_equal false, accepted
+  end
 end
