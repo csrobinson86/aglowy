@@ -65,7 +65,7 @@ class FamilyStudy::Scheduling
   # The linked notes are kept apart, so a form that shows again has exactly what was typed: Lexxy can't show an
   # attachment without the editor's own markup, and it gets linked again on the next save.
   def link_scriptures
-    @linked_notes = Bible::Linker.new(ActionText::Content.new(notes)).link.to_html if notes.present?
+    @linked_notes = (Bible::Linker.new(ActionText::Content.new(notes)).link.to_html if notes.present?)
   end
 
   # The study, its first session with the topic, notes, links and files, then the later sessions (scheduling rule 1).

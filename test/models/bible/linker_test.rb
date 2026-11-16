@@ -44,6 +44,13 @@ class Bible::LinkerTest < ActiveSupport::TestCase
     end
   end
 
+  test "a numbered book whose verses don't exist stays text, not a link to the book without its number" do
+    linked = link("<p>Read 1 John 3:36 and 2 John 1:20</p>")
+
+    assert_empty linked.attachables
+    assert_equal "Read 1 John 3:36 and 2 John 1:20", linked.to_plain_text
+  end
+
   test "text inside an existing link or code is unchanged" do
     html = %(<p><a href="https://example.com">matt 24:14</a></p><p><code>ps 37:8</code></p><pre>John 3:16</pre>)
 

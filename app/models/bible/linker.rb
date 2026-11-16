@@ -33,19 +33,29 @@ class Bible::Linker
     end
 
     # The first reference in the text, with where it starts and ends. Editors type a non-breaking space as often as a
-    # space, so both count. The longest book that parses wins, so "1 John 3:16" is 1 John and not John. Two verses
-    # joined by a comma that don't parse, as in "Ps 37:8, 10", fall back to the first; a hyphen range never does.
+    # space, so both count. The longest book that parses wins, so "1 John 3:16" is 1 John and not John, and a book
+    # named in full stops the search, so "1 John 3:36", which has no such verse, stays text rather than John 3:36.
+    # Two verses joined by a comma that don't parse, as in "Ps 37:8, 10", fall back to the first; a hyphen range never does.
     def next_reference(text)
       text = text.tr("\u00A0", " ")
       text.to_enum(:scan, VERSES).each do
         verses = Regexp.last_match
+        finishes = [ verses.end(0), (verses.begin(:range) if verses[:range]&.start_with?(",")) ].compact
 
-        book_starts(text[...verses.begin(0)]).product([ verses.end(0), (verses.begin(:range) if verses[:range]&.start_with?(",")) ].compact).each do |start, finish|
-          reference = Bible::Reference.parse(text[start...finish])
-          return [ reference, start, finish ] if reference&.first_verse
+        book_starts(text[...verses.begin(0)]).each do |start|
+          finishes.each do |finish|
+            reference = Bible::Reference.parse(text[start...finish])
+            return [ reference, start, finish ] if reference&.first_verse
+          end
+          break if book?(text[start...verses.begin(0)])
         end
       end
       nil
+    end
+
+    # Whether the text is exactly a book's name or abbreviation, "1 John" or "1 Jn", and not just the start of one.
+    def book?(text)
+      Bible::Book.all.any? { it.called?(text) }
     end
 
     # Where each word just before the verses starts, the earliest first.
