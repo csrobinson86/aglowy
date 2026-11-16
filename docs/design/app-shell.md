@@ -8,6 +8,8 @@ the **UI-01** epic.
 The approved mockup has twelve frames: desktop light and dark, the switcher
 open, a child's view, an empty household, phone home, menu and dark, and the
 signed-out pages (sign in, create an account, sign in dark, phone sign in).
+A thirteenth frame shows account settings with the Dark appearance chosen
+(see Theming and appearance).
 Exported frames go in `docs/design/app-shell/` (one PNG per frame, named as
 below). When a story's screenshot and a frame disagree, the frame wins unless
 this document says otherwise.
@@ -26,6 +28,7 @@ this document says otherwise.
 | Create an account | `sign-up.png` |
 | Sign in · dark | `sign-in-dark.png` |
 | Phone · sign in | `phone-sign-in.png` |
+| Account settings · dark appearance chosen | `account-settings-dark.png` |
 
 ## Two layouts
 
@@ -35,9 +38,63 @@ this document says otherwise.
 | `meeting_helper` | The meeting helper's pages for a child with the helper on (`docs/design/meeting-helper.md`) | Full screen, always dark, no sidebar |
 | `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark at the top left, then one centred column. No sidebar, because there is no household to navigate |
 
-Both keep the `<body>` theming attributes from `CLAUDE.md`
-(`data-color-mode="auto" data-light-theme="light" data-dark-theme="dark"`)
-and `lang` on `<html>`.
+Every layout keeps `lang` on `<html>` and the `<body>` theming attributes
+described next.
+
+## Theming and appearance
+
+Every layout sets the theme on `<body>`:
+`data-color-mode="<%= color_mode %>" data-light-theme="light" data-dark-theme="dark"`.
+Primer's components and primitives follow `data-color-mode`, so nothing else
+changes when it does.
+
+- **The mode is the signed-in person's choice.** Account settings has an
+  Appearance section, between Profile and Signing in (frames
+  `docs/design/invitations/account-settings.png`, Match my device, and
+  `account-settings-dark.png`, Dark). It holds a radio group "Theme" and a
+  "Save appearance" button:
+
+  | Choice | Value | Caption |
+  | --- | --- | --- |
+  | Match my device (the default) | `auto` | Light or dark, following your phone or computer's setting. |
+  | Light | `light` | Always light, whatever your device is set to. |
+  | Dark | `dark` | Always dark. Easier on the eyes in the evening and at meetings. |
+
+- **It's stored on the person.** `users.appearance`: string, not null,
+  default `"auto"`, with a check constraint allowing only `auto`, `light` and
+  `dark`. It belongs to `User`, like the time zone, so it follows the person
+  into every household and onto every device they sign in on. It isn't a
+  household setting, and a head can't set it for anyone else.
+- **One helper reads it.** `ApplicationHelper#color_mode` returns
+  `Current.user&.appearance || "auto"`. The `household`, `focused` and
+  `application` layouts use it. Signed out there's no person, so sign in, sign
+  up and the password pages stay `auto`.
+- **Two layouts don't use it.** `meeting_helper` stays `dark` whatever the
+  child chose (`docs/design/meeting-helper.md`). `design_system`, a
+  development page, stays `auto`.
+- **Saving.** `PATCH /account/appearance`
+  (`Accounts::AppearancesController#update`, from
+  `resource :appearance, only: :update, module: :accounts` inside
+  `resource :account`). It authorizes `@user` with `UserPolicy#update?`, saves
+  with `@user.update(appearance:)` and redirects to account settings with the
+  notice "Your appearance is saved.", keeping `return_to`. The form is
+  `Accounts::AppearanceForm`, a Primer form class with `radio_button_group`.
+  The redirect renders a new `<body>`, so the page changes theme as soon as
+  it's saved. There's no live preview and no JavaScript.
+
+### Traps
+
+- **Never style by `@media (prefers-color-scheme)`** or read
+  `matchMedia("(prefers-color-scheme: dark)")` in JavaScript. They report the
+  device, not the person's choice, so someone who chose Light on a dark phone
+  would get dark pieces on a light page. Use Primer primitives, which follow
+  `data-color-mode` (this is why `components/_lexxy.scss` maps Lexxy's colours
+  to primitives).
+- **The database is the only store.** No cookie or `localStorage` copy, so the
+  choice is the same on every device and signed-out pages stay `auto`.
+- **Emails don't use it.** They're read in a mail app with its own theme.
+- **Impersonation** shows the impersonated person's choice. That's expected:
+  it's their account.
 
 ## The root page and signing in
 

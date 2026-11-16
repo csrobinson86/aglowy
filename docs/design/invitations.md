@@ -101,6 +101,7 @@ At `/account` (outside any household, focused layout, frames `account-settings.p
 | Section | Route | Fields | Rules |
 | --- | --- | --- | --- |
 | Profile | `GET/PATCH /account` (`AccountsController`) | Name, your time zone | Updates `User`. The time zone is for personal reminders; studies use the household's |
+| Appearance | `PATCH /account/appearance` (`Accounts::AppearancesController`) | Theme: Match my device, Light or Dark | Updates `users.appearance`, which sets `data-color-mode` on every page the person sees. See `docs/design/app-shell.md`, Theming and appearance |
 | Signing in | `GET/PATCH /account/sign_in` (`Accounts::SignInsController`) | Email, new password, current password | `identity.update_with_password`. An email change is reconfirmed by Devise (`reconfirmable`): a Banner says where the link went and that the old email works until then. Children see their username read-only and only the password fields |
 | My households | `DELETE /account/memberships/:id` (`Accounts::MembershipsController`) | Each household with the person's role and Leave | Loaded through `Current.user.memberships.active`. Leave opens a Dialog explaining what happens, then calls `membership.deactivate`. The last head is refused: "Make someone else a head before you leave." Children don't see Leave, and the controller refuses them |
 

@@ -182,10 +182,15 @@ households or roles. The non-negotiables:
   `@primer/primitives`, `@use`d from `node_modules` in `application.scss`
   (load path set in `config/initializers/dartsass.rb`). JS is
   `import "@primer/view-components"` in `app/javascript/application.js`.
-- Theming via `data-color-mode="auto" data-light-theme="light"
+- Theming via `data-color-mode="<%= color_mode %>" data-light-theme="light"
   data-dark-theme="dark"` on `<body>`. Any new layout must include these.
-  The one exception is the `meeting_helper` layout, which is always
-  `data-color-mode="dark"` (`docs/design/meeting-helper.md`).
+  `color_mode` is the signed-in person's Appearance choice
+  (`users.appearance`: `auto`, `light` or `dark`) and `auto` when signed out
+  (`docs/design/app-shell.md`, Theming and appearance). The exceptions are the
+  `meeting_helper` layout, which is always `data-color-mode="dark"`
+  (`docs/design/meeting-helper.md`), and the development-only `design_system`
+  layout, which stays `auto`. Never style by `prefers-color-scheme`: it reads
+  the device, not the person's choice.
 - **Design tokens are Primer primitives** (CSS custom properties like
   `var(--bgColor-default)`, `var(--base-size-16)`, `var(--fgColor-muted)`).
   Never use magic numbers — reference a primitive.
