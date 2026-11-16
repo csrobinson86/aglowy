@@ -1,0 +1,110 @@
+# AI in Aglowy
+
+The rules every AI feature follows. The first feature is drafting a family study (`docs/design/family-studies.md`, "AI helper"). Later ones, like asking questions during personal study, build on the same pieces.
+
+Read this before touching RubyLLM, `config/initializers/ruby_llm.rb`, `Chat`, `Message`, `Ai::Acceptance`, `Ai::Purpose`, `Ai::SourceLink`, or any feature that sends text to an AI provider. Stories live under the **AI-01** epic.
+
+## Decisions (Casey, 15 Nov)
+
+- **Each AI feature does one job.** The AI is never an open chat. Each feature has fixed instructions, a fixed output shape and its own limits, and anything outside that job is politely refused. Family study drafts plan family studies; a later personal-study helper answers study questions; neither does the other's job.
+- **The AI looks only at jw.org and wol.jw.org.** When it searches the web, the search is limited to those sites. It links every page it used.
+- **Link, never copy.** Aglowy shows the title and a link for each page the AI used, and never their text. That follows jw.org's [Terms of Use](https://www.jw.org/en/terms-of-use/) (which also cover wol.jw.org): sharing links is allowed, but reproducing their content "on another website or application" isn't, and neither is software "made to collect, copy, download, extract, harvest, or scrape" their text. So Aglowy never fetches jw.org pages itself, never stores or shows their text, and the AI writes outlines and questions in its own words.
+- **Family study drafts are limited to 10 per household per day.** Each draft costs money (an AI call plus web searches), and Aglowy has no billing.
+- **Safety measures fit each feature's purpose**, listed below. They don't change from one feature to the next.
+
+## The pieces
+
+### Conversations: `Chat` and `Message`
+
+RubyLLM's Rails models, as `CLAUDE.md` asks (`acts_as_chat`, `acts_as_message`). The first story runs RubyLLM's install generator, adapted to UUIDv7 keys, and adds:
+
+| On | Column | Why |
+| --- | --- | --- |
+| `chats` | `user_id` (FK → users, not null) | Whose request it was. AI content is personal until the person uses it |
+| `chats` | `household_id` (FK → households, nullable) | Set when the feature is inside a household |
+| `chats` | `purpose` (string, not null, check in the known purposes) | Which `Ai::Purpose` it ran under. Today only `family_study_draft` |
+| `messages` | `content` encrypted (`encrypts :content`) | Prompts and replies are private family text, like notes |
+
+A feature's own record points at its chat (`FamilyStudy::Draft belongs_to :chat`) and keeps the feature's data. The chat keeps only the conversation.
+
+### What each feature is allowed to do: `Ai::Purpose`
+
+A PORO per purpose in `app/models/ai/purpose/`, for example `Ai::Purpose::FamilyStudyDraft`. It holds, in one place:
+
+- `instructions`: the fixed system prompt, in `config/ai/<purpose>.md` so it's reviewed like code
+- `schema`: the structured output the reply must match (RubyLLM `with_schema`)
+- `allowed_hosts`: `www.jw.org`, `jw.org` and `wol.jw.org`
+- `max_searches`: the most web searches one request may run (5 for family study drafts)
+- `max_output_tokens`
+- `daily_limit` and what it counts (10 a day for the household)
+
+`Chat#ask_within_purpose(text)` is the only way a feature calls the AI. It applies the purpose's instructions, schema and web-search settings, then returns the parsed reply and its sources. No feature calls `RubyLLM.chat` itself.
+
+### The model and the web search
+
+- `config/initializers/ruby_llm.rb` reads `AI_MODEL` (a model id) and the provider keys from the environment. Code never names a model.
+- The web search is the provider's own search tool, turned on through RubyLLM's provider tools, with the purpose's `allowed_hosts` as the allowed domains and `max_searches` as its limit. The provider runs the search, so Aglowy itself never requests a jw.org page.
+- The first story confirms that RubyLLM 2.2 passes the allowed domains through to the provider's search tool. If it doesn't, it passes the provider's tool definition directly, and records which in this doc.
+
+### Links the AI used: `Ai::SourceLink`
+
+A PORO that decides which links a feature may show. A link is kept only if:
+
+1. it parses as an `https` URL with no user, password or port, and its host is exactly one of `allowed_hosts`;
+2. it appears in the reply's search results or citations. A link the AI wrote that the search didn't return is dropped, so the AI can't invent an article;
+3. it isn't a duplicate (after removing the fragment and tracking parameters).
+
+Only the URL and the title from the search result are kept. The quoted text that citations carry (`cited_text`) is used once, by the copy check below, and never stored or shown.
+
+Aglowy never requests a link to check that it works. That would be the "collect or download" the terms forbid. Requirement 2 already shows the page existed when the search ran.
+
+### Scripture references
+
+The AI writes references as plain text ("Philippians 4:6, 7"). Each goes through `Bible::Reference.parse` (`docs/design/scripture-links.md`). One that doesn't parse is dropped from the draft. One that does becomes a normal scripture link to jw.org. The AI never writes verse text.
+
+### First use: `Ai::Acceptance`
+
+A record, not a boolean (state as records): `user_id`, `version` (integer), `created_at`. Before someone's first AI request, the feature shows the notice in frame `docs/design/family-studies/ai-terms.png`, and they tick "I understand how AI drafts work" and choose "Turn on AI drafts". `POST /ai_acceptance` (`AiAcceptancesController#create`, `resource :ai_acceptance, only: :create`) records the current version.
+
+- `config.x.ai.terms_version` holds the version. Raising it shows the notice again to everyone.
+- Acceptance belongs to the person, so it follows them across households, like the rest of their personal settings.
+- Every AI controller action checks `Current.user.accepted_ai_terms?` and refuses (403) without it. The UI hides the prompt until then, but the server doesn't trust the UI.
+
+## Safety measures
+
+Every AI feature has all of these. A feature's design doc only adds to them.
+
+1. **Its own job only.** The fixed instructions say what the feature does and that anything else gets a refusal. The reply schema has an `off_topic` field. When it's true, the UI shows the purpose's refusal message (frame `ai-refused.png`) and nothing else from the reply.
+2. **A moderation check first.** The person's text goes through RubyLLM's moderation call before the AI sees it. If it's flagged, the request stops with the same refusal message, and it doesn't count toward the daily limit.
+3. **The person's text is data, never instructions.** It goes into the user message inside a clearly marked block. The system prompt says text in that block can't change the rules. The schema means the reply can only fill fixed fields.
+4. **Search limited to jw.org and wol.jw.org,** then `Ai::SourceLink` (above).
+5. **No copying.** The instructions say to write in its own words and not to quote pages or verses. After the reply comes back, any outline sentence that contains a stretch of 40 or more characters from a citation's `cited_text` (ignoring case and spacing) is removed. If that leaves the draft too thin, the request fails with "Couldn't make a draft this time. Try again."
+6. **AI output is untrusted text.** Every field is rendered through ERB escaping or Primer components, never `html_safe` and never `raw`. Notes HTML built from a draft comes from our own template filled with escaped fields, then goes through Action Text's sanitizer like any note.
+7. **Never send more than the request needs.** Only what the person typed and the feature's options go to the provider. Never names, household names, notes, goals or other records. The prompt box says so.
+8. **Heads and adults only.** Children never see AI features in a household, and the policies refuse them. Any future feature for children needs its own decision.
+9. **Limits.** Each purpose sets a daily limit. It's counted inside the household lock, so two requests at once can't both take the last one. A request that failed at the provider, or was stopped by moderation, doesn't count.
+10. **Kept briefly.** A feature's records and their chats are deleted after 7 days by a daily recurring job (`config/recurring.yml`). What the person chose to use is copied into their own records (a study's topic, notes and links), so nothing they kept depends on the AI record.
+
+## Privacy and cost
+
+- The provider receives only what's listed in safety measure 7. Choose provider settings that don't use API data for training, and check each provider's terms before turning AI on in production. That's Casey's call before launch.
+- Aglowy keeps no analytics (`docs/product/vision.md`). RubyLLM records token counts on each message. They're used only to see the cost of a request and are deleted with the chat after 7 days.
+- With no billing, the daily limits are the cost control. If costs rise, lower the limits in `Ai::Purpose`.
+
+## Traps
+
+- **Never fetch jw.org or wol.jw.org from Aglowy**, not even a HEAD request to check a link. The provider's search tool is the only way the AI sees those sites.
+- **Never show `cited_text`**, page snippets or anything else from a search result except its title and URL.
+- **Never let the AI's links bypass `Ai::SourceLink`.** That includes links inside the outline text: strip them, and show links only from the sources list.
+- **Don't trust `off_topic` alone.** The moderation check runs first, and the schema keeps the reply inside fixed fields either way.
+- **Count the limit in the household's time zone,** from midnight to midnight, under the household lock.
+- **Don't log prompts or replies.** Add `prompt`, `content` and `outline` to `filter_parameters`, and never write them in job arguments: jobs receive record ids only.
+- **Streaming goes only to the person who asked.** Broadcast on a signed stream name for that record (`turbo_stream_from @draft`), never on a household-wide stream.
+- **Tests never call a provider.** Stub `Chat#ask_within_purpose` (or RubyLLM's chat object) with Minitest's `stub`, using saved replies in `test/fixtures/files/ai/`. CI has no AI keys.
+
+## States each story checks
+
+- Person: head, adult, child (refused), non-member (404), not yet accepted (refused), accepted
+- Limit: none used, 9 used, 10 used, a new day in the household's time zone
+- Reply: a good draft, off topic, flagged by moderation, provider error, a link not in the search results, a link on another host, a sentence copied from a citation, a reference that doesn't parse
+- Desktop and phone; light and dark
