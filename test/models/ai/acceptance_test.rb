@@ -42,4 +42,10 @@ class Ai::AcceptanceTest < ActiveSupport::TestCase
 
     assert_raises(ActiveRecord::NotNullViolation) { acceptance.update_column(:user_id, nil) }
   end
+
+  test "the database refuses an acceptance for someone who doesn't exist" do
+    acceptance = users(:head).accept_ai_terms(understood: "1")
+
+    assert_raises(ActiveRecord::InvalidForeignKey) { acceptance.update_column(:user_id, SecureRandom.uuid_v7) }
+  end
 end

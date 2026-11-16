@@ -4,7 +4,7 @@ class AiAcceptancesController < ApplicationController
   # A path in one of the person's own households, and nothing else: no host, no scheme, no stray characters.
   RETURN_PATH = %r{\A/(?<household_id>\h{8}-\h{4}-\h{4}-\h{4}-\h{12})(?:/[\w/-]*)?(?:\?[\w=&%-]*)?\z}
 
-  before_action { authorize Current.user, :update? }
+  before_action { authorize Current.user, policy_class: Ai::AcceptancePolicy }
 
   def create
     acceptance = Current.user.accept_ai_terms(understood: params.dig(:ai_acceptance, :understood))

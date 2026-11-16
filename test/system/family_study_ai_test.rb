@@ -45,6 +45,16 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
       assert_button "Draft with AI"
       assert_no_selector "h2", text: "Before you use AI"
     end
+
+    users(:head).accept_ai_terms(understood: "1")
+    visit new_household_family_study_url(household_id: households(:home))
+
+    within("turbo-frame#ai_panel") do
+      click_on "Draft with AI"
+      click_on "Cancel"
+      assert_button "Draft with AI"
+      assert_no_field "What should the study be about?"
+    end
   end
 
   test "with 10 used: Limit reached, and the form still schedules a study" do
