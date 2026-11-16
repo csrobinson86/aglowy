@@ -111,6 +111,7 @@ class PersonalNoteTest < ActiveSupport::TestCase
 
   test "deleting a collection nullifies the notes' collection_id" do
     note = personal_notes(:head_return_visit)
+    note.update!(collection: collections(:head_bible_questions))
 
     collections(:head_bible_questions).destroy!
 
