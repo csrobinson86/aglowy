@@ -10,9 +10,11 @@ class FamilyStudiesController < ApplicationController
   end
 
   # Also reloads the Repeat field's Turbo Frame when the date changes, so the choices come from the server.
+  # ?from_study= is "Plan a family study from this": found through Current.user, so someone else's study is ignored.
   def new
     @scheduling = FamilyStudy::Scheduling.new(household: Current.household, **repeat_field_params)
     @scheduling.fill_in_from(@goal_step) if @goal_step
+    @from_study = Current.user.personal_studies.find_by(id: params[:from_study]) if params[:from_study].present?
   end
 
   def create

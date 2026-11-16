@@ -114,7 +114,10 @@ Rails.application.routes.draw do
     # The signed-in person's own studies, found through Current.user (docs/design/personal-study.md, Pages and routes).
     resources :personal_studies, only: %i[ index new create show update destroy ] do
       resources :taggings, only: %i[ create destroy ], module: :personal_studies
-      resources :questions, only: %i[ create destroy ], module: :personal_studies
+      resources :questions, only: %i[ create destroy ], module: :personal_studies do
+        # Save to notes on an answer card: appends the answer to the study's notes.
+        resource :note_saving, only: :create
+      end
     end
     # The person's folders, shared between Personal study and Notes.
     resources :collections, only: %i[ create update destroy ]

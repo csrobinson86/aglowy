@@ -1,0 +1,13 @@
+<%# locals: (question:) -%>
+<%# An answer as it's saved to the study's notes (PersonalStudy::Question#save_to_notes). Every field is the AI's text,
+    escaped here; references stay plain text, linked when the notes are saved. %>
+<% if question.answer["not_found_note"].present? %><p><%= question.answer["not_found_note"] %></p><% end %>
+<% question.answer["paragraphs"].each do |paragraph| %><p><%= paragraph %></p><% end %>
+<% if question.sources.any? %>
+  <p>Pages:</p>
+  <ul>
+    <% question.sources.each do |source| %>
+      <li><%= link_to source["title"].presence || source_host(source["url"]), source["url"] %></li>
+    <% end %>
+  </ul>
+<% end %>

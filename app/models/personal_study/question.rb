@@ -18,7 +18,28 @@ class PersonalStudy::Question < ApplicationRecord
   # How many questions a person may ask in a day (docs/design/ai.md, safety measure 9).
   def self.daily_limit = Ai::Purpose.find(PersonalStudy::PURPOSE).daily_limit
 
+  # Only an answer that passed the checks can go into the notes.
+  class NotAnswered < StandardError; end
+
+  # Appends the answer to the study's notes: our own partial, every field escaped, references left as plain text for
+  # link_scriptures to link, then "Pages:" and the links (docs/design/personal-study.md, Save to notes). The notes are
+  # the person's record now, kept if the question goes. Under the study's lock, so two saves can't drop each other's text.
+  def save_to_notes
+    raise NotAnswered, "Only an answered question can be saved to notes" unless answered?
+
+    personal_study.with_lock do
+      personal_study.notes = "#{personal_study.notes&.body&.to_html}#{notes_html}"
+      personal_study.link_scriptures
+      personal_study.save!
+    end
+  end
+
   def stop
     (self.class.asking.where(id: id).update_all(status: "stopped", updated_at: Time.current) == 1).tap { reload }
   end
+
+  private
+    def notes_html
+      ApplicationController.render(partial: "personal_studies/questions/notes", locals: { question: self })
+    end
 end

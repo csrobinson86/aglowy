@@ -30,6 +30,9 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     })
 
     within(question_card("Why does Jehovah allow suffering, and will it ever end?")) do
+      # The broadcast can't know the page's household; the page's own card brings Save to notes and takes its place.
+      # Wait for it first, so no link below is read from the card as it's replaced.
+      assert_button "Save to notes"
       assert_text "From jw.org and wol.jw.org"
       assert_text "The publications explain that suffering didn't start with God."
       assert_link "Genesis 3:1-6", href: %r{\Ahttps://www.jw.org/finder}
@@ -124,6 +127,60 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
       assert_selector "ul[aria-live=polite] li", text: "Searching jw.org and wol.jw.org…"
     end
     assert_enqueued_jobs 1, only: PersonalStudy::AnswerQuestionJob
+  end
+
+  test "save an answer to notes and see it with scripture links" do
+    @study.update!(notes: "<p>Start with Job.</p>")
+    personal_study_question(@study, status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [] })
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+
+    within(question_card("Why does Jehovah allow suffering?")) { click_on "Save to notes" }
+
+    within("section[aria-labelledby=my-notes]") do
+      assert_text "Saved"
+      within("lexxy-editor") do
+        assert_text "Start with Job."
+        assert_text "Jehovah never causes suffering"
+        assert_selector ".scripture-link", text: "James 1:13"
+        assert_text "Pages:"
+        assert_link "Why Does God Allow Suffering?"
+      end
+    end
+    assert_accessible
+    capture_screens("personal-study-saved-to-notes", scroll_to: "#my-notes")
+
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+    within("section[aria-labelledby=my-notes] lexxy-editor") { assert_text "Jehovah never causes suffering" }
+  end
+
+  test "plan a family study and see the prefilled box" do
+    personal_study_question(@study, prompt: "How does the ransom fit in?")
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+    capture_screens("personal-study-plan-button")
+
+    click_on "Plan a family study from this"
+
+    assert_selector "h1", text: "Schedule a family study"
+    within("turbo-frame#ai_panel") do
+      assert_field "What should the study be about?", with: "Why does Jehovah allow suffering?: How does the ransom fit in?"
+      assert_button "Draft outline"
+    end
+    assert_equal 0, FamilyStudy::Draft.count
+    assert_accessible
+    capture_screens("plan-family-study-from-study", scroll_to: "turbo-frame#ai_panel")
+  end
+
+  test "a child sees no plan button" do
+    child = Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
+    study = users(:child).personal_studies.create!(title: "Why do we pray?")
+    sign_out :identity
+    sign_in child
+
+    visit household_personal_study_url(household_id: households(:home), id: study)
+
+    assert_selector "h1", text: "Why do we pray?"
+    assert_no_link "Plan a family study from this"
   end
 
   private

@@ -286,6 +286,37 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='family_study_scheduling[goal_step_id]']", count: 0
   end
 
+  # Plan a family study from this (docs/design/personal-study.md): the AI panel opens on Describe, nothing sent yet.
+  test "from_study prefills the Describe box for the owner" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, prompt: "What did Job learn?")
+    personal_study_question(study, prompt: "How does the ransom fit in?")
+    users(:head).accept_ai_terms(understood: true)
+    sign_in identities(:head)
+
+    assert_no_difference -> { FamilyStudy::Draft.count } do
+      get new_household_family_study_path(household_id: households(:home), from_study: study.id)
+    end
+
+    assert_response :success
+    assert_select "[data-ai-panel-target=opened]:not([hidden])"
+    assert_select "textarea[name='family_study_draft[prompt]']", text: "Why does Jehovah allow suffering?: How does the ransom fit in?"
+  end
+
+  test "from_study is ignored for someone else's study" do
+    personal_study_question(personal_studies(:spouse_ransom), prompt: "Why was a ransom needed?")
+    users(:head).accept_ai_terms(understood: true)
+    sign_in identities(:head)
+
+    get new_household_family_study_path(household_id: households(:home), from_study: personal_studies(:spouse_ransom).id)
+
+    assert_response :success
+    assert_select "[data-ai-panel-target=opened][hidden]"
+    assert_select "textarea[name='family_study_draft[prompt]']", text: ""
+    assert_not_includes response.body, "The ransom"
+    assert_not_includes response.body, "Why was a ransom needed?"
+  end
+
   test "scheduling from a step links it and goes back to the goal" do
     step = goal_steps(:read_luke)
     sign_in identities(:spouse)
