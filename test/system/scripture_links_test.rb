@@ -16,6 +16,7 @@ class ScriptureLinksTest < ApplicationSystemTestCase
 
   teardown do
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+    page.driver.browser.execute_cdp("Emulation.setTouchEmulationEnabled", enabled: false)
   end
 
   # The caret is put mid-text, before " Read", because with no saved selection Lexxy inserts at the end of the note.
@@ -307,7 +308,7 @@ class ScriptureLinksTest < ApplicationSystemTestCase
       within("#{PICKER} .scripture-picker__verses") { click_on number.to_s }
     end
 
-    # The phone frames' size, with touch, as the screenshots use. capture_screens puts the desktop back after it.
+    # The phone frames' size, with touch, as the screenshots use. The teardown puts the desktop back after it.
     def use_phone
       emulate_viewport(*PHONE[:phone], phone: true)
       emulate_touch(true)
