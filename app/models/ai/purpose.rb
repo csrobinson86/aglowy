@@ -29,8 +29,9 @@ class Ai::Purpose
     { allowed_domains: allowed_hosts, max_uses: max_searches }
   end
 
-  # The person's text as data inside the marked block. Tags that would close or reopen the block are removed.
+  # The person's text as data inside the marked block. Every < and > goes, so no tag in it can close the block,
+  # however it's spelled or nested.
   def user_message(text)
-    "<#{USER_BLOCK}>\n#{text.to_s.gsub(%r{</?#{USER_BLOCK}>}i, "")}\n</#{USER_BLOCK}>"
+    "<#{USER_BLOCK}>\n#{text.to_s.delete("<>")}\n</#{USER_BLOCK}>"
   end
 end

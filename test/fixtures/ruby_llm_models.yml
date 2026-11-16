@@ -12,3 +12,11 @@ test_model:
   max_output_tokens: 64000
   capabilities: ["function_calling", "structured_output", "citations"]
   modalities: { "input": ["text"], "output": ["text"] }
+
+# Another provider's model, which AI features refuse.
+openai_model:
+  model_id: gpt-6.1-sol
+  name: GPT-6.1 Sol
+  provider: openai
+  capabilities: ["function_calling", "structured_output"]
+  modalities: { "input": ["text"], "output": ["text"] }

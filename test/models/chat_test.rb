@@ -15,6 +15,18 @@ class ChatTest < ActiveSupport::TestCase
     assert_equal [ "is not included in the list" ], chat.errors[:purpose]
   end
 
+  test "the database refuses a chat without a user" do
+    assert_raises(ActiveRecord::NotNullViolation) { chats(:head_draft).update_column(:user_id, nil) }
+  end
+
+  test "the database refuses a household that doesn't exist" do
+    assert_raises(ActiveRecord::InvalidForeignKey) { chats(:head_draft).update_column(:household_id, SecureRandom.uuid_v7) }
+  end
+
+  test "the database refuses a message without a chat" do
+    assert_raises(ActiveRecord::NotNullViolation) { messages(:head_draft_question).update_column(:chat_id, nil) }
+  end
+
   test "the database refuses an unknown purpose" do
     assert_raises(ActiveRecord::StatementInvalid) { chats(:head_draft).update_column(:purpose, "chatbot") }
   end

@@ -54,6 +54,13 @@ class Chat::AskWithinPurposeTest < ActiveSupport::TestCase
     assert_empty reply.sources
   end
 
+  test "a model from another provider is refused before anything is sent" do
+    chat = Chat.create!(user: users(:head), purpose: "family_study_draft", model: ruby_llm_models(:openai_model))
+
+    assert_raises(Chat::UnsupportedProvider) { chat.ask_within_purpose("Prayer as a family") }
+    assert_empty chat.messages
+  end
+
   test "streaming hands chunks to the block" do
     chunks = []
     words = [ '{"off_topic": ', "true}" ]

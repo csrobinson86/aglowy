@@ -6,5 +6,7 @@ RubyLLM.configure do |config|
   # Moderation (Ai::Moderation) uses OpenAI's moderation model.
   config.openai_api_key = ENV["OPENAI_API_KEY"]
   config.default_model = ENV["AI_MODEL"] if ENV["AI_MODEL"].present?
+  # Providers often quote the request back in errors, and prompts are never logged (docs/design/ai.md, Traps).
+  config.redact_error_messages = true
   config.context_budget = { per_result: 0.25, per_request: 0.7 }
 end

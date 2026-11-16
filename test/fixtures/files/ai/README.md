@@ -25,5 +25,6 @@ end
 File.write("test/fixtures/files/ai/family_study_draft.json", JSON.pretty_generate(body) + "\n")
 ```
 
-Then shorten each `encrypted_content` and `encrypted_index` to a placeholder, check the citations carry
-`cited_text`, and update the expected title, points and sources in the test.
+Check that the citations carry `cited_text`, then replace every `cited_text` with a placeholder like the ones in
+the hand-built file: the repository never keeps jw.org or wol.jw.org text. Shorten each `encrypted_content` and
+`encrypted_index` to a placeholder too, and update the expected title, points and sources in the test.
