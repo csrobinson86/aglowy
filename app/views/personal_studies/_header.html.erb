@@ -1,6 +1,6 @@
 <%# locals: (personal_study:) %>
 <%# The study's header (frame personal-study.png): the breadcrumb, the title, when it started, the tag editor, and the
-    "…" menu with Rename, Move to collection and Delete, each in a Primer Dialog. Question counts come with the conversation.
+    "…" menu with Rename, Move to collection and Delete, each in a Primer Dialog.
     Names come from the database, so a refused rename doesn't show its title as saved. %>
 <% collection = personal_study.collection %>
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
@@ -15,7 +15,7 @@
     <%= render "personal_studies/menu", personal_study: %>
   <% end %>
   <% subhead.with_description do %>
-    Started <%= l(personal_study.created_at.to_date, format: :long) %>
+    Started <%= l(personal_study.created_at.to_date, format: :long) %><%= render "personal_studies/counts", personal_study: %>
     <%= render TagEditorComponent.new(taggable: personal_study, user: Current.user, household: Current.household) %>
   <% end %>
 <% end %>

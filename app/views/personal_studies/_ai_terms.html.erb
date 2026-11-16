@@ -1,0 +1,13 @@
+<%# locals: (personal_study:) %>
+<%# The AI first-use notice (docs/design/ai.md, First use), in place of the ask box until the person accepts. Accepting
+    comes back to this study. %>
+<%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2)) { "Before you use AI" } %>
+<p>Here's how AI answers work in Aglowy. You only see this once.</p>
+<ul class="ml-3 mb-3">
+  <li class="mb-2"><strong>What's sent:</strong> the question you type. Never your name, your household, or your notes.</li>
+  <li class="mb-2"><strong>Where it looks:</strong> the AI searches only jw.org and wol.jw.org. It links each page it used and never copies their text into Aglowy.</li>
+  <li class="mb-2"><strong>What it does:</strong> it only answers questions about the Bible and your spiritual study.</li>
+  <li class="mb-2"><strong>Check its work:</strong> answers can be wrong. Read each point against its scripture or page.</li>
+  <li><strong>Daily limit:</strong> you can ask <%= PersonalStudy::Question.daily_limit %> questions a day.</li>
+</ul>
+<%= render "ai_acceptances/form", acceptance: Ai::Acceptance.new, return_to: household_personal_study_path(id: personal_study), not_now: false %>

@@ -30,6 +30,7 @@ class PersonalStudiesController < ApplicationController
     authorize @personal_study
 
     if @personal_study.save
+      ask_first_question
       redirect_to household_personal_study_path(id: @personal_study), notice: "Study started."
     else
       render :new, status: :unprocessable_content
@@ -63,6 +64,16 @@ class PersonalStudiesController < ApplicationController
   def set_personal_study
     @personal_study = Current.user.personal_studies.preloaded.find(params[:id])
     authorize @personal_study
+  end
+
+  # A first question from the New study page is asked straight away (docs/design/personal-study.md, Pages and routes:
+  # New study). One refused (the day's limit, say) leaves the study started, with the reason.
+  def ask_first_question
+    prompt = params.fetch(:personal_study, {}).permit(:prompt)[:prompt]
+    return if prompt.blank?
+
+    question = @personal_study.ask(prompt, by: Current.user, young_reader: Current.membership.child?)
+    flash[:alert] = question.errors.full_messages.to_sentence unless question.persisted?
   end
 
   def filtered(studies)

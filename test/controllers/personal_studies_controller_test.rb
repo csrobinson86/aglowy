@@ -1,6 +1,8 @@
 require "test_helper"
 
 class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     @home = households(:home)
     @study = personal_studies(:head_suffering)
@@ -124,6 +126,85 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :unprocessable_content
     assert_select "h1", "New study"
+  end
+
+  test "create with a first question asks it straight away" do
+    users(:head).accept_ai_terms(understood: true)
+    sign_in identities(:head)
+
+    assert_enqueued_jobs(1, only: PersonalStudy::AnswerQuestionJob) do
+      post household_personal_studies_path(household_id: @home), params: { personal_study: { title: "Prayer", collection_id: "", prompt: "Why does Jehovah want us to pray?" } }
+    end
+
+    study = users(:head).personal_studies.find_by!(title: "Prayer")
+    assert_redirected_to household_personal_study_path(household_id: @home, id: study)
+    assert_equal "Why does Jehovah want us to pray?", study.questions.sole.prompt
+    assert_equal "Study started.", flash[:notice]
+  end
+
+  test "a first question refused at the day's limit leaves the study started, with the reason" do
+    users(:head).accept_ai_terms(understood: true)
+    30.times { Ai::Use.create!(user: users(:head), purpose: "personal_study") }
+    sign_in identities(:head)
+
+    assert_difference -> { PersonalStudy.count } do
+      post household_personal_studies_path(household_id: @home), params: { personal_study: { title: "Prayer", prompt: "Why pray?" } }
+    end
+
+    assert_empty users(:head).personal_studies.find_by!(title: "Prayer").questions
+    assert_equal "You've asked 30 questions today. You can ask again after midnight.", flash[:alert]
+  end
+
+  test "New study offers a first question only to someone who can ask the AI" do
+    sign_in identities(:head)
+
+    get new_household_personal_study_path(household_id: @home)
+    assert_select "textarea[name='personal_study[prompt]']", count: 0
+
+    users(:head).accept_ai_terms(understood: true)
+    get new_household_personal_study_path(household_id: @home)
+    assert_select "textarea[name='personal_study[prompt]']"
+    assert_select "label", text: "First question"
+  end
+
+  test "show: the conversation, the ask box, and the study's sources once each" do
+    users(:head).accept_ai_terms(understood: true)
+    page = { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" }
+    answer = { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "An answer." ], "next_questions" => [] }
+    2.times { personal_study_question(@study, status: "answered", answer:, sources: [ page ]) }
+    sign_in identities(:head)
+
+    get household_personal_study_path(household_id: @home, id: @study)
+
+    assert_select ".study-question", count: 2
+    assert_select ".Subhead", text: /· 2 questions · 1 page linked/
+    assert_select "label", text: /\AAsk a follow-up/
+    assert_select "section[aria-labelledby=study-sources] li a[href=?]", page["url"], count: 1
+    assert_select "section[aria-labelledby=study-sources]", text: /Titles and links only. Open a page to read it on jw.org./
+  end
+
+  test "show with no questions yet" do
+    users(:head).accept_ai_terms(understood: true)
+    sign_in identities(:head)
+
+    get household_personal_study_path(household_id: @home, id: @study)
+
+    assert_select ".study-question", count: 0
+    assert_select ".Subhead", text: /questions? ·/, count: 0
+    assert_select "label", text: /\AAsk a question/
+    assert_select "main", text: /30 of 30 questions left today/
+    assert_select "section[aria-labelledby=study-sources]", text: /The pages each answer uses show here./
+  end
+
+  test "show without the AI terms: the first-use notice in place of the ask box" do
+    sign_in identities(:head)
+
+    get household_personal_study_path(household_id: @home, id: @study)
+
+    assert_select "h2", "Before you use AI"
+    assert_select "form[action=?]", ai_acceptance_path(return_to: household_personal_study_path(household_id: @home, id: @study), not_now: false)
+    assert_select "button", text: "Not now", count: 0
+    assert_select "textarea[name='personal_study_question[prompt]']", count: 0
   end
 
   test "create in another person's collection: 404" do

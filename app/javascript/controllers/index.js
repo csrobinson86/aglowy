@@ -36,3 +36,6 @@ application.register("repeat-field", RepeatFieldController)
 
 import ResourceLinksController from "./resource_links_controller"
 application.register("resource-links", ResourceLinksController)
+
+import StudyAskController from "./study_ask_controller"
+application.register("study-ask", StudyAskController)

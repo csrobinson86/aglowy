@@ -1,10 +1,11 @@
-<%# locals: (acceptance:, return_to:) -%>
-<%# The First use form, also re-rendered alone when the box wasn't ticked (Primer shows no message on a check box). %>
+<%# locals: (acceptance:, return_to:, not_now: true) -%>
+<%# The First use form, also re-rendered alone when the box wasn't ticked (Primer shows no message on a check box).
+    not_now: false leaves out "Not now", which only the AI panel can close, and asks for the same when re-rendered. %>
 <div id="ai_terms">
   <% if acceptance.errors.any? %>
     <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { acceptance.errors[:understood].to_sentence } %>
   <% end %>
-  <%= primer_form_with(model: acceptance, url: ai_acceptance_path(return_to: return_to)) do |f| %>
-    <%= render AiAcceptances::AcceptanceForm.new(f) %>
+  <%= primer_form_with(model: acceptance, url: ai_acceptance_path(return_to: return_to, not_now: (false unless not_now))) do |f| %>
+    <%= render AiAcceptances::AcceptanceForm.new(f, not_now:) %>
   <% end %>
 </div>
