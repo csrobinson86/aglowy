@@ -50,4 +50,37 @@ class MeetingNote::PartTest < ActiveSupport::TestCase
     assert_not part.valid?
     assert_includes part.errors[:meeting_note], "must exist"
   end
+
+  test "notes with a scripture attachment are valid" do
+    part = meeting_note_parts(:head_talk)
+    part.notes = "<p>Let go of anger. #{scripture_attachment("19:37:8-9")}</p>"
+
+    assert part.valid?
+  end
+
+  test "notes with an attachment for another record are invalid" do
+    part = meeting_note_parts(:head_talk)
+    part.notes = "<p>#{foreign_attachment(users(:spouse))}</p>"
+
+    assert_not part.valid?
+    assert_equal [ "Notes can only link scriptures" ], part.errors.full_messages_for(:notes)
+  end
+
+  test "notes with a remote image attachment are invalid" do
+    part = meeting_note_parts(:head_talk)
+    part.notes = "<p>#{remote_image_attachment}</p>"
+
+    assert_not part.valid?
+    assert_equal [ "Notes can only link scriptures" ], part.errors.full_messages_for(:notes)
+  end
+
+  test "a refused attachment leaves the unsaved notes, so the form shows what's left" do
+    part = meeting_note_parts(:head_talk)
+    part.notes = "<p>Kept #{scripture_attachment("40:24:14")} #{foreign_attachment(users(:spouse))}#{remote_image_attachment}</p>"
+
+    assert_not part.valid?
+    assert_equal [ Bible::Reference.find("40:24:14") ], part.notes.body.attachables
+    assert_equal "Kept Matthew 24:14", part.notes.to_plain_text.strip
+    assert_includes MeetingNote::Part.find(part.id).notes.to_plain_text, "Jehovah promises", "nothing is saved"
+  end
 end

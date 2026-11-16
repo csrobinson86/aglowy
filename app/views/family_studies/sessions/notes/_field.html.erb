@@ -2,14 +2,15 @@
 <%# The approved hand-built form piece (CLAUDE.md, Forms): Primer has no rich-text input, so this is
     Primer's FormControl markup around Lexxy, which reads its accessible name from the label.
     With heading: true the label is the section's h2, as on the Schedule a study frame.
-    Attachments are off: files are resources, uploaded through the drop zone. %>
+    The notes take scripture links and nothing else (scripture_notes_options): files are resources, uploaded through the drop zone. %>
 <div class="FormControl width-full FormControl--fullWidth">
   <% if heading %>
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { form.label(:notes, "Notes") } %>
   <% else %>
     <%= form.label :notes, "Notes", class: "FormControl-label" %>
   <% end %>
-  <%= form.rich_text_area :notes, attachments: false,
+  <%= form.rich_text_area :notes,
         placeholder: "Write your own outline, questions to discuss, or anything to remember.",
-        data: { direct_upload_url: "", blob_url_template: "" } %>
+        **scripture_notes_options(form) %>
+  <%= render "scriptures/notes_validation", form: %>
 </div>

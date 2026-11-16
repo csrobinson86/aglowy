@@ -36,6 +36,9 @@ Rails.application.routes.draw do
   # (docs/design/invitations.md, Child logins). A query parameter for the same reason as the invitation's token.
   resource :password_setup, only: %i[ edit update ], path_names: { edit: "" }
   resources :households, only: %i[ index new create ]
+  # A scripture link for the notes editor, /scriptures/19:37:8-9, signed on the server (docs/design/scripture-links.md, Pieces).
+  # No household: a Bible reference isn't anyone's record.
+  resources :scriptures, only: :show
   # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
   # The sign-in details form on the same page posts to /account/sign_in; leaving a household deletes
   # /account/memberships/:id, one of the person's own active seats.

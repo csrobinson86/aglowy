@@ -836,6 +836,66 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "the notes editors accept scripture links and nothing else, with uploads off" do
+    sign_in identities(:head)
+
+    get edit_note_path(meeting_notes(:head_midweek))
+
+    editors = css_select("main lexxy-editor")
+    assert_equal 6, editors.size, "five parts and the template for another Living as Christians part"
+    editors.each do |editor|
+      assert_equal "application/vnd.actiontext.scripture", editor["permitted-attachment-types"]
+      assert_equal "false", editor["remote-images"]
+      assert_equal({ "upload" => "none" }, JSON.parse(editor["toolbar"]))
+      assert_equal "no-uploads", editor["data-controller"]
+      assert_equal "", editor["data-direct-upload-url"]
+      assert_equal "", editor["data-blob-url-template"]
+      assert_nil editor["attachments"]
+    end
+  end
+
+  test "saving a part's notes with a scripture attachment keeps it, and the note links it to jw.org" do
+    sign_in identities(:head)
+    psalm = Bible::Reference.find("19:37:8-9")
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+      "0" => { id: meeting_note_parts(:head_talk).id, notes: "<p>Let go of anger. #{scripture_attachment(psalm.id)}</p>" }
+    } } }
+
+    assert_redirected_to note_path(meeting_notes(:head_midweek))
+    assert_equal [ psalm ], meeting_note_parts(:head_talk).reload.notes.body.attachables
+    follow_redirect!
+    assert_select "main a.scripture-link[href=?][target=_blank][rel=noopener]", psalm.jw_url, text: "Psalm 37:8, 9"
+  end
+
+  test "saving a part's notes with a foreign attachment is refused with the message" do
+    sign_in identities(:head)
+    part = meeting_note_parts(:head_talk)
+    before = part.notes.body.to_html
+
+    patch note_path(meeting_notes(:head_midweek)), params: { meeting_note: { parts_attributes: {
+      "0" => { id: part.id, notes: "<p>#{foreign_attachment(users(:spouse))}</p>" }
+    } } }
+
+    assert_response :unprocessable_content
+    assert_select "lexxy-editor#meeting_note_parts_attributes_0_notes[aria-invalid=true][aria-describedby=meeting_note_parts_attributes_0_notes_validation]"
+    assert_select ".FormControl-inlineValidation#meeting_note_parts_attributes_0_notes_validation", text: "Notes can only link scriptures"
+    assert_equal before, part.reload.notes.body.to_html
+  end
+
+  test "a member reading a shared helper note sees its scripture links" do
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.mark("talk")
+    note.parts.find_by!(key: "talk").update!(notes: "<p>#{scripture_attachment("40:24:14")}</p>")
+    note.share_with(households(:home))
+    sign_in identities(:head)
+
+    get note_path(note)
+
+    assert_response :success
+    assert_select "main a.scripture-link[href=?]", Bible::Reference.find("40:24:14").jw_url, text: "Matthew 24:14"
+  end
+
   private
     def note_path(note, household = households(:home))
       household_meeting_note_path(household_id: household, id: note)

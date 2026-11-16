@@ -49,12 +49,16 @@ module Aglowy
     config.active_storage.previewers = []
     config.active_storage.service_urls_expire_in = 5.minutes
 
-    # Lexxy widens Action Text's allowed tags for its media attachments. Notes have attachments
-    # off, so take the media tags back: nobody can post an <embed> or <video> that everyone in
+    # Lexxy widens Action Text's allowed tags for its media attachments. Notes take only scripture
+    # links, so take the media tags back: nobody can post an <embed> or <video> that everyone in
     # the household then loads. Ordered after Lexxy's, which sets the list after boot too.
+    # A scripture link (bible/references/_reference) is rendered before the note is sanitized, so
+    # keep its target and rel, and it opens jw.org in a new tab that never gets this page as its
+    # opener. Its icon is an <svg>, which stays out of user content: CSS draws it instead.
     initializer "aglowy.action_text_sanitizer", after: "lexxy.sanitization" do |app|
       app.config.after_initialize do
         ActionText::ContentHelper.allowed_tags -= %w[ embed video audio source ]
+        ActionText::ContentHelper.allowed_attributes += %w[ target rel ]
       end
     end
 

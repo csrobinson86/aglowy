@@ -1,8 +1,11 @@
 # One part of a meeting note's outline. Everything the person types is encrypted.
 class MeetingNote::Part < ApplicationRecord
+  include ScriptureLinkable
+
   belongs_to :meeting_note
 
   has_rich_text :notes, encrypted: true
+  scripture_linkable :notes
   encrypts :title, :speaker
 
   validates :position, presence: true

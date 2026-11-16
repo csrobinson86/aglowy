@@ -236,4 +236,27 @@ class FamilyStudy::SessionTest < ActiveSupport::TestCase
       FamilyStudy::Session.transaction { family_study_sessions(:weekly_next).add_files([ pdf.signed_id, photo.signed_id ]) }
     end
   end
+
+  test "notes with a scripture attachment are valid" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>Read #{scripture_attachment("8:1:16")}</p>"
+
+    assert session.valid?
+  end
+
+  test "notes with an attachment for another record are invalid" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>#{foreign_attachment(households(:other))}</p>"
+
+    assert_not session.valid?
+    assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
+  end
+
+  test "notes with a remote image attachment are invalid" do
+    session = family_study_sessions(:weekly_next)
+    session.notes = "<p>#{remote_image_attachment}</p>"
+
+    assert_not session.valid?
+    assert_equal [ "Notes can only link scriptures" ], session.errors.full_messages_for(:notes)
+  end
 end

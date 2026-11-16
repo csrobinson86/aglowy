@@ -1,9 +1,12 @@
 class FamilyStudy::Session < ApplicationRecord
+  include ScriptureLinkable
+
   belongs_to :family_study
   belongs_to :conductor, class_name: "User", optional: true
   has_many :resources, -> { order(:position) }, dependent: :destroy
 
   has_rich_text :notes, encrypted: true
+  scripture_linkable :notes
 
   # Cancelled sessions included, for lists that show them struck through (scheduling rule 6).
   scope :ahead, -> { where(scheduled_at: Time.current..).order(:scheduled_at) }

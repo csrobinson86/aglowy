@@ -1,0 +1,9 @@
+<%# locals: (form:) -%>
+<%# A refused note's message under its editor, in Primer's FormControl markup like the drop zone's. The editor's
+    aria-describedby points here (scripture_notes_options). %>
+<% if (message = form.object.errors.full_messages_for(:notes).first) %>
+  <div id="<%= form.field_id(:notes, :validation) %>" class="FormControl-inlineValidation">
+    <%= render(Primer::Beta::Octicon.new(icon: :"alert-fill", size: :xsmall)) %>
+    <span><%= message %></span>
+  </div>
+<% end %>

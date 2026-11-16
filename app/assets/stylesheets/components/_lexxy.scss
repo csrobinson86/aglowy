@@ -20,3 +20,9 @@ lexxy-editor,
   --lexxy-font-mono: var(--fontStack-monospace);
   --lexxy-radius: var(--borderRadius-medium);
 }
+
+// Notes take scripture links, so attachments stay on, but never uploads: the notes editors set the toolbar's
+// upload to "none" (scripture_notes_options), and their upload buttons go, as attachments: false would hide them.
+lexxy-toolbar[data-upload="none"] :is(button[name="image"], button[name="file"]) {
+  display: none;
+}
