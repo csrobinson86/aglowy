@@ -19,7 +19,7 @@ class CollectionsController < ApplicationController
 
   # Taking it out of Personal study while studies are in it is refused, in the dialog.
   def update
-    if @collection.update(collection_params)
+    if @collection.revise(collection_params)
       redirect_to household_personal_studies_path(collection: @collection.id), notice: "Collection saved."
     else
       render_form :edit

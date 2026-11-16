@@ -29,6 +29,15 @@ class Collection < ApplicationRecord
     collection
   end
 
+  # Rename it or change where it's used. A rename that races another to the same name passes the uniqueness check
+  # and reaches the unique index, like an add; it gets the same error.
+  def revise(attributes)
+    update(attributes)
+  rescue ActiveRecord::RecordNotUnique
+    errors.add(:name, :taken)
+    false
+  end
+
   def for_studies? = !used_in_notes?
 
   private

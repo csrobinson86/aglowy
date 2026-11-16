@@ -40,6 +40,23 @@ class CollectionTest < ActiveSupport::TestCase
     assert_equal [ "Name has already been taken" ], collection.errors.full_messages
   end
 
+  test "revise renames a collection and changes where it's used" do
+    collection = collections(:head_bible_questions)
+
+    assert collection.revise(name: "Questions", used_in: "studies")
+    assert_equal [ "Questions", "studies" ], collection.reload.values_at(:name, :used_in)
+  end
+
+  test "a rename that races another to the same name reaches the unique index and fails with the same error" do
+    uniqueness = Collection.validators_on(:name).grep(ActiveRecord::Validations::UniquenessValidator).sole
+    collection = collections(:head_talks)
+
+    # As if the other request took the name after this one checked it.
+    assert_not uniqueness.stub(:validate_each, nil) { collection.revise(name: "Bible questions") }
+    assert_equal [ "Name has already been taken" ], collection.errors.full_messages
+    assert_equal "Preparing a talk", collection.reload.name
+  end
+
   test "used_in is both, studies or notes" do
     collection = collections(:head_talks)
 
