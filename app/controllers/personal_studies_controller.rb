@@ -27,6 +27,7 @@ class PersonalStudiesController < ApplicationController
 
   def create
     @personal_study = Current.user.personal_studies.new(study_attributes(:title, :collection_id))
+    @first_question = params.fetch(:personal_study, {}).permit(:prompt)[:prompt]
     authorize @personal_study
 
     if @personal_study.save
@@ -69,10 +70,9 @@ class PersonalStudiesController < ApplicationController
   # A first question from the New study page is asked straight away (docs/design/personal-study.md, Pages and routes:
   # New study). One refused (the day's limit, say) leaves the study started, with the reason.
   def ask_first_question
-    prompt = params.fetch(:personal_study, {}).permit(:prompt)[:prompt]
-    return if prompt.blank?
+    return if @first_question.blank?
 
-    question = @personal_study.ask(prompt, by: Current.user, young_reader: Current.membership.child?)
+    question = @personal_study.ask(@first_question, by: Current.user, young_reader: Current.membership.child?)
     flash[:alert] = question.errors.full_messages.to_sentence unless question.persisted?
   end
 

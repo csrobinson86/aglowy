@@ -21,15 +21,21 @@ export default class extends Controller {
   // a provider error) can come before it subscribes, or while a dropped connection comes back. Each time it
   // subscribes, look for the result; anything later arrives on the stream.
   streamTargetConnected(stream) {
-    const observer = new MutationObserver(() => this.catchUp(stream))
+    const observer = new MutationObserver(() => this.queueCatchUp(stream))
     observer.observe(stream, { attributes: true, attributeFilter: [ "connected" ] })
     catchUpObservers.set(stream, observer)
-    this.catchUp(stream)
+    this.queueCatchUp(stream)
   }
 
   streamTargetDisconnected(stream) {
     catchUpObservers.get(stream)?.disconnect()
     catchUpObservers.delete(stream)
+  }
+
+  // One at a time, so each look reads the page after the one before it was applied, and an older read never puts back
+  // counts a newer one replaced. A failed look changes nothing; the stream's next reconnect looks again.
+  queueCatchUp(stream) {
+    this.catchingUp = (this.catchingUp ?? Promise.resolve()).then(() => this.catchUp(stream)).catch(() => {})
   }
 
   // The study page as it is now: once the question has finished there, it replaces the card, and the study's counts
@@ -38,9 +44,10 @@ export default class extends Controller {
     if (!stream.hasAttribute("connected")) return
     const question = stream.closest(".study-question")
     const response = await fetch(window.location.pathname, { headers: { Accept: "text/html" } })
-    if (!response.ok || !stream.isConnected) return
+    if (!response.ok) return
 
     const page = new DOMParser().parseFromString(await response.text(), "text/html")
+    if (!stream.isConnected) return
     const finished = page.getElementById(question.id)
     if (!finished || finished.querySelector("turbo-cable-stream-source")) return
 

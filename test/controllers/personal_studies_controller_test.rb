@@ -128,6 +128,17 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "New study"
   end
 
+  test "a blank title shows the form again with the first question kept" do
+    users(:head).accept_ai_terms(understood: true)
+    sign_in identities(:head)
+
+    assert_no_enqueued_jobs do
+      post household_personal_studies_path(household_id: @home), params: { personal_study: { title: " ", prompt: "Why pray?" } }
+    end
+    assert_response :unprocessable_content
+    assert_select "textarea[name='personal_study[prompt]']", text: "Why pray?"
+  end
+
   test "create with a first question asks it straight away" do
     users(:head).accept_ai_terms(understood: true)
     sign_in identities(:head)
@@ -155,7 +166,7 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "You've asked 30 questions today. You can ask again after midnight.", flash[:alert]
   end
 
-  test "New study offers a first question only to someone who can ask the AI" do
+  test "New study offers a first question only to someone who can ask the AI, with questions left today" do
     sign_in identities(:head)
 
     get new_household_personal_study_path(household_id: @home)
@@ -165,6 +176,10 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     get new_household_personal_study_path(household_id: @home)
     assert_select "textarea[name='personal_study[prompt]']"
     assert_select "label", text: "First question"
+
+    30.times { Ai::Use.create!(user: users(:head), purpose: "personal_study") }
+    get new_household_personal_study_path(household_id: @home)
+    assert_select "textarea[name='personal_study[prompt]']", count: 0
   end
 
   test "show: the conversation, the ask box, and the study's sources once each" do
