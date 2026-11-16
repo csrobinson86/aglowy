@@ -67,17 +67,43 @@ class Ai::CopyCheckTest < ActiveSupport::TestCase
     assert_equal({ "closing" => "Sing." }, fields)
   end
 
-  test "keeps a sentence whose shortened year and possessive hold no quotation, but not a quotation opening with a number" do
+  test "keeps a sentence whose shortened year and possessive hold no quotation" do
     closing = "Remember the '90s when all of our dear parents' prayers helped us. In ‘05 our grandparents’ faith grew."
-    fields, = clean("closing" => closing, "question" => "Read '1 Corinthians 13:4 love is patient and kind.' Then ‘144,000 will rule with Christ in heaven.’ Pray.")
 
-    assert_equal({ "closing" => closing, "question" => "Pray." }, fields)
+    assert_equal [ { "closing" => closing }, false ], clean("closing" => closing)
+  end
+
+  test "removes a sentence whose quotation opens with a number" do
+    fields, = clean("question" => "Read '1 Corinthians 13:4 love is patient and kind.' Then ‘144,000 will rule with Christ in heaven.’ Pray.")
+
+    assert_equal({ "question" => "Pray." }, fields)
   end
 
   test "removes a sentence whose quotation opens with two digits and closes after a stop" do
     fields, = clean("question" => "Read '12 men went out and preached good news.' In ‘05 our grandparents’ faith grew. Pray.")
 
     assert_equal({ "question" => "In ‘05 our grandparents’ faith grew. Pray." }, fields)
+  end
+
+  test "measures a quotation opening with two digits only up to the next quotation mark" do
+    fields = { "question" => "Read '12 men' and then 'pray each day.' Keep going.", "closing" => "In ‘05 we started reading together ‘Pray continually.’ It helped." }
+
+    assert_equal [ fields, false ], clean(fields)
+  end
+
+  test "removes a single-quoted verse holding a plural possessive, but not a short quotation before one" do
+    fields, = clean(
+      "question" => "Read it. ‘Then Jesus’ disciples came and asked him why they could not expel it.’ Pray.",
+      "closing" => "Ask ‘why pray?’ and listen to the kids’ answers before bed tonight. Say ‘Jehovah loves us’ and read his ‘word.’"
+    )
+
+    assert_equal({ "question" => "Read it. Pray.", "closing" => "Ask ‘why pray?’ and listen to the kids’ answers before bed tonight. Say ‘Jehovah loves us’ and read his ‘word.’" }, fields)
+  end
+
+  test "checks a long text of quotation marks left open within the regexp timeout" do
+    text = "'12 men and ‘a few " * 3000
+
+    assert_equal [ { "question" => text }, false ], clean("question" => text)
   end
 
   private

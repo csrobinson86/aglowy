@@ -4,10 +4,25 @@
 class Ai::CopyCheck
   # A sentence runs to its stop (and any closing quotation mark or bracket), or to the end of the text.
   SENTENCE = /\S.*?(?:[.!?]+["”'’)\]]*(?=\s|\z)|\z)/m
+  # Two digits a single quotation mark may shorten a year to ('90s).
+  YEAR = /[[:digit:]]{2}s?(?![[:alnum:]])/
+  # A single quotation mark outside a word, so not the apostrophe in "don’t" or "let's", opening a quotation.
+  OPENING = /(?<![[:alnum:]])['‘](?!#{YEAR})/
   # In double quotation marks, where one left open runs to the end of the text; or in single ones, which only open
-  # and close outside a word, so the apostrophe in "don’t" or "let's" is neither. One before two digits may shorten a
-  # year ('90s), so it opens a quotation ('12 men …') only when a stop or comma closes it within the sentence.
-  QUOTATION = /["“][^"”]*(?:["”]|\z)|(?<![[:alnum:]])['‘](?:(?=[[:digit:]]{2}s?(?![[:alnum:]]))[^.!?]*?[.!?,]|(?![[:digit:]]{2}s?(?![[:alnum:]]))(?=\S).*?(?<=\S))['’](?![[:alnum:]])/m
+  # and close outside a word. A single one never runs past another opening, so each is measured on its own.
+  QUOTATION = /
+    ["“][^"”]*(?:["”]|\z)
+    | (?<![[:alnum:]])['‘]
+      (?:
+        # One before a year opens a quotation ('12 men …') only when a stop or comma closes it, before any other
+        # quotation mark.
+        (?=#{YEAR}) (?:[^.!?"“”'‘’]|(?<=[[:alnum:]])['’](?=[[:alnum:]]))*? [.!?,]
+        # Any other runs past a plural possessive (Jesus’ disciples) to a later closing mark, and otherwise closes at
+        # the first.
+        | (?!#{YEAR}) (?=\S) (?:(?:(?!#{OPENING}).)*? (?<=\S) (?:(?<![sS])|(?!['’]\s+[[:alpha:]])) | (?:(?!#{OPENING}).)*? (?<=\S))
+      )
+      ['’](?![[:alnum:]])
+  /mx
 
   # [fields, removed]: the fields (nested hashes and arrays) with those sentences gone from every string, and
   # whether any were. citations are hashes whose cited_text is an excerpt or a list of them, as Ai::Reply#sources.
