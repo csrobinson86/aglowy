@@ -3,3 +3,24 @@ head_draft:
   user: head
   household: home
   purpose: family_study_draft
+
+# Each personal study's conversation (docs/design/personal-study.md, PersonalStudy).
+head_suffering_chat:
+  model: test_model
+  user: head
+  purpose: personal_study
+
+head_kindness_chat:
+  model: test_model
+  user: head
+  purpose: personal_study
+
+head_daniel_chat:
+  model: test_model
+  user: head
+  purpose: personal_study
+
+spouse_ransom_chat:
+  model: test_model
+  user: spouse
+  purpose: personal_study

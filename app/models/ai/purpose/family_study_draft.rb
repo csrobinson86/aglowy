@@ -8,6 +8,9 @@ class Ai::Purpose::FamilyStudyDraft < Ai::Purpose
   def max_searches = 5
   def max_output_tokens = 4_000
   def daily_limit = 10
+  def keep_for = 7.days
+  # The marked block the family's request goes in (safety measure 3). The instructions name it.
+  def user_block = "family_request"
 
   def schema
     {

@@ -109,21 +109,46 @@ class PersonalStudyTest < ActiveSupport::TestCase
     end
   end
 
+  test "creating a study creates its personal study chat; deleting it deletes the chat" do
+    study = users(:spouse).personal_studies.create!(title: "Prayer")
+
+    assert_equal "personal_study", study.chat.purpose
+    assert_equal users(:spouse), study.chat.user
+    assert_nil study.chat.household
+
+    assert_difference -> { Chat.count }, -1 do
+      study.destroy!
+    end
+  end
+
+  test "database: a study needs a chat" do
+    assert_raises(ActiveRecord::NotNullViolation) { personal_studies(:head_suffering).update_column(:chat_id, nil) }
+  end
+
+  test "database: two studies can't share a chat" do
+    assert_raises(ActiveRecord::RecordNotUnique) { personal_studies(:head_daniel).update_column(:chat_id, personal_studies(:head_suffering).chat_id) }
+  end
+
   test "database: a blank title raises CheckViolation" do
     assert_raises(ActiveRecord::CheckViolation) do
-      PersonalStudy.insert!({ user_id: users(:head).id, title: "" })
+      PersonalStudy.insert!({ user_id: users(:head).id, chat_id: new_chat.id, title: "" })
     end
   end
 
   test "database: a title over 120 characters raises CheckViolation" do
     assert_raises(ActiveRecord::CheckViolation) do
-      PersonalStudy.insert!({ user_id: users(:head).id, title: "x" * 121 })
+      PersonalStudy.insert!({ user_id: users(:head).id, chat_id: new_chat.id, title: "x" * 121 })
     end
   end
 
   test "database: a study needs a person" do
     assert_raises(ActiveRecord::NotNullViolation) do
-      PersonalStudy.insert!({ user_id: nil, title: "No one's" })
+      PersonalStudy.insert!({ user_id: nil, chat_id: new_chat.id, title: "No one's" })
     end
   end
+
+  private
+    def new_chat
+      Chat.create!(user: users(:head), purpose: "personal_study")
+    end
 end

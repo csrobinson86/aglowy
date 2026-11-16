@@ -4,8 +4,6 @@
 module FamilyStudy::Draft::Writable
   extend ActiveSupport::Concern
 
-  # The provider's errors, the connection's once RubyLLM's retries run out, and a reply that isn't a JSON object.
-  PROVIDER_ERRORS = [ RubyLLM::Error, Faraday::Error, Ai::Reply::Malformed ].freeze
   OUTLINE_FIELDS = %w[ title opening points children closing ].freeze
   MINIMUM_POINTS = 2
 
@@ -31,7 +29,7 @@ module FamilyStudy::Draft::Writable
 
     progress :checking, pages: reply.search_results.size
     reply.off_topic? ? finish("off_topic") : finish_checked(reply)
-  rescue *PROVIDER_ERRORS
+  rescue *Ai::PROVIDER_ERRORS
     finish("failed")
   rescue
     finish("failed")

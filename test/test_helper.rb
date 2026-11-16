@@ -59,6 +59,11 @@ module ActiveSupport
       FamilyStudy::Draft.create!(household: household, user: user, chat: chat, prompt: "Prayer as a family", length_minutes: 30, **attributes)
     end
 
+    # A question asking, with its use, as PersonalStudy#ask leaves one, without asking the AI.
+    def personal_study_question(study = personal_studies(:head_suffering), **attributes)
+      study.questions.create!(user: study.user, prompt: "Why does Jehovah allow suffering?", use: Ai::Use.new(user: study.user, purpose: "personal_study"), **attributes)
+    end
+
     # A plain image, no attachment at all, as a crafted request could send.
     def image_tag_html
       %(<img src="https://example.com/cat.png">)
