@@ -123,4 +123,13 @@ class Calendar::EventsControllerTest < ActionDispatch::IntegrationTest
       assert_select "option[selected][value=monthly_last]", "Monthly on the last Saturday"
     end
   end
+
+  test "a household_event that isn't a set of fields opens the dialog as new" do
+    sign_in identities(:head)
+
+    get new_household_calendar_event_path(household_id: @home, household_event: "x")
+
+    assert_response :success
+    assert_select "input[name='household_event[starts_on]'][value='2026-11-17']", 2
+  end
 end

@@ -9,7 +9,7 @@ class Calendar::EventsController < ApplicationController
   # Also what the Repeats frame reloads with a new date, keeping the choice made.
   def new
     @event = Current.household.events.new(kind: "circuit_assembly", title: Household::Event.default_title("circuit_assembly"),
-                                          starts_on: Current.household.today, **params.fetch(:household_event, {}).permit(:starts_on, :repeat))
+                                          starts_on: Current.household.today, **repeat_params)
     authorize @event
   end
 
@@ -49,6 +49,12 @@ class Calendar::EventsController < ApplicationController
 
     def event_params
       params.expect(household_event: %i[ kind title all_day starts_on ends_on starts_at ends_at repeat location note ])
+    end
+
+    # Only the date and the choice; a URL with household_event as a plain value has neither.
+    def repeat_params
+      fields = params[:household_event]
+      fields.respond_to?(:permit) ? fields.permit(:starts_on, :repeat) : {}
     end
 
     def close_dialog_and_refresh

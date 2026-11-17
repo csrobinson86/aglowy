@@ -121,10 +121,10 @@
 }
 
 // All-day events across the top of the week, each spanning its days; on a phone, one after another above the days.
+// Each item has a day column's padding, so on a wide screen the band lines up with the days under it.
 .calendar-band {
   display: grid;
-  gap: var(--base-size-4);
-  padding: var(--base-size-8);
+  padding: 0;
   margin: 0 0 var(--base-size-8);
   list-style: none;
   border: var(--borderWidth-thin) solid var(--borderColor-default);
@@ -137,6 +137,7 @@
 
 .calendar-band__item {
   min-width: 0;
+  padding: var(--base-size-4) var(--base-size-8);
 
   // The days an event spans, as columns of the week.
   @media (min-width: map.get(primer.$breakpoints, lg)) {

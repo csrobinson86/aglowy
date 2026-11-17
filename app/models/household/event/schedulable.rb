@@ -13,6 +13,7 @@ module Household::Event::Schedulable
     attribute :repeat, :string
 
     validate :times_in_order
+    validate :repeat_offered, if: -> { read_attribute(:repeat).present? && days == 1 }
   end
 
   def schedule(attributes)
@@ -66,7 +67,7 @@ module Household::Event::Schedulable
         self.days = (ends_on - starts_on).to_i + 1 if starts_on && ends_on && ends_on >= starts_on
       else
         self.days = 1
-        self.time_of_day = starts_at
+        self.time_of_day = starts_at&.strftime("%H:%M")
         self.duration_minutes = timed_minutes
       end
 
@@ -94,6 +95,11 @@ module Household::Event::Schedulable
       elsif timed_minutes < 1
         errors.add(:ends_at, "must be after Starts")
       end
+    end
+
+    # Sent before the Repeats frame caught up with a new date, or crafted: shown by Repeats, not saved on another day.
+    def repeat_offered
+      errors.add(:repeat, "isn't offered for that date") unless repeat.in?(repeat_choices.map(&:last))
     end
 
     # The week-of-month rules live on FamilyStudy, so a study and an event can't disagree (as FamilyStudy::Scheduling).

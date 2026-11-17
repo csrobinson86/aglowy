@@ -20,8 +20,9 @@ class Household::Event < ApplicationRecord
 
   scope :preloaded, -> { includes(:created_by) }
 
-  # A wall-clock time in the household's zone, so never shift it by the process zone (family-studies gotcha 14).
-  self.skip_time_zone_conversion_for_attributes = %i[ time_of_day ]
+  # Wall-clock times in the household's zone, the dialog's too, so never shift them by the process zone (family-studies
+  # gotcha 14).
+  self.skip_time_zone_conversion_for_attributes = %i[ time_of_day starts_at ends_at ]
 
   validates :title, presence: true, length: { maximum: 80 }
   validates :starts_on, presence: true

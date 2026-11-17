@@ -36,6 +36,34 @@ class Household::EventTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(kind: "party")) }
   end
 
+  test "the database refuses a title over 80 characters" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(title: "x" * 81)) }
+  end
+
+  test "the database refuses a duration over 12 hours" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(time_of_day: "08:00", duration_minutes: 721)) }
+  end
+
+  test "the database refuses a duration of 0" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(time_of_day: "08:00", duration_minutes: 0)) }
+  end
+
+  test "the database refuses an unknown frequency" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(frequency: "daily")) }
+  end
+
+  test "the database refuses an interval of 0" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(interval: 0)) }
+  end
+
+  test "the database refuses a sixth week of the month" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(frequency: "monthly", week_of_month: 6)) }
+  end
+
+  test "the database refuses a location over 120 characters" do
+    assert_raises(ActiveRecord::CheckViolation) { Household::Event.insert!(row(location: "x" * 121)) }
+  end
+
   test "validations match the checks" do
     event = event(kind: "party", title: "", days: 3, time_of_day: "19:00", frequency: "monthly", location: "x" * 121, note: "x" * 501)
 
@@ -122,6 +150,22 @@ class Household::EventTest < ActiveSupport::TestCase
     all_day = @household.events.new(created_by: users(:grandparent))
     assert_not all_day.schedule(kind: "memorial", title: "Memorial", all_day: "1", starts_on: "2026-11-28", ends_on: "2026-11-27", repeat: "once")
     assert_equal [ "can't be before Starts" ], all_day.errors[:ends_on]
+  end
+
+  test "schedule refuses a Repeats choice the date doesn't offer" do
+    event = @household.events.new(created_by: users(:grandparent))
+
+    assert_not event.schedule(kind: "other", title: "Cleaning", all_day: "0", starts_on: "2026-11-21", starts_at: "13:00", ends_at: "15:00", repeat: "monthly_last")
+    assert_equal [ "isn't offered for that date" ], event.errors[:repeat]
+  end
+
+  test "the dialog's times stay wall-clock times whatever the request's zone" do
+    event = @household.events.new(created_by: users(:grandparent))
+
+    Time.use_zone("Tokyo") do
+      assert event.schedule(kind: "other", title: "Cleaning", all_day: "0", starts_on: "2026-11-21", starts_at: "09:30", ends_at: "11:00", repeat: "once")
+    end
+    assert_equal [ "09:30", 90 ], [ event.reload.time_of_day.strftime("%H:%M"), event.duration_minutes ]
   end
 
   test "repeat_choices come from the date, with the last only on the last" do
