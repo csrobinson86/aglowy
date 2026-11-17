@@ -15,9 +15,10 @@ class CalendarFeedsController < ApplicationController
   end
 
   private
-    # The token is in the path, and Lograge logs the path, so the log gets it filtered like the token param.
+    # The token is in the path, and Lograge logs the path, so the log gets it filtered like the token param. The logged
+    # path is raw but params[:token] is decoded (%41 is A), so filter the whole segment, matched as the router does.
     def append_info_to_payload(payload)
       super
-      payload[:path] = payload[:path].sub(params[:token], "[FILTERED]") if params[:token].present?
+      payload[:path] = payload[:path].sub(%r{/calendar/[^/.?]+}, "/calendar/[FILTERED]")
     end
 end

@@ -27,6 +27,19 @@ class CalendarFeedsControllerTest < ActionDispatch::IntegrationTest
     ActiveSupport::Notifications.unsubscribe(subscriber)
   end
 
+  test "a percent-encoded token is filtered from the logged path" do
+    paths = []
+    subscriber = ActiveSupport::Notifications.subscribe("process_action.action_controller") { paths << it.payload[:path] }
+    encoded = "%%%02X%s" % [ @feed.token.ord, @feed.token[1..] ]
+
+    get "/calendar/#{encoded}.ics"
+
+    assert_response :success
+    assert_equal [ "/calendar/[FILTERED].ics" ], paths
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber)
+  end
+
   test "an unknown token is a 404" do
     get calendar_feed_path(token: "not-a-real-token", format: :ics)
 
