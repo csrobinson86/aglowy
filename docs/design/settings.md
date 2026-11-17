@@ -76,7 +76,7 @@ end
 ### `/account` stays, for people with no household
 
 A person can leave every household they're in (`docs/design/invitations.md`). They still need to change their name and password, so `/account` stays in the focused layout, unchanged except:
-- `GET /account` redirects to `/:household_id/settings/profile` when the person has an active household (the first by name).
+- `GET /account` redirects to `/:household_id/settings/profile` when the person has an active household (the first by name, then by household id, since names needn't be unique).
 - `return_to` and "Back to <household>" go away, since only people with no household see the page now.
 - Its saves stay as they are, returning to `/account`.
 
