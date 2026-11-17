@@ -7,9 +7,10 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  # The PWA manifest (linked in layouts/_head) and the service worker that shows pushes, from app/views/pwa/*
+  # (docs/design/notifications.md, Push).
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # "/" sends a signed-in person where signing in would, and shows everyone
   # else the sign-in page. The visitor's root keeps the name root_path.
@@ -133,6 +134,8 @@ Rails.application.routes.draw do
     resources :notifications, only: %i[ index show ] do
       collection { resource :readings, only: :create, module: :notifications, as: :notifications_readings }
     end
+    # Turn on for this browser and Remove, in Settings → Notifications; always the person's own devices.
+    resources :push_subscriptions, only: %i[ create destroy ]
     # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).
     resource :todays_meeting, only: %i[ show create ]
     resources :meeting_notes, only: %i[ index create show edit update ] do

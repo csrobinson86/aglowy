@@ -1,4 +1,5 @@
-# Settings → Notifications, for every role: which kinds also come by email, and quiet hours
+# Settings → Notifications, for every role: which kinds also come by email or to their phone, quiet hours, and their
+# phones and browsers
 # (docs/design/notifications.md, Settings → Notifications). It saves the person, never Current.membership
 # (docs/design/settings.md, Traps).
 class Settings::NotificationsController < ApplicationController

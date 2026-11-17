@@ -48,22 +48,41 @@ class Notification < ApplicationRecord
     Notification::DeliveryJob.perform_later(self)
   end
 
-  # The email part of delivery (docs/design/notifications.md, Delivery): only while it's still the person's to see,
-  # only a right-away kind they turned email on for, and never to a child. Inside quiet hours it comes back when they
-  # end and checks everything again; the clock is read once, so quiet hours ending in between can't cost it a day. Then it claims the email and sends only if the claim is its own. Push comes with
-  # its own story.
+  # Delivery (docs/design/notifications.md, Delivery): only while it's still the person's to see, push for a kind they
+  # turned push on for and have a device for, then email for a right-away kind they turned email on for, never to a
+  # child. Inside quiet hours it comes back when they end and checks everything again; the clock is read once, so quiet
+  # hours ending in between can't cost it a day. Each channel is claimed first and sent only if the claim is its own.
   def deliver_now
-    return unless user.notifications.visible.exists?(id) && emailed_right_away?
+    return unless user.notifications.visible.exists?(id)
+
+    pushing, emailing = pushed?, emailed_right_away?
+    return unless pushing || emailing
 
     now = Time.current
     if user.quiet_now?(now)
       Notification::DeliveryJob.set(wait_until: user.quiet_hours_end_after(now)).perform_later(self)
-    elsif Delivery.claim(self, "email")
-      Delivery.sending([ id ], "email") { NotificationMailer.notification(self).deliver_now }
+    else
+      push_now if pushing && Delivery.claim(self, "push")
+      Delivery.sending([ id ], "email") { NotificationMailer.notification(self).deliver_now } if emailing && Delivery.claim(self, "email")
     end
   end
 
-  private
+  # What a phone shows: the one-line wording, never personal text (Trap 4), and where tapping it opens.
+  def push_payload
+    { title: "Aglowy", body: title, url: Rails.application.routes.url_helpers.household_notification_path(household, self), tag: id }
+  end
+
+    private
+    # Push is never retried: each device gets one try under the one claim, which stays (Notification::Delivery).
+    def push_now
+      message = push_payload.to_json
+      user.push_subscriptions.each { it.push(message) }
+    end
+
+    def pushed?
+      user.notification_settings.push.exists?(kind:) && user.push_subscriptions.exists?
+    end
+
     def emailed_right_away?
       kind_definition.right_away? && user.emailable? && user.notification_settings.email.exists?(kind:)
     end

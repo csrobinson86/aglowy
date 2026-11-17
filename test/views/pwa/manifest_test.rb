@@ -1,6 +1,6 @@
 require "test_helper"
 
-# The web app manifest's icons and colours (docs/design/brand.md, Where it appears). It isn't routed yet.
+# The web app manifest's icons and colours (docs/design/brand.md, Where it appears). It's served at /manifest.json.
 class PwaManifestTest < ActionView::TestCase
   test "the manifest has the two app icons, the ink colours and the description" do
     render template: "pwa/manifest", formats: :json
