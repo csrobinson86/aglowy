@@ -2,27 +2,36 @@
 <%# One bookmark on the Bookmarks tab (frame bookmarks.png): the title, or the scripture's reference, linking out, its
     site or "Scripture", the comment, then its tags, collection, when it was saved and the study or note it came from
     while that exists; then Edit and the filled button that removes it. A page's title came from a search result, so
-    it's escaped like any AI text, and so is the comment. From a preloaded source, collection and tags. %>
+    it's escaped like any AI text, and so is the comment. From a preloaded source, collection and tags.
+    Below md (frame phone-bookmarks.png) it's the title on one line over one muted line of the site, the collection and
+    the tags, with Edit and Remove in the "⋯" menu. The dialog sits outside both, since a dialog in a hidden element
+    can't show. %>
 <% reference = bookmark.reference %>
 <% site = reference ? "Scripture" : source_host(bookmark.url) %>
+<% name = reference&.to_s || bookmark.title.presence || site %>
 <%= render(Primer::Beta::Octicon.new(reference ? :book : :link, color: :muted, mr: 2, mt: 1, flex_shrink: 0)) %>
 <div class="flex-auto min-width-0">
-  <p class="mb-1 wb-break-word">
-    <%= render(Primer::Beta::Link.new(href: reference&.jw_url || bookmark.url, target: "_blank", rel: "noopener", font_weight: :bold)) { reference&.to_s || bookmark.title.presence || site } %>
-    <span class="color-fg-muted">· <%= site %></span>
+  <p class="bookmarks__title mb-1">
+    <%= render(Primer::Beta::Link.new(href: reference&.jw_url || bookmark.url, target: "_blank", rel: "noopener", font_weight: :bold)) { name } %>
+    <span class="color-fg-muted d-none d-md-inline">· <%= site %></span>
   </p>
   <% if bookmark.comment %>
-    <p class="mb-1 wb-break-word"><%= bookmark.comment %></p>
+    <p class="mb-1 wb-break-word d-none d-md-block"><%= bookmark.comment %></p>
   <% end %>
-  <p class="text-small color-fg-muted mb-0">
+  <p class="text-small color-fg-muted mb-0 d-none d-md-block">
     <span id="<%= dom_id(bookmark, :tags) %>"><%= render "tags/labels", taggable: bookmark %></span>
     <%= bookmark.collection&.name || "No collection" %> · <%= l(bookmark.created_at.to_date, format: :short) %>
     <% if bookmark.source %>
       · from <%= render(Primer::Beta::Link.new(href: polymorphic_path([ :household, bookmark.source ]), muted: true, underline: true)) { bookmark.source.title } %>
     <% end %>
   </p>
+  <p class="text-small color-fg-muted mb-0 d-md-none css-truncate css-truncate-overflow">
+    <%= site %><% if bookmark.collection %> · <%= bookmark.collection.name %><% end %><span id="<%= dom_id(bookmark, :phone_tags) %>"><%= render "bookmarks/phone_tags", bookmark: %></span>
+  </p>
 </div>
-<div class="d-flex flex-items-center flex-shrink-0 ml-2">
-  <%= render "bookmarks/edit_dialog", bookmark:, collections: %>
+<div class="d-none d-md-flex flex-items-center flex-shrink-0 ml-2">
+  <%= render(Primer::Beta::Button.new(size: :small, mr: 2, "aria-label": "Edit #{name}", data: { show_dialog_id: dom_id(bookmark, :edit_dialog) })) { "Edit" } %>
   <%= render BookmarkButtonComponent.new(url: bookmark.url, title: bookmark.title, scripture: reference, source: bookmark.source, bookmarked:, from_list: true) %>
 </div>
+<%= render "bookmarks/actions", bookmark:, name: %>
+<%= render "bookmarks/edit_dialog", bookmark:, collections: %>

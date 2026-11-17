@@ -1,0 +1,12 @@
+<%# locals: (bookmark:, name:) %>
+<%# Below md, a bookmark's Edit and Remove in a 44px "⋯" menu named for it (frame phone-bookmarks.png). Edit opens the
+    row's dialog; Remove refreshes the tab, as the row's filled button does from md up. %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: dom_id(bookmark, :actions), anchor_align: :end, display: [ nil, nil, :none ], ml: 2, classes: "bookmarks__actions")) do |menu| %>
+  <% menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "Bookmark actions: #{name}", show_tooltip: false) %>
+  <% menu.with_item(label: "Edit…", tag: :button, content_arguments: { "data-show-dialog-id": dom_id(bookmark, :edit_dialog) }) do |item| %>
+    <% item.with_leading_visual_icon(icon: :pencil) %>
+  <% end %>
+  <% menu.with_item(label: "Remove bookmark", scheme: :danger, href: household_bookmark_path(id: bookmark), form_arguments: { method: :delete, inputs: [ { name: "from", value: "list" } ] }) do |item| %>
+    <% item.with_leading_visual_icon(icon: :trash) %>
+  <% end %>
+<% end %>

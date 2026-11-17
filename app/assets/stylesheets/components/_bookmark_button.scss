@@ -3,3 +3,10 @@
 .bookmark-button__button--saved .octicon {
   color: var(--fgColor-accent);
 }
+
+// A 44px target on a touch screen, beside a page or scripture in a study or a note; with a mouse
+// --control-minTarget-auto is small enough to change nothing.
+.bookmark-button__button {
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}

@@ -2,11 +2,9 @@
 <%# Edit bookmark (frame bookmark-edit.png): where it's from, its title, comment and collection with Save, then its tags,
     which save as they're added, and Remove bookmark and Cancel in the footer. Save is in its form, not the footer, as
     every Primer form's is (CLAUDE.md, Forms): the tag editor's own forms sit between them. Removing refreshes the tab,
-    as the row's button does. %>
+    as the row's button does. Opened by the row's Edit button, or its "⋯" menu on a phone. %>
 <% reference = bookmark.reference %>
-<% name = reference&.to_s || bookmark.title.presence || source_host(bookmark.url) %>
 <%= render(Primer::Alpha::Dialog.new(id: dom_id(bookmark, :edit_dialog), title: "Edit bookmark", size: :large)) do |dialog| %>
-  <% dialog.with_show_button(size: :small, mr: 2, "aria-label": "Edit #{name}") { "Edit" } %>
   <% dialog.with_body(pb: 3) do %>
     <p class="text-small color-fg-muted mb-3 wb-break-word">
       <%= render(Primer::Beta::Octicon.new(reference ? :book : :link, mr: 1)) %><%= reference ? "Scripture" : source_host(bookmark.url) %>

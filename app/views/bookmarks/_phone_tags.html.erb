@@ -1,0 +1,5 @@
+<%# locals: (bookmark:) %>
+<%# A bookmark's tags in its muted line on a phone (frame phone-bookmarks.png), as text, since a one-line row has no
+    room for 44px links. The signed-in person's own only, through tags_for (docs/design/tags.md, Traps). %>
+<% tags = bookmark.tags_for(Current.user).sort_by(&:name) %>
+<% if tags.any? %> · <%= tags.map { "##{it.name}" }.join(" ") %><% end %>
