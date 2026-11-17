@@ -112,7 +112,7 @@ Kept here so USERS-01 doesn't paint them into a corner. Full column lists are in
 | `FamilyStudy::Resource` | Session | Link or file (PDF/image), 25 MB max |
 | `FamilyStudy::Guest` | FamilyStudy + User | Invited to one session or this-and-future; no household access |
 | `Invitation` | Household **or** Session | Email invite; `generates_token_for :acceptance`; only the invited email can accept. Household invitations, usernames and child logins: `docs/design/invitations.md` |
-| `Notification`, `NotificationSetting` | User + Household | See the Notifications Design doc |
+| `Notification`, `NotificationSetting`, `PushSubscription` | User (+ Household for a notification) | `docs/design/notifications.md` |
 
 ## Gotchas
 
