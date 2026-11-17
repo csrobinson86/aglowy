@@ -16,11 +16,11 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "title", "Calendar · The Head Family · Aglowy"
     assert_select "h1", "Calendar"
-    assert_select "h2", "November 16 – 22, 2026"
+    assert_select "h2", "November 16 – 22, 2026Nov 16 – 22"
     assert_select "section.calendar-day", 7
     assert_select "section.calendar-day h3", count: 7
     assert_select "section.calendar-day[aria-current=date] h3", /Tue 17/ do
-      assert_select ".sr-only", "Tuesday, November 17"
+      assert_select ".calendar-day__whole", "Today · Tuesday, November 17"
     end
     assert_select "a[aria-label='Next week'][href=?]", household_calendar_path(household_id: households(:home), view: "week", date: "2026-11-23")
     assert_select "section.calendar-day", text: /Midweek meeting/ do
@@ -35,12 +35,14 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     get household_calendar_path(household_id: households(:home), view: "month")
 
     assert_response :success
-    assert_select "h2", "November 2026"
+    assert_select "h2", "November 2026November 2026"
     assert_select ".calendar-month__day", 42
     assert_select ".calendar-month__day a[href=?]", household_calendar_path(household_id: households(:home), view: "week", date: "2026-11-02"), "2"
     assert_select "a[aria-label='Previous month'][href=?]", household_calendar_path(household_id: households(:home), view: "month", date: "2026-10-01")
-    # The Thursdays and Sundays from 29 October to 6 December.
-    assert_select ".calendar-item--meeting", 12
+    # The Thursdays and Sundays from 29 October to 6 December, in the month and in a phone's list of its weeks.
+    assert_select ".calendar-month .calendar-item--meeting", 12
+    assert_select ".calendar-week section.calendar-day", 42
+    assert_select ".calendar-week .calendar-item--meeting", 12
   end
 
   test "hide[]=meetings leaves meetings out" do
@@ -61,8 +63,8 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
 
     get household_calendar_path(household_id: households(:home))
 
-    assert_select "fieldset legend", text: "Times", count: 2
-    assert_select "input[type=checkbox][name='show[]']", 6
+    assert_select "#calendar-show-dialog fieldset legend", text: "Times", count: 2
+    assert_select "#calendar-show-dialog input[type=checkbox][name='show[]']", 6
   end
 
   test "a non-member gets a 404" do
@@ -86,11 +88,11 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
 
     get household_calendar_path(household_id: households(:home), date: "next tuesday", view: "year")
 
-    assert_select "h2", "November 16 – 22, 2026"
+    assert_select "h2", "November 16 – 22, 2026Nov 16 – 22"
 
     get household_calendar_path(household_id: households(:home), date: "1" * 200)
 
-    assert_select "h2", "November 16 – 22, 2026"
+    assert_select "h2", "November 16 – 22, 2026Nov 16 – 22"
   end
 
   test "a study session links to its page; a later one not stored yet links to Family studies" do

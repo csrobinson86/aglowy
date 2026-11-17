@@ -242,9 +242,9 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
     width: var(--base-size-44);
   }
 
-  // The Show dialog's check boxes, a 44px row each, with no gap between rows.
+  // The Show dialog's check boxes, a 44px row each, a little apart so their touch areas don't meet.
   .calendar-show .FormControl-spacingWrapper {
-    row-gap: 0;
+    row-gap: var(--base-size-4);
   }
 
   .calendar-show .FormControl-checkbox-wrap {

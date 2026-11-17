@@ -143,7 +143,7 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     def assert_touch_target(element)
       missed = element.evaluate_script(<<~JS)
         (() => {
-          this.scrollIntoView({ block: "center", inline: "center" })
+          this.scrollIntoView({ block: "center", inline: "center", behavior: "instant" })
           const { left, top, width, height } = this.getBoundingClientRect()
           if (width >= 44 && height >= 44) return 0
           const x = left + width / 2, y = top + height / 2
