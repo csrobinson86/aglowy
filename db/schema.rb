@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -513,6 +513,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_020000) do
     t.check_constraint "status::text = ANY (ARRAY['asking'::character varying, 'answered'::character varying, 'off_topic'::character varying, 'flagged'::character varying, 'failed'::character varying, 'stopped'::character varying]::text[])", name: "personal_study_questions_status_check"
   end
 
+  create_table "personal_time_completions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "personal_time_id", null: false
+    t.date "on", null: false
+    t.datetime "created_at", null: false
+    t.index ["personal_time_id", "on"], name: "index_personal_time_completions_on_personal_time_id_and_on", unique: true
+  end
+
+  create_table "personal_times", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "kind", null: false
+    t.string "title", null: false
+    t.integer "wdays", limit: 2, null: false, array: true
+    t.time "time_of_day", null: false
+    t.integer "duration_minutes", default: 30, null: false
+    t.date "starts_on", default: -> { "CURRENT_DATE" }, null: false
+    t.string "opens_type"
+    t.uuid "opens_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["opens_type", "opens_id"], name: "index_personal_times_on_opens_type_and_opens_id"
+    t.index ["user_id"], name: "index_personal_times_on_user_id"
+    t.check_constraint "(opens_type IS NULL) = (opens_id IS NULL)", name: "personal_times_opens_check"
+    t.check_constraint "cardinality(wdays) >= 1 AND cardinality(wdays) <= 7 AND wdays <@ '{0,1,2,3,4,5,6}'::smallint[]", name: "personal_times_wdays_check"
+    t.check_constraint "duration_minutes >= 5 AND duration_minutes <= 240", name: "personal_times_duration_minutes_check"
+    t.check_constraint "kind::text = ANY (ARRAY['bible_reading'::character varying, 'personal_study'::character varying, 'meeting_prep'::character varying, 'other'::character varying]::text[])", name: "personal_times_kind_check"
+    t.check_constraint "opens_type::text = ANY (ARRAY['PersonalStudy'::character varying, 'PersonalNote'::character varying]::text[])", name: "personal_times_opens_type_check"
+  end
+
   create_table "ruby_llm_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "provider_batch_id", null: false
     t.string "provider", null: false
@@ -763,6 +791,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_020000) do
   add_foreign_key "personal_studies", "users"
   add_foreign_key "personal_study_questions", "personal_studies", on_delete: :cascade
   add_foreign_key "personal_study_questions", "users"
+  add_foreign_key "personal_time_completions", "personal_times", on_delete: :cascade
+  add_foreign_key "personal_times", "users"
   add_foreign_key "taggings", "tags", on_delete: :cascade
   add_foreign_key "tags", "users"
 end

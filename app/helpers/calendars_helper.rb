@@ -10,6 +10,11 @@ module CalendarsHelper
     safe_join([ tag.span(shown, aria: { hidden: true }), tag.span(day.strftime("%A, %B %-d"), class: "sr-only") ])
   end
 
+  # The id of a personal time's card on one day, which marking it done replaces.
+  def personal_time_card_id(occurrence)
+    "personal_time_#{occurrence.personal_time.id}_#{occurrence.on.iso8601}"
+  end
+
   def calendar_time(time)
     time.strftime("%-l:%M %p")
   end

@@ -13,6 +13,9 @@ application.register("auto-submit", AutoSubmitController)
 import CalendarEventController from "./calendar_event_controller"
 application.register("calendar-event", CalendarEventController)
 
+import PersonalTimeController from "./personal_time_controller"
+application.register("personal-time", PersonalTimeController)
+
 import ClipboardController from "./clipboard_controller"
 application.register("clipboard", ClipboardController)
 

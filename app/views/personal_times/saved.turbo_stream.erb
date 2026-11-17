@@ -1,0 +1,3 @@
+<%# Empties the frame, which closes the dialog, then refreshes the calendar (as calendar/events/saved). %>
+<%= turbo_stream.update "personal_time_dialog" %>
+<%= turbo_stream.refresh(request_id: nil) %>

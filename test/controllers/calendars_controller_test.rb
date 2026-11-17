@@ -55,6 +55,16 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[aria-label='Next week'][href=?]", household_calendar_path(household_id: households(:home), view: "week", date: "2026-11-23", hide: %w[ meetings ])
   end
 
+  test "a household named Times keeps both groups of Show" do
+    households(:home).update!(name: "Times")
+    sign_in identities(:spouse)
+
+    get household_calendar_path(household_id: households(:home))
+
+    assert_select "fieldset legend", text: "Times", count: 2
+    assert_select "input[type=checkbox][name='show[]']", 6
+  end
+
   test "a non-member gets a 404" do
     sign_in identities(:outsider)
 
@@ -66,7 +76,7 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
   test "the Show form's ticks become hide[] in the URL" do
     sign_in identities(:spouse)
 
-    get household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", show: [ "", "family_studies", "assemblies", "field_service", "other_events" ])
+    get household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", show: [ "", "family_studies", "assemblies", "field_service", "other_events", "my_times" ])
 
     assert_redirected_to household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", hide: %w[ meetings ])
   end

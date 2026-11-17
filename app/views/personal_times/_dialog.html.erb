@@ -1,0 +1,38 @@
+<%# locals: (personal_time:) -%>
+<%# Add my time, or edit one with Delete time on the left of the footer (frame calendar-new-time.png). Open as soon as the
+    calendar's frame loads it. What it opens shows for the kind chosen: the meeting prep line, or the person's studies
+    and notes. %>
+<% dialog_id = "personal-time-dialog" %>
+<%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: personal_time.new_record? ? "Add my time" : "Edit my time", size: :large, open: true)) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <% personal_time.errors[:base].each do |message| %>
+      <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) { message } %>
+    <% end %>
+    <%= primer_form_with(model: personal_time, url: personal_time.new_record? ? household_personal_times_path : household_personal_time_path(id: personal_time),
+          data: { controller: "personal-time", personal_time_titles_value: PersonalTime::DEFAULT_TITLES.to_json,
+                  personal_time_opening_kinds_value: PersonalTime::OPENING_KINDS.to_json }) do |f| %>
+      <%= render PersonalTimes::Form.new(f, section: :when) %>
+      <%= tag.div class: "mt-3", hidden: !personal_time.meeting_prep?, data: { personal_time_target: "meetingPrep" } do %>
+        <p class="text-bold mb-1">Opens</p>
+        <p class="mb-1"><%= render Primer::Beta::Octicon.new(icon: :file, color: :muted) %> That week's meeting notes</p>
+        <p class="text-small color-fg-muted mb-0">Meeting prep before a meeting opens that week's notes.</p>
+      <% end %>
+      <%= tag.div class: "mt-3", hidden: !personal_time.kind.in?(PersonalTime::OPENING_KINDS), data: { personal_time_target: "opens" } do %>
+        <%= render PersonalTimes::Form.new(f, section: :opens, user: Current.user) %>
+      <% end %>
+      <p class="text-small color-fg-muted my-3">Only you see your times. You can share them with a household in Settings → Calendar.</p>
+      <% if Current.user.time_zone.nil? %>
+        <p class="text-small color-fg-muted mb-3">Your times are in <%= personal_time.zone_shown.sub(/ \(.*\)\z/, "") %>. Change it in Settings → Profile.</p>
+      <% end %>
+      <%= render PersonalTimes::Form.new(f, section: :actions, dialog_id:) %>
+    <% end %>
+  <% end %>
+  <% if personal_time.persisted? %>
+    <% dialog.with_footer do %>
+      <%= primer_form_with(url: household_personal_time_path(id: personal_time), method: :delete, class: "mr-auto",
+            data: { turbo_confirm: "Delete “#{personal_time.title_was}”? It comes off your calendar." }) do |f| %>
+        <%= render PersonalTimes::DeleteForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

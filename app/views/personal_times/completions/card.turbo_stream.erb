@@ -1,0 +1,3 @@
+<%= turbo_stream.replace personal_time_card_id(@item.source) do %>
+  <%= render "personal_times/card", item: @item, focused: true %>
+<% end %>

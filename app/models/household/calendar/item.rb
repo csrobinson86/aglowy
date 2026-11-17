@@ -1,6 +1,6 @@
 # One thing on the calendar, with its times in the household's zone. kind picks the color (.calendar-item--<kind>);
-# source is what it comes from, a Household::Meeting, a FamilyStudy::Session (unsaved past the generator's horizon) or a
-# Household::Event, so the page can link to it. An all-day item runs from the midnight it starts to the midnight after
+# source is what it comes from, a Household::Meeting, a FamilyStudy::Session (unsaved past the generator's horizon), a
+# Household::Event or a PersonalTime::Occurrence, so the page can link to it. An all-day item runs from the midnight it starts to the midnight after
 # its last day.
 Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :ends_at, :all_day, :source) do
   def self.from_meeting(meeting)
@@ -15,6 +15,18 @@ Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :e
   def self.from_event(event, occurrence)
     new(kind: event.kind, title: event.title, subtitle: event.location.presence, starts_at: occurrence.begin, ends_at: occurrence.end,
         all_day: event.all_day?, source: event)
+  end
+
+  # The viewer's own time, converted to the household's zone. Its subtitle names what it opens: a study or a note, or for
+  # meeting prep the note for that week's next meeting.
+  def self.from_time(occurrence, household:)
+    zone = household.time_zone
+    new(kind: "my_time", title: occurrence.title, subtitle: occurrence.opens_title(household), starts_at: occurrence.starts_at.in_time_zone(zone),
+        ends_at: occurrence.ends_at.in_time_zone(zone), all_day: false, source: occurrence)
+  end
+
+  def my_time?
+    kind == "my_time"
   end
 
   def meeting?

@@ -6,10 +6,13 @@
 <%= render Primer::Beta::Subhead.new(hide_border: true, mb: 0) do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Calendar" } %>
   <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
-  <% if manage_events %>
-    <% subhead.with_actions do %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_calendar_event_path, scheme: :primary, data: { turbo_frame: "calendar_event_dialog" })) { "Add household event" } %>
-    <% end %>
+  <% subhead.with_actions do %>
+    <div class="d-flex flex-wrap">
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_time_path, mr: 2, data: { turbo_frame: "personal_time_dialog" })) { "Add my time" } %>
+      <% if manage_events %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_calendar_event_path, scheme: :primary, data: { turbo_frame: "calendar_event_dialog" })) { "Add household event" } %>
+      <% end %>
+    </div>
   <% end %>
 <% end %>
 <% if @calendar.viewer_in_another_zone? %>
@@ -40,6 +43,7 @@
       <%= render Calendars::ShowForm.new(f, household: Current.household, period: @period, hide: @hide) %>
       <noscript><%= render(Primer::Beta::Button.new(type: :submit, mt: 2)) { "Show" } %></noscript>
     <% end %>
+    <p class="text-small color-fg-muted mt-3">Only you see your times.</p>
   </div>
 
   <div class="flex-auto min-width-0">
@@ -65,5 +69,6 @@
   </div>
 </div>
 
-<%# The household event dialog loads here (Calendar::EventsController). %>
+<%# The household event dialog loads here (Calendar::EventsController), and the "my time" dialog (PersonalTimesController). %>
 <%= turbo_frame_tag "calendar_event_dialog" %>
+<%= turbo_frame_tag "personal_time_dialog" %>

@@ -1,6 +1,6 @@
 <%# locals: (calendar:, period:, today:, meeting_helper:, manage_events:) -%>
 <%# All-day events in a band across the days they span, then seven days from Monday, each a list of cards in order of
-    start; not a time grid (docs/design/calendar.md, The page). On a phone the band sits above the list of days. %>
+    start, the viewer's own times among them; not a time grid (docs/design/calendar.md, The page). On a phone the band sits above the list of days. %>
 <% band = calendar.all_day_items %>
 <% if band.any? %>
   <ul class="calendar-band" aria-label="All-day events">
@@ -17,7 +17,11 @@
     <%= tag.section class: [ "calendar-day", { "calendar-day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
       <h3 class="calendar-day__heading"><%= calendar_day_heading(day) %></h3>
       <% calendar.timed_items_on(day).each do |item| %>
-        <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: false %>
+        <% if item.my_time? %>
+          <%= render "personal_times/card", item: %>
+        <% else %>
+          <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: false %>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
