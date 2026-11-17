@@ -33,6 +33,14 @@ Household::Calendar::Period = Data.define(:view, :date) do
     end
   end
 
+  # A phone's toolbar has room for less: "Nov 16 – 22", "Nov 30 – Dec 6", or still "November 2026".
+  def short_title
+    return title if month?
+
+    first, last = range.first, range.last
+    "#{first.strftime("%b %-d")} – #{last.strftime(first.month == last.month ? "%-d" : "%b %-d")}"
+  end
+
   def previous_date
     month? ? date.beginning_of_month.prev_month : first_day - 7
   end

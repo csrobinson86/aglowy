@@ -1,0 +1,17 @@
+<%# locals: (calendar:, period:, hide:, namespace: nil) -%>
+<%# The Show check boxes, and who sees the viewer's times; beside the calendar, or on a phone in the "Show on the calendar"
+    dialog, whose copy takes a namespace so the two forms' ids differ (docs/design/calendar.md, The page and On a phone). %>
+<%= primer_form_with(url: household_calendar_path, method: :get, namespace:, class: "calendar-show", data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
+  <%= render Calendars::ShowForm.new(f, calendar:, period:, hide:) %>
+  <noscript><%= render(Primer::Beta::Button.new(type: :submit, mt: 2)) { "Show" } %></noscript>
+<% end %>
+<% households_seeing = Current.user.households_seeing_times.map(&:name) %>
+<p class="text-small color-fg-muted mt-3">
+  <% if households_seeing.any? %>
+    Your times are shared with <%= households_seeing.to_sentence %>.
+    <%= render(Primer::Beta::Link.new(href: household_settings_calendar_path, underline: true)) { "Change" } %>
+  <% else %>
+    Only you see your times.
+    <%= render(Primer::Beta::Link.new(href: household_settings_calendar_path, underline: true)) { "Share them" } %>
+  <% end %>
+</p>

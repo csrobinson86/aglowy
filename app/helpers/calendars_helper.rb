@@ -4,10 +4,12 @@ module CalendarsHelper
     household_calendar_path(view:, date: date.iso8601, hide: hide.presence)
   end
 
-  # "Tue 17" for the eye, "Tuesday, November 17" for a screen reader.
-  def calendar_day_heading(day)
+  # "Tue 17" for the eye, "Today · Tuesday, November 17" for a screen reader; on a phone, where the days are a list, the
+  # whole date shows (docs/design/calendar.md, On a phone).
+  def calendar_day_heading(day, today:)
     shown = safe_join([ day.strftime("%a "), tag.span(day.day, class: "calendar-day__number") ])
-    safe_join([ tag.span(shown, aria: { hidden: true }), tag.span(day.strftime("%A, %B %-d"), class: "sr-only") ])
+    whole = [ ("Today" if day == today), day.strftime("%A, %B %-d") ].compact.join(" · ")
+    safe_join([ tag.span(shown, class: "d-none d-md-inline", aria: { hidden: true }), tag.span(whole, class: "calendar-day__whole") ])
   end
 
   # The id of a personal time's card on one day, which marking it done replaces.

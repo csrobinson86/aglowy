@@ -3,7 +3,10 @@
 
 // The calendar page (docs/design/calendar.md, The page; frames calendar-week.png, calendar-month.png, calendar-dark.png).
 // Each kind takes its color from Primer's display primitives, so dark mode comes from Primer. Below lg the week and the
-// month become one day after another.
+// month become one day after another; below md, on a phone, each day is a heading over rows (On a phone; frame
+// phone-calendar.png).
+
+$below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
 
 // Today, previous, next and the range on the left, Week and Month on the right.
 .calendar-toolbar {
@@ -15,6 +18,12 @@
   padding-bottom: var(--base-size-16);
   margin: var(--base-size-16) 0;
   border-bottom: var(--borderWidth-thin) solid var(--borderColor-default);
+}
+
+// Primer's coarse-pointer menu items are 40px tall, so the Add menu's are raised to the 44px touch target, as Bookmarks'
+// are.
+.calendar-add-menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
 }
 
 // Each kind's three colors, read by the item and by its Show check box.
@@ -135,6 +144,134 @@
   margin: 0;
   font-size: var(--text-body-size-medium);
   font-weight: var(--base-text-weight-semibold);
+}
+
+// The whole date: the heading a phone shows, and from md up Primer's .sr-only, which has no breakpoint variants.
+.calendar-day__whole {
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+// A phone's list: each day's date on a muted strip, today's in accent, then its items as rows divided by lines, each
+// the color bar, the time, the title over its subtitle, and the done box on the right. Every target is at least 44px.
+@media #{$below-md} {
+  .calendar-day {
+    gap: 0;
+    padding: 0;
+  }
+
+  .calendar-day--today {
+    background-color: transparent;
+  }
+
+  .calendar-day__heading {
+    padding: var(--base-size-8) var(--base-size-16);
+    color: var(--fgColor-muted);
+    background-color: var(--bgColor-muted);
+  }
+
+  .calendar-day--today .calendar-day__heading {
+    color: var(--fgColor-accent);
+  }
+
+  .calendar-day .calendar-item {
+    display: grid;
+    grid-template-columns: var(--base-size-64) minmax(0, 1fr) auto;
+    gap: 0 var(--base-size-12);
+    place-content: center stretch;
+    align-items: center;
+    min-height: calc(var(--base-size-44) + var(--base-size-16));
+    padding: var(--base-size-8) var(--base-size-16) var(--base-size-8) var(--base-size-12);
+    background-color: transparent;
+    border-radius: 0;
+
+    > * {
+      grid-column: 2;
+    }
+
+    > .calendar-item__time {
+      grid-row: 1 / span 3;
+      grid-column: 1;
+    }
+  }
+
+  // A shared time keeps its dashed cue in the bar alone.
+  .calendar-day .calendar-item--shared {
+    border-width: 0;
+    border-left: var(--borderWidth-thicker) dashed var(--calendar-kind-borderColor);
+  }
+
+  .calendar-day .calendar-item {
+    border-top: var(--borderWidth-thin) solid var(--borderColor-muted);
+  }
+
+  // The done box and the title become cells of the row: the title in the middle, the box on the right.
+  .calendar-day .calendar-item__done {
+    display: contents;
+
+    form {
+      grid-row: 1 / span 3;
+      grid-column: 3;
+    }
+  }
+
+  .calendar-day .calendar-item__edit,
+  .calendar-day .calendar-item__opens {
+    display: flex;
+    align-items: center;
+    min-height: var(--base-size-44);
+  }
+
+  // Primer's own coarse-pointer target for .Button never applies (its selector puts ::before inside :is()), so the
+  // toolbar's and the Add menu's buttons are 44px themselves.
+  .calendar-toolbar .Button,
+  .calendar-add-menu .Button {
+    height: var(--base-size-44);
+  }
+
+  .calendar-toolbar .Button--iconOnly {
+    width: var(--base-size-44);
+  }
+
+  // The Show dialog's check boxes, a 44px row each, with no gap between rows.
+  .calendar-show .FormControl-spacingWrapper {
+    row-gap: 0;
+  }
+
+  .calendar-show .FormControl-checkbox-wrap {
+    align-items: center;
+    min-height: var(--base-size-44);
+
+    .FormControl-checkbox {
+      margin-top: 0;
+    }
+  }
+
+  // A box stays 16px to the eye, and takes a touch 44px across.
+  .calendar-show .FormControl-checkbox::after,
+  .calendar-day .calendar-item__done .FormControl-checkbox::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--base-size-44);
+    height: var(--base-size-44);
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+
+  .calendar-band__item .calendar-item {
+    align-content: center;
+    min-height: var(--base-size-44);
+  }
 }
 
 // All-day events across the top of the week, each spanning its days; on a phone, one after another above the days.
