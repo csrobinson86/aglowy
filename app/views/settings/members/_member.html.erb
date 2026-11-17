@@ -5,7 +5,7 @@
 <% name = member.user.name %>
 <% dialog_id = "remove-member-#{member.id}" %>
 <%= tag.div id: dom_id(member), class: "d-flex flex-items-center p-3" do %>
-  <span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-2 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= name.first %></span>
+  <%= render AvatarComponent.new(user: member.user, size: 32, classes: "mr-2") %>
   <span class="Truncate flex-auto mr-2"><span class="Truncate-text"><%= name %></span></span>
   <%= primer_form_with(model: member, url: household_member_role_path(member_id: member), method: :patch, namespace: dom_id(member),
                        class: "min-width-0", data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>

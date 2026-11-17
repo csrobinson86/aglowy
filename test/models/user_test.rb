@@ -135,6 +135,29 @@ class UserTest < ActiveSupport::TestCase
     end
   end
 
+  test "database: an avatar color outside the palette raises CheckViolation" do
+    assert_raises ActiveRecord::CheckViolation do
+      users(:head).update_column(:avatar_color, "red")
+    end
+  end
+
+  test "everyone starts blue" do
+    assert_equal "blue", User.create!(name: "Nadia New").avatar_color
+  end
+
+  test "change_avatar_color saves a color from the palette" do
+    assert users(:eli).change_avatar_color("green")
+
+    assert_equal "green", users(:eli).reload.avatar_color
+  end
+
+  test "change_avatar_color refuses a color outside the palette and saves nothing" do
+    assert_not users(:eli).change_avatar_color("red")
+
+    assert_includes users(:eli).errors[:avatar_color], "is not included in the list"
+    assert_equal "blue", users(:eli).reload.avatar_color
+  end
+
   test "accepted_ai_terms? is false with no acceptance" do
     assert_not users(:head).accepted_ai_terms?
   end

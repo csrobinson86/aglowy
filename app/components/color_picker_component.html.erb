@@ -1,0 +1,14 @@
+<%= tag.fieldset class: "color-picker", data: { controller: "color-picker" } do %>
+  <%= tag.legend legend, class: [ "FormControl-label color-picker__legend", { "color-picker__legend--beside": legend_beside } ] %>
+  <div class="color-picker__swatches">
+    <% colors.each do |color| %>
+      <input type="radio" name="<%= name %>" id="<%= input_id(color) %>" value="<%= color %>" class="color-picker__input sr-only"
+             <%= "checked" if color == selected %> data-action="color-picker#choose" data-color-picker-name-param="<%= color.humanize %>">
+      <%= tag.label for: input_id(color), class: swatch_classes(color) do %>
+        <span class="sr-only"><%= color.humanize %></span>
+        <% if swatch_label %><span aria-hidden="true"><%= swatch_label %></span><% end %>
+      <% end %>
+    <% end %>
+    <span class="color-picker__chosen" data-color-picker-target="chosen"><%= selected.humanize %></span>
+  </div>
+<% end %>

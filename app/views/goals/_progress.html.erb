@@ -36,7 +36,7 @@
           <% people.each do |person| %>
             <li>
               <%= render(Primer::Beta::Label.new(size: :large)) do %>
-                <span class="avatar avatar-4 circle d-inline-flex flex-items-center flex-justify-center mr-1 color-bg-accent color-fg-accent text-bold f6" aria-hidden="true"><%= person.name.first %></span>
+                <%= render AvatarComponent.new(user: person.user, size: 20, classes: "mr-1") %>
                 <%= person.name %> · <%= person.done_count %> of <%= person.steps_count %>
               <% end %>
             </li>

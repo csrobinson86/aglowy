@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_050001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -742,7 +742,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_050000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "appearance", default: "auto", null: false
+    t.string "avatar_color", default: "blue", null: false
     t.check_constraint "appearance::text = ANY (ARRAY['auto'::character varying, 'light'::character varying, 'dark'::character varying]::text[])", name: "users_appearance_check"
+    t.check_constraint "avatar_color::text = ANY (ARRAY['blue'::character varying, 'green'::character varying, 'purple'::character varying, 'pink'::character varying, 'orange'::character varying, 'yellow'::character varying]::text[])", name: "users_avatar_color_check"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

@@ -21,8 +21,8 @@ import AiPanelController from "../components/family_studies/ai_panel_component_c
 application.register("ai-panel", AiPanelController)
 import GoalStepController from "../components/goal_step_component_controller"
 application.register("goal-step", GoalStepController)
-import NoteColorPickerController from "../components/note_color_picker_component_controller"
-application.register("note-color-picker", NoteColorPickerController)
+import ColorPickerController from "../components/color_picker_component_controller"
+application.register("color-picker", ColorPickerController)
 import ScripturePickerController from "../components/scripture_picker_component_controller"
 application.register("scripture-picker", ScripturePickerController)
 import TagEditorController from "../components/tag_editor_component_controller"
