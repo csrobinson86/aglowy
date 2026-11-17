@@ -91,3 +91,13 @@ saved_answer.save_as_note unless head.personal_notes.exists?(title: saved_answer
 seeded!(head.bookmark(scripture: daniel.scripture_references.first.id, source: daniel))
 openings = head.personal_notes.find_by!(title: "Ministry openings")
 seeded!(head.bookmark(scripture: openings.scripture_references.first.id, source: openings))
+
+# Comments, collections and tags on some of them, as the Edit dialog saves them, so the Bookmarks tab's Collections and
+# My tags have counts and search has comments to find. Updating and tagging again changes nothing.
+first_page, second_page = head.bookmarks.pages.order(:created_at, :id).to_a
+first_page.update!(comment: "Good for return visits.", collection: collections["Bible characters"])
+first_page.tag_with("courage", by: head)
+second_page.update!(collection: collections["Quick thoughts"])
+openings_scripture = head.bookmarks.find_by!(source: openings)
+openings_scripture.update!(comment: "Start here when someone is grieving.")
+openings_scripture.tag_with("hope", by: head)

@@ -1,0 +1,10 @@
+<%# locals: (record:) %>
+<%# A bookmark links out, like on the Bookmarks tab: its title, or the scripture's reference, then its site. The title
+    came from a search result, so it's escaped like any AI text. %>
+<% reference = record.reference %>
+<% site = reference ? "Scripture" : source_host(record.url) %>
+<%= render(Primer::Beta::Octicon.new(reference ? :book : :link, color: :muted, mr: 2, mt: 1, flex_shrink: 0)) %>
+<div class="min-width-0">
+  <%= render(Primer::Beta::Link.new(href: reference&.jw_url || record.url, target: "_blank", rel: "noopener", font_weight: :bold, classes: "wb-break-word")) { reference&.to_s || record.title.presence || site } %>
+  <span class="color-fg-muted">· <%= site %></span>
+</div>

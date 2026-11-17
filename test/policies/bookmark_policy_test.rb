@@ -18,9 +18,11 @@ class BookmarkPolicyTest < ActiveSupport::TestCase
     end
   end
 
-  test "the owner can remove their bookmark from any household they're in" do
+  test "the owner can edit, tag and remove their bookmark from any household they're in" do
     [ memberships(:head_in_home), memberships(:head_in_parents) ].each do |membership|
-      assert BookmarkPolicy.new(membership, bookmarks(:head_suffering_article)).destroy?, "expected #{membership.household.name} to let the owner in"
+      policy = BookmarkPolicy.new(membership, bookmarks(:head_suffering_article))
+
+      assert policy.update? && policy.tag? && policy.destroy?, "expected #{membership.household.name} to let the owner in"
     end
   end
 
@@ -28,7 +30,7 @@ class BookmarkPolicyTest < ActiveSupport::TestCase
     [ memberships(:spouse_in_home), memberships(:child_in_home), memberships(:former_in_home), nil ].each do |membership|
       policy = BookmarkPolicy.new(membership, bookmarks(:head_suffering_article))
 
-      assert_not policy.destroy? || policy.create?
+      assert_not policy.destroy? || policy.create? || policy.update? || policy.tag?
     end
   end
 end

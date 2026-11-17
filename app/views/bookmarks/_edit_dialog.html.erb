@@ -1,0 +1,24 @@
+<%# locals: (bookmark:, collections:) %>
+<%# Edit bookmark (frame bookmark-edit.png): where it's from, its title, comment and collection with Save, then its tags,
+    which save as they're added, and Remove bookmark and Cancel in the footer. Save is in its form, not the footer, as
+    every Primer form's is (CLAUDE.md, Forms): the tag editor's own forms sit between them. Removing refreshes the tab,
+    as the row's button does. %>
+<% reference = bookmark.reference %>
+<% name = reference&.to_s || bookmark.title.presence || source_host(bookmark.url) %>
+<%= render(Primer::Alpha::Dialog.new(id: dom_id(bookmark, :edit_dialog), title: "Edit bookmark", size: :large)) do |dialog| %>
+  <% dialog.with_show_button(size: :small, mr: 2, "aria-label": "Edit #{name}") { "Edit" } %>
+  <% dialog.with_body(pb: 3) do %>
+    <p class="text-small color-fg-muted mb-3 wb-break-word">
+      <%= render(Primer::Beta::Octicon.new(reference ? :book : :link, mr: 1)) %><%= reference ? "Scripture" : source_host(bookmark.url) %>
+      <% if bookmark.source %>· saved from “<%= bookmark.source.title %>”<% end %>
+    </p>
+    <%= render "bookmarks/edit_form", bookmark:, collections: %>
+    <%= render TagEditorComponent.new(taggable: bookmark, user: Current.user, household: Current.household) %>
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= primer_form_with(url: household_bookmark_path(id: bookmark), method: :delete, class: "mr-auto") do |f| %>
+      <%= render Bookmarks::RemoveForm.new(f) %>
+    <% end %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dom_id(bookmark, :edit_dialog) })) { "Cancel" } %>
+  <% end %>
+<% end %>

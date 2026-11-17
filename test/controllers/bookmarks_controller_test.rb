@@ -3,6 +3,8 @@ require "test_helper"
 # The Bookmarks tab, and saving and removing a page or a scripture from a study or a note (docs/design/bookmarks.md,
 # Pages and routes). Always through Current.user, so another person's bookmark, study or note is a 404.
 class BookmarksControllerTest < ActionDispatch::IntegrationTest
+  include ActionView::RecordIdentifier
+
   ARTICLE = { "url" => "https://www.jw.org/en/library/books/bible-questions-answered/", "title" => "Bible Questions Answered" }.freeze
 
   setup do
@@ -346,6 +348,184 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :not_found
+  end
+
+  test "index: collections for notes, All bookmarks first, and my tags on a bookmark, each with its count" do
+    bookmark = bookmarks(:head_suffering_article)
+    bookmark.update!(collection: collections(:head_quick_references))
+    bookmark.tag_with("comfort", by: users(:head))
+    users(:head).bookmarks.create!(scripture: "19:23:4")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home)
+
+    assert_select "nav[aria-label=Collections] a" do |links|
+      assert_equal [ "All bookmarks", "Bible questions", "Quick references" ], links.map { it.at_css(".ActionListItem-label").text.strip }
+    end
+    assert_select "nav[aria-label=Collections] a[aria-current=page]", text: /All bookmarks\s+2/
+    assert_select "nav[aria-label=Collections] a[href=?]", household_bookmarks_path(household_id: @home, collection: collections(:head_quick_references).id), text: /Quick references\s+1/
+    assert_select "nav[aria-label='My tags'] a", count: 1
+    assert_select "nav[aria-label='My tags'] a[href=?]", household_bookmarks_path(household_id: @home, tag: "comfort"), text: /#comfort\s+1/
+  end
+
+  test "index: each row shows its comment, tags and collection" do
+    bookmark = bookmarks(:head_suffering_article)
+    bookmark.update!(comment: "Good for return visits.", collection: collections(:head_quick_references))
+    bookmark.tag_with("comfort", by: users(:head))
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home)
+
+    assert_select "##{dom_id(bookmark)}", text: /Good for return visits\./
+    assert_select "##{dom_id(bookmark)} a.Label[href=?]", household_tag_path(household_id: @home, name: "comfort"), text: "#comfort"
+    assert_select "##{dom_id(bookmark)}", text: /Quick references ·/
+    assert_select "##{dom_id(bookmark)} dialog h1", "Edit bookmark"
+  end
+
+  test "index: filters by collection" do
+    bookmark = bookmarks(:head_suffering_article)
+    bookmark.update!(collection: collections(:head_quick_references))
+    psalm = users(:head).bookmarks.create!(scripture: "19:23:4")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, collection: collections(:head_quick_references).id)
+
+    assert_select "main .Box-row", count: 1
+    assert_select "##{dom_id(bookmark)}"
+    assert_select "##{dom_id(psalm)}", count: 0
+    assert_select "nav[aria-label=Collections] a[aria-current=page]", text: /Quick references/
+  end
+
+  test "index: another person's collection, or a studies-only one, filters to nothing" do
+    sign_in identities(:head)
+
+    [ collections(:spouse_ministry), collections(:head_talks) ].each do |collection|
+      get household_bookmarks_path(household_id: @home, collection: collection.id)
+
+      assert_select "main .Box-row", count: 0
+      assert_select ".blankslate h2", "No bookmarks match"
+    end
+  end
+
+  test "index: filters by tag" do
+    bookmark = bookmarks(:head_suffering_article)
+    bookmark.tag_with("comfort", by: users(:head))
+    users(:head).bookmarks.create!(scripture: "19:23:4")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, tag: "Comfort")
+
+    assert_select "main .Box-row", count: 1
+    assert_select "##{dom_id(bookmark)}"
+    assert_select "a[aria-label='Remove filter #comfort']"
+  end
+
+  test "index: filters by q, through the decrypted comment" do
+    bookmark = bookmarks(:head_suffering_article)
+    psalm = users(:head).bookmarks.create!(scripture: "19:23:4", comment: "Read when someone is grieving")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, q: "grieving")
+
+    assert_select "main .Box-row", count: 1
+    assert_select "##{dom_id(psalm)}"
+    assert_select "##{dom_id(bookmark)}", count: 0
+    assert_select "input[name=q][value=grieving]"
+  end
+
+  test "update for the owner: title, comment and collection, and the row is replaced" do
+    bookmark = bookmarks(:head_suffering_article)
+    sign_in identities(:head)
+
+    patch household_bookmark_path(household_id: @home, id: bookmark), as: :turbo_stream, params: {
+      bookmark: { title: "Why suffering?", comment: "For return visits", collection_id: collections(:head_quick_references).id, url: "https://www.jw.org/en/other/" }
+    }
+
+    assert_response :success
+    assert_select "turbo-stream[action=update][target=?]", dom_id(bookmark) do
+      assert_select "template", text: /For return visits/
+    end
+    bookmark.reload
+    assert_equal "Why suffering?", bookmark.title
+    assert_equal "For return visits", bookmark.comment
+    assert_equal collections(:head_quick_references), bookmark.collection
+    assert_equal "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", bookmark.url
+  end
+
+  test "update: a blank collection takes it out of any collection, and a scripture's title is ignored" do
+    psalm = users(:head).bookmarks.create!(scripture: "19:23:4", collection: collections(:head_quick_references))
+    sign_in identities(:head)
+
+    patch household_bookmark_path(household_id: @home, id: psalm), as: :turbo_stream, params: { bookmark: { title: "Mine", comment: "", collection_id: "" } }
+
+    assert_response :success
+    psalm.reload
+    assert_nil psalm.collection
+    assert_nil psalm.title
+    assert_nil psalm.comment
+  end
+
+  test "update: another person's collection id: 404" do
+    bookmark = bookmarks(:head_suffering_article)
+    sign_in identities(:head)
+
+    patch household_bookmark_path(household_id: @home, id: bookmark), as: :turbo_stream, params: { bookmark: { collection_id: collections(:spouse_ministry).id } }
+
+    assert_response :not_found
+    assert_nil bookmark.reload.collection
+  end
+
+  test "update: a refused save shows its errors in the dialog" do
+    bookmark = bookmarks(:head_suffering_article)
+    sign_in identities(:head)
+
+    patch household_bookmark_path(household_id: @home, id: bookmark), as: :turbo_stream, params: { bookmark: { title: "", comment: "x" * 281, collection_id: collections(:head_talks).id } }
+
+    assert_response :unprocessable_content
+    assert_select "turbo-stream[action=replace][target=?]", dom_id(bookmark, :edit) do
+      assert_select "template", text: /Title can't be blank/
+      assert_select "template", text: /Comment is too long/
+      assert_select "template", text: /is only used in Personal study/
+    end
+    assert_equal "Why Does God Allow Suffering?", bookmark.reload.title
+  end
+
+  test "update: another person's bookmark: 404" do
+    sign_in identities(:spouse)
+
+    patch household_bookmark_path(household_id: @home, id: bookmarks(:head_suffering_article)), as: :turbo_stream, params: { bookmark: { comment: "Mine now" } }
+
+    assert_response :not_found
+    assert_nil bookmarks(:head_suffering_article).reload.comment
+  end
+
+  test "add and remove a tag on a bookmark" do
+    bookmark = bookmarks(:head_suffering_article)
+    sign_in identities(:head)
+
+    post household_bookmark_taggings_path(household_id: @home, bookmark_id: bookmark), params: { name: "Ministry" }, as: :turbo_stream
+    assert_response :success
+    assert_select "turbo-stream[action=replace][target=?] template a.Label", dom_id(bookmark, :tag_editor), text: "#ministry"
+    assert_select "turbo-stream[action=update][target=?] template a.Label", dom_id(bookmark, :tags), text: "#ministry"
+    assert_equal [ "ministry" ], bookmark.tags.map(&:name)
+
+    delete household_bookmark_tagging_path(household_id: @home, bookmark_id: bookmark, id: tags(:head_ministry)), as: :turbo_stream
+    assert_response :success
+    assert_empty bookmark.tags.reload
+  end
+
+  test "tags on another person's bookmark: 404" do
+    bookmark = bookmarks(:head_suffering_article)
+
+    [
+      -> { post household_bookmark_taggings_path(household_id: @home, bookmark_id: bookmark), params: { name: "ministry" }, as: :turbo_stream },
+      -> { delete household_bookmark_tagging_path(household_id: @home, bookmark_id: bookmark, id: tags(:spouse_ministry)), as: :turbo_stream }
+    ].each do |request|
+      sign_in identities(:spouse) # a 404 doesn't keep the session
+      request.call
+      assert_response :not_found
+    end
+    assert_empty bookmark.tags
   end
 
   test "a non-member is a 404" do

@@ -29,7 +29,7 @@ class TagEditorComponent < ApplicationComponent
   end
 
   def tags
-    @tags ||= taggable.tags_for(user).order(:name).to_a
+    @tags ||= taggable.tags_for(user).sort_by(&:name)
   end
 
   # The person's other tags, never anyone else's (docs/design/tags.md, Traps).

@@ -3,7 +3,9 @@
 class BookmarkPolicy < ApplicationPolicy
   def index?   = member?
   def create?  = owner?
+  def update?  = owner?
   def destroy? = owner?
+  def tag?     = owner?
 
   private
 

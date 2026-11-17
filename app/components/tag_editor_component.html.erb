@@ -11,7 +11,7 @@
     </span>
   <% end %>
   <%= primer_form_with(url: taggings_path, namespace: id) do |f| %>
-    <%= render Taggings::AddForm.new(f, src: taggings_path, error:) %>
+    <%= render Taggings::AddForm.new(f, src: taggings_path, input_id: dom_id(taggable, :add_tag), error:) %>
   <% end %>
   <%# The suggestions the tag-editor controller filters as the person types, and the "Create" option it fills in. %>
   <template data-tag-editor-target="suggestions">

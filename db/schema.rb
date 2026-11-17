@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -648,7 +648,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_000000) do
     t.datetime "created_at", null: false
     t.index ["tag_id", "taggable_type", "taggable_id"], name: "index_taggings_on_tag_id_and_taggable_type_and_taggable_id", unique: true
     t.index ["taggable_type", "taggable_id"], name: "index_taggings_on_taggable"
-    t.check_constraint "taggable_type::text = ANY (ARRAY['MeetingNote'::character varying, 'Goal'::character varying, 'PersonalStudy'::character varying, 'PersonalNote'::character varying]::text[])", name: "taggings_taggable_type_check"
+    t.check_constraint "taggable_type::text = ANY (ARRAY['MeetingNote'::character varying, 'Goal'::character varying, 'PersonalStudy'::character varying, 'PersonalNote'::character varying, 'Bookmark'::character varying]::text[])", name: "taggings_taggable_type_check"
   end
 
   create_table "tags", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

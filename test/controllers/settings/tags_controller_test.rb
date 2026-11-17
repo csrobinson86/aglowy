@@ -10,6 +10,8 @@ class Settings::TagsControllerTest < ActionDispatch::IntegrationTest
     users(:head).tags.create!(name: "prayer")
     users(:spouse).tags.create!(name: "comfort")
     personal_notes(:head_return_visit).update!(collection: collections(:head_bible_questions))
+    bookmarks(:head_suffering_article).update!(collection: collections(:head_quick_references))
+    bookmarks(:head_suffering_article).tag_with("ministry", by: users(:head))
 
     get household_settings_tags_path(household_id: @home)
 
@@ -19,14 +21,14 @@ class Settings::TagsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Settings'] a[aria-current=page]", "Tags and collections"
     assert_select "aside nav a[aria-current=page]", "Settings"
     assert_select "#my-tags .Box-row", count: 2
-    assert_select "#my-tags .Box-row", text: /#ministry\s+2 items/
+    assert_select "#my-tags .Box-row", text: /#ministry\s+3 items/
     assert_select "#my-tags .Box-row", text: /#prayer\s+0 items/
     assert_select "#my-tags a.Label[href=?]", household_tag_path(household_id: @home, name: "ministry")
     assert_select "#my-tags", text: /#comfort/, count: 0
     assert_equal [ "Bible questions", "Preparing a talk", "Quick references" ], css_select("#collections .Box-row .collection-row__name").map { it.text.strip }
     assert_select "#collections .Box-row", text: /Bible questions\s+· 1 note, 1 study\s+Used in Notes and Personal study/
     assert_select "#collections .Box-row", text: /Preparing a talk\s+· 1 study\s+Used in Personal study only/
-    assert_select "#collections .Box-row", text: /Quick references\s+· 1 note\s+Used in Notes only/
+    assert_select "#collections .Box-row", text: /Quick references\s+· 1 note, 1 bookmark\s+Used in Notes only/
     assert_select "#collections", text: /Ministry/, count: 0
     assert_select "#collections", text: /Create collections from Personal study or Notes\./
     assert_select "form[action=?]", household_collection_path(household_id: @home, id: collections(:head_talks))

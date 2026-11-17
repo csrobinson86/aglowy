@@ -12,44 +12,70 @@
 
 <% help = "Bookmark a page or scripture with the bookmark button beside it in a personal study or a note. Pages open on jw.org; scriptures open on jw.org, or in JW Library if it's installed." %>
 
-<%# Show: all, pages or scriptures (frame bookmarks.png), whenever there's something to narrow or a filter to undo. %>
-<% if @kind || @page.records.any? %>
-  <div class="d-flex flex-justify-end mb-3">
-    <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Show")) do |control| %>
-      <% { nil => "All", "page" => "Pages", "scripture" => "Scriptures" }.each do |kind, label| %>
-        <% control.with_item(tag: :a, href: household_bookmarks_path(kind:), label:, selected: @kind == kind) %>
-      <% end %>
-    <% end %>
-  </div>
-<% end %>
-
-<%# Newest first (frame bookmarks.png). Collections, tags and search come with #228. %>
-<% if @page.records.any? %>
-  <%= render(Primer::Beta::BorderBox.new) do |box| %>
-    <% @page.records.each do |bookmark| %>
-      <% box.with_row(id: dom_id(bookmark), display: :flex, align_items: :flex_start) do %>
-        <%= render "bookmarks/bookmark", bookmark:, bookmarked: @bookmarked %>
-      <% end %>
-    <% end %>
+<%# Collections and my tags beside the list (frame bookmarks.png). Below md they're in the "All bookmarks ▾" menu by
+    Show instead (frame phone-bookmarks.png). %>
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md)) do |layout| %>
+  <% layout.with_sidebar(width: :narrow, row_placement: :none) do %>
+    <%= render "bookmarks/collections", collections: @collections, selected: @collection, total_count: @total_count, filters: @filters.except(:page) %>
+    <%= render "bookmarks/tags", tags: @tags, selected: @tag_name, filters: @filters %>
   <% end %>
 
-  <% if @page.previous? || @page.next? %>
-    <div class="d-flex flex-justify-between mt-3">
-      <% if @page.previous? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: household_bookmarks_path(kind: @kind, page: @page.number - 1))) { "Newer bookmarks" } %>
+  <% layout.with_main do %>
+    <%# Search, then Show: all, pages or scriptures (frame bookmarks.png). Each keeps what the others have chosen. %>
+    <div class="bookmarks__filters">
+      <%= primer_form_with(url: household_bookmarks_path, method: :get, class: "bookmarks__search") do |f| %>
+        <%= render Bookmarks::SearchForm.new(f, query: @query, filters: @filters) %>
       <% end %>
-      <% if @page.next? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: household_bookmarks_path(kind: @kind, page: @page.number + 1), ml: :auto)) { "Older bookmarks" } %>
-      <% end %>
+      <div class="bookmarks__show">
+        <%= render "bookmarks/phone_menu", collections: @collections, selected: @collection, tags: @tags, tag: @tag_name, filters: @filters %>
+        <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Show")) do |control| %>
+          <% { nil => "All", "page" => "Pages", "scripture" => "Scriptures" }.each do |kind, label| %>
+            <% control.with_item(tag: :a, href: household_bookmarks_path(**@filters, kind:), label:, selected: @kind == kind) %>
+          <% end %>
+        <% end %>
+      </div>
     </div>
-  <% end %>
 
-  <p class="text-small color-fg-muted mt-3"><%= help %></p>
-<% else %>
-  <%# No action: bookmarks are made where the links are. %>
-  <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
-    <% blankslate.with_visual_icon(icon: :bookmark) %>
-    <% blankslate.with_heading(tag: :h2) { { "page" => "No pages bookmarked yet.", "scripture" => "No scriptures bookmarked yet." }.fetch(@kind, "No bookmarks yet.") } %>
-    <% blankslate.with_description { help } %>
+    <% if @tag_name %>
+      <%= render "tags/filter", name: @tag_name, clear_path: household_bookmarks_path(**@filters.except(:tag)) %>
+    <% end %>
+
+    <%# Newest first (frame bookmarks.png). %>
+    <% if @page.records.any? %>
+      <%= render(Primer::Beta::BorderBox.new) do |box| %>
+        <% @page.records.each do |bookmark| %>
+          <% box.with_row(id: dom_id(bookmark), display: :flex, align_items: :flex_start) do %>
+            <%= render "bookmarks/bookmark", bookmark:, bookmarked: @bookmarked, collections: @collections %>
+          <% end %>
+        <% end %>
+      <% end %>
+
+      <% if @page.previous? || @page.next? %>
+        <div class="d-flex flex-justify-between mt-3">
+          <% if @page.previous? %>
+            <%= render(Primer::Beta::Button.new(tag: :a, href: household_bookmarks_path(**@filters, page: @page.number - 1))) { "Newer bookmarks" } %>
+          <% end %>
+          <% if @page.next? %>
+            <%= render(Primer::Beta::Button.new(tag: :a, href: household_bookmarks_path(**@filters, page: @page.number + 1), ml: :auto)) { "Older bookmarks" } %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <p class="text-small color-fg-muted mt-3"><%= help %></p>
+    <% elsif @filters.except(:kind).any? %>
+      <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :search) %>
+        <% blankslate.with_heading(tag: :h2) { "No bookmarks match" } %>
+        <% blankslate.with_description { "Search titles, comments, collections and tags, or show all bookmarks." } %>
+        <% blankslate.with_secondary_action(href: household_bookmarks_path) { "All bookmarks" } %>
+      <% end %>
+    <% else %>
+      <%# No action: bookmarks are made where the links are. %>
+      <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :bookmark) %>
+        <% blankslate.with_heading(tag: :h2) { { "page" => "No pages bookmarked yet.", "scripture" => "No scriptures bookmarked yet." }.fetch(@kind, "No bookmarks yet.") } %>
+        <% blankslate.with_description { help } %>
+      <% end %>
+    <% end %>
   <% end %>
 <% end %>

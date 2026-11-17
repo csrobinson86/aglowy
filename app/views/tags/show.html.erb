@@ -24,10 +24,14 @@
   <%= render "tags/group", id: "my-goals", heading: "My goals", records: @goals, row: "tags/goal" %>
 <% end %>
 
-<% if @meeting_notes.none? && @personal_studies.none? && @personal_notes.none? && @goals.none? %>
+<% if @bookmarks.any? %>
+  <%= render "tags/group", id: "bookmarks", heading: "Bookmarks", records: @bookmarks, row: "tags/bookmark" %>
+<% end %>
+
+<% if @meeting_notes.none? && @personal_studies.none? && @personal_notes.none? && @goals.none? && @bookmarks.none? %>
   <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :tag) %>
     <% blankslate.with_heading(tag: :h2) { "Nothing tagged ##{@tag.name}" } %>
-    <% blankslate.with_description { "Add it from a meeting note, a personal study, a note or a personal goal." } %>
+    <% blankslate.with_description { "Add it from a meeting note, a personal study, a note, a personal goal or a bookmark." } %>
   <% end %>
 <% end %>

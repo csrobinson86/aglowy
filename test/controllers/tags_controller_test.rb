@@ -37,6 +37,18 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby=personal-studies] .Box-row a[href=?]", household_personal_study_path(household_id: @home, id: study), text: study.title
   end
 
+  test "the tag page lists a bookmark under Bookmarks" do
+    bookmark = bookmarks(:head_suffering_article)
+    bookmark.tag_with("ministry", by: users(:head))
+    bookmarks(:spouse_ransom_article).tag_with("ministry", by: users(:spouse))
+
+    get household_tag_path(household_id: @home, name: "ministry")
+
+    assert_select "h2", text: /Bookmarks\s+1/
+    assert_select "section[aria-labelledby=bookmarks] .Box-row a[href=?][target=_blank][rel~=noopener]", bookmark.url, text: "Why Does God Allow Suffering?"
+    assert_select "section[aria-labelledby=bookmarks]", text: /The Ransom/, count: 0
+  end
+
   test "show lists a tagged note under Notes" do
     note = personal_notes(:head_daniel)
     note.tag_with("ministry", by: users(:head))
