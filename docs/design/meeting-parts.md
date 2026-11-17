@@ -262,9 +262,11 @@ Then, after the lock block returns, it calls `write_later` on a saved draft, as 
 
 What counts toward the day's 15 is whether the draft still has its `Ai::Use`. `failed` and `flagged` delete it; every other status keeps it.
 
+Every ending is written with the conditional update that applies only while the draft is `drafting`, and the use is deleted only when that update applied, in the same transaction. So whichever ending is written first stands, and the use follows it.
+
 - **The queue refuses the job** (`perform_later` returns false, or Solid Queue raises `SolidQueue::Job::EnqueueError`): `write_later` ends the draft `failed` and deletes its use, as `PersonalStudy::Question::Answerable#answer_later` does for a question. (Family study drafts fail the same way, but have no `Ai::Use`: their limit counts drafts by status.) The panel shows the family study helper's "Couldn't make a draft right now. Try again in a moment."
-- **The job raises,** at the provider or anywhere else: `failed`, and the use is deleted.
-- **Stop** ends a `drafting` draft as `stopped` and keeps its use. A stopped request counts, as a stopped personal study question does, because the AI may already have been called.
+- **The job raises,** at the provider or anywhere else: `failed`, and the use is deleted. If the person had already stopped the draft, the update doesn't apply: the draft stays `stopped` and keeps its use.
+- **Stop** ends a `drafting` draft as `stopped` and keeps its use. A draft that had already ended `failed` or `flagged` stays that way, with its use gone. A stopped request counts, as a stopped personal study question does, because the AI may already have been called.
 - **Accepted gap: the app process dies after the draft is saved and before `write_later` runs.** No job exists, nothing retries it, and the draft stays `drafting`. The panel shows Drafting with Stop, so the person stops it and asks again, and that one request still counts for the day. Family study drafts and personal study questions have the same gap. It's too rare to earn a job that sweeps up old `drafting` rows; if it does happen, add one sweep for all three features.
 
 ## Elsewhere
@@ -296,6 +298,6 @@ What counts toward the day's 15 is whether the draft still has its `Ai::Use`. `f
 - Person: head, adult, child with a login (no AI), a member reading a shared part, a non-member (404), not yet accepted the AI terms
 - Part: each of the six kinds; with and without a setting, study point and assistant; coming up, today, earlier; shared, not shared, shared then stopped
 - Time line: no words (hidden), under the time, over the time
-- AI: an outline, wording for a demonstration and for a talk, a change (the draft it revises is sent, and it's the version shown), off topic, flagged, provider error, a quotation of more than 5 words (removed), a `scripture` or `read` that isn't a reference (dropped), too thin, stopped (still counts), the queue refusing the job (`failed`, doesn't count), 14 used and 15 used, a new day in the person's time zone
+- AI: an outline, wording for a demonstration and for a talk, a change (the draft it revises is sent, and it's the version shown), off topic, flagged, provider error, a quotation of more than 5 words (removed), a `scripture` or `read` that isn't a reference (dropped), too thin, stopped (still counts), the queue refusing the job (`failed`, doesn't count), a provider error after Stop (stays `stopped`, still counts), 14 used and 15 used, a new day in the person's time zone
 - Kept: a draft 61 days old goes with its chat while a newer draft of the same part stays; a change, and sample wording, that revises it keeps its copy and its chat, and all of that goes 60 days after the newer draft was made; a change still sends its copy when the draft it revises is deleted before the job runs; deleting a part deletes its drafts and their chats; the preparation stays either way
 - Desktop and phone; light and dark
