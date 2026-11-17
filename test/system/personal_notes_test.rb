@@ -134,6 +134,8 @@ class PersonalNotesTest < ApplicationSystemTestCase
 
     assert_no_selector "section[aria-labelledby=pinned-notes]"
     within("section[aria-labelledby=all-notes]") { assert_selector ".note-card", text: "Daniel 2 image: quick reference" }
+    within("nav[aria-label=Collections]") { assert_link "Quick references" }
+    assert_text "My tags"
     assert_not personal_notes(:head_daniel).reload.pinned?
     assert_accessible
   end

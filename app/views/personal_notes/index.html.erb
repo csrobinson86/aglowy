@@ -1,6 +1,7 @@
 <% content_for :title, "Notes" %>
-<%# Unpinning from a card refreshes the page; morphing keeps the place on it. %>
-<% turbo_refreshes_with method: :morph, scroll: :preserve %>
+<%# Unpinning from a card refreshes the page, keeping the place on it. Replaced, not morphed: a morph would drop the
+    open the sidebar's open-from-md controller adds, and the controller wouldn't connect again to add it back. %>
+<% turbo_refreshes_with method: :replace, scroll: :preserve %>
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Notes" } %>

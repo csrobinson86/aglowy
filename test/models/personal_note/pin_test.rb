@@ -37,6 +37,12 @@ class PersonalNote::PinTest < ActiveSupport::TestCase
     end
   end
 
+  test "the database refuses a pin without a note" do
+    assert_raises ActiveRecord::NotNullViolation do
+      PersonalNote::Pin.insert!({ personal_note_id: nil })
+    end
+  end
+
   test "the database refuses a second pin for one note" do
     personal_notes(:head_daniel).pin_to_top
 
