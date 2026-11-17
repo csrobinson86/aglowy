@@ -7,7 +7,7 @@ class Accounts::AppearancesController < ApplicationController
 
   def update
     if @user.update(appearance_params)
-      redirect_to edit_account_path(return_to_params), notice: "Your appearance is saved."
+      redirect_to edit_account_path, notice: "Your appearance is saved."
     else
       render "accounts/edit", status: :unprocessable_content
     end

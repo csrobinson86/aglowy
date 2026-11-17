@@ -4,7 +4,7 @@ class MemberRolesTest < ApplicationSystemTestCase
   setup { sign_in identities(:head) }
 
   test "a head changes a role, then removes a member through the dialog" do
-    visit edit_household_settings_url(household_id: households(:home))
+    visit edit_household_settings_household_url(household_id: households(:home))
 
     within_members_and_roles do
       assert_text "Hannah Head"
@@ -26,6 +26,7 @@ class MemberRolesTest < ApplicationSystemTestCase
       assert_text "Removing someone works like them leaving."
       assert_text "Their own notes and goals stay with them."
     end
+    wait_for_transitions # the Dialog fades in
     assert_accessible
     capture_screens("remove-member")
 
@@ -37,7 +38,7 @@ class MemberRolesTest < ApplicationSystemTestCase
   end
 
   test "the last head making themselves an adult sees why on their row" do
-    visit edit_household_settings_url(household_id: households(:home))
+    visit edit_household_settings_household_url(household_id: households(:home))
 
     select "Adult", from: "Hannah Head"
 

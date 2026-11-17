@@ -42,6 +42,7 @@ Rails.application.routes.draw do
   # No household: a Bible reference isn't anyone's record.
   resources :scriptures, only: :show
   # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
+  # Only for a person with no household: with one, GET /account opens Settings (docs/design/settings.md, /account stays).
   # The appearance and sign-in details forms on the same page post to /account/appearance and /account/sign_in;
   # leaving a household deletes /account/memberships/:id, one of the person's own active seats.
   resource :account, only: %i[ edit update ], path_names: { edit: "" } do
@@ -57,8 +58,19 @@ Rails.application.routes.draw do
   scope "/:household_id", as: :household,
         constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
     get "/", to: "dashboards#show", as: :root
-    # Household settings at /:household_id/settings: heads, and adults for its Meetings section (docs/design/invitations.md).
-    resource :settings, only: %i[ edit update ], controller: "households/settings", path_names: { edit: "" }
+    # Settings, a page per section, opening on Profile for everyone (docs/design/settings.md, Pages and routes).
+    get "settings", to: redirect("/%{household_id}/settings/profile"), as: :settings
+    # The person's own sections: the same person from any household.
+    namespace :settings do
+      resource :profile, only: %i[ show update ]
+      resource :appearance, only: %i[ show update ]
+      resource :sign_in, only: %i[ show update ]
+      resources :memberships, only: %i[ index destroy ]   # My households
+    end
+    # Household settings: heads, and adults for its Meetings section (docs/design/invitations.md). At
+    # /settings/household until it becomes Settings' household sections.
+    resource :settings_household, path: "settings/household", only: %i[ edit update ], controller: "households/settings",
+             path_names: { edit: "" }
     # The settings page's Meetings section, for heads and adults (docs/design/meeting-helper.md, Pages).
     resource :meeting_times, only: :update, controller: "households/meeting_times"
     # The settings page's Children section: the meeting helper's switch, for heads and adults.

@@ -1,0 +1,25 @@
+<%# locals: (identity:, url:, heading: :h3) %>
+<%# The Signing in box, in Settings and on /account (docs/design/invitations.md, Account settings). A child's
+    username shows read-only, with only the password fields. %>
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: heading) { "Signing in" } } %>
+  <% box.with_body do %>
+    <% if identity.pending_reconfirmation? %>
+      <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 3)) do %>
+        We sent a link to <strong><%= identity.unconfirmed_email %></strong>. Your email changes once you open it.
+        Until then, keep signing in with <%= identity.email_in_database %>.
+      <% end %>
+    <% end %>
+
+    <% if identity.username %>
+      <dl class="mt-0 mb-3">
+        <dt class="text-bold">Username</dt>
+        <dd class="ml-0 my-1 text-mono"><%= identity.username %></dd>
+      </dl>
+    <% end %>
+
+    <%= primer_form_with(model: identity, url:, method: :patch) do |f| %>
+      <%= render Settings::SignInForm.new(f, email: identity.email_login?) %>
+    <% end %>
+  <% end %>
+<% end %>

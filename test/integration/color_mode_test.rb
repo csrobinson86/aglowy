@@ -10,7 +10,7 @@ class ColorModeTest < ActionDispatch::IntegrationTest
     get household_root_path(household_id: households(:home))
     assert_select "body[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
 
-    get edit_account_path
+    get edit_account_sign_in_path
     assert_select "main h1", "Account settings"
     assert_select "body[data-color-mode=dark][data-light-theme=light][data-dark-theme=dark]"
   end

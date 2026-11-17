@@ -11,7 +11,7 @@ class Households::MeetingTimesController < ApplicationController
     @household = Current.user.active_households.find(Current.household.id)
 
     if @household.change_meeting_times(**meeting_times_params)
-      redirect_to edit_household_settings_path, notice: "Meeting times saved."
+      redirect_to edit_household_settings_household_path, notice: "Meeting times saved."
     else
       render "households/settings/edit", status: :unprocessable_content
     end

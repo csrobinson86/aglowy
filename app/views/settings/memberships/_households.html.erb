@@ -1,9 +1,10 @@
-<%# locals: (memberships:) %>
-<%# My households (frames account-settings.png, leave-household.png). Leave asks first in a Primer Dialog, never a
+<%# locals: (memberships:, namespace:, heading: :h3) %>
+<%# My households, in Settings and on /account (frames account-settings.png, leave-household.png). Leave deletes the
+    seat under namespace: [:household, :settings] or [:account]. Leave asks first in a Primer Dialog, never a
     browser confirm. The last head's Dialog explains why they can't, and the controller refuses them too. Children
     don't see Leave; a head or adult removes them. %>
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "My households" } } %>
+  <% box.with_header { |header| header.with_title(tag: heading) { "My households" } } %>
   <% memberships.each do |membership| %>
     <% household = membership.household %>
     <% box.with_row(display: :flex, align_items: :center) do %>
@@ -34,8 +35,8 @@
             <% end %>
             <% dialog.with_footer do %>
               <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dialog_id })) { "Cancel" } %>
-              <%= primer_form_with(url: account_membership_path(membership, return_to_params), method: :delete) do |f| %>
-                <%= render Accounts::LeaveForm.new(f) %>
+              <%= primer_form_with(url: polymorphic_path([ *namespace, membership ]), method: :delete) do |f| %>
+                <%= render Settings::LeaveForm.new(f) %>
               <% end %>
             <% end %>
           <% end %>

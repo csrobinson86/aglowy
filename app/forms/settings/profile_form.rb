@@ -1,5 +1,5 @@
-# Frame account-settings.png, Profile.
-class Accounts::ProfileForm < ApplicationForm
+# Frames settings-profile.png and account-settings.png, Profile.
+class Settings::ProfileForm < ApplicationForm
   form do |f|
     f.text_field(name: :name, label: "Name", required: true, autocomplete: "name", full_width: true)
 

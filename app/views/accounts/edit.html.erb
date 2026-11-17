@@ -1,53 +1,10 @@
 <% content_for :title, "Account settings" %>
 
-<%= render(Primer::Beta::Link.new(href: @return_household ? household_root_path(household_id: @return_household) : households_path, display: :inline_flex, align_items: :center, mb: 3)) do %>
-  <%= render Primer::Beta::Octicon.new(:"chevron-left", mr: 1) %>
-  <%= @return_household ? "Back to #{@return_household.name}" : "Back to your households" %>
-<% end %>
-
 <%= render(Primer::Beta::Subhead.new) do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Account settings" } %>
 <% end %>
 
-<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "Profile" } } %>
-  <% box.with_body do %>
-    <%= primer_form_with(model: @user, url: account_path(return_to_params), method: :patch) do |f| %>
-      <%= render Accounts::ProfileForm.new(f) %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "Appearance" } } %>
-  <% box.with_body do %>
-    <%= primer_form_with(model: @user, url: account_appearance_path(return_to_params), method: :patch) do |f| %>
-      <%= render Accounts::AppearanceForm.new(f) %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: :h2) { "Signing in" } } %>
-  <% box.with_body do %>
-    <% if @identity.pending_reconfirmation? %>
-      <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 3)) do %>
-        We sent a link to <strong><%= @identity.unconfirmed_email %></strong>. Your email changes once you open it.
-        Until then, keep signing in with <%= @identity.email_in_database %>.
-      <% end %>
-    <% end %>
-
-    <% if @identity.username %>
-      <dl class="mt-0 mb-3">
-        <dt class="text-bold">Username</dt>
-        <dd class="ml-0 my-1 text-mono"><%= @identity.username %></dd>
-      </dl>
-    <% end %>
-
-    <%= primer_form_with(model: @identity, url: account_sign_in_path(return_to_params), method: :patch) do |f| %>
-      <%= render Accounts::SignInForm.new(f, email: @identity.email_login?) %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= render "accounts/households", memberships: @memberships %>
+<%= render "settings/profiles/profile", user: @user, url: account_path, heading: :h2 %>
+<%= render "settings/appearances/appearance", user: @user, url: account_appearance_path, heading: :h2 %>
+<%= render "settings/sign_ins/sign_in", identity: @identity, url: account_sign_in_path, heading: :h2 %>
+<%= render "settings/memberships/households", memberships: @memberships, namespace: [ :account ], heading: :h2 %>

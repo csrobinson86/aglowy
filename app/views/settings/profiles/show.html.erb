@@ -1,0 +1,7 @@
+<% content_for :title, "Profile · Settings" %>
+
+<%= render Settings::PageComponent.new(household: Current.household, section: :profile) do |page| %>
+  <% page.with_body do %>
+    <%= render "settings/profiles/profile", user: @user, url: household_settings_profile_path %>
+  <% end %>
+<% end %>

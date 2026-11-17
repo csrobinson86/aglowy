@@ -50,7 +50,7 @@ class Accounts::SignInsControllerTest < ActionDispatch::IntegrationTest
     perform_enqueued_jobs
     assert_equal [ "hannah@example.com" ], ActionMailer::Base.deliveries.sole.to
 
-    follow_redirect!
+    get edit_account_sign_in_path
     assert_select ".Banner", text: /We sent a link to hannah@example.com\. Your email changes once you open it\. Until then, keep signing in with head@example.com\./
   end
 
@@ -74,7 +74,7 @@ class Accounts::SignInsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to edit_account_path
     assert identities(:head).reload.valid_password?("new-password-1")
 
-    follow_redirect!
+    get edit_account_sign_in_path
     assert_response :success
     assert_select "main h1", "Account settings"
   end
@@ -82,7 +82,7 @@ class Accounts::SignInsControllerTest < ActionDispatch::IntegrationTest
   test "a username-only child can change their password and can't set an email here" do
     sign_in identities(:eli)
 
-    get edit_account_path
+    get edit_account_sign_in_path
     assert_select "#identity_email", count: 0
     assert_select "main dd", "eli.rivera"
     assert_select "main", text: /Needed to change your password\./
@@ -95,16 +95,5 @@ class Accounts::SignInsControllerTest < ActionDispatch::IntegrationTest
     assert_nil identity.email
     assert_nil identity.unconfirmed_email
     assert_empty ActionMailer::Base.deliveries
-  end
-
-  test "a failed save keeps return_to" do
-    sign_in identities(:head)
-    household = households(:home)
-
-    patch account_sign_in_path(return_to: household.id), params: { identity: { password: "new-password-1", current_password: "wrong" } }
-    assert_select "main a[href='#{household_root_path(household_id: household)}']", "Back to The Head Family"
-
-    patch account_sign_in_path(return_to: household.id), params: { identity: { password: "new-password-1", current_password: "password123" } }
-    assert_redirected_to edit_account_path(return_to: household.id)
   end
 end

@@ -33,7 +33,7 @@ class MembersController < ApplicationController
     elsif @member == Current.membership
       redirect_to households_path(household_id: nil), notice: "You left the #{Current.household.name}.", status: :see_other
     else
-      redirect_to edit_household_settings_path, notice: "#{@member.user.name} was removed from the household.", status: :see_other
+      redirect_to edit_household_settings_household_path, notice: "#{@member.user.name} was removed from the household.", status: :see_other
     end
   end
 

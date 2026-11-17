@@ -13,7 +13,7 @@ class Accounts::SignInsController < ApplicationController
     if @identity.update_with_password(permitted_attributes(@identity))
       # A new password changes the session's salt; without this the person is signed out on their next request.
       bypass_sign_in @identity
-      redirect_to edit_account_path(return_to_params), notice: "Your sign-in details are saved."
+      redirect_to edit_account_path, notice: "Your sign-in details are saved."
     else
       render "accounts/edit", status: :unprocessable_content
     end

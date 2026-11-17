@@ -1,0 +1,7 @@
+<% content_for :title, "My households · Settings" %>
+
+<%= render Settings::PageComponent.new(household: Current.household, section: :memberships) do |page| %>
+  <% page.with_body do %>
+    <%= render "settings/memberships/households", memberships: @memberships, namespace: [ :household, :settings ] %>
+  <% end %>
+<% end %>

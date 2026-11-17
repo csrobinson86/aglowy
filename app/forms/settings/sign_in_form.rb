@@ -1,6 +1,6 @@
 # Frame account-settings.png, Signing in. A username-only login gets no Email field (email: false).
 # value: nil so a re-rendered form never sends a password back.
-class Accounts::SignInForm < ApplicationForm
+class Settings::SignInForm < ApplicationForm
   def initialize(email:)
     @email = email
   end

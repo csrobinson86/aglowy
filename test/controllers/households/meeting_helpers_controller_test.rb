@@ -6,7 +6,7 @@ class Households::MeetingHelpersControllerTest < ActionDispatch::IntegrationTest
 
     patch household_meeting_helper_path(household_id: households(:home)), params: { meeting_helper: { enabled: "1" } }
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert_equal "Meeting helper turned on.", flash[:notice]
     assert households(:home).reload.meeting_helper?
   end
@@ -16,7 +16,7 @@ class Households::MeetingHelpersControllerTest < ActionDispatch::IntegrationTest
 
     patch household_meeting_helper_path(household_id: households(:home)), params: { meeting_helper: { enabled: "1" } }
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert_equal users(:spouse), households(:home).reload.meeting_helper.enabled_by
   end
 
@@ -26,7 +26,7 @@ class Households::MeetingHelpersControllerTest < ActionDispatch::IntegrationTest
 
     patch household_meeting_helper_path(household_id: households(:home)), params: { meeting_helper: { enabled: "0" } }
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert_equal "Meeting helper turned off.", flash[:notice]
     assert_not households(:home).reload.meeting_helper?
   end

@@ -28,6 +28,6 @@ class Memberships::StudyAiGrantsController < ApplicationController
   end
 
   def redirect_to_children(**options)
-    redirect_to edit_household_settings_path(anchor: "children"), **options
+    redirect_to edit_household_settings_household_path(anchor: "children"), **options
   end
 end

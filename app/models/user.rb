@@ -93,7 +93,7 @@ class User < ApplicationRecord
     households.merge(Membership.active)
   end
 
-  # One of this person's active households, or nil: how account settings checks its return_to.
+  # One of this person's active households, or nil: how AiAcceptancesController checks its return_to.
   def active_household(id)
     active_households.find_by(id: id)
   end

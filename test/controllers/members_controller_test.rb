@@ -230,7 +230,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
       delete household_member_path(household_id: households(:home), id: memberships(:spouse_in_home))
     end
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert_equal "Sam Spouse was removed from the household.", flash[:notice]
     assert_not memberships(:spouse_in_home).reload.active?
     assert_empty note.reload.shared_households

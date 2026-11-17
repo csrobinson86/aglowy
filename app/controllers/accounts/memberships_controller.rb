@@ -9,7 +9,7 @@ class Accounts::MembershipsController < ApplicationController
     if @membership.deactivate
       redirect_to households_path, notice: "You left the #{@membership.household.name}.", status: :see_other
     else
-      redirect_to edit_account_path(return_to_params), alert: "Make someone else a head before you leave.", status: :see_other
+      redirect_to edit_account_path, alert: "Make someone else a head before you leave.", status: :see_other
     end
   end
 

@@ -4,16 +4,16 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "a head renames the household" do
     sign_in identities(:head)
 
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
     assert_response :success
     assert_select "h1", "Household settings"
     assert_select "#household_name[value=?]", "The Head Family"
     assert_select "#household_time_zone option[selected][value=?]", "UTC"
     assert_select "nav a[aria-current=page]", text: "Household settings"
 
-    patch household_settings_path(household_id: households(:home)), params: { household: { name: "The Riveras", time_zone: "Central Time (US & Canada)" } }
+    patch household_settings_household_path(household_id: households(:home)), params: { household: { name: "The Riveras", time_zone: "Central Time (US & Canada)" } }
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert_equal "Household settings saved.", flash[:notice]
     assert_equal [ "The Riveras", "Central Time (US & Canada)" ], [ households(:home).reload.name, households(:home).time_zone ]
   end
@@ -23,7 +23,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
     session = family_study_sessions(:weekly_next)
     local = session.local_scheduled_at.strftime("%Y-%m-%d %H:%M")
 
-    patch household_settings_path(household_id: households(:home)), params: { household: { name: "The Head Family", time_zone: "Tokyo" } }
+    patch household_settings_household_path(household_id: households(:home)), params: { household: { name: "The Head Family", time_zone: "Tokyo" } }
 
     assert_equal local, session.reload.local_scheduled_at.strftime("%Y-%m-%d %H:%M")
     assert_equal "Tokyo", session.family_study.household.time_zone
@@ -32,7 +32,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "a blank name or an unknown time zone shows the form again and changes nothing" do
     sign_in identities(:head)
 
-    patch household_settings_path(household_id: households(:home)), params: { household: { name: " ", time_zone: "Atlantis" } }
+    patch household_settings_household_path(household_id: households(:home)), params: { household: { name: " ", time_zone: "Atlantis" } }
 
     assert_response :unprocessable_content
     assert_select "#household_name[aria-invalid=true]"
@@ -44,7 +44,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "a head sees every section" do
     sign_in identities(:head)
 
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
 
     assert_select "main h2", text: "Household"
     assert_select "main h2", text: "Meetings"
@@ -58,7 +58,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "an adult opens the page and sees Meetings but not Household or Members and roles" do
     sign_in identities(:spouse)
 
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
 
     assert_response :success
     assert_select "h1", "Household settings"
@@ -74,7 +74,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "the helper is off by default, and says nothing about who turned it on" do
     sign_in identities(:spouse)
 
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
 
     assert_select "#children input[type=checkbox][name=?]:not([checked])", "meeting_helper[enabled]"
     assert_no_match "Turned on by", response.body
@@ -86,7 +86,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
     travel_to(Time.utc(2026, 11, 16, 2)) { households(:home).enable_meeting_helper(by: users(:spouse)) }
     sign_in identities(:head)
 
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
 
     assert_select "#children input[type=checkbox][name=?][checked]", "meeting_helper[enabled]"
     assert_select "#children p", text: "Turned on by Sam Spouse on November 15."
@@ -95,7 +95,7 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "an adult still can't rename the household" do
     sign_in identities(:spouse)
 
-    patch household_settings_path(household_id: households(:home)), params: { household: { name: "Taken Over", time_zone: "Tokyo" } }
+    patch household_settings_household_path(household_id: households(:home)), params: { household: { name: "Taken Over", time_zone: "Tokyo" } }
 
     assert_redirected_to household_root_path(household_id: households(:home))
     assert_equal "You can't do that in this household.", flash[:alert]
@@ -105,10 +105,10 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "a child is refused" do
     sign_in identities(:eli)
 
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
     assert_redirected_to household_root_path(household_id: households(:home))
 
-    patch household_settings_path(household_id: households(:home)), params: { household: { name: "Taken Over", time_zone: "Tokyo" } }
+    patch household_settings_household_path(household_id: households(:home)), params: { household: { name: "Taken Over", time_zone: "Tokyo" } }
     assert_redirected_to household_root_path(household_id: households(:home))
     assert_equal "You can't do that in this household.", flash[:alert]
     assert_equal [ "The Head Family", "UTC" ], [ households(:home).reload.name, households(:home).time_zone ]
@@ -117,17 +117,17 @@ class Households::SettingsControllerTest < ActionDispatch::IntegrationTest
   test "a household you're not in is 404" do
     sign_in identities(:head)
 
-    get edit_household_settings_path(household_id: households(:other))
+    get edit_household_settings_household_path(household_id: households(:other))
     assert_response :not_found
 
     sign_in identities(:head) # A raised 404 doesn't write the session cookie.
-    patch household_settings_path(household_id: households(:other)), params: { household: { name: "Taken Over", time_zone: "Tokyo" } }
+    patch household_settings_household_path(household_id: households(:other)), params: { household: { name: "Taken Over", time_zone: "Tokyo" } }
     assert_response :not_found
     assert_equal "The Outsider Family", households(:other).reload.name
   end
 
   test "a signed-out visitor is sent to sign in" do
-    get edit_household_settings_path(household_id: households(:home))
+    get edit_household_settings_household_path(household_id: households(:home))
 
     assert_redirected_to new_identity_session_path
   end

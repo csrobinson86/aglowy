@@ -1,0 +1,27 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// Settings (docs/design/settings.md, On a phone). Below md the section menu button takes the nav's place: full width
+// and at least 44px tall, like its items, to touch.
+.settings-nav__button {
+  min-height: var(--base-size-44);
+}
+
+.settings-nav__menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
+}
+
+// Primer's .sr-only below md, where the menu button names the section (frame phone-settings.png).
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .settings-page__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}

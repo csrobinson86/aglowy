@@ -1,5 +1,5 @@
-# Account settings' signing-in details (docs/design/invitations.md, Account settings). There's no household there,
-# so the membership is nil: the person may edit only their own login, whatever their role anywhere.
+# The person's own signing-in details, in Settings and on /account (docs/design/settings.md, Traps). It never reads the
+# membership, which is nil on /account: the person may edit only their own login, whatever their role anywhere.
 class IdentityPolicy < ApplicationPolicy
   def update?
     Current.identity.present? && record == Current.identity

@@ -77,17 +77,17 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
-  test "shows the person's name, linking to their account settings, and a Sign out button" do
+  test "shows the person's name and a Sign out button" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
 
-    assert_selector "a[href='/account?return_to=#{households(:home).id}']", text: "Hannah Head"
+    assert_text "Hannah Head"
     assert_selector "form[action='/identities/sign_out'] button", text: "Sign out"
   end
 
   test "a head sees Household settings in the footer, with the gear icon, current on the settings page" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :households))
 
-    assert_selector "nav[aria-label='Main settings'] a[aria-current='page'][href='/#{households(:home).id}/settings']", text: "Household settings"
+    assert_selector "nav[aria-label='Main settings'] a[aria-current='page'][href='/#{households(:home).id}/settings/household']", text: "Household settings"
     assert_selector "nav[aria-label='Main settings'] a[aria-current='page'] svg.octicon-gear"
     assert_selector "nav[aria-label='Menu settings'] a[aria-current='page']", text: "Household settings", visible: :all
     assert_no_selector "nav[aria-label='Main'] a[aria-current='page']"
@@ -103,14 +103,14 @@ class AppShellComponentTest < ViewComponent::TestCase
   test "an adult sees Household settings in the footer" do
     render_inline(AppShellComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards))
 
-    assert_selector "nav[aria-label='Main settings'] a[href='/#{households(:home).id}/settings']", text: "Household settings"
+    assert_selector "nav[aria-label='Main settings'] a[href='/#{households(:home).id}/settings/household']", text: "Household settings"
   end
 
   test "children don't see Household settings" do
     render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :dashboards))
 
     assert_no_text "Household settings"
-    assert_no_selector "nav[aria-label='Main settings']", visible: :all
+    assert_selector "nav[aria-label='Main settings'] a", text: "Settings", count: 1
   end
 
   test "the sidebar is hidden below md, where the phone menu takes over" do
