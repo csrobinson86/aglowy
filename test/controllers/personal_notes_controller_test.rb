@@ -42,6 +42,16 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=search][placeholder='Search titles, collections and tags']"
   end
 
+  test "the header is followed by the Notes tabs, with Notes selected" do
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home)
+
+    assert_select "main .Subhead + nav[aria-label='Notes, meeting notes and bookmarks']"
+    assert_select "main nav[aria-label='Notes, meeting notes and bookmarks'] a[aria-current='page'][href=?]", household_personal_notes_path(household_id: @home), text: /Notes\s+3/
+    assert_select "main nav[aria-label='Notes, meeting notes and bookmarks'] a[href=?]", household_meeting_notes_path(household_id: @home), text: /Meeting notes\s+2/
+  end
+
   test "Pinned, newest pin first, then All notes; pinned cards carry an Unpin button" do
     travel_to(1.day.ago) { @note.pin_to_top }
     personal_notes(:head_return_visit).pin_to_top

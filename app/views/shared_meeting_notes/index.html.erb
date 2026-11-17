@@ -1,29 +1,24 @@
 <% content_for :title, "Shared in #{Current.household.name}" %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
-  <% subhead.with_heading(tag: :h1) { "Meeting notes" } %>
-  <% subhead.with_description { "Notes members have shared with #{Current.household.name}. You can read them but not change them." } %>
-<% end %>
-
-<%= render "meeting_notes/tabs", selected: :shared, shared_count: @meeting_notes.size %>
-
-<%= render Primer::Beta::BorderBox.new do |box| %>
-  <% if @meeting_notes.any? %>
-    <% @meeting_notes.each do |note| %>
-      <% box.with_row(display: :flex, align_items: :center) do %>
-        <%= meeting_note_dot(MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)) %>
-        <div class="d-md-flex min-width-0">
-          <%= render(Primer::Beta::Link.new(href: household_meeting_note_path(id: note), scheme: :primary, font_weight: :bold, mr: 3)) { meeting_note_title(note) } %>
-          <div class="color-fg-muted wb-break-word"><%= note.user.name %> · <%= note.display_week %></div>
-        </div>
+<%= render layout: "meeting_notes/tab", locals: { shared: true, kind: @kind, kind_counts: @kind_counts, shared_count: @shared_count, this_week: @this_week } do %>
+  <%= render Primer::Beta::BorderBox.new do |box| %>
+    <% if @meeting_notes.any? %>
+      <% @meeting_notes.each do |note| %>
+        <% box.with_row(display: :flex, align_items: :center) do %>
+          <%= meeting_note_dot(MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)) %>
+          <div class="d-md-flex min-width-0">
+            <%= render(Primer::Beta::Link.new(href: household_meeting_note_path(id: note), scheme: :primary, font_weight: :bold, mr: 3)) { meeting_note_title(note) } %>
+            <div class="color-fg-muted wb-break-word"><%= note.user.name %> · <%= note.display_week %></div>
+          </div>
+        <% end %>
       <% end %>
-    <% end %>
-  <% else %>
-    <% box.with_body do %>
-      <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
-        <% blankslate.with_visual_icon(icon: :people) %>
-        <% blankslate.with_heading(tag: :h2) { "Nothing shared yet" } %>
-        <% blankslate.with_description { "Notes members share with #{Current.household.name} will show here." } %>
+    <% else %>
+      <% box.with_body do %>
+        <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+          <% blankslate.with_visual_icon(icon: :people) %>
+          <% blankslate.with_heading(tag: :h2) { "Nothing shared yet" } %>
+          <% blankslate.with_description { "Notes members share with #{Current.household.name} will show here." } %>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>

@@ -1,0 +1,24 @@
+<%# locals: (shared:, kind:, kind_counts:, tags:, tag:) %>
+<%# Meetings, each with its dot and how many notes the list holds, then my tags on my own list only: on the shared list
+    tags belong to their authors (docs/design/notes.md, The Meeting notes tab). Each keeps what the other has chosen. %>
+<h2 class="f5 mb-1 color-fg-muted">Meetings</h2>
+<%= render(Primer::Beta::NavList.new(aria: { label: "Meetings" }, selected_item_id: kind || :all, mb: 3)) do |list| %>
+  <% meeting_note_kind_filters(kind_counts).each do |filter| %>
+    <% href = shared ? household_shared_meeting_notes_path(kind: filter.kind) : household_meeting_notes_path(kind: filter.kind, tag:) %>
+    <% list.with_item(label: filter.label, href:, selected_by_ids: filter.kind || :all) do |item| %>
+      <% item.with_leading_visual_icon(icon: :"dot-fill", color: filter.dot) %>
+      <% item.with_trailing_visual_counter(count: filter.count, scheme: :secondary) %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if tags.any? %>
+  <h2 class="f5 mb-1 color-fg-muted">My tags</h2>
+  <%= render(Primer::Beta::NavList.new(aria: { label: "My tags" }, selected_item_id: tag, mb: 2)) do |list| %>
+    <% tags.each do |each_tag| %>
+      <% list.with_item(label: "##{each_tag.name}", href: household_meeting_notes_path(tag: each_tag.name, kind:), selected_by_ids: each_tag.name, truncate_label: true) do |item| %>
+        <% item.with_trailing_visual_counter(count: each_tag.taggings_count, scheme: :secondary) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

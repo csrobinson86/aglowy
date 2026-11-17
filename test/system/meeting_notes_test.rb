@@ -7,10 +7,11 @@ class MeetingNotesTest < ApplicationSystemTestCase
     travel_to Time.utc(2026, 11, 25, 12) # a week with no notes yet
     sign_in identities(:head)
     visit household_root_url(household_id: households(:home))
-    within("nav[aria-label='Main']") { click_on "Meeting notes" }
+    within("nav[aria-label='Main']") { click_on "Notes" }
+    within("nav[aria-label='Notes, meeting notes and bookmarks']") { click_on "Meeting notes" }
 
-    assert_selector "h1", text: "Meeting notes"
-    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Meeting notes"
+    assert_selector "h1", text: "Notes"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
     assert_selector "button", text: "Start notes", count: 2
     assert_accessible
     capture_screens("meeting-notes-not-started")
@@ -20,6 +21,61 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_text "Week of November 23–29, 2026"
     assert_text "Nothing written yet."
     assert_equal users(:head).meeting_notes.find_by!(kind: "midweek", week_of: Date.new(2026, 11, 23)).id, current_path.split("/").last
+  end
+
+  test "from Notes, open the Meeting notes tab, filter it, switch to Shared and back, and follow a note's breadcrumb back to Notes" do
+    travel_to Time.utc(2026, 11, 18, 12)
+    users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    earlier = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    earlier.share_with(households(:home))
+    users(:spouse).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9)).share_with(households(:home))
+    sign_in identities(:head)
+    visit household_personal_notes_url(household_id: households(:home))
+
+    within("nav[aria-label='Notes, meeting notes and bookmarks']") { click_on "Meeting notes" }
+    assert_selector "nav[aria-label='Notes, meeting notes and bookmarks'] a[aria-current='page']", text: "Meeting notes"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
+    assert_no_selector "nav[aria-label='Main'] a", text: "Meeting notes"
+    assert_selector "h2", text: "This week"
+    assert_selector ".Box-row", count: 2
+    assert_accessible
+    capture_screens("notes-meeting-notes")
+
+    within(".Layout-sidebar nav[aria-label='Meetings']") { click_on "Life and Ministry" }
+    assert_selector ".Layout-sidebar nav[aria-label='Meetings'] a[aria-current='page']", text: "Life and Ministry"
+    assert_no_selector "h2", text: "This week"
+    assert_selector ".Box-row", count: 2
+    assert_no_selector ".Box-row", text: "Weekend meeting"
+
+    within("ul[aria-label='Show']") { click_on "Shared in The Head Family" }
+    assert_selector "ul[aria-label='Show'] a[aria-current='true']", text: "Shared in The Head Family"
+    assert_selector ".Box-row", count: 1
+    assert_selector ".Box-row", text: /Life and Ministry.*Hannah Head/m
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
+    assert_accessible
+
+    within(".Layout-sidebar nav[aria-label='Meetings']") { click_on "All meetings" }
+    assert_selector ".Box-row", count: 2
+    assert_selector "h2", text: "This week"
+    capture_screens("notes-meeting-notes-shared")
+    within("ul[aria-label='Show']") { click_on "Mine" }
+    assert_selector "ul[aria-label='Show'] a[aria-current='true']", text: "Mine"
+    assert_selector "h2", text: "This week"
+
+    users(:head).update!(appearance: "dark")
+    visit current_url
+    assert_selector "body[data-color-mode=dark]"
+    assert_accessible
+
+    within(".Box-row", text: "Week of November 9–15, 2026") { click_on "Life and Ministry" }
+    assert_selector "h1", text: "Life and Ministry"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
+    within("nav[aria-label='Breadcrumb']") { click_on "Meeting notes" }
+    assert_selector "nav[aria-label='Notes, meeting notes and bookmarks'] a[aria-current='page']", text: "Meeting notes"
+    page.go_back
+    within("nav[aria-label='Breadcrumb']") { click_on "Notes" }
+    assert_selector "nav[aria-label='Notes, meeting notes and bookmarks'] a[aria-current='page']", text: /\ANotes/
+    assert_current_path household_personal_notes_path(household_id: households(:home))
   end
 
   test "empty parts aren't shown" do
