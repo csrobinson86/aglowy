@@ -6,7 +6,7 @@ Frames in `docs/design/bookmarks/` (README there). Mockups are in the "Bookmarks
 
 ## Decisions (Casey, 16 Nov)
 
-- **A tab in Notes.** Notes gets two tabs, Notes and Bookmarks, sharing collections, tags and search. There's no new sidebar item.
+- **A tab in Notes.** Bookmarks is a tab of Notes, sharing collections, tags and search. There's no new sidebar item. Notes has three tabs: Notes, Meeting notes and Bookmarks (`docs/design/notes.md`, decided after this one).
 - **Only jw.org and wol.jw.org pages,** the same sites the AI is allowed to search (`docs/design/ai.md`), plus single scriptures.
 - **Bookmarks get a collection and tags,** like notes and studies.
 - **Not in the first version:** pasting a link to make a bookmark, bookmarks on Home, and bookmark buttons in family studies.

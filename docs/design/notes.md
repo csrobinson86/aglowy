@@ -4,7 +4,7 @@ Each person's own notes to come back to: a title, a body with scripture links, a
 
 Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on the design canvas.
 
-> Since BOOKMARKS-01, Notes has two tabs, Notes and Bookmarks, and "Scriptures in this note" has a bookmark button on each scripture (`docs/design/bookmarks.md`).
+> Notes has three tabs: Notes, Meeting notes and Bookmarks (see Notes, Meeting notes and Bookmarks below). Since BOOKMARKS-01, "Scriptures in this note" also has a bookmark button on each scripture (`docs/design/bookmarks.md`).
 
 ## Decisions (Casey, 16 Nov)
 
@@ -27,7 +27,7 @@ Meeting notes and bookmarks live in Notes, as tabs, so Mine stays short (decided
   | Tab | Route | Line under the title | Action |
   | --- | --- | --- | --- |
   | Notes | `/:household_id/notes` | Your own notes to come back to. Only you can see them. | New note |
-  | Meeting notes | `/:household_id/meeting_notes`, and `/:household_id/shared_meeting_notes` | Your meeting notes are private to you. Share one with your household when you want to. | My spiritual gems |
+  | Meeting notes | `/:household_id/meeting_notes`, and `/:household_id/shared_meeting_notes` | Your meeting notes are private to you. Share one with your household when you want to. | My spiritual gems, only once that page exists (it's under Later in `docs/design/meeting-notes.md`); none until then |
   | Bookmarks | `/:household_id/bookmarks` (BOOKMARKS-01) | Pages and scriptures you saved to come back to. Only you can see them. | none |
 
 - **`NotesTabsComponent.new(selected:)`** renders the tabs: a Primer `UnderlineNav` labelled "Notes, meeting notes and bookmarks", each tab a link with its icon (`pencil`, `note`, `bookmark`) and a `Counter`:
