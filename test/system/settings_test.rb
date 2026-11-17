@@ -112,6 +112,8 @@ class SettingsTest < ApplicationSystemTestCase
       assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Meetings", "Children" ], all("a").map(&:text)
       click_on "Meetings"
     end
+    assert_selector "h2", text: "Meetings"
+    assert_turbo_idle
     assert_accessible
     capture_screens("settings-adult-meetings")
     set_meeting_times

@@ -15,11 +15,13 @@ class Household::WeeklyPreview
     items.empty?
   end
 
-  # The meetings counted, then the family studies, then each event once, with the days it falls on in order.
+  # The meetings counted, then the family studies, then each event once, with the days it falls on in order. One over
+  # several days stays on its own, so two of them with the same title are both named.
   def summary
     meetings, others = items.partition(&:meeting?)
     studies, events = others.partition { it.kind == "study" }
-    [ (pluralize(meetings.size, "meeting") if meetings.any?), *(studies + events).group_by(&:title).map { |_, same| describe(same) } ].compact.join(" · ")
+    named = (studies + events).group_by { [ it.title, (it.dates if it.dates.count > 1) ] }.map { |_, same| describe(same) }
+    [ (pluralize(meetings.size, "meeting") if meetings.any?), *named ].compact.join(" · ")
   end
 
   private

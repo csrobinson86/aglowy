@@ -43,6 +43,20 @@ class Notification::InvitationFollowUpJobTest < ActiveJob::TestCase
     assert_not Notification.exists?(subject_type: "Invitation", subject_id: invitation.id)
   end
 
+  test "an invitation accepted or cancelled after the job read it isn't followed up" do
+    accepted = invite("newcomer@example.com", at: Time.utc(2026, 11, 12, 13))
+    cancelled = invite("grandpa@example.com", at: Time.utc(2026, 11, 12, 13))
+
+    at_2_pm_on_november_17 do
+      accept(Invitation.find(accepted.id))
+      Invitation.find(cancelled.id).cancel
+      accepted.follow_up
+      cancelled.follow_up
+    end
+
+    assert_not Notification.exists?(kind: "invitation_unaccepted")
+  end
+
   private
     def invite(email, at:)
       travel_to(at) { households(:home).invitations.create!(email:, invited_by: users(:head)) }

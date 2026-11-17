@@ -51,9 +51,17 @@ class Invitation < ApplicationRecord
     "#{name.first}•••••@#{domain}"
   end
 
-  # "Your invitation hasn't been accepted", to whoever sent it, once (Trap 1).
+  # "Your invitation hasn't been accepted", to whoever sent it, once (Trap 1). Under the household's lock, like accepting
+  # and cancelling, then reread, so one accepted, declined or cancelled since the job read it gets no notification to
+  # outlive it. Nil if it's gone.
   def follow_up
-    invited_by.notify(kind: "invitation_unaccepted", household:, subject: self, dedupe_key: "invitation_unaccepted:#{id}")
+    transaction do
+      household.lock!
+      lock!
+      invited_by.notify(kind: "invitation_unaccepted", household:, subject: self, dedupe_key: "invitation_unaccepted:#{id}") unless expired?
+    end
+  rescue ActiveRecord::RecordNotFound
+    nil
   end
 
   def deliver_later

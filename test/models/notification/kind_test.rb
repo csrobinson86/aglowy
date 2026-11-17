@@ -36,6 +36,18 @@ class Notification::KindTest < ActiveSupport::TestCase
     assert_equal "2 meetings · family study Tuesday and Thursday · Circuit overseer's visit until Wednesday · Field service Saturday", notification.body
   end
 
+  test "weekly_preview keeps two events over several days apart when they share a title" do
+    @household.family_studies.destroy_all
+    @household.events.delete_all
+    @household.events.create!(kind: "circuit_assembly", title: "Trip", starts_on: Date.new(2026, 11, 24), days: 2, created_by: users(:head))
+    @household.events.create!(kind: "circuit_assembly", title: "Trip", starts_on: Date.new(2026, 11, 27), days: 2, created_by: users(:head))
+    @household.change_meeting_times(midweek_wday: 1, midweek_time: "19:00", weekend_wday: 1, weekend_time: "10:00")
+
+    notification = notify(:head, kind: "weekly_preview", subject: @household, data: { week_of: Date.new(2026, 11, 23) })
+
+    assert_equal "2 meetings · Trip from Tuesday · Trip from Friday", notification.body
+  end
+
   test "study_topic_needed: the session's day, choose a topic before its date, and the session" do
     session = travel_to(Time.utc(2026, 11, 17)) do
       @household.schedule_family_study(frequency: "once", starts_on: Date.new(2026, 11, 24), time_of_day: "19:00").first_session

@@ -57,6 +57,15 @@ class Notification::StudyTopicJobTest < ActiveJob::TestCase
     assert_not Notification.exists?(subject: session)
   end
 
+  test "a session cancelled after the job read it isn't asked about" do
+    session = session_on(Date.new(2026, 11, 20))
+    FamilyStudy::Session.find(session.id).cancel
+
+    eight_am_on_november_17 { session.ask_heads_for_topic }
+
+    assert_not Notification.exists?(subject: session)
+  end
+
   private
     def session_on(date, topic: nil)
       travel_to(CHICAGO.local(2026, 11, 16)) do
