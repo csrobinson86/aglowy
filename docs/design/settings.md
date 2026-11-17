@@ -19,6 +19,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Signing in | yes | yes | password only, username read-only | Email, new password, current password (`docs/design/invitations.md`) |
 | You | My households | yes | yes | yes, without Leave | Each household with the person's role, and Leave |
 | You | Tags and collections | yes | yes | yes | Rename and delete tags; edit and delete collections |
+| You | Calendar | yes | yes | yes | Share my times with a household; the phone calendar link (`docs/design/calendar.md`, CAL-01) |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
 | | Children | yes | yes, meeting helper only | no | The meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
@@ -90,6 +91,7 @@ A person can leave every household they're in (`docs/design/invitations.md`). Th
 | Signing in | How you sign in to Aglowy. |
 | My households | The households you belong to. |
 | Tags and collections | Rename or delete your tags and collections. Only you see them. |
+| Calendar | Who sees your times, and your phone calendar link. |
 | Household | Rivera household · heads can change this. |
 | Meetings | Rivera household · heads and adults can change this. |
 | Children | Rivera household · heads and adults; AI for a child is heads only. |
@@ -100,7 +102,7 @@ The section boxes are today's boxes, moved as they are: the same Primer `BorderB
 ### The section nav
 
 `Settings::NavComponent`, a Primer `NavList` labelled "Settings" (`aria: { label: "Settings" }`), with two groups:
-- "You": Profile, Appearance, Signing in, My households, Tags and collections
+- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes)
 - the household's name: the sections the person's role allows, in the table's order. No group at all for a child.
 
 The current section is selected (`aria-current="page"`, from Primer). Each section's controller passes its id (`:profile`, `:meetings`, …).
