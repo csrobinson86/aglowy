@@ -33,4 +33,27 @@ class ShareableTest < ActiveSupport::TestCase
 
     assert_equal "Sam shared a goal", users(:head).notifications.sole.title
   end
+
+  test "stopping sharing deletes the household's notifications of it, not another household's" do
+    note = meeting_notes(:head_midweek)
+    note.share_with(households(:home))
+    note.share_with(households(:parents))
+
+    note.stop_sharing_with(households(:home))
+
+    assert_not Notification.exists?(subject: note, household: households(:home))
+    assert_equal [ users(:grandparent) ], Notification.where(subject: note).map(&:user)
+  end
+
+  test "leaving the household deletes the notifications of the person's notes and goals shared there" do
+    note, goal = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16)), goals(:spouse_bible_reading)
+    note.share_with(households(:home))
+    goal.share_with(households(:home))
+    meeting_notes(:head_midweek).share_with(households(:home))
+
+    memberships(:spouse_in_home).deactivate
+
+    assert_not Notification.exists?(subject: [ note, goal ])
+    assert Notification.exists?(subject: meeting_notes(:head_midweek), user: users(:child))
+  end
 end

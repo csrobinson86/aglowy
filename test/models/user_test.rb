@@ -340,17 +340,19 @@ class UserTest < ActiveSupport::TestCase
     note = meeting_notes(:head_midweek)
     unread = users(:head).notify(kind: "shared_with_you", household: households(:home), subject: note, actor: users(:spouse), dedupe_key: "shared_with_you:1")
     already_read = users(:head).notify(kind: "shared_with_you", household: households(:home), subject: meeting_notes(:head_weekend), actor: users(:spouse), dedupe_key: "shared_with_you:2")
-    hidden = users(:head).notify(kind: "shared_with_you", household: households(:parents), subject: note, actor: users(:grandparent), dedupe_key: "shared_with_you:3")
+    hidden = users(:head).notify(kind: "shared_with_you", household: households(:parents), subject: goals(:spouse_bible_reading), actor: users(:grandparent), dedupe_key: "shared_with_you:3")
     someone_elses = users(:spouse).notify(kind: "shared_with_you", household: households(:home), subject: note, actor: users(:head), dedupe_key: "shared_with_you:1")
     already_read.read
     read_at = already_read.reading.created_at
     memberships(:head_in_parents).deactivate
 
-    travel 1.minute do
+    read_all_at = travel 1.minute do
       assert_turbo_stream_broadcasts([ users(:head), :notifications ], count: 2) { users(:head).read_all_notifications }
+      Time.current
     end
 
-    assert unread.reload.reading
+    assert_equal 7, unread.reload.reading.id[14].to_i, "a UUIDv7 id"
+    assert_equal read_all_at, unread.reading.created_at
     assert_equal read_at, already_read.reload.reading.created_at
     assert_nil hidden.reload.reading
     assert_nil someone_elses.reload.reading

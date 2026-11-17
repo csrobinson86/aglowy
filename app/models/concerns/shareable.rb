@@ -33,8 +33,10 @@ module Shareable
   end
 
   # The filtered delete_all leaves loaded sharings alone, so they're reset for the page that answers from this record.
+  # Its "shared with you" notifications there go too, so nobody's inbox shows what's private again.
   def stop_sharing_with(household)
     sharings.where(household: household).delete_all
+    notifications.where(household: household).delete_all
     sharings.reset
     shared_households.reset
   end

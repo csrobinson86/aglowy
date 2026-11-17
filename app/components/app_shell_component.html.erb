@@ -1,14 +1,14 @@
 <%# Below md the sidebar is hidden and this top bar takes its place (docs/design/app-shell.md, Phone). %>
 <header class="app-shell__top-bar d-flex d-md-none flex-items-center px-2 color-bg-subtle border-bottom">
-  <%= render Primer::Beta::IconButton.new(icon: :"three-bars", "aria-label": "Open menu", scheme: :invisible, mr: 2, data: { show_dialog_id: MENU_ID }) %>
-  <div class="flex-auto min-width-0">
-    <%= render AppShell::HouseholdSwitcherComponent.new(membership:, menu_id: "household-switcher-top-bar") %>
-  </div>
-  <%# The bell opens the inbox, with the counter beside it (docs/design/notifications.md, The sidebar). %>
-  <div class="d-flex flex-items-center ml-2">
+  <%= render Primer::Beta::IconButton.new(icon: :"three-bars", "aria-label": "Open menu", scheme: :invisible, data: { show_dialog_id: MENU_ID }) %>
+  <%# Beside the menu button, the bell opens the inbox, with the counter after it (docs/design/notifications.md, The sidebar). %>
+  <div class="d-flex flex-items-center mx-2">
     <%= render Primer::Beta::IconButton.new(icon: :bell, tag: :a, href: notifications_path, scheme: :invisible, show_tooltip: false, "aria-labelledby": BELL_NAME_ID) %>
     <span id="<%= BELL_NAME_ID %>" class="app-shell__notifications-name" hidden><%= render "notifications/name", count: unread_notifications_count %></span>
     <%= render "notifications/counter", count: unread_notifications_count %>
+  </div>
+  <div class="flex-auto min-width-0">
+    <%= render AppShell::HouseholdSwitcherComponent.new(membership:, menu_id: "household-switcher-top-bar") %>
   </div>
 </header>
 

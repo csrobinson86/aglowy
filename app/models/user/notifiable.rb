@@ -23,8 +23,10 @@ module User::Notifiable
   end
 
   # Mark all as read: every visible unread one, in one insert. One read in the meantime is skipped, not read twice.
+  # insert_all skips callbacks, so the UUIDv7 id is set here; created_at too, so it follows the app's clock.
   def read_all_notifications
-    readings = notifications.visible.unread.pluck(:id).map { { notification_id: it } }
+    created_at = Time.current
+    readings = notifications.visible.unread.pluck(:id).map { { id: SecureRandom.uuid_v7, notification_id: it, created_at: } }
     Notification::Reading.insert_all(readings, unique_by: :notification_id) if readings.any?
     broadcast_unread_notifications_count
   end

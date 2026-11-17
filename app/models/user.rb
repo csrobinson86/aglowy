@@ -201,14 +201,17 @@ class User < ApplicationRecord
     meeting_notes.create_or_find_by!(kind: kind, week_of: week_of, &:build_parts)
   end
 
-  # Membership#deactivate calls this inside its transaction, so the shares end with the membership.
+  # Membership#deactivate calls this inside its transaction, so the shares end with the membership, and their
+  # "shared with you" notifications there with them.
   def stop_sharing_meeting_notes_with(household)
     MeetingNote::Sharing.where(household: household, meeting_note: meeting_notes).delete_all
+    Notification.where(household: household, subject_type: "MeetingNote", subject_id: meeting_notes.select(:id)).delete_all
   end
 
   # Membership#deactivate calls this inside its transaction too, so personal goals stop being shared there as well.
   def stop_sharing_goals_with(household)
     Goal::Sharing.where(household: household, goal: goals).delete_all
+    Notification.where(household: household, subject_type: "Goal", subject_id: goals.select(:id)).delete_all
   end
 
   # Membership#deactivate calls this under the household's lock, so a step naming only someone who left can

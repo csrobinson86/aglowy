@@ -15,7 +15,7 @@ class Notification::Kind::SharedWithYou < Notification::Kind
     if goal?
       subject.title
     else
-      "#{MeetingNotesHelper::MEETING_NOTE_TITLES.fetch(subject.kind)} · week of #{subject.week_of.strftime("%B %-d")}"
+      "#{MeetingNote::TITLES.fetch(subject.kind)} · week of #{subject.week_of.strftime("%B %-d")}"
     end
   end
 

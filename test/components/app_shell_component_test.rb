@@ -123,4 +123,18 @@ class AppShellComponentTest < ViewComponent::TestCase
       assert_selector "nav[aria-label='Main']"
     end
   end
+
+  test "the top bar's bell opens the inbox, named by a hidden copy of the sidebar link's name, with the counter" do
+    Notification.insert_all(Array.new(3) do |n|
+      { user_id: users(:head).id, household_id: households(:home).id, kind: "shared_with_you", subject_type: "Goal",
+        subject_id: goals(:spouse_bible_reading).id, dedupe_key: "shared_with_you:#{n}" }
+    end)
+
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
+
+    assert_selector "header a[href='/#{households(:home).id}/notifications'][aria-labelledby='app-shell-bell-name'] svg.octicon-bell"
+    assert_selector "header #app-shell-bell-name[hidden]", visible: :all, exact_text: "Notifications, 3 unread", normalize_ws: true
+    assert_selector "header .Counter[aria-hidden='true']", text: "3"
+    assert_selector "turbo-cable-stream-source", visible: :all, count: 1
+  end
 end

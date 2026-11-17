@@ -11,7 +11,7 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
     earlier = travel_to(2.days.ago) { notify(users(:head), meeting_notes(:head_weekend), actor: users(:spouse), key: "shared_with_you:1") }
     today = notify(users(:head), goals(:spouse_bible_reading), actor: users(:spouse), key: "shared_with_you:2")
     notify(users(:spouse), meeting_notes(:head_midweek), actor: users(:head), key: "shared_with_you:3")
-    left = notify(users(:head), meeting_notes(:head_midweek), household: households(:parents), actor: users(:grandparent), key: "shared_with_you:4")
+    left = notify(users(:head), goals(:spouse_bible_reading), household: households(:parents), actor: users(:grandparent), key: "shared_with_you:4")
     memberships(:head_in_parents).deactivate
     earlier.read
 
@@ -101,7 +101,7 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "one from a household you left is a 404" do
-    notification = notify(users(:head), meeting_notes(:head_midweek), household: households(:parents), actor: users(:grandparent), key: "shared_with_you:1")
+    notification = notify(users(:head), goals(:spouse_bible_reading), household: households(:parents), actor: users(:grandparent), key: "shared_with_you:1")
     memberships(:head_in_parents).deactivate
 
     get household_notification_path(household_id: households(:home), id: notification)

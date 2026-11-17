@@ -4,6 +4,7 @@ class MeetingNote < ApplicationRecord
   include Shareable, Taggable
 
   PROGRAM_URL = "https://wol.jw.org/en/wol/meetings/r1/lp-e"
+  TITLES = { "midweek" => "Life and Ministry", "weekend" => "Weekend meeting" }.freeze
 
   belongs_to :user
   has_many :parts, -> { order(:position) }, dependent: :destroy

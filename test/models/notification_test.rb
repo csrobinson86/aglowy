@@ -26,7 +26,7 @@ class NotificationTest < ActiveSupport::TestCase
 
   test "visible leaves out a household the person left" do
     from_home = shared_with_spouse
-    from_parents = users(:head).notify(kind: "shared_with_you", household: households(:parents), subject: @note, actor: users(:grandparent), dedupe_key: "shared_with_you:2")
+    from_parents = users(:head).notify(kind: "shared_with_you", household: households(:parents), subject: goals(:spouse_bible_reading), actor: users(:grandparent), dedupe_key: "shared_with_you:2")
 
     assert_equal [ from_home, from_parents ].sort_by(&:id), Notification.visible.where(id: [ from_home, from_parents ]).sort_by(&:id)
 
@@ -55,15 +55,22 @@ class NotificationTest < ActiveSupport::TestCase
     assert_not Notification.exists?(notification.id)
   end
 
-  test "a renamed household and a renamed sharer show their new names" do
+  # The household's name shows on the inbox row, not in the body: NotificationsControllerTest, "a renamed household
+  # shows its new name on the row".
+  test "a renamed sharer shows the new name" do
     notification = shared_with_spouse
-    households(:home).update!(name: "The Renamed Family")
     users(:head).update!(name: "Henrietta Head")
 
-    notification = Notification.find(notification.id)
+    assert_equal "Henrietta shared a meeting note", Notification.find(notification.id).title
+  end
 
-    assert_equal "The Renamed Family", notification.household.name
-    assert_equal "Henrietta shared a meeting note", notification.title
+  test "database: a second reading of one notification raises RecordNotUnique" do
+    notification = shared_with_spouse
+    notification.read
+
+    assert_raises ActiveRecord::RecordNotUnique do
+      Notification::Reading.insert!({ notification_id: notification.id })
+    end
   end
 
   test "a shared meeting note's wording, icon and target" do
