@@ -5,8 +5,25 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
 
-      assert_equal [ "Today's meeting", "Meeting notes", "Personal study", "Notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(5), "for #{membership}"
+      assert_equal [ "Today's meeting", "Personal study", "Notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4), "for #{membership}"
       assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/todays_meeting'] svg.octicon-sun"
+    end
+  end
+
+  test "there's no Meeting notes item: meeting notes are a tab in Notes" do
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards, label: "Main"))
+
+    assert_selector "nav[aria-label='Main'] h2", text: "Mine"
+    assert_no_selector "nav[aria-label='Main'] a", text: "Meeting notes"
+    assert_no_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/meeting_notes']"
+  end
+
+  test "Notes is selected on the notes pages, the meeting notes list and a meeting note, and the shared list" do
+    %i[ personal_notes meeting_notes shared_meeting_notes ].each do |selected_item|
+      render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item:, label: "Main"))
+
+      assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/notes']", text: "Notes", count: 1
+      assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
     end
   end
 

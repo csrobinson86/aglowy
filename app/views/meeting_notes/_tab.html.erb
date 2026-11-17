@@ -1,0 +1,50 @@
+<%# locals: (shared:, kind:, kind_counts:, shared_count:, this_week:, tags: [], tag: nil) %>
+<%# The Meeting notes tab of Notes, around my own list or the shared one, which the page yields (docs/design/notes.md,
+    The Meeting notes tab; frames notes-meeting-notes.png and notes-meeting-notes-shared.png). No action in the header
+    until "My spiritual gems" has a page. %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Notes" } %>
+  <% subhead.with_description { "Your meeting notes are private to you. Share one with your household when you want to." } %>
+<% end %>
+
+<%= render NotesTabsComponent.new(selected: :meeting_notes) %>
+
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md)) do |layout| %>
+  <% layout.with_sidebar(width: :narrow, row_placement: :none) do %>
+    <%= render "meeting_notes/filters", shared:, kind:, kind_counts:, tags:, tag: %>
+  <% end %>
+
+  <% layout.with_main do %>
+    <%# Below md the side column folds behind this, above the cards (frame phone-notes-meeting-notes.png). %>
+    <%= render(Primer::Beta::Details.new(display: [ nil, nil, :none ], mb: 3)) do |details| %>
+      <% details.with_summary { "Meetings and tags" } %>
+      <% details.with_body(pt: 3) do %>
+        <%= render "meeting_notes/filters", shared:, kind:, kind_counts:, tags:, tag: %>
+      <% end %>
+    <% end %>
+
+    <% if this_week %>
+      <h2 class="f5 color-fg-muted mb-2">This week</h2>
+      <div class="d-md-flex gutter-md-condensed mb-2">
+        <% this_week.each do |note| %>
+          <div class="col-md-6 mb-3">
+            <%= render "meeting_notes/this_week_card", note: %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Mine and Shared are two pages, so the switch's segments are links, each keeping the meeting chosen. %>
+    <div class="d-flex flex-wrap flex-items-center flex-justify-between">
+      <h2 class="f5 color-fg-muted mr-3 mb-2"><%= this_week ? "Earlier" : "All weeks" %></h2>
+      <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Show", mb: 2, classes: "meeting-notes__show")) do |control| %>
+        <% control.with_item(tag: :a, href: household_meeting_notes_path(kind:), label: "Mine", selected: !shared) %>
+        <% control.with_item(tag: :a, href: household_shared_meeting_notes_path(kind:), label: "Shared in #{Current.household.name}", selected: shared) do |item| %>
+          <% item.with_trailing_visual_label { shared_count.to_s } %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%= yield %>
+  <% end %>
+<% end %>

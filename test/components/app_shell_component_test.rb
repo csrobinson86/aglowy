@@ -41,15 +41,6 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
-  test "Meeting notes is in the Mine group, with the note icon, and is the current item when selected_item is :meeting_notes" do
-    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :meeting_notes))
-
-    assert_selector "nav[aria-label='Main'] h2", text: "Mine"
-    assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/meeting_notes']", text: "Meeting notes"
-    assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-note"
-    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
-  end
-
   test "My goals follows Notes in the Mine group, with the flag icon, and is the current item when selected_item is :personal_goals" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :personal_goals))
 
@@ -59,10 +50,10 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
-  test "Personal study sits between Meeting notes and Notes, with the search icon, and is the current item on its pages" do
+  test "Personal study sits between Today's meeting and Notes, with the search icon, and is the current item on its pages" do
     render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :personal_studies))
 
-    assert_equal [ "Meeting notes", "Personal study", "Notes" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4).first(3)
+    assert_equal [ "Today's meeting", "Personal study", "Notes" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4).first(3)
     assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/personal_studies']", text: "Personal study"
     assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-search"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1

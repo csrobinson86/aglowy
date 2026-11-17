@@ -1,0 +1,13 @@
+// The Meeting notes tab's Show switch. A long household name truncates the "Shared in <household>" segment, so the
+// switch never scrolls a phone sideways, and Mine keeps its full width.
+.meeting-notes__show {
+  max-width: 100%;
+}
+
+.meeting-notes__show .SegmentedControl-item {
+  min-width: 0;
+}
+
+.meeting-notes__show .SegmentedControl-item:first-child {
+  flex-shrink: 0;
+}

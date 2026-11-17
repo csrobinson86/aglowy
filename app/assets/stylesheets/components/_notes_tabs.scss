@@ -1,0 +1,15 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// Notes' tabs fill the width on a phone, each taking an equal share (frame phone-notes-meeting-notes.png), and sit at
+// their own width from md up (frame notes-meeting-notes.png).
+.notes-tabs .UnderlineNav-body,
+.notes-tabs__tab,
+.notes-tabs__tab .UnderlineNav-item {
+  flex: 1;
+  justify-content: center;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    flex: initial;
+  }
+}

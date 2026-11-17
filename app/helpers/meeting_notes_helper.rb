@@ -2,6 +2,8 @@ module MeetingNotesHelper
   MEETING_NOTE_TITLES = { "midweek" => "Life and Ministry", "weekend" => "Weekend meeting" }.freeze
   # Primer functional colours, as drawn in docs/design/meeting-notes/notes-list.png.
   MEETING_NOTE_DOTS = { "midweek" => :danger, "weekend" => :muted }.freeze
+  # One row of the Meetings list on the Meeting notes tab; a nil kind is All meetings.
+  MeetingNoteKindFilter = Data.define(:kind, :label, :dot, :count)
   # The meeting helper's own decorative icons, inline so they take the text colour. Each file carries aria-hidden.
   MEETING_HELPER_ICONS = Rails.root.glob("app/assets/images/meeting_helper/*.svg").to_h { [ it.basename(".svg").to_s, it.read.html_safe ] }.freeze
   # The drawing page's seven colours (frame tablet-draw.png), first picked first. Each swatch's BEM modifier
@@ -12,6 +14,12 @@ module MeetingNotesHelper
 
   def meeting_note_title(note)
     MEETING_NOTE_TITLES.fetch(note.kind)
+  end
+
+  # "All meetings", then each meeting, with its dot and how many of the list's notes are for it.
+  def meeting_note_kind_filters(kind_counts)
+    [ MeetingNoteKindFilter.new(kind: nil, label: "All meetings", dot: :muted, count: kind_counts.values.sum) ] +
+      MEETING_NOTE_TITLES.map { |kind, title| MeetingNoteKindFilter.new(kind:, label: title, dot: MEETING_NOTE_DOTS.fetch(kind), count: kind_counts.fetch(kind, 0)) }
   end
 
   def meeting_note_dot(color)

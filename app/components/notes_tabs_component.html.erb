@@ -1,0 +1,10 @@
+<%# Below md the tabs share the width and drop their counters (frame phone-notes-meeting-notes.png). %>
+<%= render(Primer::Alpha::UnderlineNav.new(label: "Notes, meeting notes and bookmarks", mb: 4, classes: "notes-tabs")) do |nav| %>
+  <% tabs.each do |tab| %>
+    <% nav.with_tab(href: tab.href, selected: tab.id == selected, wrapper_arguments: { classes: "notes-tabs__tab" }) do |item| %>
+      <% item.with_icon(tab.icon) %>
+      <% item.with_text { tab.label } %>
+      <% item.with_counter(count: tab.count, classes: "d-none d-md-inline-block") %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -3,6 +3,8 @@
 <% title = meeting_note_title(meeting_note) %>
 <% author = policy(meeting_note).update? %>
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <%# Meeting notes are a tab of Notes (docs/design/notes.md, A meeting note). %>
+  <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
   <% breadcrumbs.with_item(href: household_meeting_notes_path) { "Meeting notes" } %>
   <% breadcrumbs.with_item(href: household_meeting_note_path(id: meeting_note)) { meeting_note.display_week } %>
 <% end %>

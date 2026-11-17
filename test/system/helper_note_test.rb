@@ -16,7 +16,7 @@ class HelperNoteTest < ApplicationSystemTestCase
     sign_out :identity
     sign_in identities(:head)
     visit household_shared_meeting_notes_url(household_id: households(:home))
-    within("main .Box") { click_on "Life and Ministry" }
+    within("main .Box-row", text: "Eli Child") { click_on "Life and Ministry" }
 
     assert_selector "h1 .Label", text: "Shared by Eli Child · from Today's meeting"
     assert_selector "h3", text: "Talk about it with Eli"

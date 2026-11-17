@@ -4,22 +4,24 @@
 # MeetingNote.shared_with(Current.household), read-only.
 class MeetingNotesController < ApplicationController
   include HouseholdScoped
-  include TagFiltered
+  include TagFiltered, KindFiltered
 
   before_action :set_editable_meeting_note, only: %i[ edit update ]
 
-  # Filtered by a tag, the list holds every week's tagged notes, this week's too, in place of the This week cards.
+  # Filtered by a meeting or a tag, the list holds every week's notes, this week's too, in place of the This week cards.
   def index
     authorize MeetingNote
+    @kind_counts = Current.user.meeting_notes.group(:kind).count
+    @tags = Current.user.tags.carried_by("MeetingNote").order(:name).load
     @shared_count = MeetingNote.shared_with(Current.household).count
-    notes = Current.user.meeting_notes.includes(:sharings, :tags).newest_first
+    notes = tagged(of_kind(Current.user.meeting_notes)).includes(:sharings, :tags).newest_first
 
-    if @tag_name
-      @earlier = Page.new(tagged(notes), number: params[:page])
+    if @kind || @tag_name
+      @earlier = Page.new(notes, number: params[:page])
     else
-      @week_of = Current.membership.this_week
-      @this_week = Current.user.meeting_notes_for_week(@week_of)
-      @earlier = Page.new(notes.where(week_of: ...@week_of), number: params[:page])
+      week_of = Current.membership.this_week
+      @this_week = Current.user.meeting_notes_for_week(week_of)
+      @earlier = Page.new(notes.where(week_of: ...week_of), number: params[:page])
     end
   end
 

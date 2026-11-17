@@ -41,11 +41,11 @@ Meeting notes and bookmarks live in Notes, as tabs, so Mine stays short (decided
 
 Frame `notes-meeting-notes.png`. The same two columns as the Notes tab (`Primer::Alpha::Layout`, the side column folding behind a "Meetings and tags" `Details` on a phone):
 - **Side column:**
-  - **Meetings:** "All meetings", "Life and Ministry" and "Weekend meeting", each with its dot and count, setting `?kind=` (`MeetingNote.kinds`; an unknown kind is ignored)
+  - **Meetings:** "All meetings", "Life and Ministry" and "Weekend meeting", each with its dot and count, setting `?kind=` (`MeetingNote.kinds`; an unknown kind is ignored). Each count is of the list showing: the person's own notes on their list, the household's shared notes on the shared list (decided in #239, so a count always matches what its filter shows)
   - **My tags:** the person's tags that are on a meeting note, with counts, setting `?tag=` (as today). Hidden on the shared list, where tags belong to their authors
 - **Main column:**
   - "This week" with its two cards, as today, with a left bar in the meeting's color. Hidden while a filter is set, as today
-  - "Earlier", with a Primer `SegmentedControl` labelled "Show": "Mine" and "Shared in <household>" with its count. They're links to `/meeting_notes` and `/shared_meeting_notes`, keeping `?kind=`. If the pinned `SegmentedControl` can't render links, use two `Button`s with `aria-current`, and record it here
+  - "Earlier", with a Primer `SegmentedControl` labelled "Show": "Mine" and "Shared in <household>" with its count. They're links to `/meeting_notes` and `/shared_meeting_notes`, keeping `?kind=`. If the pinned `SegmentedControl` can't render links, use two `Button`s with `aria-current`, and record it here. The pinned 0.53.5 renders links (an item with `href` gets `aria-current` and no select action), so there's no fallback. While a filter hides This week, the heading reads "All weeks", since the list then holds this week's notes too
   - the list as today: dot, meeting, week, summary, tags (`tags_for(Current.user)`), "Shared", and Newer / Older notes
 - The old "My notes" / "Shared in" `UnderlineNav` (`meeting_notes/_tabs`) goes away; a second row of tabs under the first is what the switch replaces.
 - No search box: meeting notes are encrypted, and the meeting and tag filters cover finding one.

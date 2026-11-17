@@ -14,8 +14,9 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "title", "Meeting notes · The Head Family · Aglowy"
-    assert_select "h1", "Meeting notes"
-    assert_select "main", text: /Private to you, wherever you go. Share a note with your household when you want to./
+    assert_select "h1", "Notes"
+    assert_select "main .Subhead", text: /Your meeting notes are private to you. Share one with your household when you want to./
+    assert_select "main .Subhead-actions", count: 0
     assert_select "main a[href='#{note_path(mine)}']", count: 1
     assert_select "main a[href='#{note_path(meeting_notes(:head_midweek))}']", text: "Open notes"
     assert_select "main a[href='#{note_path(meeting_notes(:head_weekend))}']", text: "Open notes"
@@ -120,8 +121,94 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     get household_meeting_notes_path(household_id: households(:home))
 
-    assert_select "main nav[aria-label='Meeting notes'] a[aria-current='page']", text: "My notes"
+    assert_select "main ul[aria-label='Show'] a[aria-current='true']", text: "Mine"
     assert_select "main h2", text: "No earlier notes"
+  end
+
+  test "the page has the Notes tabs with Meeting notes selected" do
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home))
+
+    assert_select "main nav[aria-label='Notes, meeting notes and bookmarks'] a[aria-current='page'][href='#{household_meeting_notes_path(household_id: households(:home))}']", text: /Meeting notes\s+2/
+    assert_select "main nav[aria-label='Notes, meeting notes and bookmarks'] a[href='#{household_personal_notes_path(household_id: households(:home))}']", text: /Notes\s+3/
+    assert_select "main nav[aria-label='Notes, meeting notes and bookmarks'] a[aria-current='page']", count: 1
+  end
+
+  test "the Meetings list counts each meeting's notes and sets ?kind=, and My tags counts my tags on meeting notes" do
+    users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9)).tag_with("prayer", by: users(:head))
+    users(:head).tags.create!(name: "unused")
+    personal_notes(:head_daniel).tag_with("daniel", by: users(:head))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home))
+
+    meetings = "main .Layout-sidebar nav[aria-label='Meetings']"
+    assert_select "#{meetings} a[aria-current='page'][href='#{household_meeting_notes_path(household_id: households(:home))}']", text: /All meetings\s+3/
+    assert_select "#{meetings} a[href='#{household_meeting_notes_path(household_id: households(:home), kind: "midweek")}']", text: /Life and Ministry\s+2/
+    assert_select "#{meetings} a[href='#{household_meeting_notes_path(household_id: households(:home), kind: "weekend")}']", text: /Weekend meeting\s+1/
+    assert_select "#{meetings} a svg.octicon-dot-fill", count: 3
+    assert_equal [ "#ministry", "#prayer" ], css_select("main .Layout-sidebar nav[aria-label='My tags'] a").map { it.text.squish.split.first }
+    assert_select "main nav[aria-label='My tags'] a[href='#{household_meeting_notes_path(household_id: households(:home), tag: "prayer")}']", text: /#prayer\s+1/
+    assert_select "main details summary", text: "Meetings and tags"
+  end
+
+  test "?kind=weekend lists only weekend notes, every week's, in place of the This week cards" do
+    earlier_weekend = users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    earlier_midweek = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), kind: "weekend")
+
+    assert_response :success
+    assert_select "main h2", text: "This week", count: 0
+    assert_select "main .Box-row", count: 2
+    assert_select "main .Box-row a[href='#{note_path(meeting_notes(:head_weekend))}']", count: 1
+    assert_select "main .Box-row a[href='#{note_path(earlier_weekend)}']", count: 1
+    assert_select "main a[href='#{note_path(earlier_midweek)}']", count: 0
+    assert_select "main a[href='#{note_path(meeting_notes(:head_midweek))}']", count: 0
+    assert_select "main nav[aria-label='Meetings'] a[aria-current='page']", text: /Weekend meeting/
+    assert_select "main ul[aria-label='Show'] a[href='#{household_meeting_notes_path(household_id: households(:home), kind: "weekend")}']", text: "Mine"
+    assert_select "main ul[aria-label='Show'] a[href='#{household_shared_meeting_notes_path(household_id: households(:home), kind: "weekend")}']", text: /Shared in The Head Family/
+  end
+
+  test "?kind=teal is ignored" do
+    earlier = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), kind: "teal")
+
+    assert_response :success
+    assert_select "main h2", text: "This week"
+    assert_select "main a[href='#{note_path(meeting_notes(:head_midweek))}']", text: "Open notes"
+    assert_select "main a[href='#{note_path(meeting_notes(:head_weekend))}']", text: "Open notes"
+    assert_select "main .Box-row a[href='#{note_path(earlier)}']", count: 1
+    assert_select "main nav[aria-label='Meetings'] a[aria-current='page']", text: /All meetings/
+    assert_select "main ul[aria-label='Show'] a[href='#{household_shared_meeting_notes_path(household_id: households(:home))}']"
+  end
+
+  test "a kind and a tag narrow the list together, and each filter keeps the other" do
+    tagged_midweek = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    tagged_midweek.tag_with("ministry", by: users(:head))
+    users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9)).tag_with("ministry", by: users(:head))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home), kind: "midweek", tag: "ministry")
+
+    assert_select "main .Box-row", count: 2
+    assert_select "main .Box-row a[href='#{note_path(tagged_midweek)}']"
+    assert_select "main .Box-row a[href='#{note_path(meeting_notes(:head_midweek))}']"
+    assert_select "main nav[aria-label='Meetings'] a[href='#{household_meeting_notes_path(household_id: households(:home), kind: "weekend", tag: "ministry")}']"
+    assert_select "main nav[aria-label='My tags'] a[href='#{household_meeting_notes_path(household_id: households(:home), tag: "ministry", kind: "midweek")}']"
+    assert_select "main a[aria-label='Remove filter #ministry'][href='#{household_meeting_notes_path(household_id: households(:home), kind: "midweek")}']"
+  end
+
+  test "a kind with no notes says so" do
+    sign_in identities(:spouse)
+
+    get household_meeting_notes_path(household_id: households(:home), kind: "midweek")
+
+    assert_select "main h2", text: "No Life and Ministry notes"
   end
 
   test "starting a note twice redirects to the same one" do
@@ -157,6 +244,8 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "title", "Life and Ministry · The Head Family · Aglowy"
+    assert_equal [ "Notes", "Meeting notes" ], css_select("nav[aria-label='Breadcrumb'] a").map { it.text.strip }.first(2)
+    assert_select "nav[aria-label='Breadcrumb'] a[href='#{household_personal_notes_path(household_id: households(:home))}']", text: "Notes"
     assert_select "nav[aria-label='Breadcrumb'] a[href='#{household_meeting_notes_path(household_id: households(:home))}']", text: "Meeting notes"
     assert_select "main h1", /\ALife and Ministry\s+Private\z/
     assert_select ".Subhead h1 .Label", "Private"

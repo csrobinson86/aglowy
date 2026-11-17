@@ -11,10 +11,6 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_todays_meeting_path(household_id: household.id)
   end
 
-  def meeting_notes_path
-    household_meeting_notes_path(household_id: household.id)
-  end
-
   def initialize(membership:, selected_item:, label:)
     @membership = membership
     @selected_item = selected_item

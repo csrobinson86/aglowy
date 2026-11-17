@@ -11,8 +11,8 @@ class SharedMeetingNotesTest < ApplicationSystemTestCase
     visit household_meeting_notes_url(household_id: households(:home))
 
     click_on "Shared in The Head Family"
-    assert_selector "nav[aria-label='Meeting notes'] a[aria-current='page']", text: "Shared in The Head Family"
-    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Meeting notes"
+    assert_selector "ul[aria-label='Show'] a[aria-current='true']", text: "Shared in The Head Family"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
     assert_text "Hannah Head · Week of November 16–22, 2026"
     assert_accessible
     capture_screens("shared-notes")

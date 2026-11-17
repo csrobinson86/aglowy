@@ -21,6 +21,9 @@ class Tag < ApplicationRecord
 
   # Each tag with how many things carry it, as taggings_count, for the tag editor's suggestions.
   scope :with_taggings_count, -> { left_joins(:taggings).group(:id).select("tags.*", "COUNT(taggings.id) AS taggings_count") }
+  # Each tag on at least one thing of a type ("MeetingNote"), with how many of those carry it, as taggings_count, for
+  # that list's My tags.
+  scope :carried_by, ->(taggable_type) { joins(:taggings).where(taggings: { taggable_type: }).group(:id).select("tags.*", "COUNT(taggings.id) AS taggings_count") }
 
   # "Talk Prep", "#talk_prep" and " talk-prep " are all talk-prep. "###" is "", which is invalid.
   def self.normalize(text)
