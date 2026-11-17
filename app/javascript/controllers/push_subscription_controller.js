@@ -4,7 +4,8 @@ import { Controller } from "@hotwired/stimulus"
 // shows only where push works and this browser isn't already one of the person's devices: the page lists a SHA-256 of
 // each of their endpoints, never the endpoints, which work as secrets. Turning it on asks for permission, registers the
 // service worker, subscribes with the VAPID public key and submits the hidden form; Turbo shows the page again with the
-// device listed. If permission is refused, it says how to allow it, and if the browser can't subscribe, it says so.
+// device listed. If permission is refused, it says how to allow it, and if the browser can't subscribe, it says so;
+// either message takes focus, so a screen reader reads it (Primer's Banner, Communicating feedback).
 export default class extends Controller {
   static targets = [ "offer", "refused", "failed", "form" ]
   static values = { publicKey: String, subscribed: Array }
@@ -12,9 +13,12 @@ export default class extends Controller {
   async connect() {
     if (!this.supported) return
 
-    const registration = await navigator.serviceWorker.getRegistration("/")
-    const subscription = await registration?.pushManager.getSubscription()
-    if (subscription && this.subscribedValue.includes(await this.digest(subscription.endpoint))) return
+    // If the browser can't say whether it's subscribed, the offer still shows, so the person can try.
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/")
+      const subscription = await registration?.pushManager.getSubscription()
+      if (subscription && this.subscribedValue.includes(await this.digest(subscription.endpoint))) return
+    } catch {}
 
     this.offerTarget.hidden = false
   }
@@ -22,7 +26,7 @@ export default class extends Controller {
   async subscribe() {
     this.refusedTarget.hidden = this.failedTarget.hidden = true
     if (await Notification.requestPermission() !== "granted") {
-      this.refusedTarget.hidden = false
+      this.reveal(this.refusedTarget)
       return
     }
 
@@ -34,8 +38,13 @@ export default class extends Controller {
         await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.applicationServerKey })
       this.submit(subscription.toJSON())
     } catch {
-      this.failedTarget.hidden = false
+      this.reveal(this.failedTarget)
     }
+  }
+
+  reveal(banner) {
+    banner.hidden = false
+    banner.focus()
   }
 
   submit({ endpoint, keys }) {

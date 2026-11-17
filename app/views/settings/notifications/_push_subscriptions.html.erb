@@ -15,10 +15,10 @@
       </div>
       <%= render(Primer::Beta::Button.new(scheme: :primary, data: { action: "push-subscription#subscribe" })) { "Turn on for this browser" } %>
     </div>
-    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mt: 3, hidden: true, data: { push_subscription_target: "refused" })) do %>
+    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mt: 3, hidden: true, tabindex: -1, data: { push_subscription_target: "refused" })) do %>
       Your browser blocked notifications for Aglowy. Allow them in its settings, then try again.
     <% end %>
-    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mt: 3, hidden: true, data: { push_subscription_target: "failed" })) do %>
+    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mt: 3, hidden: true, tabindex: -1, data: { push_subscription_target: "failed" })) do %>
       Notifications couldn't be turned on for this browser.
     <% end %>
     <%= primer_form_with(scope: :push_subscription, url: household_push_subscriptions_path, data: { push_subscription_target: "form" }) do |f| %>
