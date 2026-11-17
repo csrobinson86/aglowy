@@ -80,9 +80,10 @@ Under `/:household_id`, so they use the household layout. Bookmarks are always f
 
 ### The tabs
 
-- Notes (`/:household_id/notes`) and Bookmarks (`/:household_id/bookmarks`) share a header: the `h1` "Notes", then a Primer `UnderlineNav` labelled "Notes and bookmarks" with "Notes" and "Bookmarks", each with its count (`Primer::Beta::Counter`). The current tab is `aria-current="page"`.
-- "New note" shows only on the Notes tab.
-- The sidebar's "Notes" item is selected on both (`selected_by_ids` includes `:bookmarks`).
+- Bookmarks is the third tab of Notes, after Notes and Meeting notes (`docs/design/notes.md`, Notes, Meeting notes and Bookmarks). Add it to `NotesTabsComponent`, with its count.
+- "New note" shows only on the Notes tab; the Bookmarks tab has no action.
+- The sidebar's "Notes" item is selected here too (`selected_by_ids` includes `:bookmarks`).
+- The Bookmarks frames show two tabs because they were drawn first; build three.
 
 ### The Bookmarks tab
 

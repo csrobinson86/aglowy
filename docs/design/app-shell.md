@@ -129,7 +129,7 @@ changes when it does.
 │   ☺ Members           │                                              │
 │   ◎ Family goals      │                                              │
 │ Mine                  │                                              │
-│   ▢ Meeting notes     │                                              │
+│   ✎ Notes             │                                              │
 │   ⚑ My goals          │                                              │
 │                       │                                              │
 │ ───────────────────── │                                              │
@@ -143,7 +143,7 @@ changes when it does.
 1. **Aglowy mark:** Octicon `sun` in the attention colour, then "Aglowy". Links to the household home.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
 3. **Household group:** Home, Family studies, Members, Family goals.
-4. **Mine group:** Today's meeting, Meeting notes, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
+4. **Mine group:** Today's meeting, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`, whose tabs hold notes, meeting notes and bookmarks), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
 5. **Footer:** Settings, for everyone (`docs/design/settings.md`; it replaced Household settings and the link on the person's name in SETTINGS-01), then the person's initial and name with a Sign out button.
 
 **Main**
