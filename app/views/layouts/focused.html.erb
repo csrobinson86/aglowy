@@ -5,15 +5,19 @@
   </head>
 
   <body data-color-mode="<%= color_mode %>" data-light-theme="light" data-dark-theme="dark">
-    <%# Pages outside a household: the Aglowy mark, then one centred column (docs/design/app-shell.md). %>
-    <header class="px-3 py-3">
-      <%= render(Primer::Beta::Link.new(href: root_path, scheme: :primary, font_weight: :bold, font_size: 3, display: :inline_flex, align_items: :center, classes: "no-underline")) do %>
-        <%= render Primer::Beta::Octicon.new(:sun, color: :attention, size: :medium, mr: 2) %>
-        Aglowy
-      <% end %>
-    </header>
+    <%# Pages outside a household: the Aglowy logo, then one centred column. Signed in, the logo is at the top left;
+        signed out, the mark alone is centred above the column (docs/design/brand.md, Where it appears). %>
+    <% if identity_signed_in? %>
+      <header class="px-3 py-3">
+        <%= render LogoComponent.new(href: root_path) %>
+      </header>
+    <% else %>
+      <header class="d-flex flex-justify-center pt-6">
+        <%= render LogoComponent.new(href: root_path, size: :large) %>
+      </header>
+    <% end %>
 
-    <main class="container-sm px-3 py-5">
+    <main class="container-sm px-3 <%= identity_signed_in? ? "py-5" : "pt-4 pb-5" %>">
       <%= render "shared/flash" %>
       <%= render "shared/impersonation_banner" %>
       <%= yield %>

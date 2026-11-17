@@ -12,9 +12,12 @@
 <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
 <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
-<link rel="icon" href="/icon.png" type="image/png">
+<%# The Two flames: the SVG mark, a 32 px PNG for browsers without SVG favicons, and the app icon for an iPhone's
+    Home Screen. theme-color is the logo's ink (docs/design/brand.md, Files and Colours). %>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#1F2328">
 
 <%# Lexxy's stylesheet from its gem, so Propshaft resolves the files it @imports (Sass would leave them as 404s). %>
 <%= stylesheet_link_tag "lexxy", "data-turbo-track": "reload" %>
