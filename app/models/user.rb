@@ -117,9 +117,10 @@ class User < ApplicationRecord
   end
 
   # Settings → Calendar: shares their times with the active households ticked and stops with the rest, in one
-  # transaction. Any other household is ignored.
+  # transaction. Any other household is ignored. The lock makes two saves at once take turns, so the later one wins
+  # rather than leaving both selections shared.
   def share_times_only_with(household_ids)
-    transaction do
+    with_lock do
       memberships.active.each { it.household_id.in?(household_ids) ? it.share_times : it.stop_sharing_times }
     end
   end

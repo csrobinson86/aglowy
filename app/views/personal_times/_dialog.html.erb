@@ -20,9 +20,11 @@
       <%= tag.div class: "mt-3", hidden: !personal_time.kind.in?(PersonalTime::OPENING_KINDS), data: { personal_time_target: "opens" } do %>
         <%= render PersonalTimes::Form.new(f, section: :opens, user: Current.user) %>
       <% end %>
+      <%# Every household the person shares with, not only this one, so "Only you" is never said when another sees it. %>
+      <% households_seeing = Current.user.households_seeing_times.map(&:name) %>
       <p class="text-small color-fg-muted my-3">
-        <% if Current.membership.shares_times? %>
-          <%= Current.household.name %> sees this time's title and when it is.
+        <% if households_seeing.any? %>
+          <%= households_seeing.to_sentence %> <%= households_seeing.one? ? "sees" : "see" %> this time's title and when it is.
         <% else %>
           Only you see your times. You can share them with a household in Settings → Calendar.
         <% end %>
