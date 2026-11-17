@@ -68,12 +68,15 @@ class PersonalTimesControllerTest < ActionDispatch::IntegrationTest
 
   test "another person's time is a 404" do
     time = spouse_time
-    sign_in identities(:head)
 
+    # A 404 doesn't keep the session, so each request signs in again.
+    sign_in identities(:head)
     get edit_household_personal_time_path(household_id: @home, id: time)
     assert_response :not_found
+    sign_in identities(:head)
     patch household_personal_time_path(household_id: @home, id: time), params: { personal_time: { title: "Mine now" } }
     assert_response :not_found
+    sign_in identities(:head)
     delete household_personal_time_path(household_id: @home, id: time)
     assert_response :not_found
     assert_equal "Daily Bible reading", time.reload.title

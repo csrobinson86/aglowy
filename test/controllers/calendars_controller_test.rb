@@ -66,7 +66,7 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
   test "the Show form's ticks become hide[] in the URL" do
     sign_in identities(:spouse)
 
-    get household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", show: [ "", "family_studies", "assemblies", "field_service", "other_events" ])
+    get household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", show: [ "", "family_studies", "assemblies", "field_service", "other_events", "my_times" ])
 
     assert_redirected_to household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", hide: %w[ meetings ])
   end

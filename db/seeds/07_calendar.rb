@@ -13,3 +13,23 @@ monday = rivera.today.beginning_of_week(:monday)
 ].each do |event|
   rivera.events.exists?(title: event[:title]) || rivera.events.create!(created_by: maria, **event)
 end
+
+# Maria's own times (docs/design/calendar.md, Elsewhere): daily Bible reading at 6:30 AM, done yesterday and today;
+# personal study on Tuesdays at 8:30 PM, opening a study of her own; and meeting prep on Wednesday evening, the day before
+# the Thursday midweek meeting. Lucia, the child with a login, reads a Bible story at 7:30 PM every day. Each starts a
+# week back, so the days before today show; saving the first settles the person's zone to the Riveras'. Titles are
+# encrypted, so each is found by its kind.
+lucia = seeded_person("lucia.rivera")
+listening = seed_personal_study(maria, title: "Being a good listener", notes: "<p>Jas 1:19: quick to listen, slow to speak.</p>")
+
+def seed_personal_time(user, household, kind:, **attributes)
+  user.personal_times.find_by(kind:) || user.personal_times.new(starts_on: household.today - 7).tap do |time|
+    time.plan({ kind:, duration_minutes: 30, **attributes }, household:) || raise(ActiveRecord::RecordInvalid, time)
+  end
+end
+
+reading = seed_personal_time(maria, rivera, kind: "bible_reading", title: "Daily Bible reading", wdays: [ 0, 1, 2, 3, 4, 5, 6 ], time_of_day: "06:30")
+[ reading.today - 1, reading.today ].each { reading.complete(on: it) }
+seed_personal_time(maria, rivera, kind: "personal_study", title: "Personal study", wdays: [ 2 ], time_of_day: "20:30", duration_minutes: 60, opens: listening)
+seed_personal_time(maria, rivera, kind: "meeting_prep", title: "Meeting prep", wdays: [ 3 ], time_of_day: "19:00", duration_minutes: 45)
+seed_personal_time(lucia, rivera, kind: "bible_reading", title: "Read a Bible story", wdays: [ 0, 1, 2, 3, 4, 5, 6 ], time_of_day: "19:30", duration_minutes: 15)

@@ -28,7 +28,9 @@ class PersonalTimesTest < ApplicationSystemTestCase
     end
 
     assert_no_selector "dialog[open]"
-    assert_selector ".calendar-item--my-time", text: /6:30 AM\s+Daily Bible reading/, count: 7
+    # From today on: Monday was before the time existed.
+    assert_selector ".calendar-item--my-time .calendar-item__time", text: "6:30 AM", count: 6
+    assert_selector ".calendar-item--my-time .calendar-item__title", text: "Daily Bible reading", count: 6
     assert_no_selector "section[aria-current=date] ~ section .calendar-item--my-time input[type=checkbox]"
 
     within "section[aria-current=date]" do

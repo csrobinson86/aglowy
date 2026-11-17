@@ -1,0 +1,4 @@
+<% content_for :title, "Edit my time" %>
+<%= turbo_frame_tag "personal_time_dialog" do %>
+  <%= render "personal_times/dialog", personal_time: @personal_time %>
+<% end %>

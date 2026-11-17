@@ -1,0 +1,27 @@
+<%# locals: (item:) -%>
+<%# The viewer's own time on one day (frame calendar-week.png): the time, the done box with the title, which opens the
+    edit dialog, and a link to what it opens, a study or a note, or for meeting prep that week's note through
+    POST /meeting_notes. No done box on a day that hasn't come yet; a done title has a line through it
+    (docs/design/calendar.md, My time's done box). %>
+<% occurrence, time = item.source, item.source.personal_time %>
+<%= tag.div id: personal_time_card_id(occurrence), class: [ "calendar-item", "calendar-item--my-time", { "calendar-item--done": occurrence.done? } ] do %>
+  <span class="calendar-item__time"><%= calendar_time(item.starts_at) %></span>
+  <div class="calendar-item__done">
+    <% unless occurrence.future? %>
+      <%= primer_form_with(url: occurrence.done? ? household_personal_time_completion_path(personal_time_id: time, id: occurrence.on.iso8601) : household_personal_time_completions_path(personal_time_id: time),
+            method: occurrence.done? ? :delete : :post, data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
+        <%= render PersonalTimes::CompletionForm.new(f, occurrence:) %>
+      <% end %>
+    <% end %>
+    <%= link_to item.title, edit_household_personal_time_path(id: time), class: "calendar-item__title calendar-item__edit", data: { turbo_frame: "personal_time_dialog" } %>
+  </div>
+  <% case opens = occurrence.opens(Current.household) %>
+  <% when Household::Meeting %>
+    <%= button_to item.subtitle, household_meeting_notes_path, params: { meeting_note: { kind: opens.kind, week_of: opens.week_of.iso8601 } },
+          class: "calendar-item__opens", form_class: "calendar-item__form" %>
+  <% when PersonalStudy %>
+    <%= link_to item.subtitle, household_personal_study_path(id: opens), class: "calendar-item__opens" %>
+  <% when PersonalNote %>
+    <%= link_to item.subtitle, household_personal_note_path(id: opens), class: "calendar-item__opens" %>
+  <% end %>
+<% end %>

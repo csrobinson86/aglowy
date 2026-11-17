@@ -1,9 +1,12 @@
 # Everything on a household's calendar for a range of dates in its zone, as Items in order of start
 # (docs/design/calendar.md, How a calendar is put together). Nothing is stored: each source is asked for the range.
-# The sources are meetings, family studies and household events; hide leaves a group out without asking it.
+# The sources are meetings, family studies, household events and the viewer's own times, converted from their zone
+# (Trap 2); hide leaves a group out without asking it.
 class Household::Calendar
   GROUPS = { "meetings" => "Meetings", "family_studies" => "Family studies", "assemblies" => "Assemblies and special events",
              "field_service" => "Field service", "other_events" => "Other events" }.freeze
+  # The "Times" groups under them.
+  TIME_GROUPS = { "my_times" => "My times" }.freeze
   # Which Show group each household event kind is in.
   EVENT_GROUPS = { "circuit_assembly" => "assemblies", "regional_convention" => "assemblies", "co_visit" => "assemblies",
                    "memorial" => "assemblies", "field_service" => "field_service", "other" => "other_events" }.freeze
@@ -18,7 +21,7 @@ class Household::Calendar
   end
 
   def items
-    @items ||= [ *meetings, *studies, *events ].sort_by(&:starts_at)
+    @items ||= [ *meetings, *studies, *events, *my_times ].sort_by(&:starts_at)
   end
 
   def items_on(date)
@@ -37,6 +40,10 @@ class Household::Calendar
 
   def timed_items_on(date)
     items_on(date).reject(&:all_day)
+  end
+
+  def self.group_keys
+    GROUPS.keys + TIME_GROUPS.keys
   end
 
   # No meeting times, no studies and no events: the page offers to set them up (docs/design/calendar.md, The page).
@@ -79,5 +86,14 @@ class Household::Calendar
       household.events.preloaded.where(kind: kinds).flat_map do |event|
         event.occurrences_between(range).map { Item.from_event(event, it) }
       end
+    end
+
+    # The range's days as instants in the household's zone, so a time from another zone lands on the day it shows on.
+    def my_times
+      return [] unless shown?("my_times")
+
+      zone = ActiveSupport::TimeZone[household.time_zone]
+      instants = zone.local(range.first.year, range.first.month, range.first.day)...range.last.next_day.then { zone.local(it.year, it.month, it.day) }
+      viewer.personal_times.includes(:opens).occurring_between(instants).map { Item.from_time(it, household:) }
     end
 end

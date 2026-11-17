@@ -57,6 +57,14 @@
   --calendar-kind-fgColor: var(--display-gray-fgColor);
 }
 
+// The viewer's own times.
+.calendar-item--my-time,
+.calendar-show__check--my-time {
+  --calendar-kind-bgColor: var(--display-orange-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-orange-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-orange-fgColor);
+}
+
 // A ticked Show check box is filled with its group's color, in place of Primer's accent.
 .calendar-show__check {
   --control-checked-bgColor-rest: var(--calendar-kind-borderColor);
@@ -212,6 +220,46 @@
   min-width: 0;
 }
 
+// A personal time's card isn't a link itself: its done box sits beside the title, which opens the edit dialog, and what
+// it opens is a link under them (docs/design/calendar.md, My time's done box).
+.calendar-item--my-time {
+  cursor: auto;
+}
+
+.calendar-item__done {
+  display: flex;
+  gap: var(--base-size-8);
+  align-items: flex-start;
+
+  form {
+    flex-shrink: 0;
+  }
+}
+
+.calendar-item__edit {
+  min-width: 0;
+  color: var(--fgColor-default);
+}
+
+.calendar-item--done .calendar-item__title {
+  text-decoration: line-through;
+}
+
+// A link, or meeting prep's button to that week's note, in the subtitle's place. Underlined in the kind's own text
+// color: Primer's accent blue is too faint on the orange.
+.calendar-item__opens {
+  padding: 0;
+  font: inherit;
+  font-size: var(--text-body-size-small);
+  color: var(--calendar-kind-fgColor);
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  overflow-wrap: break-word;
+}
+
 .calendar-item__time {
   font-size: var(--text-body-size-small);
   color: var(--calendar-kind-fgColor);
@@ -354,7 +402,15 @@
   border-radius: var(--borderRadius-full);
 }
 
+.calendar-month__mine,
 .calendar-month__more {
   font-size: var(--text-body-size-small);
   color: var(--fgColor-muted);
+}
+
+// The "my time" dialog's Days: the seven check boxes in a row, wrapping on a narrow screen (docs/design/calendar.md, The
+// "my time" dialog).
+.personal-time-days .FormControl-spacingWrapper {
+  flex-flow: row wrap;
+  gap: var(--base-size-8) var(--base-size-16);
 }

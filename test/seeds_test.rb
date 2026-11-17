@@ -94,6 +94,17 @@ class SeedsTest < ActiveSupport::TestCase
     assert rivera.events.field_service.sole.weekly?
     assert_equal 1, Household::Calendar.new(rivera, viewer: user("rivera@example.com"), range: monday..monday + 6).all_day_items.size
 
+    maria, lucia = user("rivera@example.com"), user("lucia.rivera")
+    assert_equal "Pacific Time (US & Canada)", maria.time_zone
+    assert_equal %w[ bible_reading meeting_prep personal_study ], maria.personal_times.pluck(:kind).sort
+    reading = maria.personal_times.bible_reading.sole
+    assert_equal [ reading.today - 1, reading.today ], reading.completions.order(:on).pluck(:on)
+    assert_equal maria, maria.personal_times.personal_study.sole.opens.user
+    assert_equal "midweek", maria.personal_times.meeting_prep.sole.meeting_note_for(monday + 2, household: rivera).kind
+    assert_equal [ "Read a Bible story" ], lucia.personal_times.map(&:title)
+    my_times = Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:my_time?)
+    assert_operator my_times.size, :>=, 9
+
     assert_equal 0, Ai::Use.count
   end
 

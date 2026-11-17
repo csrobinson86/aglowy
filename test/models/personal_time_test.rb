@@ -150,7 +150,7 @@ class PersonalTimeTest < ActiveSupport::TestCase
     time = @user.personal_times.new(attributes(kind: "personal_study", opens_key: "PersonalStudy/#{personal_studies(:head_suffering).id}"))
 
     assert_not time.valid?
-    assert_includes time.errors[:opens], "must be one of your own studies or notes"
+    assert_includes time.errors[:opens_key], "must be one of your own studies or notes"
     assert_equal personal_notes(:spouse_grieving), @user.personal_times.new(opens_key: "PersonalNote/#{personal_notes(:spouse_grieving).id}").opens
   end
 

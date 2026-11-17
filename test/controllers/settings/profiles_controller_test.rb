@@ -57,6 +57,24 @@ class Settings::ProfilesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "someone with times on the calendar isn't offered Not set, and can't clear their zone" do
+    users(:spouse).update!(time_zone: "UTC")
+    users(:spouse).personal_times.create!(kind: "bible_reading", title: "Daily Bible reading", wdays: [ 2 ], time_of_day: "06:30")
+    sign_in identities(:spouse)
+
+    get household_settings_profile_path(household_id: @home)
+    assert_select "#user_time_zone option", text: "Not set", count: 0
+
+    patch household_settings_profile_path(household_id: @home), params: { user: { name: "Sam Spouse", time_zone: "" } }
+    assert_response :unprocessable_content
+    assert_select "main", text: /can't be blank while you have times on the calendar/
+    assert_equal "UTC", users(:spouse).reload.time_zone
+
+    sign_in identities(:head)
+    get household_settings_profile_path(household_id: @home)
+    assert_select "#user_time_zone option", text: "Not set", count: 1
+  end
+
   test "only name and time zone are permitted" do
     sign_in identities(:head)
 

@@ -9,6 +9,8 @@ class PersonalNote < ApplicationRecord
   has_one :pin
   # Deleting it keeps the bookmarks saved from it, with no source (docs/design/bookmarks.md, Bookmark).
   has_many :bookmarks, as: :source, dependent: :nullify
+  # Deleting it keeps the calendar times that opened it, opening nothing (docs/design/calendar.md, PersonalTime).
+  has_many :personal_times, as: :opens, dependent: :nullify
 
   has_rich_text :body, encrypted: true
   scripture_linkable :body

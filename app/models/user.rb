@@ -7,6 +7,8 @@ class User < ApplicationRecord
   has_many :goals, dependent: :destroy
   # Before their studies and notes, which would otherwise nullify each one first.
   has_many :bookmarks, dependent: :delete_all
+  # The same; the database deletes their done marks with them.
+  has_many :personal_times, dependent: :delete_all
   # Destroyed one by one, so their notes and taggings go too; before collections, whose studies the database would keep.
   has_many :personal_studies, dependent: :destroy
   # The same, for their bodies and taggings.
@@ -31,6 +33,8 @@ class User < ApplicationRecord
 
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }, allow_nil: true
+  # Their times are in it, so it can't go blank under them (docs/design/calendar.md, The person's own zone).
+  validates :time_zone, presence: { message: "can't be blank while you have times on the calendar" }, if: -> { time_zone.nil? && personal_times.exists? }
 
   # "Invited by Daniel" (frame members.png).
   def first_name
@@ -89,6 +93,18 @@ class User < ApplicationRecord
   def study_questions_left_today
     used = ai_uses.personal_study.since(Time.current.in_time_zone(limit_time_zone).beginning_of_day).count
     [ PersonalStudy::Question.daily_limit - used, 0 ].max
+  end
+
+  # The zone their own times are in, and the phone feed: their profile's, else their first active household's by name
+  # then id, else UTC (docs/design/calendar.md, The person's own zone).
+  def calendar_time_zone
+    time_zone || active_households.order(:name, :id).first&.time_zone || "UTC"
+  end
+
+  # Adding their first time with no profile zone saves the household's, so renaming or leaving a household never moves
+  # a time. PersonalTime#plan calls it in the time's transaction.
+  def settle_time_zone(household)
+    update!(time_zone: household.time_zone) if time_zone.nil?
   end
 
   def active_households

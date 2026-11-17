@@ -12,6 +12,8 @@ class PersonalStudy < ApplicationRecord
   has_many :questions, -> { order(:created_at) }, class_name: "PersonalStudy::Question", inverse_of: :personal_study
   # Deleting it keeps the bookmarks saved from it, with no source (docs/design/bookmarks.md, Bookmark).
   has_many :bookmarks, as: :source, dependent: :nullify
+  # Deleting it keeps the calendar times that opened it, opening nothing (docs/design/calendar.md, PersonalTime).
+  has_many :personal_times, as: :opens, dependent: :nullify
 
   has_rich_text :notes, encrypted: true
   scripture_linkable :notes

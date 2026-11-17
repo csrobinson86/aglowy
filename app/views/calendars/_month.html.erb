@@ -1,6 +1,7 @@
 <%# locals: (calendar:, period:, today:, hide:, meeting_helper:, manage_events:) -%>
 <%# 6 × 7 days from the Monday on or before the 1st, a week to a row. All-day events run as a bar across their days in
-    each row they fall in, under the day numbers; then up to three items a day as one-line chips, and "+N more". On a
+    each row they fall in, under the day numbers; then up to three household items a day as one-line chips, "N of my
+    times", and "+N more". On a
     phone, where the days are a list, an all-day event is a chip on each of its days. The day number opens its week; on a
     1st it reads "Nov 1", so its label, "Sunday, Nov 1", holds what it shows (docs/design/calendar.md, The page). %>
 <div class="calendar-month">
@@ -10,7 +11,8 @@
   <% period.days.each_slice(7) do |week| %>
     <div class="calendar-month__week">
       <% week.each.with_index(1) do |day, column| %>
-        <% all_day, timed = calendar.items_on(day).partition(&:all_day) %>
+        <% mine, household_items = calendar.items_on(day).partition(&:my_time?) %>
+        <% all_day, timed = household_items.partition(&:all_day) %>
         <%= tag.div class: [ "calendar-month__day", "calendar-month__day--column-#{column}", { "calendar-month__day--outside": !period.in_month?(day), "calendar-month__day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
           <%= link_to (day.day == 1 ? day.strftime("%b %-d") : day.day), calendar_page_path("week", day, hide:), class: "calendar-month__number", aria: { label: day.strftime("%A, %b %-d") } %>
           <div class="calendar-month__items">
@@ -23,6 +25,9 @@
             <% end %>
             <% timed.first(3).each do |item| %>
               <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: true %>
+            <% end %>
+            <% if mine.any? %>
+              <span class="calendar-month__mine"><%= mine.size %> of my times</span>
             <% end %>
             <% if timed.size > 3 %>
               <span class="calendar-month__more">+<%= timed.size - 3 %> more</span>

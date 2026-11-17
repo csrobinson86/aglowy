@@ -64,6 +64,11 @@ Rails.application.routes.draw do
     namespace :calendar do
       resources :events, only: %i[ new create edit update destroy ]
     end
+    # The signed-in person's own times, found through Current.user, added and edited in a dialog on the calendar. A done
+    # mark is created with the day as on, and deleted with the day as its id (completions/2026-11-17).
+    resources :personal_times, only: %i[ new create edit update destroy ] do
+      resources :completions, only: %i[ create destroy ], module: :personal_times
+    end
     # Settings, a page per section, opening on Profile for everyone (docs/design/settings.md, Pages and routes).
     get "settings", to: redirect("/%{household_id}/settings/profile"), as: :settings
     # The person's own sections, the same person from any household; then the household's, each for the roles that
