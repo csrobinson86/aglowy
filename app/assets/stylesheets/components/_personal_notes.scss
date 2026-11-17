@@ -1,8 +1,16 @@
-// The cards, as many across as fit (frame notes.png): three on a desktop, one on a phone (frame phone-notes.png).
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// The cards, one per row below md (frame phone-notes.png), then as many across as fit: three on a desktop (frame
+// notes.png).
 .personal-notes__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--base-size-128) * 2)), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--base-size-16);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--base-size-128) * 2)), 1fr));
+  }
 }
 
 // Search, then the color filter beside it (frame notes.png), or under it when there isn't room.

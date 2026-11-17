@@ -2,9 +2,10 @@
 <%# Below md, the sidebar's collections and my tags in one menu, named for the collection showing (frame
     phone-notes.png). Each item links where its sidebar link does, and New collection opens the same dialog. %>
 <%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-notes-menu", anchor_align: :start, display: [ nil, nil, :none ], classes: "personal-notes__menu")) do |menu| %>
-  <% menu.with_show_button do |button| %>
+  <%# A collection's name can be forty characters with no spaces, so the button's label wraps, even mid-word. %>
+  <% menu.with_show_button(label_wrap: true) do |button| %>
     <% button.with_trailing_action_icon(icon: :"triangle-down") %>
-    <%= selected&.name || "All notes" %>
+    <span class="wb-break-word"><%= selected&.name || "All notes" %></span>
   <% end %>
   <% menu.with_group do |group| %>
     <% group.with_heading(title: "Collections") %>

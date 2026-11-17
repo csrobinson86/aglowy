@@ -43,6 +43,22 @@ class PersonalNotesPhoneTest < ApplicationSystemTestCase
     capture_screens("phone-notes-menu", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
   end
 
+  test "a long collection name and a wider phone still fit" do
+    users(:head).collections.add(name: "W" * 40, used_in: "notes")
+    visit notes_url
+
+    click_on "All notes"
+    find("[role=menuitem]", text: "W" * 40).click
+
+    assert_button "W" * 40
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth"), "the page is wider than the phone"
+    assert_operator find_button("W" * 40).evaluate_script("this.getBoundingClientRect().right"), :<=, evaluate_script("document.documentElement.clientWidth"), "the menu button is wider than the phone"
+
+    emulate_viewport(767, 1024, phone: true)
+    visit notes_url
+    assert_equal 1, all("main .note-card").map { it.evaluate_script("this.getBoundingClientRect().left") }.uniq.size, "the cards aren't one per row below md"
+  end
+
   test "make a Notes-only collection from the menu" do
     visit notes_url
 
