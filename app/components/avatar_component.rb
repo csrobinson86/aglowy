@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# A person as Aglowy shows them everywhere: their initial on a circle in their color (docs/design/avatars.md,
-# AvatarComponent). Hidden from screen readers when their name is beside it; with alone, it's an image named for them.
+# A person as Aglowy shows them everywhere: their photo, or their initial on a circle in their color
+# (docs/design/avatars.md, AvatarComponent). Hidden from screen readers when their name is beside it (alt="" on a
+# photo); with alone, it's an image named for them. Lists of people preload avatar_attachment: :blob.
 #
 # size:    one of Primer's avatar sizes, in pixels. 80 is Settings → Profile.
 # classes: utilities for spacing, like mr-2
@@ -17,6 +18,19 @@ class AvatarComponent < ApplicationComponent
     @size = size
     @alone = alone
     @classes = classes
+  end
+
+  def photo?
+    user.avatar.attached?
+  end
+
+  # The photo's checksum changes with each new photo, so the browser never mistakes it for an old one.
+  def photo_path
+    helpers.avatar_path(user, v: user.avatar.blob.checksum, household_id: nil)
+  end
+
+  def alt
+    alone ? user.name : ""
   end
 
   def html_classes

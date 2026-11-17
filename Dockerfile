@@ -74,6 +74,12 @@ RUN rm -rf node_modules
 # Final stage for app image
 FROM base
 
+# libvips crops, resizes and strips avatar photos (docs/design/avatars.md), reading HEIC through libheif and its
+# libde265 decoder. Only the runtime needs it: ruby-vips loads it through FFI, with nothing to compile.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y libvips42 libheif1 libheif-plugin-libde265 && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
