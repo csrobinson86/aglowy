@@ -1,15 +1,16 @@
-// Notes' collections and tags are a Primer Layout sidebar inside the app shell's Layout. Below md the shell hides its
-// own sidebar with a descendant selector that hides this one too, as on Personal study (_personal_studies.scss). This
-// shows it again, above the cards: the same specificity, loaded after Primer's.
-.personal-notes.Layout > .personal-notes__sidebar.Layout-sidebar {
-  display: block;
-}
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
 
-// The cards, as many across as fit (frame notes.png): three on a desktop, one on a phone (frame phone-notes.png).
+// The cards, one per row below md (frame phone-notes.png), then as many across as fit: three on a desktop (frame
+// notes.png).
 .personal-notes__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--base-size-128) * 2)), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--base-size-16);
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--base-size-128) * 2)), 1fr));
+  }
 }
 
 // Search, then the color filter beside it (frame notes.png), or under it when there isn't room.
@@ -23,4 +24,18 @@
 
 .personal-notes__search {
   flex: 1 1 calc(var(--base-size-128) * 2);
+}
+
+// The "All notes ▾" menu (below md only), "Color" (from sm up) and the swatches, wrapping onto a second row when a
+// phone's is too narrow for all of them (frame phone-notes.png).
+.personal-notes__color-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-12);
+}
+
+// Primer's coarse-pointer menu items are 40px tall, so they're raised to the 44px touch target, as the app shell's are.
+.personal-notes__menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
 }

@@ -1,6 +1,5 @@
 <% content_for :title, "Notes" %>
-<%# Unpinning from a card refreshes the page, keeping the place on it. Replaced, not morphed: a morph would drop the
-    open the sidebar's open-from-md controller adds, and the controller wouldn't connect again to add it back. %>
+<%# Unpinning from a card refreshes the page, keeping the place on it. %>
 <% turbo_refreshes_with method: :replace, scroll: :preserve %>
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
@@ -11,29 +10,26 @@
   <% end %>
 <% end %>
 
-<%# Collections and my tags beside the cards (frame notes.png). On a phone they're above them, behind
-    "Collections and tags"; from md up the open-from-md controller keeps them open, with the summary hidden. %>
-<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-notes")) do |layout| %>
-  <% layout.with_sidebar(width: :narrow, row_placement: :start, classes: "personal-notes__sidebar") do %>
-    <%= render(Primer::Beta::Details.new(data: { controller: "open-from-md" })) do |details| %>
-      <% details.with_summary(block: true, mb: 3, display: [ nil, nil, :none ]) { "Collections and tags" } %>
-      <% details.with_body do %>
-        <%= render "personal_notes/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
-        <%= render "personal_notes/tags", tags: @tags, selected: @tag_name, collection: @collection %>
-      <% end %>
-    <% end %>
+<%# Collections and my tags beside the cards (frame notes.png). Below md they're hidden, and in the "All notes ▾" menu
+    by the color filter instead (frame phone-notes.png). %>
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md)) do |layout| %>
+  <% layout.with_sidebar(width: :narrow, row_placement: :none) do %>
+    <%= render "personal_notes/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
+    <%= render "personal_notes/tags", tags: @tags, selected: @tag_name, collection: @collection %>
   <% end %>
 
   <% layout.with_main do %>
     <%# Personal study's search box: the same three fields, and the same reason it can't read bodies (Traps). Then the
-        color filter (frame notes.png), under it on a phone. Each keeps what the other has chosen. %>
+        color filter (frame notes.png), under it on a phone, after the "All notes ▾" menu. Each keeps what the other
+        has chosen. %>
     <div class="personal-notes__filters">
       <%= primer_form_with(url: household_personal_notes_path, method: :get, class: "personal-notes__search") do |f| %>
         <%= render PersonalStudies::SearchForm.new(f, query: @query, collection: @collection_id, tag: @tag_name, color: @color) %>
       <% end %>
-      <div class="d-flex flex-items-center">
+      <div class="personal-notes__color-filter">
+        <%= render "personal_notes/phone_menu", collections: @collections, selected: @collection, tags: @tags, tag: @tag_name %>
         <%# Only from sm up: on a phone the swatches need the whole row. It still names the group there. %>
-        <span id="note-color-filter-label" class="color-fg-muted mr-3 d-none d-sm-inline">Color</span>
+        <span id="note-color-filter-label" class="color-fg-muted d-none d-sm-inline">Color</span>
         <%= primer_form_with(url: household_personal_notes_path, method: :get) do |f| %>
           <%= render PersonalNotes::ColorFilterForm.new(f, color: @color, query: @query, collection: @collection_id, tag: @tag_name) %>
         <% end %>
@@ -84,5 +80,12 @@
         <% blankslate.with_secondary_action(href: household_personal_notes_path) { "All notes" } %>
       <% end %>
     <% end %>
+  <% end %>
+<% end %>
+
+<%# Opened by "New collection" in the sidebar, or in the phone's menu. %>
+<%= render(Primer::Alpha::Dialog.new(id: "new-collection-dialog", title: "New collection")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= render "collections/new_form", collection: Collection.new, section: "notes" %>
   <% end %>
 <% end %>

@@ -19,12 +19,8 @@
   </p>
 <% end %>
 
-<%= render(Primer::Alpha::Dialog.new(id: "new-collection-dialog", title: "New collection")) do |dialog| %>
-  <% dialog.with_show_button(scheme: :invisible, mb: 4) do |button| %>
-    <% button.with_leading_visual_icon(icon: :plus) %>
-    New collection
-  <% end %>
-  <% dialog.with_body(pb: 3) do %>
-    <%= render "collections/new_form", collection: Collection.new, section: "notes" %>
-  <% end %>
+<%# Opens the New collection dialog, which is outside the sidebar so the phone's menu can open it too. %>
+<%= render(Primer::Beta::Button.new(scheme: :invisible, mb: 4, data: { "show-dialog-id": "new-collection-dialog" })) do |button| %>
+  <% button.with_leading_visual_icon(icon: :plus) %>
+  New collection
 <% end %>

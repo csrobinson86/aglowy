@@ -1,0 +1,29 @@
+<%# locals: (collections:, selected:, tags:, tag:) %>
+<%# Below md, the sidebar's collections and my tags in one menu, named for the collection showing (frame
+    phone-notes.png). Each item links where its sidebar link does, and New collection opens the same dialog. %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-notes-menu", anchor_align: :start, display: [ nil, nil, :none ], classes: "personal-notes__menu")) do |menu| %>
+  <%# A collection's name can be forty characters with no spaces, so the button's label wraps, even mid-word. %>
+  <% menu.with_show_button(label_wrap: true) do |button| %>
+    <% button.with_trailing_action_icon(icon: :"triangle-down") %>
+    <span class="wb-break-word"><%= selected&.name || "All notes" %></span>
+  <% end %>
+  <% menu.with_group do |group| %>
+    <% group.with_heading(title: "Collections") %>
+    <% notes_menu_item(group, label: "All notes", href: household_personal_notes_path(tag:), current: selected.nil?) %>
+    <% collections.each do |collection| %>
+      <% notes_menu_item(group, label: collection.name, href: household_personal_notes_path(collection: collection.id, tag:), current: collection == selected) %>
+    <% end %>
+  <% end %>
+  <% if tags.any? %>
+    <% menu.with_group do |group| %>
+      <% group.with_heading(title: "My tags") %>
+      <% tags.each do |each_tag| %>
+        <% notes_menu_item(group, label: "##{each_tag.name}", href: household_personal_notes_path(tag: each_tag.name, collection: selected&.id), current: each_tag.name == tag) %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% menu.with_divider %>
+  <% menu.with_item(label: "New collection", tag: :button, content_arguments: { "data-show-dialog-id": "new-collection-dialog" }) do |item| %>
+    <% item.with_leading_visual_icon(icon: :plus) %>
+  <% end %>
+<% end %>
