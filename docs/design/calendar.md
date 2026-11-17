@@ -102,7 +102,7 @@ A time a person sets aside on some weekdays.
 | `starts_on` | date | not null, default today | Earlier weeks don't show a time that didn't exist yet |
 | `opens_type`, `opens_id` | string, uuid | nullable together; check `opens_type` in (`PersonalStudy`, `PersonalNote`) | What a study time opens |
 
-- **The person's own zone:** `users.time_zone` (Settings → Profile), or the household's when that's blank. Each occurrence is `zone.local(date…, time_of_day…)`, so 6:30 AM stays 6:30 AM across a DST change.
+- **The person's own zone:** `User#calendar_time_zone`, which is `users.time_zone` (Settings → Profile), or when that's blank the zone of the person's first active household by name (the same household `/account` sends them to, `docs/design/settings.md`). One rule for every household page, Today on Home and the phone feed, so a time is the same instant everywhere. Each occurrence is `zone.local(date…, time_of_day…)`, so 6:30 AM stays 6:30 AM across a DST change.
 - **What it opens:**
   - `meeting_prep` opens the person's meeting note for the next meeting after it that week, through the existing `POST /:household_id/meeting_notes` (`kind`, `week_of`), which finds or creates it (`docs/design/meeting-notes.md`). A prep time on a Thursday before a Friday midweek meeting opens that week's Life and Ministry note. A prep time with no meeting after it that week (or with no meeting times set) opens nothing. Nothing is stored for this.
   - `personal_study` and `other` can open one of the person's own studies or notes (`opens`). Looked up through `Current.user`, so someone else's study can't be picked (validation).
@@ -154,7 +154,7 @@ A person's private subscribe link.
 `Household::Calendar.new(household, viewer: Current.user, range:)`, a PORO in `app/models/household/`, gathers every item in the range as `Household::Calendar::Item`s: kind, title, subtitle, start, end, whether it's all day, an href (or none), and for the viewer's own times, the done state.
 
 - meetings: `household.meetings_between(range)`, built like `meeting_in` (Trap 5 in `docs/design/meeting-helper.md`)
-- family study sessions: `household.family_study_sessions.where(scheduled_at: range, canceled_at: nil)`
+- family studies: `FamilyStudy#occurrences_between(range)` for each of the household's studies. It returns the stored sessions in the range that aren't cancelled, and, for a repeating study, the `Recurrence` dates after its last stored session, as unsaved occurrences titled "Family study" with "Topic not chosen yet" that link to Family studies. Stored sessions only reach the generator's horizon (the later of 31 August and three months ahead, `docs/design/family-studies.md`, rule 4), and the calendar can be browsed past it and the phone feed runs 180 days ahead. Nothing is stored for the later dates; the daily task still makes their rows when the horizon reaches them.
 - household events: `household.events.preloaded`, each expanded with `occurrences_between(range)`
 - the viewer's own times
 - other members' times, for each member in `household.members_sharing_times`, leaving out the viewer
@@ -181,7 +181,7 @@ scope "/:household_id", as: :household do
     resources :events, only: %i[ new create edit update destroy ]
   end
   resources :personal_times, only: %i[ new create edit update destroy ] do
-    resources :completions, only: %i[ create destroy ], module: :personal_times   # by date: completions/2026-11-17
+    resources :completions, only: %i[ create destroy ], module: :personal_times   # create sends on=2026-11-17; destroy's id is the date
   end
 end
 
@@ -196,7 +196,8 @@ get "calendar/:token", to: "calendar_feeds#show", as: :calendar_feed, format: :i
 | A child's calendar | the same page | `calendar-child.png` |
 | Add or edit a household event | `Calendar::EventsController`, in a Primer `Dialog` | `calendar-new-event.png` |
 | Add or edit my time | `PersonalTimesController`, in a Primer `Dialog` | `calendar-new-time.png` |
-| Mark done / undo | `POST`/`DELETE /:household_id/personal_times/:id/completions/:date`, Turbo Stream | |
+| Mark done | `POST /:household_id/personal_times/:id/completions` with `on` (the date) in the body, Turbo Stream | |
+| Undo | `DELETE /:household_id/personal_times/:id/completions/:on` (the date as the id, `2026-11-17`), Turbo Stream | |
 | Home | Today in the Mine column | `home-today.png` |
 | Settings → Calendar | `GET /:household_id/settings/calendar` | `settings-calendar.png` |
 | On a phone | the same page | `phone-calendar.png` |
@@ -211,7 +212,7 @@ get "calendar/:token", to: "calendar_feeds#show", as: :calendar_feed, format: :i
   - "Add to your phone's calendar", linking to Settings → Calendar.
 - **Week:** seven day columns, Monday first (meeting weeks start on Monday, `docs/design/meeting-helper.md`). Each day is a `section` with an `h3` ("Tue 17"; screen readers get "Tuesday, November 17" from a visually hidden span), today marked with `aria-current="date"`. All-day events sit in a band across the top, spanning their days. Timed items follow in order of start, each a card with the time, the title and a subtitle (a study's topic, a location, "Daniel's time"). Not a time grid: families have a handful of items a day, and a list reads better on every screen.
 - **Month:** a 6 × 7 grid of days from the Monday on or before the 1st. Each day shows up to three household items as one-line chips, then "N of my times" (and "+2 more" when there are more). A day number links to that week. The circuit overseer's visit and other multi-day events run as a bar across their days.
-- **My time's done box:** a checkbox labelled "Done: Daily Bible reading, Tuesday" in a one-field Primer form (`PersonalTimes::CompletionForm`), auto-submitted. The Turbo Stream response replaces the card, and the title gets a line through it when done. No done box on future days, and none on anyone else's time.
+- **My time's done box:** a checkbox labelled "Done: Daily Bible reading, Tuesday" in a one-field Primer form (`PersonalTimes::CompletionForm`), auto-submitted: unticked, it posts to `completions` with the day in a hidden `on` field; ticked, it sends `DELETE completions/<day>`. The Turbo Stream response replaces the card, and the title gets a line through it when done. No done box on future days, and none on anyone else's time.
 - **Empty:** a week with nothing in it still shows its days. A household with no meeting times set, no studies and no events shows a Primer `Blankslate` above the week: "Nothing on the calendar yet." with "Set your meeting times" (heads and adults, to Settings → Meetings) and "Add household event".
 
 ### The household event dialog
@@ -275,8 +276,8 @@ end
 - `rate_limit to: 30, within: 1.minute`, and `Cache-Control: private, max-age=900`
 - content: for every active household the person is in, its meetings, family study sessions and events; and the person's own times. Never anyone else's times. From 30 days back to 180 days ahead.
 - `CalendarFeed::Document`, a PORO, writes RFC 5545 by hand (no gem): one `VEVENT` per occurrence with a stable `UID` (`<source id>-<date>@aglowy`), `DTSTAMP`, `DTSTART`/`DTEND` in UTC (or `VALUE=DATE` for all day), `SUMMARY` and `LOCATION`. The household's name goes in each household item's summary ("Midweek meeting · Rivera household"). Escape `\`, `;`, `,` and newlines; fold lines at 75 octets; end lines with CRLF.
-- each of the person's own times gets a `VALARM` (`ACTION:DISPLAY`, `TRIGGER:PT0M`), so the phone reminds them when it starts.
-- **No notes and no links in the feed.** No `DESCRIPTION` and no `URL`: a feed link can leak, so it carries titles, times and places only.
+- each of the person's own times gets a `VALARM` (`ACTION:DISPLAY`, `TRIGGER:PT0M`, and the `DESCRIPTION` RFC 5545 requires on a display alarm, which is the same text as the event's `SUMMARY`), so the phone reminds them when it starts.
+- **No notes and no links in the feed.** No `DESCRIPTION` on any `VEVENT` and no `URL`: a feed link can leak, so it carries titles, times and places only. The alarm's `DESCRIPTION` repeats the title and nothing more.
 - `webcal://` in Settings is the same URL with `webcal` in place of `https`.
 
 ### On a phone
