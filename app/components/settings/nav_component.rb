@@ -5,7 +5,8 @@
 # sections the person's role may change, as HouseholdPolicy decides. A child gets no household group.
 class Settings::NavComponent < ApplicationComponent
   # Each section's id is its controller's, and its page is household_settings_<id>_path.
-  SECTIONS = { profile: "Profile", appearance: "Appearance", sign_in: "Signing in", memberships: "My households", tags: "Tags and collections" }.freeze
+  SECTIONS = { profile: "Profile", appearance: "Appearance", sign_in: "Signing in", memberships: "My households", tags: "Tags and collections",
+               calendar: "Calendar" }.freeze
   HOUSEHOLD_SECTIONS = { household: "Household", meetings: "Meetings", children: "Children", members: "Members and roles" }.freeze
   LABELS = SECTIONS.merge(HOUSEHOLD_SECTIONS).freeze
 

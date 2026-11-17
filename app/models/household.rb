@@ -53,6 +53,12 @@ class Household < ApplicationRecord
     end
   end
 
+  # The people whose times show on this calendar: an active seat here that shares. Someone who leaves stops appearing,
+  # and their row stays harmless (docs/design/calendar.md, Membership::TimeSharing).
+  def members_sharing_times
+    users.merge(memberships.active.sharing_times)
+  end
+
   # Today where the household lives. Date.current is the app's zone, which can be a day ahead or behind.
   def today
     Time.current.in_time_zone(time_zone).to_date

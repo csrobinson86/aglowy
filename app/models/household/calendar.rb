@@ -1,11 +1,11 @@
 # Everything on a household's calendar for a range of dates in its zone, as Items in order of start
 # (docs/design/calendar.md, How a calendar is put together). Nothing is stored: each source is asked for the range.
-# The sources are meetings, family studies, household events and the viewer's own times, converted from their zone
-# (Trap 2); hide leaves a group out without asking it.
+# The sources are meetings, family studies, household events, the viewer's own times and other members' shared times,
+# converted from their zones (Trap 2); hide leaves a group out without asking it.
 class Household::Calendar
   GROUPS = { "meetings" => "Meetings", "family_studies" => "Family studies", "assemblies" => "Assemblies and special events",
              "field_service" => "Field service", "other_events" => "Other events" }.freeze
-  # The "Times" groups under them.
+  # The first of the "Times" groups under them; then one per member who shares (time_groups).
   TIME_GROUPS = { "my_times" => "My times" }.freeze
   # Which Show group each household event kind is in.
   EVENT_GROUPS = { "circuit_assembly" => "assemblies", "regional_convention" => "assemblies", "co_visit" => "assemblies",
@@ -21,7 +21,21 @@ class Household::Calendar
   end
 
   def items
-    @items ||= [ *meetings, *studies, *events, *my_times ].sort_by(&:starts_at)
+    @items ||= [ *meetings, *studies, *events, *my_times, *shared_times ].sort_by(&:starts_at)
+  end
+
+  # "My times", then "<First name>'s times" for each other member who shares their times here, keyed by their id.
+  def time_groups
+    TIME_GROUPS.merge(members_sharing.to_h { [ shared_group(it), "#{it.first_name}'s times" ] })
+  end
+
+  def group_keys
+    GROUPS.keys + time_groups.keys
+  end
+
+  # The groups asked to be hidden that the page has, for its links.
+  def hidden
+    @hide & group_keys
   end
 
   def items_on(date)
@@ -40,10 +54,6 @@ class Household::Calendar
 
   def timed_items_on(date)
     items_on(date).reject(&:all_day)
-  end
-
-  def self.group_keys
-    GROUPS.keys + TIME_GROUPS.keys
   end
 
   # No meeting times, no studies and no events: the page offers to set them up (docs/design/calendar.md, The page).
@@ -88,12 +98,31 @@ class Household::Calendar
       end
     end
 
-    # The range's days as instants in the household's zone, so a time from another zone lands on the day it shows on.
     def my_times
       return [] unless shown?("my_times")
 
-      zone = ActiveSupport::TimeZone[household.time_zone]
-      instants = zone.local(range.first.year, range.first.month, range.first.day)...range.last.next_day.then { zone.local(it.year, it.month, it.day) }
       viewer.personal_times.includes(:opens).occurring_between(instants).map { Item.from_time(it, household:) }
+    end
+
+    # Other members' times shared with this household, never the viewer's, in one query for the members shown.
+    def shared_times
+      members = members_sharing.select { shown?(shared_group(it)) }
+      return [] if members.empty?
+
+      PersonalTime.where(user: members).includes(:user).occurring_between(instants).map { Item.from_shared_time(it, household:) }
+    end
+
+    def members_sharing
+      @members_sharing ||= household.members_sharing_times.where.not(id: viewer.id).order(:name, :id).to_a
+    end
+
+    def shared_group(member)
+      "times_#{member.id}"
+    end
+
+    # The range's days as instants in the household's zone, so a time from another zone lands on the day it shows on.
+    def instants
+      zone = ActiveSupport::TimeZone[household.time_zone]
+      zone.local(range.first.year, range.first.month, range.first.day)...range.last.next_day.then { zone.local(it.year, it.month, it.day) }
     end
 end

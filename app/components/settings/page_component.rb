@@ -9,6 +9,7 @@ class Settings::PageComponent < ApplicationComponent
     sign_in: "How you sign in to Aglowy.",
     memberships: "The households you belong to.",
     tags: "Rename or delete your tags and collections. Only you see them.",
+    calendar: "Who sees your times, and your phone calendar link.",
     household: "heads can change this.",
     meetings: "heads and adults can change this.",
     children: "heads and adults; AI for a child is heads only.",

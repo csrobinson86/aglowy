@@ -101,8 +101,51 @@ class Household::CalendarTest < ActiveSupport::TestCase
     assert_not calendar(WEEK).nothing_planned?
   end
 
+  test "another member's shared time appears as \"<First name>'s time\", with no href and no done state" do
+    time = hannahs_time
+    time.complete(on: Date.new(2026, 11, 16))
+    memberships(:head_in_parents).share_times
+
+    item = calendar(WEEK).items_on(Date.new(2026, 11, 16)).sole
+
+    assert_equal [ "shared", "Daily Bible reading", "Hannah's time", CHICAGO.local(2026, 11, 16, 6, 30) ], [ item.kind, item.title, item.subtitle, item.starts_at ]
+    # The person, never the time: nothing to link to, nothing it opens and no done mark (Trap 3).
+    assert_equal users(:head), item.source
+    assert_not item.my_time?
+    assert_equal({ "my_times" => "My times", "times_#{users(:head).id}" => "Hannah's times" }, calendar(WEEK).time_groups)
+    assert_empty calendar(WEEK, hide: [ "times_#{users(:head).id}" ]).items_on(Date.new(2026, 11, 16))
+  end
+
+  test "an unshared time doesn't appear" do
+    hannahs_time
+
+    assert_empty calendar(WEEK).items.select { it.kind == "shared" }
+    assert_equal({ "my_times" => "My times" }, calendar(WEEK).time_groups)
+  end
+
+  test "a time shared only with another household doesn't appear" do
+    hannahs_time
+    memberships(:head_in_home).share_times
+
+    assert_empty calendar(WEEK).items.select { it.kind == "shared" }
+  end
+
+  test "the viewer's own shared time shows once, as their own" do
+    users(:grandparent).update!(time_zone: CHICAGO.name)
+    users(:grandparent).personal_times.create!(kind: "bible_reading", title: "Daily Bible reading", wdays: [ 1 ], time_of_day: "06:30", starts_on: Date.new(2026, 11, 1))
+    memberships(:grandparent_in_parents).share_times
+
+    assert_equal [ "my_time" ], calendar(WEEK).items_on(Date.new(2026, 11, 16)).map(&:kind)
+  end
+
   private
     def calendar(range, hide: [])
       Household::Calendar.new(@household, viewer: users(:grandparent), range:, hide:)
+    end
+
+    # Hannah Head's reading on Mondays at 6:30 AM in Chicago, the household's zone.
+    def hannahs_time
+      users(:head).update!(time_zone: CHICAGO.name)
+      users(:head).personal_times.create!(kind: "bible_reading", title: "Daily Bible reading", wdays: [ 1 ], time_of_day: "06:30", starts_on: Date.new(2026, 11, 1))
     end
 end

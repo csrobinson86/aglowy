@@ -1,0 +1,15 @@
+<% content_for :title, "Calendar · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :calendar) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Share my times" } } %>
+      <% box.with_body do %>
+        <p class="color-fg-muted">Your Bible reading, study and meeting prep times are private. Members of a household you pick here see them on its calendar: the title and time, never your notes or links.</p>
+        <%= primer_form_with(scope: :time_sharing, url: household_settings_time_sharing_path, method: :patch) do |f| %>
+          <%= render Settings::TimeSharingForm.new(f, memberships: @memberships) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

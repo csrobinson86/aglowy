@@ -102,8 +102,10 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal maria, maria.personal_times.personal_study.sole.opens.user
     assert_equal "midweek", maria.personal_times.meeting_prep.sole.meeting_note_for(monday + 2, household: rivera).kind
     assert_equal [ "Read a Bible story" ], lucia.personal_times.map(&:title)
+    assert_equal [ lucia ], rivera.members_sharing_times.to_a
     my_times = Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:my_time?)
     assert_operator my_times.size, :>=, 9
+    assert_equal [ "Lucia's time" ], Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:shared?).map(&:subtitle).uniq
 
     assert_equal 0, Ai::Use.count
   end

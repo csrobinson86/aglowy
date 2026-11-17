@@ -8,12 +8,12 @@ class CalendarsController < ApplicationController
 
   def show
     @period = Household::Calendar::Period.new(view: view, date: date)
+    @calendar = Household::Calendar.new(Current.household, viewer: Current.user, range: @period.range, hide: Array(params[:hide]))
 
     if params.key?(:show)
-      redirect_to helpers.calendar_page_path(@period.view, @period.date, hide: Household::Calendar.group_keys - Array(params[:show]))
+      redirect_to helpers.calendar_page_path(@period.view, @period.date, hide: @calendar.group_keys - Array(params[:show]))
     else
-      @hide = Array(params[:hide]) & Household::Calendar.group_keys
-      @calendar = Household::Calendar.new(Current.household, viewer: Current.user, range: @period.range, hide: @hide)
+      @hide = @calendar.hidden
       @meeting_helper = MeetingHelperPolicy.new(pundit_user, Current.household).show?
     end
   end
