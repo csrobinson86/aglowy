@@ -14,7 +14,7 @@ class FamilyStudy::Session < ApplicationRecord
   scope :ahead, -> { where(scheduled_at: Time.current..).order(:scheduled_at) }
   scope :upcoming, -> { ahead.where(canceled_at: nil) }
   scope :preloaded, -> { includes(family_study: :household) }
-  scope :without_topic, -> { where(canceled_at: nil, topic: [ nil, "" ]) }
+  scope :without_topic, -> { where(topic: [ nil, "" ]) }
 
   validates :recurrence_at, :scheduled_at, presence: true
   validates :recurrence_at, uniqueness: { scope: :family_study_id }

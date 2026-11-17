@@ -12,9 +12,9 @@ class Invitation < ApplicationRecord
 
   scope :preloaded, -> { includes(:invited_by) }
   scope :newest_first, -> { order(created_at: :desc) }
-  # Still pending five days after it was sent, and not yet expired. The window is a day wide, as the daily follow-up
-  # job runs once a day (docs/design/notifications.md, Recurring jobs).
-  scope :unaccepted_after_five_days, -> { where(created_at: 6.days.ago..5.days.ago, expires_at: Time.current..) }
+  # Still pending five or more days after it was sent, and not yet expired. No lower bound, so a late or missed daily
+  # run skips no one; the dedupe key keeps it to one notification each (docs/design/notifications.md, Recurring jobs).
+  scope :unaccepted_after_five_days, -> { where(created_at: ..5.days.ago, expires_at: Time.current..) }
 
   attribute :expires_at, default: -> { VALID_FOR.from_now }
 

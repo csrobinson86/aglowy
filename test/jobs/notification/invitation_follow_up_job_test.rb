@@ -23,6 +23,15 @@ class Notification::InvitationFollowUpJobTest < ActiveJob::TestCase
     at_2_pm_on_november_17 { Notification::InvitationFollowUpJob.perform_now }
 
     assert_not Notification.exists?(subject_type: "Invitation", subject_id: [ day_four, expired, accepted ].map(&:id))
+    assert_not Notification.exists?(kind: "invitation_unaccepted")
+  end
+
+  test "a day the job didn't run is caught up the next day" do
+    invitation = invite("newcomer@example.com", at: Time.utc(2026, 11, 11, 13))
+
+    at_2_pm_on_november_17 { Notification::InvitationFollowUpJob.perform_now }
+
+    assert Notification.exists?(subject_type: "Invitation", subject_id: invitation.id)
   end
 
   test "accepting the invitation deletes its notification" do

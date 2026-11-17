@@ -205,7 +205,7 @@ class Household < ApplicationRecord
   # Each session three days ahead by the household's own date, not cancelled and with no topic, asks the heads for one.
   def ask_heads_for_study_topics(on: today + 3)
     zone = ActiveSupport::TimeZone[time_zone]
-    family_study_sessions.without_topic.where(scheduled_at: zone.local(on.year, on.month, on.day)...on.next_day.then { zone.local(it.year, it.month, it.day) })
+    family_study_sessions.without_topic.where(canceled_at: nil).where(scheduled_at: zone.local(on.year, on.month, on.day)...on.next_day.then { zone.local(it.year, it.month, it.day) })
       .preloaded.each(&:ask_heads_for_topic)
   end
 
