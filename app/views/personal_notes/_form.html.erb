@@ -6,7 +6,7 @@
 <% end %>
 <%= primer_form_with(model: personal_note, url:) do |f| %>
   <%= render PersonalNotes::NoteForm.new(f) %>
-  <div class="my-3"><%= render NoteColorPickerComponent.new(name: "personal_note[color]", selected: personal_note.drawn_color) %></div>
+  <div class="my-3"><%= render ColorPickerComponent.new(name: "personal_note[color]", selected: personal_note.drawn_color, colors: PersonalNote.colors.keys, legend: "Color", legend_beside: true) %></div>
   <%= render PersonalNotes::CollectionForm.new(f, collections: Current.user.collections.for_notes.positioned) %>
   <div class="my-3">
     <%= render "meeting_notes/notes_field", form: f, attribute: :body, label: "Note", visually_hidden: true, tall: true,

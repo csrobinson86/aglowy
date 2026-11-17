@@ -70,9 +70,9 @@ class PersonalNotesTest < ApplicationSystemTestCase
     visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
 
     within("fieldset", text: "Color") do
-      assert_selector ".note-color-picker__chosen", text: "None"
+      assert_selector ".color-picker__chosen", text: "None"
       find("input[type=radio][value=none]", visible: :all).send_keys(:right)
-      assert_selector ".note-color-picker__chosen", text: "Yellow"
+      assert_selector ".color-picker__chosen", text: "Yellow"
     end
     assert find_field("Yellow", visible: :all).checked?
     click_on "Save note"

@@ -22,7 +22,7 @@
     <span class="sr-only">With <%= people.map(&:name).to_sentence %></span>
     <span class="d-flex flex-shrink-0 ml-2" aria-hidden="true">
       <% people.each do |person| %>
-        <span class="avatar avatar-4 circle d-flex flex-items-center flex-justify-center ml-1 color-bg-accent color-fg-accent text-bold f6"><%= person.name.first %></span>
+        <%= render AvatarComponent.new(user: person.user, classes: "ml-1") %>
       <% end %>
     </span>
   <% end %>

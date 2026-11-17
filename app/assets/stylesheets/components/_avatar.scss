@@ -1,0 +1,28 @@
+// A person's initial on a circle in their color (AvatarComponent; docs/design/avatars.md). It carries Primer's .avatar
+// and .circle; the circle and the letter come from Avatar::Palette's display primitives, which follow light and dark.
+.avatar-initial {
+  --avatar-initial-size: var(--base-size-24);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--avatar-initial-size);
+  height: var(--avatar-initial-size);
+  font-size: calc(var(--avatar-initial-size) / 2);
+  font-weight: var(--base-text-weight-semibold);
+  box-shadow: none;
+}
+
+// Primer's avatar sizes (Primer::Beta::Avatar::SIZE_OPTIONS), each a base-size primitive.
+@each $size in 16, 20, 24, 32, 40, 48, 64, 80 {
+  .avatar-initial--size-#{$size} {
+    --avatar-initial-size: var(--base-size-#{$size});
+  }
+}
+
+@each $color in "blue", "green", "purple", "pink", "orange", "yellow" {
+  .avatar-initial--#{$color} {
+    color: var(--display-#{$color}-fgColor);
+    background-color: var(--display-#{$color}-bgColor-muted);
+  }
+}

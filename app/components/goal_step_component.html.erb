@@ -40,7 +40,7 @@
         <span class="sr-only">With <%= people.map(&:name).to_sentence %></span>
         <span class="d-flex flex-shrink-0 mt-2 mt-md-0 ml-md-2" aria-hidden="true">
           <% people.each do |person| %>
-            <span class="avatar avatar-4 circle d-flex flex-items-center flex-justify-center mr-1 color-bg-accent color-fg-accent text-bold f6"><%= person.name.first %></span>
+            <%= render AvatarComponent.new(user: person, classes: "mr-1") %>
           <% end %>
         </span>
       <% end %>

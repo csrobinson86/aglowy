@@ -78,6 +78,7 @@ Rails.application.routes.draw do
     # may change it (docs/design/settings.md, Sections and who sees them).
     namespace :settings do
       resource :profile, only: %i[ show update ]
+      resource :avatar, only: :update                      # Your initial's color, in Profile (docs/design/avatars.md)
       resource :appearance, only: %i[ show update ]
       resource :sign_in, only: %i[ show update ]
       resources :memberships, only: %i[ index destroy ]   # My households

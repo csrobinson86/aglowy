@@ -2,6 +2,8 @@
 
 <%= render Settings::PageComponent.new(membership: Current.membership, section: :profile) do |page| %>
   <% page.with_body do %>
+    <%# Current.user, as saved: a refused save holds its change on @user, a copy. %>
+    <%= render "settings/profiles/avatar", user: Current.user, error: @user.errors.full_messages_for(:avatar_color).first %>
     <%= render "settings/profiles/profile", user: @user, url: household_settings_profile_path %>
   <% end %>
 <% end %>

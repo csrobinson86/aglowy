@@ -95,7 +95,7 @@ class PersonalNotesPhoneTest < ApplicationSystemTestCase
     visit notes_url
     click_on "Ideas for family worship"
 
-    all(".note-color-picker__swatch").each do |swatch|
+    all(".color-picker__swatch").each do |swatch|
       assert_operator swatch.evaluate_script("this.offsetWidth"), :>=, 44, "a swatch is too small to tap"
       assert_operator swatch.evaluate_script("this.offsetHeight"), :>=, 44, "a swatch is too small to tap"
     end
@@ -103,7 +103,7 @@ class PersonalNotesPhoneTest < ApplicationSystemTestCase
       find("main .note-card").evaluate_script("this.getBoundingClientRect().bottom"), "the side panel isn't under the note"
 
     find("label[for=personal_note_color_blue]").click
-    assert_selector ".note-color-picker__chosen", text: "Blue"
+    assert_selector ".color-picker__chosen", text: "Blue"
     click_on "Save note"
 
     assert_text "Note saved."

@@ -25,7 +25,7 @@ class Calendar::EventsControllerTest < ActionDispatch::IntegrationTest
         repeat: "weekly", location: "Meet at the Kingdom Hall", note: "Bring tracts" } }, as: :turbo_stream
     end
     assert_response :success
-    event = @home.events.order(:created_at).last
+    event = @home.events.find_by!(title: "Field service")
     assert_equal [ "field_service", "09:30", 90, "weekly", users(:spouse) ], [ event.kind, event.time_of_day.strftime("%H:%M"), event.duration_minutes, event.frequency, event.created_by ]
     assert_select "turbo-stream[action=update][target=calendar_event_dialog]"
     assert_select "turbo-stream[action=refresh]"

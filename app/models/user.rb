@@ -34,9 +34,22 @@ class User < ApplicationRecord
   enum :appearance, { auto: "auto", light: "light", dark: "dark" }, prefix: true, validate: true
 
   validates :name, presence: true
+  # The database checks it too (users_avatar_color_check); this gives a refused color a message.
+  validates :avatar_color, inclusion: { in: Avatar::Palette::COLORS }
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }, allow_nil: true
   # Their times are in it, so it can't go blank under them (docs/design/calendar.md, The person's own zone).
   validates :time_zone, presence: { message: "can't be blank while you have times on the calendar" }, if: -> { time_zone.nil? && personal_times.exists? }
+
+  # Settings → Profile's "Color for your initial" (docs/design/avatars.md, User).
+  def change_avatar_color(color)
+    update(avatar_color: color)
+  end
+
+  # Their avatar's letter: the first of their name as a reader sees it, accent and all, in capitals, so "émile" is É
+  # (docs/design/avatars.md, What an avatar is).
+  def initial
+    name.grapheme_clusters.first.upcase
+  end
 
   # "Invited by Daniel" (frame members.png).
   def first_name

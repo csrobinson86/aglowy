@@ -58,8 +58,4 @@ class AppShell::SidebarComponent < ApplicationComponent
   def settings_path
     household_settings_path(household_id: household.id)
   end
-
-  def initial
-    user.name.first
-  end
 end

@@ -1,0 +1,91 @@
+// The color picker (ColorPickerComponent): the legend, then a round swatch per color, then the chosen color's name.
+// Each swatch is the label of a visually hidden radio, which keeps the keyboard and the focus ring. A note's has
+// "Color" beside its swatches (frame note.png); an avatar's has its legend above, and the person's initial in each
+// swatch (frame docs/design/avatars/settings-avatar.png).
+.color-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.color-picker__legend {
+  margin-bottom: var(--base-size-8);
+}
+
+// Floated beside the swatches, which sit next to it as their own formatting context.
+.color-picker__legend--beside {
+  float: left;
+  margin-right: var(--base-size-12);
+  margin-bottom: 0;
+  line-height: var(--control-medium-size);
+
+  @media (pointer: coarse) {
+    line-height: var(--control-minTarget-coarse);
+  }
+}
+
+.color-picker__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-8);
+}
+
+.color-picker__swatch {
+  --color-picker-swatch: var(--borderColor-emphasis);
+
+  width: var(--control-medium-size);
+  height: var(--control-medium-size);
+  cursor: pointer;
+  background-color: var(--color-picker-swatch);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-full);
+
+  @media (pointer: coarse) {
+    width: var(--control-minTarget-coarse);
+    height: var(--control-minTarget-coarse);
+  }
+}
+
+.color-picker__input:checked + .color-picker__swatch {
+  box-shadow: 0 0 0 var(--base-size-2) var(--bgColor-default), 0 0 0 var(--base-size-4) var(--fgColor-default);
+}
+
+.color-picker__input:focus-visible + .color-picker__swatch {
+  outline: var(--focus-outline);
+  outline-offset: var(--base-size-6);
+}
+
+.color-picker__swatch--none {
+  --color-picker-swatch: var(--bgColor-default);
+}
+
+@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+  .color-picker__swatch--#{$color} {
+    --color-picker-swatch: var(--display-#{$color}-borderColor-emphasis);
+  }
+}
+
+// A swatch with a letter in it is drawn as that avatar would be (components/_avatar.scss, Avatar::Palette).
+.color-picker__swatch--labelled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--base-text-weight-semibold);
+  border-color: transparent;
+}
+
+@each $color in "blue", "green", "purple", "pink", "orange", "yellow" {
+  .color-picker__swatch--labelled.color-picker__swatch--#{$color} {
+    --color-picker-swatch: var(--display-#{$color}-bgColor-muted);
+
+    color: var(--display-#{$color}-fgColor);
+  }
+}
+
+.color-picker__chosen {
+  margin-left: var(--base-size-4);
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+}

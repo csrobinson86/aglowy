@@ -1,0 +1,22 @@
+<%# locals: (user:, error: nil) %>
+<%# The Avatar box, above Profile (docs/design/avatars.md, The Avatar box; frame settings-avatar.png): the person's
+    avatar as saved, and the color for their initial. A refused color shows why above the picker. %>
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "Avatar" } } %>
+  <% box.with_row(display: :flex, align_items: :center) do %>
+    <%= render AvatarComponent.new(user:, size: 80, alone: true, classes: "mr-3") %>
+    <p class="f6 color-fg-muted mb-0">Everyone in your households sees your avatar.</p>
+  <% end %>
+  <% box.with_row do %>
+    <% if error %>
+      <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { error } %>
+    <% end %>
+    <%= primer_form_with(scope: :avatar, url: household_settings_avatar_path, method: :patch) do |f| %>
+      <div class="mb-3">
+        <%= render ColorPickerComponent.new(name: "avatar[color]", selected: user.avatar_color, colors: Avatar::Palette::COLORS,
+                                            legend: "Color for your initial", swatch_label: user.initial) %>
+      </div>
+      <%= render Settings::AvatarForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>
