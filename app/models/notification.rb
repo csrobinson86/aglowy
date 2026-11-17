@@ -7,6 +7,8 @@ class Notification < ApplicationRecord
   belongs_to :subject, polymorphic: true
   belongs_to :actor, class_name: "User", optional: true
   has_one :reading, dependent: :delete
+  # The database deletes them with it (on_delete: :cascade).
+  has_many :deliveries, dependent: :delete_all
 
   # From households where the person is still an active member: leaving hides them, without deleting them (Trap 8).
   scope :visible, -> do
@@ -14,12 +16,13 @@ class Notification < ApplicationRecord
     where(Membership.active.where(memberships[:user_id].eq(arel_table[:user_id]).and(memberships[:household_id].eq(arel_table[:household_id]))).arel.exists)
   end
   scope :unread, -> { where.missing(:reading) }
+  scope :not_emailed, -> { where.not(id: Delivery.email.select(:notification_id)) }
   scope :newest_first, -> { order(created_at: :desc, id: :desc) }
   scope :preloaded, -> { includes(:subject, :actor, :household, :reading) }
   # Kept for 90 days; their readings and deliveries go with them (on_delete: :cascade).
   scope :expired, -> { where(created_at: ...90.days.ago) }
 
-  delegate :title, :body, :icon, :color, :email, :target_path, to: :kind_definition
+  delegate :title, :body, :icon, :color, :email, :email_subject, :label, :target_path, to: :kind_definition
 
   # Deletes these, as a share ending or the purge does, and refreshes each person's counter once that's committed, so
   # an open page doesn't keep counting one that's gone. delete_all skips callbacks, so nothing else would.
@@ -41,12 +44,29 @@ class Notification < ApplicationRecord
     reading.present?
   end
 
-  # Sends nothing yet: email and push come in later NOTIFY-01 stories.
   def deliver_later
     Notification::DeliveryJob.perform_later(self)
   end
 
+  # The email part of delivery (docs/design/notifications.md, Delivery): only while it's still the person's to see,
+  # only a right-away kind they turned email on for, and never to a child. Inside quiet hours it comes back when they
+  # end and checks everything again. Then it claims the email and sends only if the claim is its own. Push comes with
+  # its own story.
+  def deliver_now
+    return unless user.notifications.visible.exists?(id) && emailed_right_away?
+
+    if user.quiet_now?
+      Notification::DeliveryJob.set(wait_until: user.quiet_hours_end_after(Time.current)).perform_later(self)
+    elsif Delivery.claim(self, "email")
+      Delivery.sending([ id ], "email") { NotificationMailer.notification(self).deliver_now }
+    end
+  end
+
   private
+    def emailed_right_away?
+      kind_definition.right_away? && user.emailable? && user.notification_settings.email.exists?(kind:)
+    end
+
     def kind_definition
       @kind_definition ||= Kind.for(self)
     end

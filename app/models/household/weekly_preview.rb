@@ -24,13 +24,18 @@ class Household::WeeklyPreview
     [ (pluralize(meetings.size, "meeting") if meetings.any?), *named ].compact.join(" · ")
   end
 
+  # Each day of the week that has something on it, with what's on it in order, for the email's list.
+  def days_with_items
+    days.map { |date| [ date, items.select { it.on?(date) } ] }.reject { |_, on| on.empty? }
+  end
+
+  def days
+    week_of..(week_of + 6)
+  end
+
   private
     def items
       @items ||= Household::Calendar.new(household, viewer: nil, range: days, hide: %w[ my_times shared_times ]).items
-    end
-
-    def days
-      week_of..(week_of + 6)
     end
 
     # "family study Tuesday and Thursday", "Field service Saturday", or for one over several days "… from Tuesday", or

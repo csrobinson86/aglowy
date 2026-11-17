@@ -1,0 +1,15 @@
+<% first, last = preview.days.first, preview.days.last %>
+<%= @notification.title %>
+<%= first.strftime("%A, %B %-d") %> to <%= last.strftime("%A, %B %-d") %>.
+
+<% preview.days_with_items.each do |date, items| %>
+<%= date.strftime("%A") %>
+<% items.each do |item| %>
+- <%= item.title %>, <%= item.all_day ? "all day" : item.starts_at.strftime("%-l:%M %p") %><%= " (#{item.subtitle})" if item.subtitle %>
+<% end %>
+
+<% end %>
+Open the calendar:
+<%= @open_url %>
+
+<%= render "footer", reason: "You get this because you turned on #{@notification.label} emails." %>

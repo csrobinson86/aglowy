@@ -121,15 +121,17 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a non-member gets a 404 and saves nothing" do
+    # A 404 ends the request before the session is saved, so each request signs in again.
     sign_in identities(:outsider)
-
     get household_settings_notifications_path(household_id: @home)
     assert_response :not_found
 
+    sign_in identities(:outsider)
     patch household_settings_notifications_path(household_id: @home), params: { notification_settings: { weekly_preview: [ "email" ] } }
     assert_response :not_found
     assert_empty users(:outsider).notification_settings
 
+    sign_in identities(:outsider)
     patch household_settings_quiet_hours_path(household_id: @home), params: { user: { quiet_hours_start: "22:00", quiet_hours_end: "06:00" } }
     assert_response :not_found
     assert_equal "21:00", users(:outsider).reload.quiet_hours_start.strftime("%H:%M")

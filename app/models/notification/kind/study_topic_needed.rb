@@ -4,9 +4,20 @@ class Notification::Kind::StudyTopicNeeded < Notification::Kind
   def icon = :book
   def color = :blue
   def email = :right_away
+  def label = "Family study needs a topic"
+  def description = "Three days before a session with no topic. Heads only."
+
+  # Only a head somewhere is asked for a topic.
+  def offered_to?(user)
+    user.memberships.active.head.exists?
+  end
 
   def title
     "#{subject.local_scheduled_at.strftime("%A")}'s family study has no topic yet"
+  end
+
+  def email_subject
+    "#{subject.local_scheduled_at.strftime("%A")}'s family study needs a topic"
   end
 
   def body

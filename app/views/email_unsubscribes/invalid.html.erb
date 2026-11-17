@@ -1,0 +1,9 @@
+<% content_for :title, "This link can't be used" %>
+
+<%# Says nothing about whose email it was. %>
+<%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+  <% blankslate.with_visual_icon(icon: :"bell-slash") %>
+  <% blankslate.with_heading(tag: :h1) { "This link can't be used" } %>
+  <% blankslate.with_description { "This link no longer works. Change emails in Settings → Notifications." } %>
+  <% blankslate.with_secondary_action(href: root_path) { "Open Aglowy" } %>
+<% end %>

@@ -31,6 +31,9 @@ production:
   follow_up_invitations:
     class: Notification::InvitationFollowUpJob
     schedule: every day at 2pm
+  send_daily_summaries:
+    class: Notification::DailySummaryJob
+    schedule: every 15 minutes
   purge_old_notifications:
     class: Notification::PurgeJob
     schedule: every day at 4:45am

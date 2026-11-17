@@ -161,6 +161,13 @@ class Notification::DeliveryJobConcurrencyTest < ActiveJob::TestCase
     @head.notification_settings.delete_all
   end
 
+  test "a notification deleted just before its claim claims nothing" do
+    @notification.delete
+
+    assert_not Notification::Delivery.claim(@notification, "email")
+    assert_no_emails { @notification.deliver_now }
+  end
+
   test "two jobs at once send once" do
     ready = Concurrent::CountDownLatch.new(2)
     go = Concurrent::CountDownLatch.new(1)

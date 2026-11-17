@@ -4,9 +4,17 @@ class Notification::Kind::WeeklyPreview < Notification::Kind
   def icon = :calendar
   def color = :purple
   def email = :right_away
+  def label = "Weekly preview"
+  def description = "Sunday evening: each household's week ahead."
 
   def title
     "Your week in #{subject.name}"
+  end
+
+  # "Your week in Rivera household: November 23 – 29", or "November 30 – December 6" across two months.
+  def email_subject
+    last = week_of + 6
+    "#{title}: #{week_of.strftime("%B %-d")} – #{last.strftime(week_of.month == last.month ? "%-d" : "%B %-d")}"
   end
 
   def body

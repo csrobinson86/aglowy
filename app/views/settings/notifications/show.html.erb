@@ -1,0 +1,36 @@
+<% content_for :title, "Notifications · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :notifications) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new(mb: 4, id: "notification-settings")) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "What you get" } } %>
+      <% box.with_body do %>
+        <p class="color-fg-muted">In Aglowy: always. Every notification shows in your inbox.</p>
+        <%= primer_form_with(scope: :notification_settings, url: household_settings_notifications_path, method: :patch) do |f| %>
+          <%= render Settings::NotificationsForm.new(f, user: @user) %>
+        <% end %>
+        <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, mt: 3, mb: 0)) do %>
+          <% if @user.emailable? %>
+            Emails go to <%= @user.identity.email %>. "Right away" sends when it happens; the rest wait for your daily summary at <%= @user.quiet_hours_end_in_database.strftime("%-l:%M %p") %>.
+          <% elsif @user.child_somewhere? %>
+            Children get notifications in Aglowy and on their phone, never by email.
+          <% else %>
+            Your login has no email address, so nothing is emailed. Add one in Signing in to choose emails here.
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%= render(Primer::Beta::BorderBox.new(id: "quiet-hours")) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Quiet hours" } } %>
+      <% box.with_body do %>
+        <%= primer_form_with(model: @user, scope: :user, url: household_settings_quiet_hours_path, method: :patch) do |f| %>
+          <%= render Settings::QuietHoursForm.new(f) %>
+        <% end %>
+        <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, mt: 3, mb: 0)) do %>
+          Nothing is emailed or sent to your phone during quiet hours. It waits until they end. Times are in <%= @user.calendar_time_zone.sub(/ \(.*\)\z/, "") %>, your time zone in Profile.
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
