@@ -42,6 +42,46 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=search][placeholder='Search titles, collections and tags']"
   end
 
+  test "Pinned, newest pin first, then All notes; pinned cards carry an Unpin button" do
+    travel_to(1.day.ago) { @note.pin_to_top }
+    personal_notes(:head_return_visit).pin_to_top
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home)
+
+    assert_select "main section[aria-labelledby] h2", text: /\A(Pinned|All notes)\z/ do |headings|
+      assert_equal [ "Pinned", "All notes" ], headings.map { it.text.strip }
+    end
+    assert_select "section[aria-labelledby=pinned-notes] .note-card", count: 2 do |cards|
+      assert_match "Questions for my return visit", cards.first.text
+      assert_match "Daniel 2 image: quick reference", cards.last.text
+    end
+    assert_select "section[aria-labelledby=pinned-notes] .note-card", text: /Daniel 2 image/ do |card|
+      assert_select card, "form[action=?] input[name=_method][value=delete]", household_personal_note_pin_path(household_id: @home, personal_note_id: @note)
+      assert_select card, "form button[type=submit][name=from][value=list][aria-pressed=true]", "Unpin"
+    end
+    assert_select "section[aria-labelledby=all-notes] .note-card", count: 1
+    assert_select "section[aria-labelledby=all-notes] .note-card", text: /Ideas for family worship/ do |card|
+      assert_select card, "button[aria-pressed]", count: 0
+    end
+  end
+
+  test "filters narrow the pinned notes too, and with none pinned there's no Pinned" do
+    @note.pin_to_top
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home, color: "green")
+
+    assert_select "section[aria-labelledby=pinned-notes]", count: 0
+    assert_select "section[aria-labelledby=all-notes] .note-card", count: 1
+
+    get household_personal_notes_path(household_id: @home, color: "orange")
+
+    assert_select "section[aria-labelledby=pinned-notes] .note-card", count: 1
+    assert_select "section[aria-labelledby=all-notes]", count: 0
+    assert_select ".blankslate", count: 0
+  end
+
   test "the New collection dialog on Notes offers Notes and Personal study, or Notes only" do
     sign_in identities(:head)
 
@@ -251,6 +291,18 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_select "section[aria-labelledby=note-details]", text: /Created/
     assert_select "dialog#delete-personal-note"
+    assert_select "#pin_personal_note_#{@note.id} form[action=?] button[type=submit][aria-pressed=false]",
+                  household_personal_note_pin_path(household_id: @home, personal_note_id: @note), text: "Pin"
+  end
+
+  test "a pinned note's page shows Pinned, pressed" do
+    @note.pin_to_top
+    sign_in identities(:head)
+
+    get household_personal_note_path(household_id: @home, id: @note)
+
+    assert_select "#pin_personal_note_#{@note.id} button[type=submit][aria-pressed=true]", "Pinned"
+    assert_select "#pin_personal_note_#{@note.id} [name=from]", count: 0
   end
 
   test "update: title, body, and move to another collection and out of any" do

@@ -1,15 +1,18 @@
 <% content_for :title, @personal_note.title_in_database %>
 <% collection = Current.user.collections.find_by(id: @personal_note.collection_id_in_database) %>
 
-<%# The breadcrumb, then the note open for editing, with its scriptures and details beside it (frame note.png), or
+<%# The breadcrumb and the Pinned toggle, then the note open for editing, with its scriptures and details beside it (frame note.png), or
     under it on a phone. The breadcrumb and heading name the saved note, so a refused save doesn't show its title or
     collection as saved. %>
-<%= render(Primer::Beta::Breadcrumbs.new(mb: 3)) do |breadcrumbs| %>
-  <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
-  <% if collection %>
-    <% breadcrumbs.with_item(href: household_personal_notes_path(collection: collection.id)) { collection.name } %>
+<div class="d-flex flex-items-center flex-justify-between mb-3">
+  <%= render(Primer::Beta::Breadcrumbs.new(mr: 3)) do |breadcrumbs| %>
+    <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
+    <% if collection %>
+      <% breadcrumbs.with_item(href: household_personal_notes_path(collection: collection.id)) { collection.name } %>
+    <% end %>
   <% end %>
-<% end %>
+  <%= render "personal_notes/pin", personal_note: @personal_note %>
+</div>
 <h1 class="sr-only"><%= @personal_note.title_in_database %></h1>
 
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>

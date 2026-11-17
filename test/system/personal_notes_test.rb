@@ -105,6 +105,39 @@ class PersonalNotesTest < ApplicationSystemTestCase
     assert_accessible
   end
 
+  test "pin a note from its page, see it under Pinned and on Home, and unpin it from its card" do
+    visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_daniel))
+    click_on "Pin"
+
+    assert_selector "button[aria-pressed=true]", text: "Pinned"
+    assert personal_notes(:head_daniel).reload.pinned?
+    assert_accessible
+    capture_screens("note-pinned")
+
+    visit household_personal_notes_url(household_id: households(:home))
+    within("section[aria-labelledby=pinned-notes]") { assert_selector ".note-card", count: 1, text: "Daniel 2 image: quick reference" }
+    within("section[aria-labelledby=all-notes]") { assert_no_text "Daniel 2 image" }
+    assert_accessible
+    capture_screens("notes-pinned")
+
+    visit household_root_url(household_id: households(:home))
+    within(".Box", text: "Pinned notes") do
+      assert_selector ".note-dot--orange"
+      assert_link "Daniel 2 image: quick reference"
+      assert_link "All notes"
+    end
+    assert_accessible
+    capture_screens("home-pinned-notes", scroll_to: ".Box:has(.note-dot)")
+
+    visit household_personal_notes_url(household_id: households(:home))
+    within("section[aria-labelledby=pinned-notes] .note-card") { click_on "Unpin" }
+
+    assert_no_selector "section[aria-labelledby=pinned-notes]"
+    within("section[aria-labelledby=all-notes]") { assert_selector ".note-card", text: "Daniel 2 image: quick reference" }
+    assert_not personal_notes(:head_daniel).reload.pinned?
+    assert_accessible
+  end
+
   test "delete a note after the dialog, on a phone, where the details come under the note" do
     visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
     emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)
