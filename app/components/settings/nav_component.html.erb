@@ -1,8 +1,10 @@
 <%= render(Primer::Beta::NavList.new(aria: { label: "Settings" }, selected_item_id: selected, display: [ :none, nil, :block ])) do |list| %>
-  <% list.with_group do |group| %>
-    <% group.with_heading(title: "You", heading_level: 2) %>
-    <% sections.each do |id, label| %>
-      <% group.with_item(label:, href: section_path(id), selected_by_ids: id) %>
+  <% groups.each do |heading, sections| %>
+    <% list.with_group do |group| %>
+      <% group.with_heading(title: heading, heading_level: 2) %>
+      <% sections.each do |id, label| %>
+        <% group.with_item(label:, href: section_path(id), selected_by_ids: id) %>
+      <% end %>
     <% end %>
   <% end %>
 <% end %>
@@ -11,12 +13,14 @@
       classes: "settings-nav__menu")) do |menu| %>
   <% menu.with_show_button(block: true, align_content: :start, classes: "settings-nav__button") do |button| %>
     <% button.with_trailing_action_icon(icon: :"triangle-down") %>
-    <%= sections.fetch(selected) %>
+    <%= selected_label %>
   <% end %>
-  <% menu.with_group do |group| %>
-    <% group.with_heading(title: "You") %>
-    <% sections.each do |id, label| %>
-      <% group.with_item(label:, href: section_path(id), active: id == selected) %>
+  <% groups.each do |heading, sections| %>
+    <% menu.with_group do |group| %>
+      <% group.with_heading(title: heading) %>
+      <% sections.each do |id, label| %>
+        <% group.with_item(label:, href: section_path(id), active: id == selected) %>
+      <% end %>
     <% end %>
   <% end %>
 <% end %>

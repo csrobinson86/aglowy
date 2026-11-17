@@ -56,7 +56,7 @@ class TodaysMeetingsControllerTest < ActionDispatch::IntegrationTest
 
     get household_todays_meeting_path(household_id: households(:home))
 
-    assert_select "main a[href='#{edit_household_settings_household_path(household_id: households(:home), anchor: "meetings")}']", "Set your meeting times"
+    assert_select "main a[href='#{household_settings_meetings_path(household_id: households(:home))}']", "Set your meeting times"
   end
 
   test "a child doesn't see Set your meeting times" do

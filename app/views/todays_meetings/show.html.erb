@@ -24,7 +24,7 @@
       </div>
       <% if policy(Current.household).manage_meetings? %>
         <p class="color-fg-muted mt-2 mb-0">
-          <%= render(Primer::Beta::Link.new(href: edit_household_settings_household_path(anchor: "meetings"), underline: true)) { "Set your meeting times" } %>
+          <%= render(Primer::Beta::Link.new(href: household_settings_meetings_path, underline: true)) { "Set your meeting times" } %>
           and this page will open the right meeting by itself.
         </p>
       <% end %>

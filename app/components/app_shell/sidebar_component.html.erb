@@ -51,11 +51,6 @@
       <% list.with_item(label: "Settings", href: settings_path, selected_by_ids: :settings) do |item| %>
         <% item.with_leading_visual_icon(icon: :gear) %>
       <% end %>
-      <% if show_household_settings? %>
-        <% list.with_item(label: "Household settings", href: household_settings_page_path, selected_by_ids: :households) do |item| %>
-          <% item.with_leading_visual_icon(icon: :gear) %>
-        <% end %>
-      <% end %>
     <% end %>
 
     <div class="d-flex flex-items-center">

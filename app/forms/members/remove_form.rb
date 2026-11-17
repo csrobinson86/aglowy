@@ -1,4 +1,4 @@
-# The "Remove" button in household settings' remove-member Dialog.
+# The "Remove" button in Settings → Members and roles' remove-member Dialog.
 class Members::RemoveForm < ApplicationForm
   form do |f|
     f.submit(name: :submit, label: "Remove", scheme: :danger)

@@ -59,16 +59,6 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_settings_path(household_id: household.id)
   end
 
-  # Heads and adults, until Settings gains the household's sections (#218). The settings controller authorizes too
-  # (docs/design/app-shell.md, Navigation rules).
-  def show_household_settings?
-    membership.head? || membership.adult?
-  end
-
-  def household_settings_page_path
-    edit_household_settings_household_path(household_id: household.id)
-  end
-
   def initial
     user.name.first
   end

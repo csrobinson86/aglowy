@@ -1,6 +1,6 @@
 <% content_for :title, "Signing in · Settings" %>
 
-<%= render Settings::PageComponent.new(household: Current.household, section: :sign_in) do |page| %>
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :sign_in) do |page| %>
   <% page.with_body do %>
     <%= render "settings/sign_ins/sign_in", identity: @identity, url: household_settings_sign_in_path %>
   <% end %>

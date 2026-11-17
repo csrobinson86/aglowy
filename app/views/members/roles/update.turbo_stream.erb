@@ -1,3 +1,3 @@
-<%= turbo_stream.replace @member, partial: "households/settings/member", locals: { member: @member, focused: true } %>
+<%= turbo_stream.replace @member, partial: "settings/members/member", locals: { member: @member, focused: true } %>
 <%= turbo_stream.remove_all "main .flash:not(.Banner)" %>
 <%= turbo_stream.prepend_all "main .container-xl", partial: "shared/flash" %>

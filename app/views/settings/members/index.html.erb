@@ -1,0 +1,16 @@
+<% content_for :title, "Members and roles · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :members) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new(id: "members-and-roles", mb: 4)) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Members and roles" } } %>
+      <% @memberships.each do |member| %>
+        <% box.with_row(p: 0) { render "settings/members/member", member: } %>
+      <% end %>
+      <% box.with_footer(font_size: :small, color: :muted) do %>
+        A household always keeps at least one head. Removing someone works like them leaving: their shares here end and
+        their open steps go back to the family. Their own notes and goals stay with them.
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

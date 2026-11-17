@@ -1,6 +1,5 @@
-# The Children section of Household settings: heads and adults turn the meeting helper for children on or off
-# (docs/design/meeting-helper.md, Pages).
-class Households::MeetingHelpersController < ApplicationController
+# Settings → Children: heads and adults turn the meeting helper for children on or off (docs/design/meeting-helper.md, Pages).
+class Settings::MeetingHelpersController < ApplicationController
   include HouseholdScoped
 
   def update
@@ -8,10 +7,10 @@ class Households::MeetingHelpersController < ApplicationController
 
     if enabled?
       Current.household.enable_meeting_helper(by: Current.user)
-      redirect_to edit_household_settings_household_path, notice: "Meeting helper turned on."
+      redirect_to household_settings_children_path, notice: "Meeting helper turned on."
     else
       Current.household.disable_meeting_helper
-      redirect_to edit_household_settings_household_path, notice: "Meeting helper turned off."
+      redirect_to household_settings_children_path, notice: "Meeting helper turned off."
     end
   end
 

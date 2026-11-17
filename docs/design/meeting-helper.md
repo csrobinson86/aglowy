@@ -240,11 +240,10 @@ Methods on `MeetingNote`:
 7. **Turning the helper off deletes nothing** of the children's. Turning it on twice at once makes one row (`create_or_find_by!` with the unique index).
 8. **Validate drawings on the server:** the content type `image/png` from the blob's analysis, not the request header, and at most 2 MB. A bad file is a validation error, not a 500.
 9. **Never render `url_for(drawing.image)`** in a page; always use the authorizing `drawing` route (gotcha 22).
-10. **Household settings opens to adults**, for the Meetings and Children sections only.
-    - `HouseholdPolicy#update?` (name and time zone) stays heads-only.
-    - Add `HouseholdPolicy#edit?` for heads and adults.
-    - `Households::MeetingTimesController` and `Households::MeetingHelpersController` authorize `HouseholdPolicy#manage_meetings?`, for heads and adults.
-    - The sidebar footer shows Household settings to heads and adults.
+10. **Adults reach Settings' Meetings and Children sections only** (`docs/design/settings.md`).
+    - `HouseholdPolicy#update?` (Household and Members and roles) stays heads-only.
+    - `Settings::MeetingsController`, `Settings::ChildrenController` and `Settings::MeetingHelpersController` authorize `HouseholdPolicy#manage_meetings?`, for heads and adults.
+    - The section nav lists only the sections the role allows; there is no separate sidebar item.
 11. **No animation sneaks in.** Primer's default button transitions are fine; add nothing that moves on its own.
 
 ## States each story checks

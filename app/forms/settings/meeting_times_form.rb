@@ -1,6 +1,6 @@
-# Household settings, Meetings (frames household-settings-head.png and household-settings-adult.png). Primer forms have
-# no headings, so each label names its meeting. Days are Ruby's wday, listed from Monday.
-class Households::MeetingTimesForm < ApplicationForm
+# Settings → Meetings (frame settings-adult-meetings.png). Primer forms have no headings, so each label names its
+# meeting. Days are Ruby's wday, listed from Monday.
+class Settings::MeetingTimesForm < ApplicationForm
   DAYS = Date::DAYNAMES.each_with_index.to_a.rotate(1).freeze
 
   form do |f|

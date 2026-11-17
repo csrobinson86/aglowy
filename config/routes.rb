@@ -60,22 +60,20 @@ Rails.application.routes.draw do
     get "/", to: "dashboards#show", as: :root
     # Settings, a page per section, opening on Profile for everyone (docs/design/settings.md, Pages and routes).
     get "settings", to: redirect("/%{household_id}/settings/profile"), as: :settings
-    # The person's own sections: the same person from any household.
+    # The person's own sections, the same person from any household; then the household's, each for the roles that
+    # may change it (docs/design/settings.md, Sections and who sees them).
     namespace :settings do
       resource :profile, only: %i[ show update ]
       resource :appearance, only: %i[ show update ]
       resource :sign_in, only: %i[ show update ]
       resources :memberships, only: %i[ index destroy ]   # My households
+      resource :household, only: %i[ show update ]         # Heads
+      resource :meetings, only: %i[ show update ]          # Heads and adults
+      resource :children, only: :show                      # Heads and adults
+      resource :meeting_helper, only: :update              # Children's meeting helper switch
+      resources :members, only: :index                     # Members and roles, heads
     end
-    # Household settings: heads, and adults for its Meetings section (docs/design/invitations.md). At
-    # /settings/household until it becomes Settings' household sections.
-    resource :settings_household, path: "settings/household", only: %i[ edit update ], controller: "households/settings",
-             path_names: { edit: "" }
-    # The settings page's Meetings section, for heads and adults (docs/design/meeting-helper.md, Pages).
-    resource :meeting_times, only: :update, controller: "households/meeting_times"
-    # The settings page's Children section: the meeting helper's switch, for heads and adults.
-    resource :meeting_helper, only: :update, controller: "households/meeting_helpers"
-    # Changing a role and removing a member are on household settings, heads only (docs/design/invitations.md).
+    # Changing a role and removing a member are on Settings → Members and roles, heads only (docs/design/invitations.md).
     resources :members, only: %i[ index new create destroy ] do
       resource :login, only: %i[ new create ], module: :members, path_names: { new: "" }
       resource :password_link, only: :create, module: :members
@@ -83,7 +81,7 @@ Rails.application.routes.draw do
       # A head's read-only view of a child's personal studies, under a study AI grant (docs/design/personal-study.md, Children).
       resources :personal_studies, only: %i[ index show ], module: :members
     end
-    # Turning personal study with AI on or off for a child, from the settings page's Children section; heads only.
+    # Turning personal study with AI on or off for a child, from Settings → Children; heads only.
     resources :memberships, only: [] do
       resource :study_ai_grant, only: %i[ create destroy ], module: :memberships
     end

@@ -1,0 +1,23 @@
+<% content_for :title, "Children · Settings" %>
+
+<% meeting_helper = Current.household.meeting_helper %>
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :children) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Children" } } %>
+      <% box.with_body do %>
+        <%= primer_form_with(scope: :meeting_helper, url: household_settings_meeting_helper_path, method: :patch) do |f| %>
+          <%= render Settings::MeetingHelperForm.new(f, enabled: meeting_helper.present?) %>
+        <% end %>
+        <% if meeting_helper %>
+          <p class="f6 color-fg-muted mt-3 mb-0">
+            Turned on by <%= meeting_helper.enabled_by.name %> on <%= meeting_helper.created_at.in_time_zone(Current.household.time_zone).strftime("%B %-d") %>.
+          </p>
+        <% end %>
+      <% end %>
+      <% box.with_row do %>
+        <%= render "settings/children/study_ai", children: @children, head: policy(Current.household).update? %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
