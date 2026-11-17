@@ -109,13 +109,14 @@ One AI request and its checked reply.
 | `user_id` | uuid | FK → users, not null | Who asked; the limit is per person |
 | `kind` | string | not null, check in (`outline`, `wording`) | What was asked for |
 | `request` | text | nullable, encrypted, 500 characters at most | "Anything it should know?", or the change asked for |
-| `revises_id` | uuid | FK → meeting_part_drafts, nullable, `on_delete: :nullify` | The draft a change, or the wording, was built on |
+| `revises_id` | uuid | FK → meeting_part_drafts, nullable, `on_delete: :nullify` | The draft a change, or the wording, was built on. Only for the links to it; the purge nulls it |
+| `revised_result` | jsonb | encrypted, nullable | A copy of that draft's checked `result`, taken when the request is made. The job sends this copy and never reads `revises`, so a purge between the request and the job can't change what's sent |
 | `status` | string | not null, check in (`drafting`, `drafted`, `off_topic`, `flagged`, `failed`, `stopped`, `discarded`) | |
 | `result` | jsonb | encrypted, nullable until drafted | The checked reply fields |
 | `sources` | jsonb | not null, default `[]` | `[{url, title}]` that passed `Ai::SourceLink` |
 
 - `belongs_to :chat, dependent: :destroy`, so deleting a part deletes its drafts' chats with them, not at the next purge.
-- `revises` must be a `drafted` draft of the same part: of the same kind for a change, or an outline for sample wording.
+- `revises` must be a `drafted` draft of the same part: of the same kind for a change, or an outline for sample wording. `part.draft` checks that and copies its `result` into `revised_result` in the same lock.
 - `Ai::Use` gains `meeting_part_draft_id` (FK, nullable, unique, `on_delete: :nullify`), used exactly as `question_id` is for personal study: made with the draft, deleted when the draft ends `failed` or `flagged`, kept when the draft or its part is deleted.
 - `draft.spoken_length` counts the words of the result, plus `READ_SECONDS` for each scripture marked to read.
 - `draft.preparation_html` builds notes from our own ERB partial with escaped fields, as `FamilyStudy::Draft#notes_html` does.
@@ -198,7 +199,7 @@ Everything in `docs/design/ai.md` applies. This section only adds to it.
 - **Its one job:** help prepare a student part in Apply Yourself to the Field Ministry. Anything else is `off_topic` and gets "This helper only prepares your meeting part."
 - `instructions` in `config/ai/meeting_part.md`; `allowed_hosts` as always; `max_searches` 5
 - `daily_limit` 15 per person, counted from `Ai::Use` rows in the person's time zone under the person's lock, as personal study is
-- `keep_for` 60 days. Each draft has its own chat, so the daily purge that family study drafts use (`Ai::PurgeExpiredChatsJob`) deletes a chat 60 days after it was made, and its draft goes with it. Nothing the AI was sent or wrote is kept longer, however many newer drafts the part has. What the person used is already in their preparation, which is theirs and stays.
+- `keep_for` 60 days. Each draft has its own chat, so the daily purge that family study drafts use (`Ai::PurgeExpiredChatsJob`) deletes a chat 60 days after it was made, and its draft goes with it. So each request and its reply are kept 60 days from when the request was made, however many newer drafts the part has. A change carries a copy of the draft it revises, and that copy is kept with the change for the change's own 60 days. What the person used is already in their preparation, which is theirs and stays.
 - No `context_exchanges`: a chat holds one request and one reply, so there's no history to trim.
 - **What's sent:** the part's kind, minutes, setting, topic and study point, the target length in words (`SpokenLength.target_words(minutes)`: four fifths of `minutes × WORDS_PER_MINUTE`, which leaves room for reading scriptures and for pauses), and `request`. A change, or sample wording written from an outline, also sends the draft it `revises` (How a request runs). **Never** the preparation, the counsel, the assistant's name, the person's name or the household (`docs/design/ai.md`, safety measure 7). The panel says so.
 - **Moderation** runs on the topic, the study point and the request together.
@@ -242,13 +243,13 @@ Frames `part-prepare.png`, `part-ai-outline.png` and `part-ai-wording.png`. The 
 `part.draft(kind:, request:, revises:, by: user)` runs inside `user.with_lock`:
 
 - refuses with `:limit` at 15, and with `:not_allowed` unless `may_prepare_parts_with_ai?` and `accepted_ai_terms?`
-- makes the draft (`drafting`) with its own chat and its `Ai::Use`, then calls `write_later`
+- makes the draft (`drafting`) with its own chat, its `Ai::Use` and, when it revises a draft, the copy in `revised_result`, then calls `write_later`
 
 `MeetingPart::WriteDraftJob` → `draft.write_now`, the same five steps as `FamilyStudy::Draft#write_now` (`docs/design/family-studies.md`): moderation; `chat.ask_within_purpose` with progress lines only; the checks; the final status with a conditional update that applies only while `drafting`; one broadcast of the result.
 
 - **A change** is a new draft of the same kind with `revises` set and the change as `request`. It counts as one request.
 - **Write sample wording** is a new `wording` draft that `revises` the outline.
-- **Both send the draft they revise.** The text sent adds that draft's `result`, the fields the checks left and the person sees, as plain text inside the same marked block as the person's own text (`docs/design/ai.md`, safety measure 3). So the AI changes the version on screen, whichever version that is, and never gets back a sentence the checks removed. What the person typed for an earlier version isn't sent again; the draft already reflects it.
+- **Both send the draft they revise.** The text sent adds `revised_result`: that draft's `result`, the fields the checks left and the person sees, copied when the request was made. It goes as plain text inside the same marked block as the person's own text (`docs/design/ai.md`, safety measure 3). The job reads only the copy, so it never runs a change without the draft the person chose, even if the purge deletes that draft first. So the AI changes the version on screen, whichever version that is, and never gets back a sentence the checks removed. What the person typed for an earlier version isn't sent again; the draft already reflects it.
 - **Each draft runs in its own chat.** No request depends on an earlier chat, so an old draft can be purged without touching a newer one, and two drafts of one part never share a chat.
 - **Use this outline** and **Use this wording** send nothing to the server. The `ai-draft` Stimulus controller appends `preparation_html` to the Preparation editor, and a "From an AI draft" Label shows beside the heading until the person edits it. The person still presses Save. Nothing records that AI was used.
 
@@ -264,7 +265,7 @@ Frames `part-prepare.png`, `part-ai-outline.png` and `part-ai-wording.png`. The 
 ## Traps
 
 1. **Children never reach the AI.** The panel isn't rendered for them, and `Drafts` controllers check `draft?` on every action. Don't add a grant or a setting.
-2. **Send only the part's five details, the request and, for a change or sample wording, the draft it revises.** Not the preparation, and not the assistant's name, even though both are on the same page. The draft sent is its checked `result`, never what the person made of it in Preparation.
+2. **Send only the part's five details, the request and, for a change or sample wording, the draft it revises.** Not the preparation, and not the assistant's name, even though both are on the same page. The draft sent is the copy of its checked `result` (`revised_result`), never what the person made of it in Preparation.
 3. **Counsel never leaves the owner.** The shared view, the calendar and notifications never include it.
 4. **No verse text.** The wording says "(Read …)" and stops. Two checks back the instructions up, and neither is complete:
    - `scripture` and `read` hold a reference or nothing. One that doesn't parse as a reference, verse text included, is dropped (`docs/design/ai.md`, Scripture references).
@@ -282,5 +283,5 @@ Frames `part-prepare.png`, `part-ai-outline.png` and `part-ai-wording.png`. The 
 - Part: each of the six kinds; with and without a setting, study point and assistant; coming up, today, earlier; shared, not shared, shared then stopped
 - Time line: no words (hidden), under the time, over the time
 - AI: an outline, wording for a demonstration and for a talk, a change (the draft it revises is sent, and it's the version shown), off topic, flagged, provider error, a quotation of more than 5 words (removed), a `scripture` or `read` that isn't a reference (dropped), too thin, stopped, 14 used and 15 used, a new day in the person's time zone
-- Kept: a draft 61 days old goes with its chat while a newer draft of the same part stays; deleting a part deletes its drafts and their chats; the preparation stays either way
+- Kept: a draft 61 days old goes with its chat while a newer draft of the same part stays; a change still sends its copy when the draft it revises is deleted before the job runs; deleting a part deletes its drafts and their chats; the preparation stays either way
 - Desktop and phone; light and dark

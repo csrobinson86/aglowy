@@ -105,7 +105,7 @@ Every AI feature has all of these. A feature's design doc only adds to them.
 ## Privacy and cost
 
 - The provider receives only what's listed in safety measure 7. Choose provider settings that don't use API data for training, and check each provider's terms before turning AI on in production. That's Casey's call before launch.
-- Aglowy keeps no analytics (`docs/product/vision.md`). RubyLLM records token counts on each message. They're used only to see the cost of a request and are deleted with the chat after 7 days.
+- Aglowy keeps no analytics (`docs/product/vision.md`). RubyLLM records token counts on each message. They're used only to see the cost of a request and are deleted with their chat, so they follow the purpose's `keep_for`: 7 days for family study drafts, 60 days for meeting part drafts, and until the person deletes them for personal study.
 - With no billing, the daily limits are the cost control. If costs rise, lower the limits in `Ai::Purpose`.
 
 ## Traps
