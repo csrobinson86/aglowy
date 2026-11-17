@@ -364,4 +364,115 @@ class UserTest < ActiveSupport::TestCase
       users(:head).read_all_notifications
     end
   end
+
+  test "emailable? is false for a child, even with an email address, and for a username-only login" do
+    Identity.create!(user: users(:sofia), email: "sofia@example.com", password: "password123", confirmed_at: Time.current)
+    identities(:spouse).update_columns(email: nil, username: "sam.spouse")
+
+    assert users(:head).emailable?
+    assert_not users(:sofia).emailable?, "a child with an email address"
+    assert_not users(:eli).emailable?, "a child with a username"
+    assert_not users(:spouse).reload.emailable?, "an adult with a username-only login"
+    assert_not users(:child).emailable?, "no login at all"
+  end
+
+  test "emailable? is false for a child in any active household, and true again once they've left it" do
+    households(:parents).memberships.create!(user: users(:spouse), role: :child)
+    assert_not users(:spouse).emailable?
+
+    users(:spouse).memberships.find_by!(household: households(:parents)).update!(active: false)
+    assert users(:spouse).emailable?
+  end
+
+  test "quiet_now? across midnight in the person's zone" do
+    head = users(:head)
+    head.update!(time_zone: "Central Time (US & Canada)")
+    chicago = ActiveSupport::TimeZone[head.time_zone]
+
+    { [ 22, 20, 59 ] => false, [ 22, 21, 0 ] => true, [ 22, 23, 59 ] => true, [ 23, 0, 0 ] => true, [ 23, 6, 59 ] => true, [ 23, 7, 0 ] => false, [ 23, 12, 0 ] => false }.each do |(day, hour, minute), quiet|
+      travel_to chicago.local(2026, 11, day, hour, minute)
+
+      assert_equal quiet, head.quiet_now?, "#{hour}:#{minute} in Chicago"
+    end
+
+    # 9:30 PM in Chicago is 3:30 AM the next day in UTC: the zone decides, not the server's clock.
+    travel_to Time.utc(2026, 11, 23, 3, 30)
+    assert head.quiet_now?
+    head.update!(time_zone: "UTC")
+    assert head.quiet_now?
+    head.update!(time_zone: "Hawaii")
+    assert_not head.quiet_now?, "5:30 PM in Hawaii"
+  end
+
+  test "quiet_now? with quiet hours inside one day, and none when they start and end together" do
+    head = users(:head)
+    head.update!(time_zone: "UTC", quiet_hours_start: "13:00", quiet_hours_end: "14:30")
+
+    travel_to Time.utc(2026, 11, 23, 14, 29)
+    assert head.quiet_now?
+    travel_to Time.utc(2026, 11, 23, 14, 30)
+    assert_not head.quiet_now?
+
+    head.update!(quiet_hours_start: "14:30")
+    assert_not head.quiet_now?
+  end
+
+  test "quiet_hours_end_after and last_quiet_hours_end_before are the ends on either side, in the person's zone" do
+    head = users(:head)
+    head.update!(time_zone: "Central Time (US & Canada)")
+    chicago = ActiveSupport::TimeZone[head.time_zone]
+
+    assert_equal chicago.local(2026, 11, 23, 7), head.quiet_hours_end_after(chicago.local(2026, 11, 22, 22))
+    assert_equal chicago.local(2026, 11, 23, 7), head.quiet_hours_end_after(chicago.local(2026, 11, 23, 6, 59))
+    assert_equal chicago.local(2026, 11, 24, 7), head.quiet_hours_end_after(chicago.local(2026, 11, 23, 7))
+
+    assert_equal chicago.local(2026, 11, 22, 7), head.last_quiet_hours_end_before(chicago.local(2026, 11, 23, 6, 59))
+    assert_equal chicago.local(2026, 11, 23, 7), head.last_quiet_hours_end_before(chicago.local(2026, 11, 23, 7))
+    assert_equal chicago.local(2026, 11, 23, 7), head.last_quiet_hours_end_before(chicago.local(2026, 11, 23, 23))
+  end
+
+  test "quiet hours default to 9 PM until 7 AM and are on the half hour" do
+    head = users(:head)
+
+    assert_equal %w[ 21:00 07:00 ], [ head.quiet_hours_start, head.quiet_hours_end ].map { it.strftime("%H:%M") }
+    assert head.update(quiet_hours_start: "22:30", quiet_hours_end: "06:30")
+    assert_not head.update(quiet_hours_start: "22:10")
+    assert_includes head.errors[:quiet_hours_start], "must be on the hour or the half hour"
+    assert_not head.update(quiet_hours_start: "22:00", quiet_hours_end: "")
+    assert_includes head.errors[:quiet_hours_end], "can't be blank"
+  end
+
+  test "database: quiet hours off the half hour raise CheckViolation" do
+    assert_raises ActiveRecord::CheckViolation do
+      users(:head).update_column(:quiet_hours_end, "07:10")
+    end
+  end
+
+  test "notification_kinds: everyone gets the weekly preview and shared, heads and adults the invitation kind, heads the topic kind" do
+    assert_equal %w[ weekly_preview study_topic_needed shared_with_you invitation_unaccepted ], users(:head).notification_kinds.map(&:name)
+    assert_equal %w[ weekly_preview shared_with_you invitation_unaccepted ], users(:spouse).notification_kinds.map(&:name)
+    assert_equal %w[ weekly_preview shared_with_you ], users(:eli).notification_kinds.map(&:name)
+    assert_equal %w[ weekly_preview shared_with_you ], users(:former).notification_kinds.map(&:name), "roles in a household they left don't count"
+  end
+
+  test "an unsubscribe token finds its person only for its own scope" do
+    head = users(:head)
+
+    assert_equal head, User.find_by_unsubscribe_token("summary", head.unsubscribe_token("summary"))
+    assert_nil User.find_by_unsubscribe_token("weekly_preview", head.unsubscribe_token("summary"))
+    assert_nil User.find_by_unsubscribe_token("shared_with_you", head.generate_token_for(:unsubscribe_summary)), "not a scope"
+    assert_nil User.find_by_unsubscribe_token("summary", "nonsense")
+  end
+
+  test "unsubscribe_from_email turns off one right-away kind, or every summary kind, and leaves the rest" do
+    head = users(:head)
+    everything = Notification::Kind.all.map { [ it.name, "email" ] }
+
+    head.notification_settings.change(everything)
+    head.unsubscribe_from_email("weekly_preview")
+    assert_equal %w[ invitation_unaccepted shared_with_you study_topic_needed ], head.notification_settings.pluck(:kind).sort
+
+    head.unsubscribe_from_email("summary")
+    assert_equal %w[ study_topic_needed ], head.notification_settings.pluck(:kind)
+  end
 end
