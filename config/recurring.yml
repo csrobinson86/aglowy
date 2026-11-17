@@ -22,3 +22,6 @@ production:
   purge_expired_ai_uses:
     class: Ai::PurgeExpiredUsesJob
     schedule: every day at 4:30am
+  purge_old_notifications:
+    class: Notification::PurgeJob
+    schedule: every day at 4:45am

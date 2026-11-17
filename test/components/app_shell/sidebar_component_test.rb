@@ -71,7 +71,7 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
   test "with none unread, the counter is hidden and the accessible name is just Notifications" do
     render_inline(AppShell::SidebarComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards, label: "Main"))
 
-    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications"
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications", normalize_ws: true
     assert_selector "a[href='/#{households(:home).id}/notifications'] .Counter[hidden][aria-hidden='true']", visible: :all
   end
 
@@ -80,7 +80,7 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
 
     render_inline(AppShell::SidebarComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards, label: "Main"))
 
-    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications, 3 unread"
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications, 3 unread", normalize_ws: true
     assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label .sr-only", exact_text: ", 3 unread"
     assert_selector "a[href='/#{households(:home).id}/notifications'] .Counter[aria-hidden='true']:not([hidden])", text: "3"
   end
@@ -91,7 +91,7 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     render_inline(AppShell::SidebarComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards, label: "Main"))
 
     assert_selector "a[href='/#{households(:home).id}/notifications'] .Counter", text: "99+"
-    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications, 100 unread"
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications, 100 unread", normalize_ws: true
   end
 
   test "Notifications is selected on the inbox" do

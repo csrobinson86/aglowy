@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-  include Avatarable
+  include Avatarable, Notifiable
 
   has_one :identity, dependent: :destroy
   has_many :memberships, dependent: :destroy

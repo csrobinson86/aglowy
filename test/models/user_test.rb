@@ -1,6 +1,8 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   test "squishes the name" do
     assert_equal "Ann Lee", User.new(name: "  Ann   Lee ").name
   end

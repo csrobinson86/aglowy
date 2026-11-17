@@ -43,7 +43,7 @@ class Members::PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "p", text: "Answering…"
-    assert_select "turbo-cable-stream-source", count: 0
+    assert_select "main turbo-cable-stream-source", count: 0
   end
 
   test "no studies yet" do

@@ -47,8 +47,14 @@
   <% end %>
 
   <div class="mt-auto pt-3 border-top">
-    <%# Settings, for everyone, selected on every settings page (docs/design/settings.md, The sidebar). %>
+    <%# Notifications with its unread counter, then Settings, for everyone (docs/design/notifications.md, The sidebar;
+        docs/design/settings.md, The sidebar). The counter and the hidden ", 3 unread" are replaced live. %>
     <%= render(Primer::Beta::NavList.new(aria: { label: "#{label} settings" }, selected_item_id: selected_item, mb: 2)) do |list| %>
+      <% list.with_item(href: notifications_path, selected_by_ids: :notifications) do |item| %>
+        <% item.with_leading_visual_icon(icon: :bell) %>
+        <% item.with_trailing_visual_text(render("notifications/counter", count: unread_notifications_count)) %>
+        <span class="app-shell__notifications-name"><%= render "notifications/name", count: unread_notifications_count %></span>
+      <% end %>
       <% list.with_item(label: "Settings", href: settings_path, selected_by_ids: :settings) do |item| %>
         <% item.with_leading_visual_icon(icon: :gear) %>
       <% end %>

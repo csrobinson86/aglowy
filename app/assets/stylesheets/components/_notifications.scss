@@ -1,0 +1,26 @@
+// The inbox's rows (docs/design/notifications.md, The inbox; frame notifications.png): a column for the unread dot,
+// then the kind's icon in a circle of its color, from Primer's display primitives, which have their dark modes.
+.notification-row__dot {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  width: var(--base-size-16);
+  margin-top: var(--base-size-8);
+  margin-right: var(--base-size-8);
+}
+
+.notification-row__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-32);
+  height: var(--base-size-32);
+  margin-right: var(--base-size-12);
+  border-radius: 50%;
+
+  &--pink {
+    color: var(--display-pink-fgColor);
+    background-color: var(--display-pink-bgColor-muted);
+  }
+}

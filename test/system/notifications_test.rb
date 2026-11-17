@@ -9,7 +9,7 @@ class NotificationsTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_root_url(household_id: households(:home))
     assert_selector "turbo-cable-stream-source[connected]", visible: :all
-    assert_link "Notifications", exact: true
+    assert_no_selector "nav[aria-label='Main settings'] .Counter"
 
     note.share_with(households(:home))
 
@@ -22,8 +22,8 @@ class NotificationsTest < ApplicationSystemTestCase
 
     assert_current_path household_meeting_note_path(household_id: households(:home), id: note)
     assert_text "Shared by Sam Spouse"
-    assert_link "Notifications", exact: true
-    assert_no_selector "nav[aria-label='Main settings'] .Counter", visible: true
+    assert_no_link "Notifications, 1 unread"
+    assert_no_selector "nav[aria-label='Main settings'] .Counter"
   end
 
   test "Mark all as read clears the list's unread dots and the counter" do
@@ -33,10 +33,14 @@ class NotificationsTest < ApplicationSystemTestCase
 
     click_on "Unread (2)"
     assert_selector "main .Box-row", count: 2
+    assert_selector "nav[aria-label='Main settings'] .Counter", text: "2"
     click_on "Mark all as read"
 
-    assert_text "You're all caught up"
-    assert_link "Notifications", exact: true
+    assert_link "Unread (0)"
+    assert_selector "main .Box-row", count: 3
+    assert_no_selector "main .Box-row .octicon-dot-fill"
+    assert_no_button "Mark all as read"
+    assert_no_selector "nav[aria-label='Main settings'] .Counter"
   end
 
   test "the inbox passes assert_accessible in light and dark, on a desktop and a phone" do
@@ -53,7 +57,7 @@ class NotificationsTest < ApplicationSystemTestCase
     assert_selector "body[data-color-mode='dark']"
     assert_accessible
 
-    users(:head).update!(appearance: "light")
+    users(:head).update!(appearance: "auto")
     page.driver.browser.manage.window.resize_to(390, 844)
     visit household_notifications_url(household_id: households(:home))
     assert_selector "header a[href='#{household_notifications_path(household_id: households(:home))}']"

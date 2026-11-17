@@ -1,0 +1,18 @@
+<%# locals: (notification:, zone:) %>
+<%# One inbox row (frame notifications.png): the unread dot, the kind's icon in its color, the title linking to it, the
+    second line, then "<household> · <time>". %>
+<span class="notification-row__dot">
+  <% unless notification.read? %>
+    <%= render Primer::Beta::Octicon.new(:"dot-fill", color: :accent) %>
+  <% end %>
+</span>
+<span class="notification-row__icon notification-row__icon--<%= notification.color %>">
+  <%= render Primer::Beta::Octicon.new(notification.icon) %>
+</span>
+<div class="flex-auto min-width-0">
+  <%= render(Primer::Beta::Link.new(href: household_notification_path(id: notification), scheme: :primary, font_weight: (notification.read? ? :normal : :bold))) do %>
+    <%= notification.title %><% unless notification.read? %><span class="sr-only"> (unread)</span><% end %>
+  <% end %>
+  <p class="color-fg-muted mb-0"><%= notification.body %></p>
+  <p class="f6 color-fg-muted mb-0"><%= notification.household.name %> · <%= notification_time(notification, zone) %></p>
+</div>

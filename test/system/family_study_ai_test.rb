@@ -291,7 +291,8 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
       assert_button "Draft outline"
       assert_text "9 of 10 drafts left today"
     end
-    assert_no_selector "turbo-cable-stream-source", visible: :all
+    # The draft's stream; the shell's own stream for the person's notifications stays.
+    assert_no_selector "turbo-cable-stream-source[data-ai-panel-target='stream']", visible: :all
     assert_predicate households(:home).family_study_drafts.sole, :stopped?
   end
 

@@ -57,7 +57,7 @@ class SeedsTest < ActiveSupport::TestCase
     child_note = user("lucia.rivera").meeting_notes.sole
     assert child_note.marks.any?
     assert child_note.shared_with?(Household.find_by!(name: "The Rivera Family"))
-    assert_equal 13, MeetingNote.count
+    assert_equal 15, MeetingNote.count
 
     assert_equal [ 1, 1, 1 ], [ demo.goals.active.count, demo.goals.completed.count, demo.goals.archived.count ]
     steps = demo.goals.active.sole.steps
@@ -112,6 +112,12 @@ class SeedsTest < ActiveSupport::TestCase
     my_times = Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:my_time?)
     assert_operator my_times.size, :>=, 9
     assert_equal [ "Lucia's time" ], Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:shared?).map(&:subtitle).uniq
+
+    # Maria's inbox: Lucia's helper note, then Sam's two notes and a goal, the two oldest read (09_notifications.rb).
+    assert_equal 4, maria.notifications.visible.count
+    assert_equal 2, maria.unread_notifications_count
+    assert_equal [ "Sam shared a meeting note", "Sam shared a goal", "Sam shared a meeting note" ], maria.notifications.where(actor: user("spouse@example.com")).newest_first.map(&:title)
+    assert maria.notifications.all? { it.kind == "shared_with_you" && it.household == rivera }
 
     assert_equal 0, Ai::Use.count
   end

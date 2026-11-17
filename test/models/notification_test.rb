@@ -2,6 +2,8 @@ require "test_helper"
 
 # docs/design/notifications.md, Models (Notification, Notification::Reading) and The kinds (shared_with_you).
 class NotificationTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @note = meeting_notes(:head_midweek)
   end

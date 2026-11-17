@@ -11,6 +11,8 @@ class MeetingNote < ApplicationRecord
   has_many :marks, dependent: :delete_all
   # Destroyed one by one, so their images are purged.
   has_many :drawings, dependent: :destroy
+  # Deleting the note takes its "shared with you" notifications with it (docs/design/notifications.md, Models).
+  has_many :notifications, as: :subject, dependent: :delete_all
 
   # Only Living as Christians parts can be removed (only_repeating_parts_removed); new ones come from revise!.
   accepts_nested_attributes_for :parts, allow_destroy: true
