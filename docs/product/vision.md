@@ -44,7 +44,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 4 | **STUDIES-01** Family studies: scheduling, sessions, notes, resources (guests, "all future" edits and the AI helper follow) | Stories filed |
 | 5 | **NOTES-01** Meeting notes: Life and Ministry, weekend, spiritual gems, sharing with the household | Stories filed |
 | 6 | **GOALS-01** Goals: family and personal milestone goals, steps, sharing (habit goals follow) | Stories filed |
-| 7 | Notifications: in-app list and email | Design done |
+| 7 | **NOTIFY-01** Notifications: an inbox for everyone, email and phone push for those who turn them on, quiet hours; the weekly preview, family study topic, shared with you and invitation alerts | Design done |
 | 8 | Production on AWS: EC2 + Docker Compose, SES, bounce handler | Stack decided |
 | 9 | **KIDS-01** Today's meeting: meeting times, the right note for everyone, and the meeting helper for children (marks, drawing, sharing with the family) | Design done |
 | 10 | **SCRIPT-01** Scripture links in notes: a book, chapter and verse picker, typed references linked on save, links to jw.org only | Design done |
