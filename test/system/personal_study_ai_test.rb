@@ -23,7 +23,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
       assert_selector "ul[aria-live=polite] li", text: "Searching jw.org and wol.jw.org…"
       assert_button "Stop"
     end
-    assert_selector "turbo-cable-stream-source[connected]", visible: :all
+    assert_selector "turbo-cable-stream-source[data-study-ask-target='stream'][connected]", visible: :all
 
     answer("personal_study_answer", midway: lambda {
       assert_selector "ul[aria-live=polite] li", text: "Writing the answer…"
@@ -50,7 +50,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     assert_field "Ask a follow-up", with: "How does the ransom fit in?"
     click_on "Ask"
     assert_selector ".study-question p", exact_text: "How does the ransom fit in?"
-    assert_selector "turbo-cable-stream-source[connected]", visible: :all
+    assert_selector "turbo-cable-stream-source[data-study-ask-target='stream'][connected]", visible: :all
 
     answer("personal_study_not_found")
 

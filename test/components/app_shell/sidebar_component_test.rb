@@ -58,4 +58,55 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     assert_no_link "Hannah Head"
     assert_no_selector "a[href^='/account']"
   end
+
+  test "Notifications sits above Settings in the footer, with the bell, for a head, an adult and a child" do
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
+
+      assert_equal [ "Notifications", "Settings" ], page.all("nav[aria-label='Main settings'] a .ActionListItem-label").map { it.text.strip }, "for #{membership}"
+      assert_selector "nav[aria-label='Main settings'] a[href='/#{households(:home).id}/notifications'] svg.octicon-bell"
+    end
+  end
+
+  test "with none unread, the counter is hidden and the accessible name is just Notifications" do
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards, label: "Main"))
+
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications", normalize_ws: true
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .Counter[hidden][aria-hidden='true']", visible: :all
+  end
+
+  test "with three unread, the counter shows 3 and the accessible name says so" do
+    notify(users(:spouse), 3)
+
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards, label: "Main"))
+
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications, 3 unread", normalize_ws: true
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label .sr-only", exact_text: ", 3 unread"
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .Counter[aria-hidden='true']:not([hidden])", text: "3"
+  end
+
+  test "past 99 the counter shows 99+" do
+    notify(users(:spouse), 100)
+
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards, label: "Main"))
+
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .Counter", text: "99+"
+    assert_selector "a[href='/#{households(:home).id}/notifications'] .ActionListItem-label", exact_text: "Notifications, 100 unread", normalize_ws: true
+  end
+
+  test "Notifications is selected on the inbox" do
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:child_in_home), selected_item: :notifications, label: "Main"))
+
+    assert_selector "nav[aria-label='Main settings'] a[aria-current=page]", text: "Notifications"
+    assert_selector "a[aria-current=page]", count: 1
+  end
+
+  private
+    # Notifications made straight in the table: the count is all the sidebar reads.
+    def notify(user, count)
+      Notification.insert_all(Array.new(count) do |n|
+        { user_id: user.id, household_id: households(:home).id, kind: "shared_with_you", subject_type: "MeetingNote",
+          subject_id: meeting_notes(:head_midweek).id, actor_id: users(:head).id, dedupe_key: "shared_with_you:#{n}" }
+      end)
+    end
 end

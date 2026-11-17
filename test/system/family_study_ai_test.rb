@@ -291,7 +291,8 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
       assert_button "Draft outline"
       assert_text "9 of 10 drafts left today"
     end
-    assert_no_selector "turbo-cable-stream-source", visible: :all
+    # The draft's stream; the shell's own stream for the person's notifications stays.
+    assert_no_selector "turbo-cable-stream-source[data-ai-panel-target='stream']", visible: :all
     assert_predicate households(:home).family_study_drafts.sole, :stopped?
   end
 
@@ -447,7 +448,7 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
         click_on "Draft outline"
         assert_selector "h2", text: "Drafting with AI"
       end
-      assert_selector "turbo-cable-stream-source[connected]", visible: :all
+      assert_selector "turbo-cable-stream-source[data-ai-panel-target='stream'][connected]", visible: :all
     end
 
     # Every button and select in the open dialog is at least 44px tall, and its close button 44px wide. A link-styled
@@ -477,7 +478,7 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
         click_on "Draft outline"
         assert_selector "h2", text: "Drafting with AI"
       end
-      assert_selector "turbo-cable-stream-source[connected]", visible: :all
+      assert_selector "turbo-cable-stream-source[data-ai-panel-target='stream'][connected]", visible: :all
     end
 
     # Types into the Notes editor the way a person does: focus the editable area, then type at its end.

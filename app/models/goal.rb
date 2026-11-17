@@ -10,6 +10,8 @@ class Goal < ApplicationRecord
   has_one :completion, dependent: :delete
   has_one :archival, dependent: :delete
   has_many :steps, -> { order(:position) }, dependent: :delete_all, inverse_of: :goal
+  # Deleting the goal takes its "shared with you" notifications with it (docs/design/notifications.md, Models).
+  has_many :notifications, as: :subject, dependent: :delete_all
 
   enum :kind, %w[ milestone ].index_by(&:itself), default: :milestone, validate: true
 

@@ -20,18 +20,23 @@ module Shareable
   # Takes the household lock Membership#deactivate takes and rechecks the owner's active membership behind it,
   # so a share can't slip in just after the owner leaves. Not a member (or no owner, as on a family goal):
   # RecordNotFound, a 404. The lock also serializes two shares at once, so sharing twice leaves one record.
+  # Then, outside the lock, every other active member hears about it, once per sharing: sharing again finds the
+  # same sharing, so its dedupe key makes no second notification (docs/design/notifications.md, shared_with_you).
   def share_with(household)
-    transaction do
+    sharing = transaction do
       household.lock!
       household.memberships.active.find_by!(user_id: user_id)
       sharings.find_or_create_by!(household: household)
     end
     shared_households.reset
+    notify_household_of(household, sharing)
   end
 
   # The filtered delete_all leaves loaded sharings alone, so they're reset for the page that answers from this record.
+  # Its "shared with you" notifications there go too, so nobody's inbox shows what's private again.
   def stop_sharing_with(household)
     sharings.where(household: household).delete_all
+    notifications.where(household: household).withdraw
     sharings.reset
     shared_households.reset
   end
@@ -47,4 +52,20 @@ module Shareable
   def households_not_shared_with_besides(household)
     user.active_households.where.not(id: household).where.not(id: sharings.select(:household_id)).order(:name)
   end
+
+  private
+    def notify_household_of(household, sharing)
+      household.memberships.active.where.not(user_id: user_id).includes(:user).each do |membership|
+        membership.user.notify(kind: "shared_with_you", household:, subject: self, actor: user, dedupe_key: "shared_with_you:#{sharing.id}")
+      end
+      take_back_notifications_of(sharing) unless sharings.lock.exists?(sharing.id)
+    end
+
+    # The share ended, or this was deleted, while they were being made: that request's delete may have run before they
+    # existed. Ending deletes the sharing before its notifications (destroying does too: the record includes Shareable
+    # before it declares its notifications), and FOR UPDATE above waits for an uncommitted end, so either that delete
+    # sees them or this check sees the sharing gone, and none outlive the share.
+    def take_back_notifications_of(sharing)
+      notifications.where(dedupe_key: "shared_with_you:#{sharing.id}").withdraw
+    end
 end

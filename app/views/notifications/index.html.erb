@@ -1,0 +1,52 @@
+<% content_for :title, "Notifications" %>
+
+<%# The inbox, from all the person's households (docs/design/notifications.md, The inbox; frames notifications.png,
+    notifications-unread.png and phone-notifications.png). "Notification settings" joins the header once Settings →
+    Notifications exists. %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Notifications" } %>
+  <% subhead.with_description { "From all your households. Kept for 90 days." } %>
+  <% if @unread_count.positive? %>
+    <% subhead.with_actions do %>
+      <%= primer_form_with(url: household_notifications_readings_path) do |f| %>
+        <%= render Notifications::ReadingForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Show", mb: 3)) do |control| %>
+  <% control.with_item(tag: :a, href: household_notifications_path(show: "unread"), label: "Unread (#{@unread_count})", selected: @unread_only) %>
+  <% control.with_item(tag: :a, href: household_notifications_path, label: "All", selected: !@unread_only) %>
+<% end %>
+
+<% if @page.records.any? %>
+  <% zone = Current.user.calendar_time_zone %>
+  <% notifications_by_day(@page.records, zone).each do |day, notifications| %>
+    <h2 class="f5 color-fg-muted mb-2"><%= day %></h2>
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% notifications.each do |notification| %>
+        <% box.with_row(id: dom_id(notification), display: :flex, align_items: :flex_start, bg: (:accent unless notification.read?)) do %>
+          <%= render "notifications/notification", notification:, zone: %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% if @page.previous? || @page.next? %>
+    <div class="d-flex flex-justify-between">
+      <% if @page.previous? %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: household_notifications_path(show: params[:show].presence, page: @page.number - 1))) { "Newer notifications" } %>
+      <% end %>
+      <% if @page.next? %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: household_notifications_path(show: params[:show].presence, page: @page.number + 1), ml: :auto)) { "Older notifications" } %>
+      <% end %>
+    </div>
+  <% end %>
+<% else %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :bell) %>
+    <% blankslate.with_heading(tag: :h2) { "You're all caught up" } %>
+    <% blankslate.with_description { "New notifications from your households show up here." } %>
+  <% end %>
+<% end %>

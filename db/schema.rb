@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_050001) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -481,6 +481,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_050001) do
     t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
+  create_table "notification_deliveries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "notification_id", null: false
+    t.string "channel", null: false
+    t.datetime "created_at", null: false
+    t.index ["notification_id", "channel"], name: "index_notification_deliveries_on_notification_id_and_channel", unique: true
+    t.check_constraint "channel::text = ANY (ARRAY['email'::character varying, 'push'::character varying]::text[])", name: "notification_deliveries_channel_check"
+  end
+
+  create_table "notification_readings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "notification_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["notification_id"], name: "index_notification_readings_on_notification_id", unique: true
+  end
+
+  create_table "notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "household_id", null: false
+    t.string "kind", null: false
+    t.string "subject_type", null: false
+    t.uuid "subject_id", null: false
+    t.uuid "actor_id"
+    t.jsonb "data", default: {}, null: false
+    t.string "dedupe_key", null: false
+    t.datetime "created_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["created_at"], name: "index_notifications_on_created_at"
+    t.index ["household_id"], name: "index_notifications_on_household_id"
+    t.index ["subject_type", "subject_id"], name: "index_notifications_on_subject"
+    t.index ["user_id", "dedupe_key"], name: "index_notifications_on_user_id_and_dedupe_key", unique: true
+    t.check_constraint "kind::text = ANY (ARRAY['weekly_preview'::character varying, 'study_topic_needed'::character varying, 'shared_with_you'::character varying, 'invitation_unaccepted'::character varying]::text[])", name: "notifications_kind_check"
+  end
+
   create_table "personal_note_pins", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "personal_note_id", null: false
     t.datetime "created_at", null: false
@@ -803,6 +835,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_050001) do
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "notification_deliveries", "notifications", on_delete: :cascade
+  add_foreign_key "notification_readings", "notifications", on_delete: :cascade
+  add_foreign_key "notifications", "households", on_delete: :cascade
+  add_foreign_key "notifications", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "notifications", "users", on_delete: :cascade
   add_foreign_key "personal_note_pins", "personal_notes", on_delete: :cascade
   add_foreign_key "personal_notes", "collections", on_delete: :nullify
   add_foreign_key "personal_notes", "users"

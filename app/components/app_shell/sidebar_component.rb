@@ -11,10 +11,16 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_todays_meeting_path(household_id: household.id)
   end
 
-  def initialize(membership:, selected_item:, label:)
+  # The shell passes the unread count it already has, so the desktop sidebar and the phone menu don't each count again.
+  def initialize(membership:, selected_item:, label:, unread_notifications_count: nil)
     @membership = membership
     @selected_item = selected_item
     @label = label
+    @unread_notifications_count = unread_notifications_count
+  end
+
+  def unread_notifications_count
+    @unread_notifications_count ||= user.unread_notifications_count
   end
 
   def switcher_menu_id
@@ -51,6 +57,11 @@ class AppShell::SidebarComponent < ApplicationComponent
 
   def my_goals_path
     household_my_goals_path(household_id: household.id)
+  end
+
+  # Notifications, for everyone, above Settings (docs/design/notifications.md, The sidebar).
+  def notifications_path
+    household_notifications_path(household_id: household.id)
   end
 
   # Settings, for everyone. The layout selects it on every settings page: its id is the first part of controller_path,

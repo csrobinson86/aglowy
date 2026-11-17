@@ -123,6 +123,11 @@ Rails.application.routes.draw do
         resources :files, only: :create, module: :sessions
       end
     end
+    # The inbox, from all the person's households; show reads one and opens it, and readings is Mark all as read
+    # (docs/design/notifications.md, Pages and routes).
+    resources :notifications, only: %i[ index show ] do
+      collection { resource :readings, only: :create, module: :notifications, as: :notifications_readings }
+    end
     # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).
     resource :todays_meeting, only: %i[ show create ]
     resources :meeting_notes, only: %i[ index create show edit update ] do

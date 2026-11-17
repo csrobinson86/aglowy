@@ -1,0 +1,5 @@
+<%# locals: (count:) %>
+<%# The unread counter beside each Notifications link, hidden at none and 99+ past 99. Its number is in the link's
+    accessible name already (notifications/_name), so screen readers skip it. User#broadcast_unread_notifications_count
+    replaces it live. %>
+<span class="app-shell__notifications-counter"><%= render Primer::Beta::Counter.new(count:, limit: 99, hide_if_zero: true, scheme: :primary, aria: { hidden: true }) %></span>

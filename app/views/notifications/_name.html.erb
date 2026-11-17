@@ -1,0 +1,3 @@
+<%# locals: (count:) %>
+<%# "Notifications, 3 unread" to a screen reader, "Notifications" to the eye (docs/design/notifications.md, The sidebar). %>
+Notifications<% if count.positive? %><span class="sr-only">, <%= count %> unread</span><% end %>

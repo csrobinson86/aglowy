@@ -74,7 +74,7 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
     within(question_card("Why does Jehovah allow suffering, and will it ever end?")) do
       assert_selector "ul[aria-live=polite] li", text: "Searching jw.org and wol.jw.org…"
     end
-    assert_selector "turbo-cable-stream-source[connected]", visible: :all
+    assert_selector "turbo-cable-stream-source[data-study-ask-target='stream'][connected]", visible: :all
 
     answer("personal_study_answer")
 

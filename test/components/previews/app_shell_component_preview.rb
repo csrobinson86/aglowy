@@ -15,11 +15,11 @@ class AppShellComponentPreview < ViewComponent::Preview
   end
 
   private
-    # Unsaved records, so previews need no database rows; the id gives the household a URL.
+    # Unsaved records, so previews need no database rows; the ids give the household a URL and the person a stream.
     def render_shell(role:, household_name:, person_name:)
       membership = Membership.new(role:,
         household: Household.new(id: SecureRandom.uuid_v7, name: household_name),
-        user: User.new(name: person_name))
+        user: User.new(id: SecureRandom.uuid_v7, name: person_name))
 
       render(AppShellComponent.new(membership:, selected_item: :dashboards)) { "Page content" }
     end

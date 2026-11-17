@@ -31,6 +31,18 @@ def find_seeded(records, **attributes)
   records.find { |record| attributes.all? { |name, value| record.public_send(name) == value } }
 end
 
-ActiveRecord::Base.transaction do
-  Dir[Rails.root.join("db/seeds/*.rb")].sort.each { load it }
+# Sharing and user.notify make notifications, and each enqueues its delivery. Seeding sends nothing, so while the seeds
+# run those enqueues are dropped: the notifications still show in the inbox (docs/design/notifications.md, Elsewhere).
+unless defined?(SEEDS_DROP_DELIVERIES)
+  SEEDS_DROP_DELIVERIES = true
+  Notification::DeliveryJob.before_enqueue { throw :abort if Thread.current[:seeding] }
+end
+
+begin
+  Thread.current[:seeding] = true
+  ActiveRecord::Base.transaction do
+    Dir[Rails.root.join("db/seeds/*.rb")].sort.each { load it }
+  end
+ensure
+  Thread.current[:seeding] = nil
 end

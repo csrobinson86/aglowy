@@ -1,5 +1,5 @@
 module MeetingNotesHelper
-  MEETING_NOTE_TITLES = { "midweek" => "Life and Ministry", "weekend" => "Weekend meeting" }.freeze
+  MEETING_NOTE_TITLES = MeetingNote::TITLES
   # Primer functional colours, as drawn in docs/design/meeting-notes/notes-list.png.
   MEETING_NOTE_DOTS = { "midweek" => :danger, "weekend" => :muted }.freeze
   # One row of the Meetings list on the Meeting notes tab; a nil kind is All meetings.

@@ -1,22 +1,31 @@
 <%# Below md the sidebar is hidden and this top bar takes its place (docs/design/app-shell.md, Phone). %>
 <header class="app-shell__top-bar d-flex d-md-none flex-items-center px-2 color-bg-subtle border-bottom">
-  <%= render Primer::Beta::IconButton.new(icon: :"three-bars", "aria-label": "Open menu", scheme: :invisible, mr: 2, data: { show_dialog_id: MENU_ID }) %>
+  <%= render Primer::Beta::IconButton.new(icon: :"three-bars", "aria-label": "Open menu", scheme: :invisible, data: { show_dialog_id: MENU_ID }) %>
+  <%# Beside the menu button, the bell opens the inbox, with the counter after it (docs/design/notifications.md, The sidebar). %>
+  <div class="d-flex flex-items-center mx-2">
+    <%= render Primer::Beta::IconButton.new(icon: :bell, tag: :a, href: notifications_path, scheme: :invisible, show_tooltip: false, "aria-labelledby": BELL_NAME_ID) %>
+    <span id="<%= BELL_NAME_ID %>" class="app-shell__notifications-name" hidden><%= render "notifications/name", count: unread_notifications_count %></span>
+    <%= render "notifications/counter", count: unread_notifications_count %>
+  </div>
   <div class="flex-auto min-width-0">
     <%= render AppShell::HouseholdSwitcherComponent.new(membership:, menu_id: "household-switcher-top-bar") %>
   </div>
 </header>
 
+<%# The person's own stream, never a household's, for the live counter (Trap 6). %>
+<%= helpers.turbo_stream_from membership.user, :notifications %>
+
 <%# The menu sits outside the top bar: an open modal inside the hidden top bar would vanish at md and leave the page inert. %>
 <%= render(Primer::Alpha::Dialog.new(id: MENU_ID, title: "Menu", position: :left, position_narrow: :left, bg: :subtle, classes: "app-shell__menu",
       data: { controller: "app-shell", action: "turbo:before-cache@document->app-shell#close" })) do |dialog| %>
   <% dialog.with_body(p: 0, display: :flex, direction: :column, flex: :auto) do %>
-    <%= render AppShell::SidebarComponent.new(membership:, selected_item:, label: "Menu") %>
+    <%= render AppShell::SidebarComponent.new(membership:, selected_item:, label: "Menu", unread_notifications_count:) %>
   <% end %>
 <% end %>
 
 <%= render Primer::Alpha::Layout.new(stacking_breakpoint: :md, gutter: :none, classes: "app-shell") do |layout| %>
   <% layout.with_sidebar(width: :default, col_placement: :start, row_placement: :none, tag: :aside, bg: :subtle, border: :right) do %>
-    <%= render AppShell::SidebarComponent.new(membership:, selected_item:, label: "Main") %>
+    <%= render AppShell::SidebarComponent.new(membership:, selected_item:, label: "Main", unread_notifications_count:) %>
   <% end %>
   <% layout.with_main(tag: :main, width: :xl, p: [3, nil, 5]) do %>
     <%= content %>
