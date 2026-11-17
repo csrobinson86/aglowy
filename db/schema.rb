@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -93,6 +93,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_040000) do
     t.check_constraint "scripture::text ~ '^\\d+:\\d+(:\\d+(-\\d+)?)?$'::text", name: "bookmarks_scripture_check"
     t.check_constraint "source_type::text = ANY (ARRAY['PersonalStudy'::character varying, 'PersonalNote'::character varying]::text[])", name: "bookmarks_source_type_check"
     t.check_constraint "url::text ~ '^https://(www\\.)?(jw\\.org|wol\\.jw\\.org)/'::text", name: "bookmarks_url_check"
+  end
+
+  create_table "calendar_feeds", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "token", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token"], name: "index_calendar_feeds_on_token", unique: true
+    t.index ["user_id"], name: "index_calendar_feeds_on_user_id", unique: true
   end
 
   create_table "chats", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -743,6 +752,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_040000) do
   add_foreign_key "ai_uses", "users"
   add_foreign_key "bookmarks", "collections", on_delete: :nullify
   add_foreign_key "bookmarks", "users"
+  add_foreign_key "calendar_feeds", "users"
   add_foreign_key "chats", "households"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "chats", "users"

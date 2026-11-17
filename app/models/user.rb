@@ -9,6 +9,8 @@ class User < ApplicationRecord
   has_many :bookmarks, dependent: :delete_all
   # The same; the database deletes their done marks with them.
   has_many :personal_times, dependent: :delete_all
+  # Their private phone calendar link (docs/design/calendar.md, CalendarFeed).
+  has_one :calendar_feed, dependent: :delete
   # Destroyed one by one, so their notes and taggings go too; before collections, whose studies the database would keep.
   has_many :personal_studies, dependent: :destroy
   # The same, for their bodies and taggings.
@@ -123,6 +125,11 @@ class User < ApplicationRecord
     with_lock do
       memberships.active.each { it.household_id.in?(household_ids) ? it.share_times : it.stop_sharing_times }
     end
+  end
+
+  # Made the first time Settings → Calendar shows it. The unique index on user_id settles two first views at once.
+  def ensure_calendar_feed
+    calendar_feed || CalendarFeed.create_or_find_by!(user: self)
   end
 
   # One of this person's active households, or nil: how AiAcceptancesController checks its return_to.
