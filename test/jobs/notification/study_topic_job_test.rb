@@ -61,7 +61,25 @@ class Notification::StudyTopicJobTest < ActiveJob::TestCase
     session = session_on(Date.new(2026, 11, 20))
     FamilyStudy::Session.find(session.id).cancel
 
-    eight_am_on_november_17 { session.ask_heads_for_topic }
+    eight_am_on_november_17 { session.ask_heads_for_topic(on: Date.new(2026, 11, 20)) }
+
+    assert_not Notification.exists?(subject: session)
+  end
+
+  test "a session given a topic after the job read it isn't asked about" do
+    session = session_on(Date.new(2026, 11, 20))
+    FamilyStudy::Session.find(session.id).update!(topic: "Proverbs 3")
+
+    eight_am_on_november_17 { session.ask_heads_for_topic(on: Date.new(2026, 11, 20)) }
+
+    assert_not Notification.exists?(subject: session)
+  end
+
+  test "a session moved to another day after the job read it isn't asked about" do
+    session = session_on(Date.new(2026, 11, 20))
+    FamilyStudy::Session.find(session.id).reschedule(on: Date.new(2026, 11, 21), at: Time.zone.parse("19:00"))
+
+    eight_am_on_november_17 { session.ask_heads_for_topic(on: Date.new(2026, 11, 20)) }
 
     assert_not Notification.exists?(subject: session)
   end

@@ -50,13 +50,13 @@ class FamilyStudy::Session < ApplicationRecord
     end
   end
 
-  # "Tuesday's family study has no topic yet", to each of the household's heads, once per session (Trap 1). Reread under
-  # its lock, held until the notifications are in, so a cancel either comes first and leaves nothing to ask, or waits
-  # and withdraws them.
-  def ask_heads_for_topic
+  # "Tuesday's family study has no topic yet", to each of the household's heads, once per session (Trap 1), when it's
+  # still on that local date. Reread under its lock, held until the notifications are in, so a cancel, a topic or a move
+  # either comes first and leaves nothing to ask, or waits (and a cancel withdraws them).
+  def ask_heads_for_topic(on:)
     transaction do
       lock!
-      next if canceled?
+      next if canceled? || topic.present? || local_scheduled_at.to_date != on
 
       household = family_study.household
       household.memberships.active.head.includes(:user).each do |membership|
