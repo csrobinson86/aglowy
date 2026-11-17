@@ -258,7 +258,10 @@ class UserTest < ActiveSupport::TestCase
     note.save!
 
     assert users(:head).bookmark(scripture: "19:83:18", source: note).persisted?
-    assert_equal "19:23", users(:head).bookmark(scripture: "19:23", source: note).scripture
+    chapter = users(:head).bookmark(scripture: "19:23", source: note)
+
+    assert chapter.persisted?
+    assert_equal "19:23", chapter.scripture
   end
 
   test "bookmarking a scripture that isn't in the source is refused" do
