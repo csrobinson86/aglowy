@@ -47,6 +47,16 @@ class PersonalStudy::Question < ApplicationRecord
     end
   end
 
+  # Each paragraph of the answer escaped, so the reply's own markup is only ever text, then with its references linked
+  # by Bible::Linker: what the answer card shows, and so what Scriptures in this study lists.
+  def linked_paragraphs
+    Array(answer&.dig("paragraphs")).map { Bible::Linker.new(ActionText::Content.new(ERB::Util.html_escape(it))).link }
+  end
+
+  def scripture_references
+    linked_paragraphs.flat_map { it.attachables.grep(Bible::Reference) }
+  end
+
   def stop
     (self.class.asking.where(id: id).update_all(status: "stopped", updated_at: Time.current) == 1).tap { reload }
   end

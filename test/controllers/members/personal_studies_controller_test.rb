@@ -32,6 +32,7 @@ class Members::PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main form", count: 0
     assert_select "main button", count: 0
     assert_select "[data-bookmark-key]", count: 0
+    assert_select "section[aria-labelledby=study-scriptures]", count: 0
   end
 
   test "a study still being answered shows that it's answering, with no Stop" do

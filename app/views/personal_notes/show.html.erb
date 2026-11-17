@@ -29,7 +29,7 @@
   <% end %>
 
   <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-note__sidebar") do %>
-    <%= render "personal_notes/scriptures", personal_note: @personal_note %>
+    <%= render "personal_notes/scriptures", personal_note: @personal_note, bookmarked: Current.user.bookmarked %>
     <%= render "personal_notes/details", personal_note: @personal_note %>
   <% end %>
 <% end %>

@@ -1,6 +1,6 @@
 require "test_helper"
 
-# A saved jw.org page (docs/design/bookmarks.md, Bookmark). Scriptures come with #227; the table holds them already.
+# A saved jw.org page or scripture (docs/design/bookmarks.md, Bookmark).
 class BookmarkTest < ActiveSupport::TestCase
   PAGE = "https://www.jw.org/en/library/books/bible-questions-answered/".freeze
 
@@ -93,6 +93,11 @@ class BookmarkTest < ActiveSupport::TestCase
     assert_equal [ page ], users(:head).bookmarks.pages.to_a
     assert_equal [ scripture ], users(:head).bookmarks.scriptures.to_a
     assert_equal [ scripture, page ], users(:head).bookmarks.recent_first.to_a
+  end
+
+  test "reference is the scripture's Bible reference, and nil for a page" do
+    assert_equal "Revelation 21:3, 4", Bookmark.new(scripture: "66:21:3-4").reference.to_s
+    assert_nil bookmarks(:head_suffering_article).reference
   end
 
   test "kind is page or scripture" do

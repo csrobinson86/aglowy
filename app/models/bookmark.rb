@@ -41,6 +41,11 @@ class Bookmark < ApplicationRecord
     url ? :page : :scripture
   end
 
+  # The scripture's Bible reference, which views show (to_s) and link (jw_url); nil for a page.
+  def reference
+    Bible::Reference.find(scripture) if scripture
+  end
+
   # What User#bookmarked holds it by: the normalized URL, or the scripture's reference id.
   def key
     url || scripture

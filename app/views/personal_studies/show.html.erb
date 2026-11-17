@@ -36,6 +36,7 @@
       <% panels.with_tab(id: "study-tab-sources", data: { study_ask_target: "sourcesTab" }) do |tab| %>
         <% tab.with_text { "Sources" } %>
         <% tab.with_panel(classes: "personal-study-tabs__sources", data: { study_layout_target: "panel" }) do %>
+          <%= render "personal_studies/scriptures", personal_study: @personal_study, bookmarked: %>
           <%= render "personal_studies/sources", personal_study: @personal_study, bookmarked: %>
         <% end %>
       <% end %>

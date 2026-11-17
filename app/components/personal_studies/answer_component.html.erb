@@ -22,8 +22,8 @@
           <%= render(Primer::Beta::Octicon.new(:"sparkle-fill", size: :xsmall, mr: 2)) %>From jw.org and wol.jw.org
         </p>
       <% end %>
-      <% paragraphs.each do |paragraph| %>
-        <p class="mb-2"><%= linked(paragraph) %></p>
+      <% linked_paragraphs.each do |paragraph| %>
+        <p class="mb-2"><%= paragraph %></p>
       <% end %>
       <% if question.sources.any? && !read_only? %>
         <%# On a phone the study's Sources tab lists the pages, and this opens it (frame phone-personal-study.png). %>

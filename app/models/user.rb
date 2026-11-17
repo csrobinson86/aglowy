@@ -122,12 +122,16 @@ class User < ApplicationRecord
     bookmarks.pluck(:url, :scripture, :id).to_h { |url, scripture, id| [ url || scripture, id ] }
   end
 
-  # Finds or saves their bookmark for a page the source showed them. The title comes from the source's own sources,
-  # never from a form, and a page that isn't among them is refused: a bookmark only ever holds a link Aglowy showed
-  # (docs/design/bookmarks.md, Traps). The unique index settles two saves at once. Scriptures come with #227.
-  def bookmark(url:, source:)
+  # Finds or saves their bookmark for a page or a scripture the source showed them. A page's title comes from the
+  # source's own sources, never from a form, and a page that isn't among them is refused, as is a scripture that isn't
+  # in its scripture_references: a bookmark only ever holds a link Aglowy showed (docs/design/bookmarks.md, Traps). The
+  # unique index settles two saves at once.
+  def bookmark(source:, url: nil, scripture: nil)
+    return bookmark_scripture(scripture, source:) if scripture
+
     url = Bookmark.normalize_value_for(:url, url)
-    page = source.sources.find { Bookmark.normalize_value_for(:url, it["url"]) == url } if url
+    # Only a study has pages: a note's links are scriptures, so a page posted with a note is refused.
+    page = source.try(:sources)&.find { Bookmark.normalize_value_for(:url, it["url"]) == url } if url
 
     if page
       bookmarks.create_or_find_by(url:) do |bookmark|
@@ -171,4 +175,15 @@ class User < ApplicationRecord
     started = meeting_notes.preloaded.where(week_of: week_of).index_by(&:kind)
     MeetingNote.kinds.keys.map { |kind| started[kind] || MeetingNote.new(kind: kind, week_of: week_of) }
   end
+
+  private
+    def bookmark_scripture(scripture, source:)
+      id = Bookmark.normalize_value_for(:scripture, scripture)
+
+      if source.scripture_references.any? { it.id == id }
+        bookmarks.create_or_find_by(scripture: id) { it.source = source }
+      else
+        bookmarks.new(scripture:, source:).tap { it.errors.add(:scripture, "isn't one of the scriptures in this study or note") }
+      end
+    end
 end

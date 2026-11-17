@@ -1,7 +1,7 @@
 require "test_helper"
 
-# The Bookmarks tab, and saving and removing a page from a study (docs/design/bookmarks.md, Pages and routes). Always
-# through Current.user, so another person's bookmark or study is a 404.
+# The Bookmarks tab, and saving and removing a page or a scripture from a study or a note (docs/design/bookmarks.md,
+# Pages and routes). Always through Current.user, so another person's bookmark, study or note is a 404.
 class BookmarksControllerTest < ActionDispatch::IntegrationTest
   ARTICLE = { "url" => "https://www.jw.org/en/library/books/bible-questions-answered/", "title" => "Bible Questions Answered" }.freeze
 
@@ -84,6 +84,68 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to household_bookmarks_path(household_id: @home)
   end
 
+  test "index: ?kind=scripture lists only scriptures, each linking to jw.org" do
+    users(:head).bookmarks.create!(scripture: "66:21:3-4")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, kind: "scripture")
+
+    assert_select "main .Box-row", count: 1
+    assert_select "main .Box-row svg.octicon-book"
+    assert_select "main .Box-row a[href=?][target=_blank][rel~=noopener]", Bible::Reference.find("66:21:3-4").jw_url, text: "Revelation 21:3, 4"
+    assert_select "main .Box-row", text: /Scripture/
+    assert_select "main .Box-row", text: /Why Does God Allow Suffering\?/, count: 0
+    assert_select "segmented-control ul[aria-label=Show]" do
+      assert_select "a[href=?]", household_bookmarks_path(household_id: @home), text: "All"
+      assert_select "a[href=?]", household_bookmarks_path(household_id: @home, kind: "page"), text: "Pages"
+      assert_select "a[href=?][aria-current=true]", household_bookmarks_path(household_id: @home, kind: "scripture"), text: "Scriptures"
+    end
+  end
+
+  test "index: ?kind=page lists only pages" do
+    users(:head).bookmarks.create!(scripture: "66:21:3-4")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, kind: "page")
+
+    assert_select "main .Box-row", count: 1
+    assert_select "main .Box-row", text: /Why Does God Allow Suffering\?/
+    assert_select "segmented-control a[aria-current=true]", text: "Pages"
+  end
+
+  test "index: an unknown kind is ignored" do
+    users(:head).bookmarks.create!(scripture: "66:21:3-4")
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, kind: "video")
+
+    assert_response :success
+    assert_select "main .Box-row", count: 2
+    assert_select "segmented-control a[aria-current=true]", text: "All"
+  end
+
+  test "index: no scriptures yet, filtered to Scriptures" do
+    sign_in identities(:head)
+
+    get household_bookmarks_path(household_id: @home, kind: "scripture")
+
+    assert_select "main .Box-row", count: 0
+    assert_select ".blankslate h2", "No scriptures bookmarked yet."
+    assert_select "segmented-control ul[aria-label=Show]"
+  end
+
+  test "index: the next page keeps the kind" do
+    rows = Array.new(51) { { user_id: users(:eli).id, scripture: "19:#{it + 1}:1", created_at: it.minutes.ago } }
+    Bookmark.insert_all!(rows)
+    sign_in identities(:eli)
+
+    get household_bookmarks_path(household_id: @home, kind: "scripture")
+
+    assert_select "a[href=?]", household_bookmarks_path(household_id: @home, kind: "scripture", page: 2), text: "Older bookmarks"
+    get household_bookmarks_path(household_id: @home, kind: "scripture", page: 3)
+    assert_redirected_to household_bookmarks_path(household_id: @home, kind: "scripture", page: 2)
+  end
+
   test "create: saves the page and fills every button for it" do
     sign_in identities(:head)
 
@@ -136,6 +198,64 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "create: saves a scripture from a study and fills every button for it" do
+    personal_study_question(@study, status: "answered", answer: { "paragraphs" => [ "Comfort (Revelation 21:3, 4)." ] })
+    sign_in identities(:head)
+
+    assert_difference -> { users(:head).bookmarks.scriptures.count } do
+      post household_bookmarks_path(household_id: @home), params: { scripture: "66:21:3-4", source_type: "PersonalStudy", source_id: @study.id }, as: :turbo_stream
+    end
+
+    assert_equal @study, users(:head).bookmark_for(scripture: "66:21:3-4").source
+    assert_select "turbo-stream[action=replace][targets=?]", "[data-bookmark-key='#{Digest::SHA256.hexdigest("66:21:3-4")}']" do
+      assert_select "template button[aria-pressed=true][aria-label=?]", "Remove bookmark: Revelation 21:3, 4"
+    end
+  end
+
+  test "create: saves a scripture from a note" do
+    note = note_linking("Psalm 83:18")
+    sign_in identities(:head)
+
+    post household_bookmarks_path(household_id: @home), params: { scripture: "19:83:18", source_type: "PersonalNote", source_id: note.id }, as: :turbo_stream
+
+    assert_response :success
+    assert_equal note, users(:head).bookmark_for(scripture: "19:83:18").source
+    assert_select "template input[name=source_type][value=PersonalNote]"
+  end
+
+  test "create: a scripture that isn't in the note is refused" do
+    note = note_linking("Psalm 83:18")
+    sign_in identities(:head)
+
+    assert_no_difference -> { Bookmark.count } do
+      post household_bookmarks_path(household_id: @home), params: { scripture: "43:3:16", source_type: "PersonalNote", source_id: note.id }, as: :turbo_stream
+    end
+
+    assert_response :unprocessable_content
+  end
+
+  test "create: a page posted with a note is refused" do
+    note = note_linking("Psalm 83:18")
+    sign_in identities(:head)
+
+    assert_no_difference -> { Bookmark.count } do
+      post household_bookmarks_path(household_id: @home), params: { url: ARTICLE["url"], source_type: "PersonalNote", source_id: note.id }, as: :turbo_stream
+    end
+
+    assert_response :unprocessable_content
+  end
+
+  test "create: another person's note is a 404" do
+    note = note_linking("Psalm 83:18")
+    sign_in identities(:spouse)
+
+    assert_no_difference -> { Bookmark.count } do
+      post household_bookmarks_path(household_id: @home), params: { scripture: "19:83:18", source_type: "PersonalNote", source_id: note.id }, as: :turbo_stream
+    end
+
+    assert_response :not_found
+  end
+
   test "create without Turbo goes back to the study" do
     sign_in identities(:head)
 
@@ -160,19 +280,30 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-stream[action=refresh]", count: 0
   end
 
-  # Scripture buttons come with #227; until then a scripture bookmark has no button to replace, and nothing breaks.
-  test "destroy: a scripture bookmark is removed and replaces no page's buttons" do
-    bookmark = users(:head).bookmarks.create!(scripture: "19:23:4")
+  test "destroy: a scripture bookmark empties every button for it, which save from the note the person is on" do
+    note = note_linking("Psalm 23:4")
+    bookmark = users(:head).bookmark(scripture: "19:23:4", source: note)
     sign_in identities(:head)
 
     assert_difference -> { Bookmark.count }, -1 do
-      delete household_bookmark_path(household_id: @home, id: bookmark), as: :turbo_stream
+      delete household_bookmark_path(household_id: @home, id: bookmark), params: { source_type: "PersonalNote", source_id: note.id }, as: :turbo_stream
     end
 
     assert_response :success
     assert_select "turbo-stream[action=replace][targets=?]", "[data-bookmark-key='#{Digest::SHA256.hexdigest("19:23:4")}']" do
-      assert_select "template button", count: 0
+      assert_select "template button[aria-pressed=false][aria-label=?]", "Bookmark: Psalm 23:4"
+      assert_select "template input[name=scripture][value=?]", "19:23:4"
     end
+  end
+
+  # With no source, as from the Bookmarks tab: nothing to save it from again, so the empty button isn't drawn.
+  test "destroy: a scripture bookmark with no source leaves no button to save it again" do
+    bookmark = users(:head).bookmarks.create!(scripture: "19:23:4")
+    sign_in identities(:head)
+
+    delete household_bookmark_path(household_id: @home, id: bookmark), as: :turbo_stream
+
+    assert_select "turbo-stream[action=replace] template button", count: 0
   end
 
   test "destroy on another study's page: the empty buttons save from the study the person is on" do
@@ -223,5 +354,15 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     get household_bookmarks_path(household_id: @home)
 
     assert_response :not_found
+  end
+
+  private
+
+  def note_linking(text)
+    personal_notes(:head_return_visit).tap do |note|
+      note.body = "<p>#{text}</p>"
+      note.link_scriptures
+      note.save!
+    end
   end
 end

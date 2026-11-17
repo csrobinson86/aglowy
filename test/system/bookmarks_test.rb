@@ -53,6 +53,52 @@ class BookmarksTest < ApplicationSystemTestCase
     assert_not users(:head).bookmarks.exists?(url: ARTICLE["url"])
   end
 
+  test "bookmark a scripture from a study and one from a note, filter to Scriptures, and each opens jw.org's finder" do
+    note = personal_notes(:head_return_visit)
+    note.body = "<p>Then read Psalm 83:18 and John 17:3.</p>"
+    note.link_scriptures
+    note.save!
+
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+    assert_selector "lexxy-editor [contenteditable='true']"
+    assert_turbo_idle
+    within("section[aria-labelledby=study-scriptures]") do
+      assert_link "James 1:13", href: Bible::Reference.find("59:1:13").jw_url
+      find("button[aria-label='Bookmark: James 1:13']").click
+      assert_selector "button[aria-label='Remove bookmark: James 1:13'][aria-pressed=true]"
+    end
+    assert_accessible
+    # On a phone the box is in the Sources tab, which the page test opens; here, desktop beside the conversation.
+    capture_screens("personal-study-scriptures", scroll_to: "section[aria-labelledby=study-scriptures]", viewports: { desktop: ScreenshotHelper::VIEWPORTS[:desktop] })
+
+    visit household_personal_note_url(household_id: households(:home), id: note)
+    assert_selector "lexxy-editor [contenteditable='true']"
+    assert_turbo_idle
+    within("section[aria-labelledby=note-scriptures]") do
+      find("button[aria-label='Bookmark: Psalm 83:18']").click
+      assert_selector "button[aria-label='Remove bookmark: Psalm 83:18'][aria-pressed=true]"
+      assert_selector "button[aria-label='Bookmark: John 17:3'][aria-pressed=false]"
+    end
+    assert_accessible
+    capture_screens("note-bookmarks")
+
+    visit household_bookmarks_url(household_id: households(:home))
+    within("segmented-control ul[aria-label=Show]") { click_on "Scriptures" }
+
+    assert_selector "segmented-control a[aria-current=true]", text: "Scriptures"
+    assert_selector "main .Box-row", count: 2
+    assert_no_selector "main .Box-row", text: "Why Does God Allow Suffering?"
+    within("main .Box-row", text: "Psalm 83:18") do
+      assert_selector "svg.octicon-book"
+      assert_text "Scripture"
+      assert_selector "a[href='https://www.jw.org/finder?wtlocale=E&pub=nwtsty&bible=19083018'][target=_blank][rel~=noopener]", text: "Psalm 83:18"
+      assert_link "Questions for my return visit"
+    end
+    assert_selector "main .Box-row a[href='#{Bible::Reference.find("59:1:13").jw_url}']", text: "James 1:13"
+    assert_accessible
+    capture_screens("bookmarks-scriptures")
+  end
+
   test "no bookmarks yet" do
     users(:head).bookmarks.delete_all
 

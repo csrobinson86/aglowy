@@ -28,15 +28,13 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
 
   def not_found? = answer["not_found"] == true
 
-  def paragraphs = answer["paragraphs"] || []
-
   def next_questions = answer["next_questions"] || []
 
   def refused? = question.off_topic? || question.flagged?
 
   # Escaped first, so the reply's own markup is only ever text; then its references become scripture links.
-  def linked(paragraph)
-    helpers.render_action_text_content(Bible::Linker.new(ActionText::Content.new(ERB::Util.html_escape(paragraph))).link)
+  def linked_paragraphs
+    question.linked_paragraphs.map { helpers.render_action_text_content(it) }
   end
 
   def note_saving_path

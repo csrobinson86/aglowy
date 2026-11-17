@@ -85,3 +85,9 @@ end
 
 saved_answer = daniel.questions.answered.first
 saved_answer.save_as_note unless head.personal_notes.exists?(title: saved_answer.prompt)
+
+# A scripture from Daniel's answers and one from a note, bookmarked as their buttons save them, so the Bookmarks tab
+# has scripture rows and Show has something to narrow (docs/design/bookmarks.md). Saving again finds each one.
+seeded!(head.bookmark(scripture: daniel.scripture_references.first.id, source: daniel))
+openings = head.personal_notes.find_by!(title: "Ministry openings")
+seeded!(head.bookmark(scripture: openings.scripture_references.first.id, source: openings))

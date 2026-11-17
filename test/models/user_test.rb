@@ -237,6 +237,52 @@ class UserTest < ActiveSupport::TestCase
     assert_equal page.id, bookmarked[page.url]
   end
 
+  test "bookmark saves a scripture the study's answers link" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "Comfort (Revelation 21:3, 4)." ] })
+
+    bookmark = users(:head).bookmark(scripture: "66:21:3-4", source: study)
+
+    assert bookmark.persisted?
+    assert_equal "66:21:3-4", bookmark.scripture
+    assert_nil bookmark.title
+    assert_equal study, bookmark.source
+    assert_no_difference(-> { Bookmark.count }) { assert_equal bookmark, users(:head).bookmark(scripture: "66:21:3-4", source: study) }
+  end
+
+  # A note can link a whole chapter with the picker, so a chapter can be bookmarked from a note.
+  test "bookmark saves a scripture the note links, a whole chapter too" do
+    note = personal_notes(:head_return_visit)
+    note.body = %(<p>Psalm 83:18</p>#{ActionText::Attachment.from_attachable(Bible::Reference.find("19:23")).to_html})
+    note.link_scriptures
+    note.save!
+
+    assert users(:head).bookmark(scripture: "19:83:18", source: note).persisted?
+    assert_equal "19:23", users(:head).bookmark(scripture: "19:23", source: note).scripture
+  end
+
+  test "bookmarking a scripture that isn't in the source is refused" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "Comfort (Revelation 21:4)." ] })
+
+    assert_no_difference -> { Bookmark.count } do
+      [ "19:23:4", "19:23:99", "Psalm 23" ].each do |scripture|
+        bookmark = users(:head).bookmark(scripture:, source: study)
+
+        assert_not bookmark.persisted?, scripture
+        assert_includes bookmark.errors[:scripture], "isn't one of the scriptures in this study or note"
+      end
+    end
+  end
+
+  test "bookmarked includes scripture ids" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "Comfort (Revelation 21:3, 4)." ] })
+    bookmark = users(:head).bookmark(scripture: "66:21:3-4", source: study)
+
+    assert_equal bookmark.id, users(:head).bookmarked["66:21:3-4"]
+  end
+
   test "deleting a person deletes their bookmarks" do
     user = User.create!(name: "Ann")
     user.bookmarks.create!(url: ARTICLE["url"])

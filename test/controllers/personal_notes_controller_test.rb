@@ -324,6 +324,26 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
                   household_personal_note_pin_path(household_id: @home, personal_note_id: @note), text: "Pin"
   end
 
+  # docs/design/bookmarks.md, The bookmark button: beside each scripture in Scriptures in this note, filled where it's
+  # saved, from one read of the bookmarks.
+  test "show: a bookmark button beside each scripture in the note" do
+    @note.body = "<p>Daniel 2:44, then Daniel 2:31-33</p>"
+    @note.link_scriptures
+    @note.save!
+    users(:head).bookmark(scripture: "27:2:44", source: @note)
+    sign_in identities(:head)
+
+    assert_queries_match(/FROM "bookmarks"/, count: 1) do
+      get household_personal_note_path(household_id: @home, id: @note)
+    end
+
+    assert_select "section[aria-labelledby=note-scriptures]" do
+      assert_select "button[aria-pressed=true][aria-label=?]", "Remove bookmark: Daniel 2:44"
+      assert_select "button[aria-pressed=false][aria-label=?]", "Bookmark: Daniel 2:31-33"
+      assert_select "input[name=source_type][value=PersonalNote]"
+    end
+  end
+
   test "a pinned note's page shows Pinned, pressed" do
     @note.pin_to_top
     sign_in identities(:head)

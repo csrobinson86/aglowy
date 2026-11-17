@@ -1,6 +1,6 @@
 require "test_helper"
 
-# The bookmark button beside a page (docs/design/bookmarks.md, The bookmark button).
+# The bookmark button beside a page or a scripture (docs/design/bookmarks.md, The bookmark button).
 class BookmarkButtonComponentTest < ViewComponent::TestCase
   URL = "https://www.jw.org/en/library/books/bible-questions-answered/".freeze
 
@@ -63,5 +63,28 @@ class BookmarkButtonComponentTest < ViewComponent::TestCase
     render_inline(BookmarkButtonComponent.new(url: URL, title: "Bible Questions Answered", source: nil, bookmarked: {}, household: @home))
 
     assert_no_selector "button"
+  end
+
+  test "a scripture: an empty bookmark that saves it from its note, labelled with the reference" do
+    note = personal_notes(:head_return_visit)
+    reference = Bible::Reference.find("66:21:3-4")
+
+    render_inline(BookmarkButtonComponent.new(scripture: reference, source: note, bookmarked: {}, household: @home))
+
+    assert_selector "[data-bookmark-key='#{Digest::SHA256.hexdigest("66:21:3-4")}'] form[method=post]"
+    assert_selector "input[type=hidden][name=scripture][value='66:21:3-4']", visible: :hidden
+    assert_selector "input[type=hidden][name=source_type][value=PersonalNote]", visible: :hidden
+    assert_selector "button[aria-pressed=false][aria-label='Bookmark: Revelation 21:3, 4']"
+    assert_no_selector "input[name=url]", visible: :all
+  end
+
+  test "a saved scripture: a filled bookmark that removes it" do
+    reference = Bible::Reference.find("19:23:4")
+
+    render_inline(BookmarkButtonComponent.new(scripture: reference, source: @study, bookmarked: { "19:23:4" => "abc" }, household: @home))
+
+    assert_selector "form[action='/#{@home.id}/bookmarks/abc']"
+    assert_selector "button[aria-pressed=true][aria-label='Remove bookmark: Psalm 23:4']"
+    assert_no_selector "input[name=scripture]", visible: :all
   end
 end

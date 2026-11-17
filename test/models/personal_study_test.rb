@@ -132,6 +132,22 @@ class PersonalStudyTest < ActiveSupport::TestCase
     assert_equal [ suffering, eden ], study.reload.sources
   end
 
+  # Exactly the scripture links the answers show (docs/design/bookmarks.md, PersonalStudy#scripture_references): a
+  # chapter alone stays text, and a question still asking or refused adds none.
+  test "scripture_references lists each reference once, in order, from answered questions only" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "Sin spread (Romans 5:12), see Genesis 3:1-6.", "Psalm 23 comforts." ] })
+    personal_study_question(study, status: "answered", answer: { "not_found" => true, "paragraphs" => [ "No one knows the day (Matthew 24:36); Romans 5:12 again." ] })
+    personal_study_question(study, status: "off_topic", answer: { "paragraphs" => [ "John 3:16" ] })
+    personal_study_question(study, answer: { "paragraphs" => [ "Job 1:9-11" ] })
+
+    assert_equal [ "Romans 5:12", "Genesis 3:1-6", "Matthew 24:36" ], study.reload.scripture_references.map(&:to_s)
+  end
+
+  test "scripture_references is empty with no answers" do
+    assert_empty personal_studies(:head_kindness).scripture_references
+  end
+
   test "conversation: the questions asked, oldest first, never one ask refused" do
     users(:head).accept_ai_terms(understood: true)
     study = personal_studies(:head_suffering)
