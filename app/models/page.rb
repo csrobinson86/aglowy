@@ -24,6 +24,16 @@ class Page
     loaded.size > size
   end
 
+  # A page with nothing on it after the first, as a later page is once its last record goes.
+  def past_the_end?
+    previous? && records.empty?
+  end
+
+  # The last page that has records, or the first when there are none.
+  def last_number
+    [ (@relation.count - 1) / size + 1, 1 ].max
+  end
+
   private
     def loaded
       @loaded ||= @relation.offset((number - 1) * size).limit(size + 1).to_a

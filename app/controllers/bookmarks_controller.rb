@@ -9,6 +9,9 @@ class BookmarksController < ApplicationController
   def index
     authorize Bookmark
     @page = Page.new(Current.user.bookmarks.preloaded.recent_first, number: params[:page], size: PAGE_SIZE)
+    # Removing the last bookmark on a later page refreshes a page that's now empty: show the last one with bookmarks.
+    return redirect_to household_bookmarks_path(page: (@page.last_number if @page.last_number > 1)) if @page.past_the_end?
+
     @bookmarked = @page.records.to_h { [ it.key, it.id ] }
   end
 

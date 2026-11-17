@@ -37,7 +37,7 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 
 - A check makes exactly one of `url` and `scripture` present: `num_nonnulls(url, scripture) = 1`.
 - **`url` is normalized before it's saved,** with `Ai::SourceLink.new(url, allowed_hosts: Bookmark::HOSTS).url` (`jw.org`, `www.jw.org`, `wol.jw.org`): https only, no fragment, no `utm_` parameters. A URL it turns into nil is invalid. The same page bookmarked twice is the same row.
-- **`scripture` must parse:** `Bible::Reference.find(scripture)` (validation). `reference` returns it, so views show `reference.to_s` and link `reference.jw_url`.
+- **`scripture` must parse:** `Bible::Reference.find(scripture)` (validation), and is stored as that reference's `id`, so "19:23:4-4" and "19:23:4" are one row (#226). `reference` returns it, so views show `reference.to_s` and link `reference.jw_url`.
 - `include Taggable`. Add `Bookmark` to the `taggings.taggable_type` check and `taggable_by?`.
 - `belongs_to :source, polymorphic: true, optional: true`. `PersonalStudy` and `PersonalNote` each get `has_many :bookmarks, as: :source, dependent: :nullify`, so deleting the study or note keeps its bookmarks.
 - At most 2,000 bookmarks per person (validation, like the 200-tag limit).

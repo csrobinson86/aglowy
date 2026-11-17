@@ -17,6 +17,13 @@ class Bookmark < ApplicationRecord
 
   # https only, no fragment and no utm_ parameters, so the same page saved twice is the same row. Anything else is nil.
   normalizes :url, with: -> { Ai::SourceLink.new(it, allowed_hosts: HOSTS).url }
+  # The reference's own id, so "19:23:4-4" and "19:23:4" are one row. One that isn't a reference stays as it came, for
+  # scripture_exists to refuse.
+  normalizes :scripture, with: -> do
+    Bible::Reference.find(it).id
+  rescue ActiveRecord::RecordNotFound
+    it
+  end
 
   validates :title, length: { maximum: TITLE_MAX }
   validates :comment, length: { maximum: COMMENT_MAX }

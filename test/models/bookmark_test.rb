@@ -30,6 +30,16 @@ class BookmarkTest < ActiveSupport::TestCase
     assert_includes users(:head).bookmarks.new(scripture: "19:23:99").tap(&:valid?).errors[:scripture], "isn't a Bible reference"
   end
 
+  # Bible::Reference.find reads "19:23:4-4" as "19:23:4", so storing what came in would let one passage be two rows.
+  test "a scripture is stored as its reference id, so one passage written two ways is one bookmark" do
+    bookmark = users(:head).bookmarks.create!(scripture: "19:23:4-4")
+
+    assert_equal "19:23:4", bookmark.scripture
+    assert_equal bookmark, users(:head).bookmark_for(scripture: "19:23:4-4")
+    assert_equal "99:1:1", Bookmark.new(scripture: "99:1:1").scripture
+    assert_raises(ActiveRecord::RecordNotUnique) { users(:head).bookmarks.create!(scripture: "19:23:4") }
+  end
+
   test "a title over 120 characters and a comment over 280 are invalid" do
     bookmark = users(:head).bookmarks.new(url: PAGE, title: "x" * 121, comment: "x" * 281)
 

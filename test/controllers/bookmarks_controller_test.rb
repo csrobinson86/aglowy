@@ -66,6 +66,24 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", household_bookmarks_path(household_id: @home, page: 1), text: "Newer bookmarks"
   end
 
+  # Removing the last bookmark on a later page refreshes that page, which is now past the end.
+  test "index: a page past the last one goes to the last page that has bookmarks" do
+    rows = Array.new(51) { { user_id: users(:eli).id, url: "https://www.jw.org/en/#{it}/", created_at: it.minutes.ago } }
+    Bookmark.insert_all!(rows)
+    sign_in identities(:eli)
+
+    get household_bookmarks_path(household_id: @home, page: 3)
+    assert_redirected_to household_bookmarks_path(household_id: @home, page: 2)
+
+    users(:eli).bookmarks.recent_first.last.destroy!
+    get household_bookmarks_path(household_id: @home, page: 2)
+    assert_redirected_to household_bookmarks_path(household_id: @home)
+
+    users(:eli).bookmarks.delete_all
+    get household_bookmarks_path(household_id: @home, page: 2)
+    assert_redirected_to household_bookmarks_path(household_id: @home)
+  end
+
   test "create: saves the page and fills every button for it" do
     sign_in identities(:head)
 
@@ -140,6 +158,21 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
       assert_select "template button[aria-pressed=false][aria-label=?]", "Bookmark: Bible Questions Answered"
     end
     assert_select "turbo-stream[action=refresh]", count: 0
+  end
+
+  # Scripture buttons come with #227; until then a scripture bookmark has no button to replace, and nothing breaks.
+  test "destroy: a scripture bookmark is removed and replaces no page's buttons" do
+    bookmark = users(:head).bookmarks.create!(scripture: "19:23:4")
+    sign_in identities(:head)
+
+    assert_difference -> { Bookmark.count }, -1 do
+      delete household_bookmark_path(household_id: @home, id: bookmark), as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_select "turbo-stream[action=replace][targets=?]", "[data-bookmark-key='#{Digest::SHA256.hexdigest("19:23:4")}']" do
+      assert_select "template button", count: 0
+    end
   end
 
   test "destroy on another study's page: the empty buttons save from the study the person is on" do
