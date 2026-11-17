@@ -33,6 +33,18 @@ class AvatarPolicyTest < ActiveSupport::TestCase
     end
   end
 
+  test "show_avatar? for an adult and a child signed in: themselves and a household mate, not a stranger" do
+    %i[ spouse eli ].each do |viewer|
+      Current.identity = identities(viewer)
+
+      [ nil, memberships(:"#{viewer}_in_home") ].each do |membership|
+        assert AvatarPolicy.new(membership, users(viewer)).show_avatar?, "expected #{viewer} to see their own"
+        assert AvatarPolicy.new(membership, users(:head)).show_avatar?, "expected #{viewer} to see a household mate's"
+        assert_not AvatarPolicy.new(membership, users(:outsider)).show_avatar?, "expected #{viewer} not to see a stranger's"
+      end
+    end
+  end
+
   test "show_avatar? is false signed out" do
     assert_not AvatarPolicy.new(nil, users(:eli)).show_avatar?
   end

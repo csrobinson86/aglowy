@@ -31,6 +31,9 @@ module User::Avatarable
       .convert("webp").saver(strip: true, quality: 80).call
     # In memory (it's at most 100 KB): Active Storage uploads after the outermost commit, by when the file is gone.
     avatar.attach(io: StringIO.new(built.read), filename: "avatar.webp", content_type: "image/webp")
+  rescue Vips::Error
+    # A header that reads, over pixels that don't.
+    refuse_photo
   ensure
     built&.close!
   end

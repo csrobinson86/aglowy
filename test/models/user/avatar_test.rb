@@ -5,7 +5,8 @@ require "test_helper"
 #
 # The files in test/fixtures/files/avatars/: gps.jpg (400 × 300, with a GPS position in its EXIF), sideways.jpg (red on
 # its left and blue on its right, with EXIF orientation 6), photo.png, photo.webp and photo.heic (300 × 200),
-# document.jpg (a PDF), tiny.png (40 × 40), and huge.png (a PNG whose header says 8000 × 7500, with no picture after).
+# document.jpg (a PDF), tiny.png (40 × 40), huge.png (a PNG whose header says 8000 × 7500, with no picture after), and
+# corrupt.webp (photo.webp with its last two thirds zeroed: the header reads, the pixels don't).
 class User::AvatarTest < ActiveSupport::TestCase
   REFUSED = "Choose a JPEG, PNG, WebP or HEIC photo up to 10 MB."
 
@@ -73,6 +74,12 @@ class User::AvatarTest < ActiveSupport::TestCase
 
       assert_refused Rack::Test::UploadedFile.new(file.path, "image/jpeg")
     end
+  end
+
+  test "refused: a readable header with pixels libvips can't decode" do
+    assert_equal [ 300, 200 ], Vips::Image.new_from_file(file_fixture("avatars/corrupt.webp").to_s).then { [ it.width, it.height ] }
+
+    assert_refused photo("corrupt.webp")
   end
 
   test "refused: anything that isn't an uploaded file" do
