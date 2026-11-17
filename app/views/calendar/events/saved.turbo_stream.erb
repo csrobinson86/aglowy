@@ -1,0 +1,4 @@
+<%# Empties the frame, which closes the dialog, then refreshes the calendar. Without a request id: with this request's,
+    Turbo would skip the refresh as an echo of its own. %>
+<%= turbo_stream.update "calendar_event_dialog" %>
+<%= turbo_stream.refresh(request_id: nil) %>

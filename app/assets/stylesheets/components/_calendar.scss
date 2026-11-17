@@ -32,6 +32,31 @@
   --calendar-kind-fgColor: var(--display-blue-fgColor);
 }
 
+// Household events: assemblies and special events, field service, and the rest.
+.calendar-item--circuit-assembly,
+.calendar-item--regional-convention,
+.calendar-item--co-visit,
+.calendar-item--memorial,
+.calendar-show__check--assembly {
+  --calendar-kind-bgColor: var(--display-purple-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-purple-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-purple-fgColor);
+}
+
+.calendar-item--field-service,
+.calendar-show__check--field-service {
+  --calendar-kind-bgColor: var(--display-green-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-green-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-green-fgColor);
+}
+
+.calendar-item--other,
+.calendar-show__check--other {
+  --calendar-kind-bgColor: var(--display-gray-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-gray-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-gray-fgColor);
+}
+
 // A ticked Show check box is filled with its group's color, in place of Primer's accent.
 .calendar-show__check {
   --control-checked-bgColor-rest: var(--calendar-kind-borderColor);
@@ -93,6 +118,44 @@
   margin: 0;
   font-size: var(--text-body-size-medium);
   font-weight: var(--base-text-weight-semibold);
+}
+
+// All-day events across the top of the week, each spanning its days; on a phone, one after another above the days.
+.calendar-band {
+  display: grid;
+  gap: var(--base-size-4);
+  padding: var(--base-size-8);
+  margin: 0 0 var(--base-size-8);
+  list-style: none;
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.calendar-band__item {
+  min-width: 0;
+
+  // The days an event spans, as columns of the week.
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    @for $day from 1 through 7 {
+      &--start-#{$day} {
+        grid-column-start: $day;
+      }
+
+      &--span-#{$day} {
+        grid-column-end: span $day;
+      }
+    }
+  }
+
+  .calendar-item {
+    flex-flow: row wrap;
+    gap: 0 var(--base-size-8);
+    align-items: baseline;
+  }
 }
 
 // A card: a colored bar on the left, the time, the title and a subtitle. A meeting's is a button in a form, a study's

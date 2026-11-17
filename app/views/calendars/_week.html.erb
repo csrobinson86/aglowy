@@ -1,11 +1,23 @@
-<%# locals: (calendar:, period:, today:, meeting_helper:) -%>
-<%# Seven days from Monday, each a list of cards in order of start; not a time grid (docs/design/calendar.md, The page). %>
+<%# locals: (calendar:, period:, today:, meeting_helper:, manage_events:) -%>
+<%# All-day events in a band across the days they span, then seven days from Monday, each a list of cards in order of
+    start; not a time grid (docs/design/calendar.md, The page). On a phone the band sits above the list of days. %>
+<% band = calendar.all_day_items %>
+<% if band.any? %>
+  <ul class="calendar-band" aria-label="All-day events">
+    <% band.each do |item| %>
+      <% start, span = item.columns_in(period.days) %>
+      <li class="calendar-band__item calendar-band__item--start-<%= start %> calendar-band__item--span-<%= span %>">
+        <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: false %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
 <div class="calendar-week">
   <% period.days.each do |day| %>
     <%= tag.section class: [ "calendar-day", { "calendar-day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
       <h3 class="calendar-day__heading"><%= calendar_day_heading(day) %></h3>
-      <% calendar.items_on(day).each do |item| %>
-        <%= render "calendars/item", item:, today:, meeting_helper:, chip: false %>
+      <% calendar.timed_items_on(day).each do |item| %>
+        <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: false %>
       <% end %>
     <% end %>
   <% end %>

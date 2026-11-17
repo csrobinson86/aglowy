@@ -1,6 +1,6 @@
 require "test_helper"
 
-class FamilyStudy::RecurrenceTest < ActiveSupport::TestCase
+class RecurrenceTest < ActiveSupport::TestCase
   test "daily every 2 days" do
     assert_dates %w[ 2026-11-17 2026-11-19 2026-11-21 2026-11-23 ],
       study(frequency: "daily", interval: 2), from: "2026-11-01", through: "2026-11-24"
@@ -62,11 +62,12 @@ class FamilyStudy::RecurrenceTest < ActiveSupport::TestCase
   end
 
   private
-    def study(**attributes)
-      households(:home).family_studies.new(starts_on: "2026-11-17", time_of_day: "19:00", **attributes)
+    # The family study cases, through the keyword constructor: once from 17 November 2026 unless told otherwise.
+    def study(frequency: "once", interval: 1, starts_on: "2026-11-17", ends_on: nil, week_of_month: nil)
+      Recurrence.new(frequency:, interval:, starts_on: Date.parse(starts_on), ends_on: ends_on&.then { Date.parse(it) }, week_of_month:)
     end
 
-    def assert_dates(expected, study, from:, through:)
-      assert_equal expected.map { Date.parse(it) }, study.recurrence.dates(from: Date.parse(from), through: Date.parse(through))
+    def assert_dates(expected, recurrence, from:, through:)
+      assert_equal expected.map { Date.parse(it) }, recurrence.dates(from: Date.parse(from), through: Date.parse(through))
     end
 end

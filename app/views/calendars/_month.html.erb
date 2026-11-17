@@ -1,5 +1,6 @@
-<%# locals: (calendar:, period:, today:, hide:, meeting_helper:) -%>
-<%# 6 × 7 days from the Monday on or before the 1st. Up to three items as one-line chips, then "+N more". The day
+<%# locals: (calendar:, period:, today:, hide:, meeting_helper:, manage_events:) -%>
+<%# 6 × 7 days from the Monday on or before the 1st. Up to three items as one-line chips, then "+N more"; an all-day
+    event of several days is a chip on each of its days, first, like a bar across them (frame calendar-month.png). The day
     number opens its week; on a 1st it reads "Nov 1", so its label, "Sunday, Nov 1", holds what it shows
     (docs/design/calendar.md, The page). %>
 <div class="calendar-month">
@@ -11,7 +12,7 @@
     <%= tag.div class: [ "calendar-month__day", { "calendar-month__day--outside": !period.in_month?(day), "calendar-month__day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
       <%= link_to (day.day == 1 ? day.strftime("%b %-d") : day.day), calendar_page_path("week", day, hide:), class: "calendar-month__number", aria: { label: day.strftime("%A, %b %-d") } %>
       <% items.first(3).each do |item| %>
-        <%= render "calendars/item", item:, today:, meeting_helper:, chip: true %>
+        <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: true %>
       <% end %>
       <% if items.size > 3 %>
         <span class="calendar-month__more">+<%= items.size - 3 %> more</span>

@@ -10,6 +10,9 @@ application.register("ai-draft", AiDraftController)
 import AutoSubmitController from "./auto_submit_controller"
 application.register("auto-submit", AutoSubmitController)
 
+import CalendarEventController from "./calendar_event_controller"
+application.register("calendar-event", CalendarEventController)
+
 import ClipboardController from "./clipboard_controller"
 application.register("clipboard", ClipboardController)
 

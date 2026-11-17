@@ -89,7 +89,7 @@ class FamilyStudy < ApplicationRecord
   end
 
   def recurrence
-    Recurrence.new(self)
+    Recurrence.new(frequency:, interval:, starts_on:, ends_on:, week_of_month:)
   end
 
   def first_session_at

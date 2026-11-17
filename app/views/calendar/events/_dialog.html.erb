@@ -1,0 +1,33 @@
+<%# locals: (event:) -%>
+<%# Add a household event, or edit one with Delete event on the left of the footer (frame calendar-new-event.png). Open as
+    soon as the calendar's frame loads it. Repeats sits in its own frame, which the server redraws when the date changes:
+    its choices come from the date (scheduling rule 5). %>
+<% dialog_id = "calendar-event-dialog" %>
+<%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: event.new_record? ? "Add a household event" : "Edit household event", size: :large, open: true)) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= primer_form_with(model: event, url: event.new_record? ? household_calendar_events_path : household_calendar_event_path(id: event),
+          data: { controller: "calendar-event", calendar_event_titles_value: Household::Event::KINDS.to_json,
+                  calendar_event_all_day_kinds_value: Household::Event::ALL_DAY_KINDS.to_json,
+                  calendar_event_url_value: new_household_calendar_event_path }) do |f| %>
+      <%= render Calendar::EventForm.new(f, section: :when) %>
+      <%= tag.div class: "mt-3", hidden: event.several_days?, data: { calendar_event_target: "repeatField" } do %>
+        <%= turbo_frame_tag :calendar_event_repeat, data: { calendar_event_target: "repeatFrame" } do %>
+          <%= render Calendar::EventForm.new(f, section: :repeat) %>
+        <% end %>
+      <% end %>
+      <div class="mt-3"><%= render Calendar::EventForm.new(f, section: :details) %></div>
+      <p class="text-small color-fg-muted my-3">
+        Everyone in <%= Current.household.name %> sees this. Meetings come from Settings → Meetings, and family studies from Family studies.
+      </p>
+      <%= render Calendar::EventForm.new(f, section: :actions, dialog_id:) %>
+    <% end %>
+  <% end %>
+  <% if event.persisted? %>
+    <% dialog.with_footer do %>
+      <%= primer_form_with(url: household_calendar_event_path(id: event), method: :delete, class: "mr-auto",
+            data: { turbo_confirm: "Delete “#{event.title}”? It comes off everyone's calendar." }) do |f| %>
+        <%= render Calendar::EventDeleteForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

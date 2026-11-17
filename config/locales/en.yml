@@ -52,6 +52,14 @@ en:
         login: "Email or username"
       family_study/resource:
         url: "Link"
+      household/event:
+        all_day: "All day"
+        starts_on: "Starts"
+        ends_on: "Ends"
+        starts_at: "Starts"
+        ends_at: "Ends"
+        repeat: "Repeats"
+        location: "Where"
   activemodel:
     attributes:
       family_study/scheduling:

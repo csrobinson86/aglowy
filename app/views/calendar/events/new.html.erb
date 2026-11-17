@@ -1,0 +1,4 @@
+<% content_for :title, "Add a household event" %>
+<%= turbo_frame_tag "calendar_event_dialog" do %>
+  <%= render "calendar/events/dialog", event: @event %>
+<% end %>

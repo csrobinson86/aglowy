@@ -13,4 +13,9 @@ module CalendarsHelper
   def calendar_time(time)
     time.strftime("%-l:%M %p")
   end
+
+  # An all-day event's days: "Sat 28", or "Tue 17 – Sun 22".
+  def calendar_days(dates)
+    [ dates.first, dates.last ].uniq.map { it.strftime("%a %-d") }.join(" – ")
+  end
 end

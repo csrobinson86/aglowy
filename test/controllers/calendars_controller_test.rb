@@ -66,7 +66,7 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
   test "the Show form's ticks become hide[] in the URL" do
     sign_in identities(:spouse)
 
-    get household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", show: [ "", "family_studies" ])
+    get household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", show: [ "", "family_studies", "assemblies", "field_service", "other_events" ])
 
     assert_redirected_to household_calendar_path(household_id: households(:home), view: "month", date: "2026-11-01", hide: %w[ meetings ])
   end
@@ -108,8 +108,9 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?] button.calendar-item--meeting", household_meeting_notes_path(household_id: households(:home)), /Weekend meeting/
   end
 
-  test "nothing planned: heads and adults are offered Set your meeting times, children aren't" do
+  test "nothing planned: heads and adults are offered Set your meeting times and Add household event, children aren't" do
     households(:home).family_studies.destroy_all
+    households(:home).events.delete_all
     households(:home).update_columns(midweek_meeting_wday: nil, midweek_meeting_time: nil, weekend_meeting_wday: nil, weekend_meeting_time: nil)
 
     sign_in identities(:spouse)
@@ -117,6 +118,7 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".blankslate h2", "Nothing on the calendar yet."
     assert_select ".blankslate a[href=?]", household_settings_meetings_path(household_id: households(:home)), "Set your meeting times"
+    assert_select ".blankslate a[href=?][data-turbo-frame=calendar_event_dialog]", new_household_calendar_event_path(household_id: households(:home)), "Add household event"
     assert_select "section.calendar-day", 7
 
     sign_in identities(:eli)
@@ -136,5 +138,34 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     get household_calendar_path(household_id: households(:home))
 
     assert_select "p.color-fg-muted", "Times are in Central Time, the household's time zone."
+  end
+
+  test "household events: heads and adults get Add household event and an edit link; a child sees the location and note, with no link" do
+    households(:home).events.create!(kind: "field_service", title: "Field service", starts_on: Date.new(2026, 11, 21), time_of_day: "09:30",
+                                     duration_minutes: 90, location: "Kingdom Hall", note: "Bring tracts", created_by: users(:head))
+
+    sign_in identities(:spouse)
+    get household_calendar_path(household_id: households(:home))
+
+    assert_select "a[href=?][data-turbo-frame=calendar_event_dialog]", new_household_calendar_event_path(household_id: households(:home)), "Add household event"
+    assert_select "turbo-frame#calendar_event_dialog"
+    assert_select "ul.calendar-band[aria-label='All-day events'] li.calendar-band__item--start-2.calendar-band__item--span-6" do
+      assert_select "a.calendar-item--co-visit[href=?]", edit_household_calendar_event_path(household_id: households(:home), id: household_events(:co_visit)), /Tue 17 – Sun 22\s+Circuit overseer's visit/
+    end
+    assert_select "a.calendar-item--field-service", /9:30 AM\s+Field service\s+Kingdom Hall\z/
+    assert_select "input[type=checkbox][value=assemblies].calendar-show__check--assembly[checked]"
+    assert_select "input[type=checkbox][value=field_service].calendar-show__check--field-service[checked]"
+    assert_select "input[type=checkbox][value=other_events].calendar-show__check--other[checked]"
+
+    get household_calendar_path(household_id: households(:home), view: "month")
+    assert_select ".calendar-month__day a.calendar-item--co-visit.calendar-item--chip", 6
+
+    sign_in identities(:eli)
+    get household_calendar_path(household_id: households(:home))
+
+    assert_select "a", text: "Add household event", count: 0
+    assert_select "a.calendar-item--field-service", 0
+    assert_select "div.calendar-item--field-service", /9:30 AM\s+Field service\s+Kingdom Hall\s+Bring tracts/
+    assert_select "div.calendar-item--co-visit", /Circuit overseer's visit/
   end
 end
