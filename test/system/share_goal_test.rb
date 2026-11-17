@@ -19,6 +19,7 @@ class ShareGoalTest < ApplicationSystemTestCase
       assert_text "Members of The Head Family will be able to read this goal and its steps. They can't change it."
       assert_text "You can stop sharing at any time, and if you leave The Head Family it stops automatically."
     end
+    wait_for_dialog # axe reads the Share goal button's colour mid-animation otherwise
     assert_accessible
     capture_screens("share-goal")
 
