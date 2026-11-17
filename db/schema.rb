@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -410,6 +410,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_200000) do
     t.index ["chat_id"], name: "index_messages_on_chat_id"
   end
 
+  create_table "personal_note_pins", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "personal_note_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["personal_note_id"], name: "index_personal_note_pins_on_personal_note_id", unique: true
+  end
+
   create_table "personal_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "collection_id"
@@ -690,6 +696,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_200000) do
   add_foreign_key "memberships", "households"
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "chats"
+  add_foreign_key "personal_note_pins", "personal_notes", on_delete: :cascade
   add_foreign_key "personal_notes", "collections", on_delete: :nullify
   add_foreign_key "personal_notes", "users"
   add_foreign_key "personal_studies", "chats"

@@ -326,6 +326,59 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "Home lists up to 5 pinned notes, newest pin first, with a color dot, above Recent meeting notes" do
+    notes = pin_notes(6)
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select "main .Layout-sidebar h3", text: /\A(My goals|Pinned notes|Recent meeting notes)\z/ do |headings|
+      assert_equal [ "My goals", "Pinned notes", "Recent meeting notes" ], headings.map(&:text)
+    end
+    assert_select ".Box", text: /Pinned notes/ do
+      assert_select ".Box-row", count: 5
+      notes.reverse.first(5).each.with_index(1) do |note, position|
+        assert_select ".Box-row:nth-of-type(#{position}) a[href='#{household_personal_note_path(household_id: households(:home), id: note)}']", note.title
+      end
+      assert_select ".Box-row:nth-of-type(1) .note-dot.note-dot--yellow"
+      assert_select ".Box-row:nth-of-type(1) .sr-only", "Yellow note"
+      assert_select "a[href*='#{notes.first.id}']", count: 0
+      assert_select ".Box-footer a[href='#{household_personal_notes_path(household_id: households(:home))}']", "All notes"
+    end
+  end
+
+  test "a person whose only content is a pinned note sees Home's two columns, not the Welcome state" do
+    with_nothing_to_show
+    personal_notes(:head_daniel).pin_to_top
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_two_columns
+    assert_select "main .Layout-sidebar h3", "Pinned notes"
+  end
+
+  test "a person with notes but none pinned: no Pinned notes section" do
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select "main .Layout-sidebar h3", "Recent meeting notes"
+    assert_select "main h3", text: "Pinned notes", count: 0
+    assert_select "main", text: /Daniel 2 image/, count: 0
+  end
+
+  test "another member never sees someone else's pinned notes" do
+    personal_notes(:spouse_grieving).pin_to_top
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select "main h3", text: "Pinned notes", count: 0
+    assert_select "main", text: /Comfort for someone grieving/, count: 0
+    assert_select "a[href*='#{personal_notes(:spouse_grieving).id}']", count: 0
+  end
+
   test "Home asks no query per goal, note or session" do
     sign_in identities(:head)
     get household_root_path(household_id: households(:home))
@@ -337,6 +390,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     weekly = family_studies(:weekly)
     [ 4, 5 ].each { |weeks| weekly.sessions.create!(recurrence_at: weekly.first_session_at + weeks.weeks, scheduled_at: weekly.first_session_at + weeks.weeks) }
     users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    pin_notes(3)
 
     assert_equal few, queries_during_get
   end
@@ -482,6 +536,15 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
 
     def add_goals(owner, count, set_by: users(:spouse))
       count.times.map { owner.goals.create!(title: "Goal #{it}", target_on: Date.new(2027, 6, 1) + it, set_by:) }
+    end
+
+    # The head's new notes, pinned a minute apart, oldest pin first; the last is yellow.
+    def pin_notes(count)
+      count.times.map do |index|
+        note = users(:head).personal_notes.create!(title: "Pinned #{index}", color: index == count - 1 ? "yellow" : "none")
+        travel_to(Time.current + index.minutes) { note.pin_to_top }
+        note
+      end
     end
 
     def goal_path(goal)

@@ -1,4 +1,4 @@
-<%# locals: (goals:, meeting_notes:) -%>
+<%# locals: (goals:, pinned_notes:, meeting_notes:) -%>
 <%# Personal content follows the person, so these come from Current.user, never the household (docs/design/users.md). %>
 <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 6, color: :muted, mb: 2)) { "Mine · follows you to every household" } %>
 
@@ -14,6 +14,24 @@
   <% end %>
   <% box.with_footer do %>
     <%= render(Primer::Beta::Link.new(href: household_my_goals_path)) { "All my goals" } %>
+  <% end %>
+<% end %>
+
+<%# Up to 5, most recently pinned first, each with its color dot; hidden when none are pinned (frame
+    home-pinned-notes.png). %>
+<% if pinned_notes.any? %>
+  <%= render Primer::Beta::BorderBox.new(mb: 3) do |box| %>
+    <% box.with_header { |header| header.with_title(tag: :h3) { "Pinned notes" } } %>
+    <% pinned_notes.each do |note| %>
+      <% box.with_row(display: :flex, align_items: :baseline) do %>
+        <span class="note-dot note-dot--<%= note.drawn_color %> mr-2 flex-shrink-0" aria-hidden="true"></span>
+        <%= render "personal_notes/color_name", personal_note: note %>
+        <%= render(Primer::Beta::Link.new(href: household_personal_note_path(id: note), scheme: :primary, classes: "wb-break-word")) { note.title } %>
+      <% end %>
+    <% end %>
+    <% box.with_footer do %>
+      <%= render(Primer::Beta::Link.new(href: household_personal_notes_path)) { "All notes" } %>
+    <% end %>
   <% end %>
 <% end %>
 

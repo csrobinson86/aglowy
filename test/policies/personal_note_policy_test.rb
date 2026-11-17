@@ -21,7 +21,7 @@ class PersonalNotePolicyTest < ActiveSupport::TestCase
     [ memberships(:head_in_home), memberships(:head_in_parents) ].each do |membership|
       policy = PersonalNotePolicy.new(membership, personal_notes(:head_daniel))
 
-      assert policy.show? && policy.update? && policy.destroy? && policy.tag?, "expected #{membership.household.name} to let the owner in"
+      assert policy.show? && policy.update? && policy.destroy? && policy.tag? && policy.pin?, "expected #{membership.household.name} to let the owner in"
     end
   end
 
@@ -29,7 +29,7 @@ class PersonalNotePolicyTest < ActiveSupport::TestCase
     [ memberships(:spouse_in_home), memberships(:child_in_home), memberships(:former_in_home), nil ].each do |membership|
       policy = PersonalNotePolicy.new(membership, personal_notes(:head_daniel))
 
-      assert_not policy.show? || policy.update? || policy.destroy? || policy.tag? || policy.create?
+      assert_not policy.show? || policy.update? || policy.destroy? || policy.tag? || policy.pin? || policy.create?
     end
   end
 end

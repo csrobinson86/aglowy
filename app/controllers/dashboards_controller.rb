@@ -8,7 +8,8 @@ class DashboardsController < ApplicationController
     @family_goals = Current.household.goals.active.includes(:set_by).limit(3).load
     @my_goals = Current.user.goals.active.limit(3).load
     @meeting_notes = Current.user.meeting_notes.newest_first.limit(2).load
-    @welcome = [ @next_session, @family_goals, @my_goals, @meeting_notes ].all?(&:blank?)
+    @pinned_notes = Current.user.personal_notes.pinned.limit(5).load
+    @welcome = [ @next_session, @family_goals, @my_goals, @meeting_notes, @pinned_notes ].all?(&:blank?)
     @todays_meeting = Current.household.current_or_next_meeting if Current.household.meeting_day?
   end
 

@@ -1,0 +1,9 @@
+<%# locals: (personal_note:) %>
+<%# The "Pinned" toggle in a note's header (frame note.png): pressed while the note is pinned, and swapped in place
+    when pressed, so the note's form keeps what hasn't been saved. %>
+<% pinned = personal_note.pinned? %>
+<%= tag.div id: dom_id(personal_note, :pin) do %>
+  <%= primer_form_with(url: household_personal_note_pin_path(personal_note_id: personal_note), method: pinned ? :delete : :post) do |f| %>
+    <%= render PersonalNotes::PinForm.new(f, pinned:) %>
+  <% end %>
+<% end %>

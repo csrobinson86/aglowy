@@ -9,7 +9,7 @@ class PersonalNotesController < ApplicationController
 
   # ?collection=, ?tag= and ?color= narrow the list, and ?q= searches titles, collection names and tag names. A
   # collection that isn't one of the person's for notes, like an unknown tag, filters the list to nothing; a color
-  # that isn't on the filter is ignored.
+  # that isn't on the filter is ignored. Pinned notes come first, under Pinned, and the filters narrow them too.
   def index
     authorize PersonalNote
     @collections = Current.user.collections.for_notes.with_personal_notes_count.positioned
@@ -18,7 +18,9 @@ class PersonalNotesController < ApplicationController
     @collection_id = params[:collection].presence
     @color = params[:color].presence_in(PersonalNote::FILTER_COLORS)
     @collection = @collections.find { it.id == @collection_id } if @collection_id
-    @personal_notes = tagged(filtered(Current.user.personal_notes)).preloaded.recent_first
+    notes = tagged(filtered(Current.user.personal_notes)).preloaded
+    @pinned_notes = notes.pinned.load
+    @personal_notes = notes.unpinned.recent_first.load
     @total_count = Current.user.personal_notes.count
   end
 

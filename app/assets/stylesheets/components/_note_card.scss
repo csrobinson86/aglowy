@@ -26,8 +26,18 @@
   }
 }
 
-.note-card__title {
+// The title, with the Unpin button beside it on a pinned card.
+.note-card__header {
+  display: flex;
+  gap: var(--base-size-8);
+  align-items: flex-start;
   margin-bottom: var(--base-size-8);
+}
+
+.note-card__title {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
   font-size: var(--text-title-size-small);
   overflow-wrap: anywhere;
 }

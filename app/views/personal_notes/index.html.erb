@@ -1,4 +1,7 @@
 <% content_for :title, "Notes" %>
+<%# Unpinning from a card refreshes the page, keeping the place on it. Replaced, not morphed: a morph would drop the
+    open the sidebar's open-from-md controller adds, and the controller wouldn't connect again to add it back. %>
+<% turbo_refreshes_with method: :replace, scroll: :preserve %>
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Notes" } %>
@@ -41,6 +44,20 @@
       <%= render "tags/filter", name: @tag_name, clear_path: household_personal_notes_path(collection: @collection_id, q: @query, color: @color) %>
     <% end %>
 
+    <%# "Pinned", then "All notes" (frame notes.png); each only when it has a card. %>
+    <% if @pinned_notes.any? %>
+      <section aria-labelledby="pinned-notes" class="mb-4">
+        <h2 id="pinned-notes" class="f5 color-fg-muted mb-2">
+          <%= render(Primer::Beta::Octicon.new(:pin, mr: 1)) %>Pinned
+        </h2>
+        <div class="personal-notes__cards">
+          <% @pinned_notes.each do |personal_note| %>
+            <%= render "personal_notes/card", personal_note:, pinned: true %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
     <% if @personal_notes.any? %>
       <section aria-labelledby="all-notes">
         <h2 id="all-notes" class="f5 color-fg-muted mb-2"><%= @collection&.name || "All notes" %></h2>
@@ -50,14 +67,16 @@
           <% end %>
         </div>
       </section>
-    <% elsif @total_count.zero? %>
+    <% end %>
+
+    <% if @total_count.zero? %>
       <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
         <% blankslate.with_visual_icon(icon: :pencil) %>
         <% blankslate.with_heading(tag: :h2) { "No notes yet." } %>
         <% blankslate.with_description { "Write one to come back to." } %>
         <% blankslate.with_primary_action(href: new_household_personal_note_path) { "New note" } %>
       <% end %>
-    <% else %>
+    <% elsif @pinned_notes.none? && @personal_notes.none? %>
       <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
         <% blankslate.with_visual_icon(icon: :search) %>
         <% blankslate.with_heading(tag: :h2) { "No notes match" } %>

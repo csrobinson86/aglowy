@@ -63,7 +63,7 @@
 
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "household-home__aside") do %>
       <%= render "dashboards/family_goals", goals: @family_goals %>
-      <%= render "dashboards/mine", goals: @my_goals, meeting_notes: @meeting_notes %>
+      <%= render "dashboards/mine", goals: @my_goals, pinned_notes: @pinned_notes, meeting_notes: @meeting_notes %>
     <% end %>
   <% end %>
 <% end %>
