@@ -7,6 +7,8 @@ class PersonalNote < ApplicationRecord
   belongs_to :user
   # The database deletes the pin with the note.
   has_one :pin
+  # Deleting it keeps the bookmarks saved from it, with no source (docs/design/bookmarks.md, Bookmark).
+  has_many :bookmarks, as: :source, dependent: :nullify
 
   has_rich_text :body, encrypted: true
   scripture_linkable :body

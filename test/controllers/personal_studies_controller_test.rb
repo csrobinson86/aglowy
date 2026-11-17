@@ -198,6 +198,25 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby=study-sources]", text: /Titles and links only. Open a page to read it on jw.org./
   end
 
+  # docs/design/bookmarks.md, The bookmark button: beside each page in Pages used and Sources in this study, with the
+  # person's bookmarks read once for the page.
+  test "show: a bookmark button beside each page, filled where it's saved, from one read of the bookmarks" do
+    saved = { "url" => bookmarks(:head_suffering_article).url, "title" => "Why Does God Allow Suffering?" }
+    other = { "url" => "https://wol.jw.org/en/wol/d/r1/lp-e/2017283", "title" => "The Issue Raised in Eden" }
+    answer = { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "An answer." ], "next_questions" => [] }
+    personal_study_question(@study, status: "answered", answer:, sources: [ saved, other ])
+    sign_in identities(:head)
+
+    assert_queries_match(/FROM "bookmarks"/, count: 1) do
+      get household_personal_study_path(household_id: @home, id: @study)
+    end
+
+    assert_select "ul[aria-label='Pages used'] button[aria-pressed=true][aria-label=?]", "Remove bookmark: Why Does God Allow Suffering?"
+    assert_select "ul[aria-label='Pages used'] button[aria-pressed=false][aria-label=?]", "Bookmark: The Issue Raised in Eden"
+    assert_select "section[aria-labelledby=study-sources] button[aria-pressed=true][aria-label=?]", "Remove bookmark: Why Does God Allow Suffering?"
+    assert_select "section[aria-labelledby=study-sources] button[aria-pressed=false][aria-label=?]", "Bookmark: The Issue Raised in Eden"
+  end
+
   test "show with no questions yet" do
     users(:head).accept_ai_terms(understood: true)
     sign_in identities(:head)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -70,6 +70,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_210000) do
     t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
     t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
     t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying]::text[])", name: "ai_uses_purpose_check"
+  end
+
+  create_table "bookmarks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "url"
+    t.string "scripture"
+    t.string "title"
+    t.string "comment"
+    t.uuid "collection_id"
+    t.string "source_type"
+    t.uuid "source_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["collection_id"], name: "index_bookmarks_on_collection_id"
+    t.index ["source_type", "source_id"], name: "index_bookmarks_on_source"
+    t.index ["user_id", "created_at"], name: "index_bookmarks_on_user_id_and_created_at"
+    t.index ["user_id", "scripture"], name: "index_bookmarks_on_user_id_and_scripture", unique: true
+    t.index ["user_id", "url"], name: "index_bookmarks_on_user_id_and_url", unique: true
+    t.check_constraint "num_nonnulls(source_type, source_id) <> 1", name: "bookmarks_source_together_check"
+    t.check_constraint "num_nonnulls(url, scripture) = 1", name: "bookmarks_page_or_scripture_check"
+    t.check_constraint "scripture::text ~ '^\\d+:\\d+(:\\d+(-\\d+)?)?$'::text", name: "bookmarks_scripture_check"
+    t.check_constraint "source_type::text = ANY (ARRAY['PersonalStudy'::character varying, 'PersonalNote'::character varying]::text[])", name: "bookmarks_source_type_check"
+    t.check_constraint "url::text ~ '^https://(www\\.)?(jw\\.org|wol\\.jw\\.org)/'::text", name: "bookmarks_url_check"
   end
 
   create_table "chats", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -651,6 +674,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_210000) do
   add_foreign_key "ai_acceptances", "users"
   add_foreign_key "ai_uses", "personal_study_questions", column: "question_id", on_delete: :nullify
   add_foreign_key "ai_uses", "users"
+  add_foreign_key "bookmarks", "collections", on_delete: :nullify
+  add_foreign_key "bookmarks", "users"
   add_foreign_key "chats", "households"
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "chats", "users"

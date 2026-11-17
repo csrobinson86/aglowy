@@ -50,7 +50,7 @@ Bookmarks are private, like everything in Mine (`docs/design/app-shell.md`).
 
 - `has_many :bookmarks, dependent: :delete_all`
 - `bookmark_for(url: nil, scripture: nil)`: the person's bookmark for a page or scripture, or nil.
-- `bookmarked`: one query for the keys of everything the person has bookmarked (normalized URLs and scripture ids), as a `Set`. A page with many bookmark buttons loads it once and passes it to each button, so the buttons cost no query each.
+- `bookmarked`: one query for the keys of everything the person has bookmarked (normalized URLs and scripture ids), as a Hash of each key to its bookmark's id, so a filled button can remove it (`include?` reads it like a `Set`; #226). A page with many bookmark buttons loads it once and passes it to each button, so the buttons cost no query each.
 - `bookmark(url: nil, scripture: nil, source:)`: finds or creates the bookmark. For a page, the title comes from the source, never from the form: `PersonalStudy#sources` (every page across the study's answered questions, already built in #223), matched by normalized URL. A page that isn't in the source's sources is refused, so a bookmark can only hold a link Aglowy showed the person. A scripture must be in the source's `scripture_references`.
 
 ### `Collection`
@@ -116,7 +116,8 @@ Saving replaces the row with a Turbo Stream and closes the dialog. A refused sav
 `BookmarkButtonComponent.new(url:, title:, source:, bookmarked:)` or `(scripture:, source:, bookmarked:)`, where `bookmarked` is `Current.user.bookmarked`, renders a Primer `IconButton`:
 - `bookmark` with the label "Bookmark: <title>" when it isn't saved; `bookmark-fill` with "Remove bookmark: <title>" when it is, with `aria-pressed`
 - tapping it saves or removes (`button_to` with `POST` or `DELETE`), and the response is a Turbo Stream that replaces every button for the same page or scripture on the page, so "Pages used" and "Sources in this study" stay in step
-- `dom_id` for the button comes from a digest of the URL or the scripture id, never the raw URL
+- every button for the same page or scripture carries `data-bookmark-key`, a SHA-256 digest of the URL or the scripture id (never the raw URL, and not a DOM id, which two buttons on one page can't share), and the Turbo Stream replaces them all with `replace_all` (#226)
+- removing posts the button's source too, so the empty buttons that replace it save from the page the person is on
 
 It appears:
 - on a Personal study answer, beside each page in "Pages used"

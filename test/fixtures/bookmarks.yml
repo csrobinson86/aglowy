@@ -1,0 +1,13 @@
+# Each person's saved jw.org pages (docs/design/bookmarks.md, Bookmark). Titles are stored encrypted, as the app would.
+head_suffering_article:
+  user: head
+  url: https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/
+  title: Why Does God Allow Suffering?
+  source: head_suffering (PersonalStudy)
+  created_at: <%= 2.days.ago.to_fs(:db) %>
+
+spouse_ransom_article:
+  user: spouse
+  url: https://wol.jw.org/en/wol/d/r1/lp-e/2017283
+  title: The Ransom
+  source: spouse_ransom (PersonalStudy)

@@ -10,6 +10,8 @@ class PersonalStudy < ApplicationRecord
   belongs_to :chat, dependent: :destroy, default: -> { Chat.new(user: user, purpose: PURPOSE) }
 
   has_many :questions, -> { order(:created_at) }, class_name: "PersonalStudy::Question", inverse_of: :personal_study
+  # Deleting it keeps the bookmarks saved from it, with no source (docs/design/bookmarks.md, Bookmark).
+  has_many :bookmarks, as: :source, dependent: :nullify
 
   has_rich_text :notes, encrypted: true
   scripture_linkable :notes

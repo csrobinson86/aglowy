@@ -77,6 +77,8 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal 8, head.personal_notes.count
     assert_equal PersonalNote.colors.keys.sort, head.personal_notes.distinct.pluck(:color).sort
     assert_equal 2, head.personal_notes.pinned.count
+    assert_equal 2, head.bookmarks.count
+    assert head.bookmarks.all? { it.source.present? && it.title.present? }
     assert head.personal_notes.any? { it.scripture_references.any? }
 
     assert_equal 0, Ai::Use.count

@@ -9,11 +9,17 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
   attr_reader :question, :household
 
   # household: where Stop, Save to notes and Save as a note post. The job's broadcast has none. read_only: a head reading a child's
-  # study (Members::PersonalStudiesController), with nothing to press and no stream.
-  def initialize(question:, household:, read_only: false)
+  # study (Members::PersonalStudiesController), with nothing to press and no stream. bookmarked: the owner's bookmarks
+  # (User#bookmarked), for a bookmark button beside each page used; none from the broadcast or for a head reading.
+  def initialize(question:, household:, read_only: false, bookmarked: nil)
     @question = question
     @household = household
     @read_only = read_only
+    @bookmarked = bookmarked
+  end
+
+  def bookmark_button(source)
+    BookmarkButtonComponent.new(url: source["url"], title: source["title"], source: question.personal_study, bookmarked: @bookmarked, household:) if @bookmarked && household
   end
 
   def read_only? = @read_only

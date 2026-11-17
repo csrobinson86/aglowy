@@ -1,0 +1,9 @@
+<%= tag.span class: "bookmark-button flex-shrink-0 ml-auto", data: { bookmark_key: key } do %>
+  <%= primer_form_with(url: form_url, method: saved? ? :delete : :post) do |f| %>
+    <%= render Bookmarks::ButtonForm.new(f, fields:) %>
+    <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
+    <%= render(Primer::Beta::IconButton.new(icon: saved? ? :"bookmark-fill" : :bookmark, type: :submit, scheme: :invisible,
+                                            show_tooltip: false, "aria-label": label, aria: { pressed: saved?.to_s },
+                                            classes: class_names("bookmark-button__button", "bookmark-button__button--saved": saved?))) %>
+  <% end %>
+<% end %>

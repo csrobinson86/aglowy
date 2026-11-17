@@ -1,6 +1,7 @@
-<%# locals: (personal_study:) %>
+<%# locals: (personal_study:, bookmarked: nil) %>
 <%# Every page linked across the study's answers, once each, as titles and links only (frame personal-study.png).
-    Replaced when an answer adds pages. %>
+    Replaced when an answer adds pages. bookmarked, the owner's bookmarks, brings a bookmark button beside each page
+    (frame personal-study-bookmarks.png); the answer's broadcast has none, and the page's own copy then replaces it. %>
 <section id="<%= dom_id(personal_study, :sources) %>" aria-labelledby="study-sources" data-study-ask-catch-up>
   <%= render(Primer::Beta::BorderBox.new) do |box| %>
     <% box.with_header do %>
@@ -11,6 +12,9 @@
         <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
         <%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener", flex: :auto, classes: "wb-break-word")) { source["title"].presence || source_host(source["url"]) } %>
         <span class="text-small color-fg-muted ml-2"><%= source_host(source["url"]) %></span>
+        <% if bookmarked %>
+          <%= render BookmarkButtonComponent.new(url: source["url"], title: source["title"], source: personal_study, bookmarked:) %>
+        <% end %>
       <% end %>
     <% end %>
     <% box.with_footer(font_size: :small, color: :muted) do %>

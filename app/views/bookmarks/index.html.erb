@@ -1,0 +1,44 @@
+<% content_for :title, "Bookmarks" %>
+<%# Removing a bookmark here refreshes the page, keeping the place on it. %>
+<% turbo_refreshes_with method: :replace, scroll: :preserve %>
+
+<%# One header for all three tabs of Notes, with this tab's line and no action (docs/design/notes.md). %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Notes" } %>
+  <% subhead.with_description { "Pages and scriptures you saved to come back to. Only you can see them." } %>
+<% end %>
+
+<%= render NotesTabsComponent.new(selected: :bookmarks) %>
+
+<% help = "Bookmark a page or scripture with the bookmark button beside it in a personal study or a note. Pages open on jw.org; scriptures open on jw.org, or in JW Library if it's installed." %>
+
+<%# Newest first (frame bookmarks.png). Collections, tags, search and Show come with #227 and #228. %>
+<% if @page.records.any? %>
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% @page.records.each do |bookmark| %>
+      <% box.with_row(id: dom_id(bookmark), display: :flex, align_items: :flex_start) do %>
+        <%= render "bookmarks/bookmark", bookmark:, bookmarked: @bookmarked %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% if @page.previous? || @page.next? %>
+    <div class="d-flex flex-justify-between mt-3">
+      <% if @page.previous? %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: household_bookmarks_path(page: @page.number - 1))) { "Newer bookmarks" } %>
+      <% end %>
+      <% if @page.next? %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: household_bookmarks_path(page: @page.number + 1), ml: :auto)) { "Older bookmarks" } %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <p class="text-small color-fg-muted mt-3"><%= help %></p>
+<% else %>
+  <%# No action: bookmarks are made where the links are. %>
+  <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :bookmark) %>
+    <% blankslate.with_heading(tag: :h2) { "No bookmarks yet." } %>
+    <% blankslate.with_description { help } %>
+  <% end %>
+<% end %>
