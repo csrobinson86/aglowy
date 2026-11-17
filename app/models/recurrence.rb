@@ -1,8 +1,13 @@
-# Which dates a study's schedule produces (scheduling rule 3). Monthly follows RFC 5545:
-# the fifth Tuesday skips months without one, and -1 is the last Tuesday (gotcha 17).
-class FamilyStudy::Recurrence
-  def initialize(study)
-    @study = study
+# Which dates a schedule produces, for family studies (scheduling rule 3) and household events
+# (docs/design/calendar.md, Household::Event). Monthly follows RFC 5545: the fifth Tuesday skips
+# months without one, and -1 is the last Tuesday (gotcha 17).
+class Recurrence
+  def initialize(frequency:, interval:, starts_on:, ends_on:, week_of_month:)
+    @frequency = frequency
+    @interval = interval
+    @starts_on = starts_on
+    @ends_on = ends_on
+    @week_of_month = week_of_month
   end
 
   def dates(from:, through:)
@@ -11,8 +16,7 @@ class FamilyStudy::Recurrence
   end
 
   private
-    attr_reader :study
-    delegate :frequency, :interval, :starts_on, :ends_on, :week_of_month, to: :study, private: true
+    attr_reader :frequency, :interval, :starts_on, :ends_on, :week_of_month
 
     def candidates(first, last)
       case frequency

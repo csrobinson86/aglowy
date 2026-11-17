@@ -32,6 +32,31 @@
   --calendar-kind-fgColor: var(--display-blue-fgColor);
 }
 
+// Household events: assemblies and special events, field service, and the rest.
+.calendar-item--circuit-assembly,
+.calendar-item--regional-convention,
+.calendar-item--co-visit,
+.calendar-item--memorial,
+.calendar-show__check--assembly {
+  --calendar-kind-bgColor: var(--display-purple-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-purple-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-purple-fgColor);
+}
+
+.calendar-item--field-service,
+.calendar-show__check--field-service {
+  --calendar-kind-bgColor: var(--display-green-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-green-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-green-fgColor);
+}
+
+.calendar-item--other,
+.calendar-show__check--other {
+  --calendar-kind-bgColor: var(--display-gray-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-gray-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-gray-fgColor);
+}
+
 // A ticked Show check box is filled with its group's color, in place of Primer's accent.
 .calendar-show__check {
   --control-checked-bgColor-rest: var(--calendar-kind-borderColor);
@@ -93,6 +118,66 @@
   margin: 0;
   font-size: var(--text-body-size-medium);
   font-weight: var(--base-text-weight-semibold);
+}
+
+// All-day events across the top of the week, each spanning its days; on a phone, one after another above the days.
+// Each item has a day column's padding, so on a wide screen the band lines up with the days under it.
+.calendar-band {
+  display: grid;
+  padding: 0;
+  margin: 0 0 var(--base-size-8);
+  list-style: none;
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.calendar-band__item {
+  min-width: 0;
+  padding: var(--base-size-4) var(--base-size-8);
+
+  // The days an event spans, as columns of the week.
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    @for $day from 1 through 7 {
+      &--start-#{$day} {
+        grid-column-start: $day;
+      }
+
+      &--span-#{$day} {
+        grid-column-end: span $day;
+      }
+    }
+  }
+
+  .calendar-item {
+    flex-flow: row wrap;
+    gap: 0 var(--base-size-8);
+    align-items: baseline;
+  }
+}
+
+// In the month, the bars of a week row sit under its day numbers, each over the days it spans, packed into as few lines
+// as fit. On a phone they're hidden, and each day lists its own all-day events.
+.calendar-band--month {
+  display: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    display: grid;
+    grid-row: 2;
+    grid-column: 1 / -1;
+    grid-auto-flow: dense;
+    padding-top: var(--base-size-4);
+  }
+
+  .calendar-band__item {
+    padding: var(--base-size-2) var(--base-size-8);
+  }
 }
 
 // A card: a colored bar on the left, the time, the title and a subtitle. A meeting's is a button in a form, a study's
@@ -185,6 +270,18 @@
   }
 }
 
+// A week row: the day numbers, then the all-day bars across the days, then each day's chips. Each day spans the three
+// rows (a subgrid), so the bars lie over its column, between its number and its chips.
+.calendar-month__week {
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-rows: auto auto 1fr;
+    grid-template-columns: subgrid;
+    min-height: var(--base-size-128);
+  }
+}
+
 .calendar-month__day {
   display: flex;
   flex-direction: column;
@@ -194,8 +291,40 @@
   border-bottom: var(--borderWidth-thin) solid var(--borderColor-muted);
 
   @media (min-width: map.get(primer.$breakpoints, lg)) {
-    min-height: var(--base-size-128);
+    display: grid;
+    grid-row: 1 / -1;
+    grid-template-rows: subgrid;
+    row-gap: 0;
     border-right: var(--borderWidth-thin) solid var(--borderColor-muted);
+
+    @for $day from 1 through 7 {
+      &--column-#{$day} {
+        grid-column: $day;
+      }
+    }
+  }
+}
+
+.calendar-month__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-4);
+  min-width: 0;
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    grid-row: 3;
+    padding-top: var(--base-size-4);
+  }
+}
+
+// On a phone each day lists its all-day events; on a wide screen the week row's bars show them.
+.calendar-month__all-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-4);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    display: none;
   }
 }
 
@@ -205,7 +334,7 @@
   background-color: var(--bgColor-muted);
 
   @media (min-width: map.get(primer.$breakpoints, lg)) {
-    display: flex;
+    display: grid;
   }
 }
 
@@ -216,6 +345,7 @@
 
 .calendar-month__number {
   align-self: flex-start;
+  justify-self: start;
   min-width: var(--base-size-24);
   padding: 0 var(--base-size-4);
   font-weight: var(--base-text-weight-semibold);

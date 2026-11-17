@@ -86,6 +86,14 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal %w[ courage hope ], head.tags.carried_by("Bookmark").map(&:name).sort
     assert head.personal_notes.any? { it.scripture_references.any? }
 
+    rivera = Household.find_by!(name: "The Rivera Family")
+    monday = rivera.today.beginning_of_week(:monday)
+    assert_equal 4, rivera.events.count
+    assert_equal [ monday + 1, 6 ], rivera.events.co_visit.sole.values_at(:starts_on, :days)
+    assert_equal monday + 12, rivera.events.circuit_assembly.sole.starts_on
+    assert rivera.events.field_service.sole.weekly?
+    assert_equal 1, Household::Calendar.new(rivera, viewer: user("rivera@example.com"), range: monday..monday + 6).all_day_items.size
+
     assert_equal 0, Ai::Use.count
   end
 

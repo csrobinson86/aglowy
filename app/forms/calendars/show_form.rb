@@ -1,7 +1,8 @@
 # "Show" beside the calendar (docs/design/calendar.md, The page): a check box per group, sent as show[] whenever one
 # changes. The empty show[] says the form was sent even with nothing ticked. Each check box is drawn in its group's color.
 class Calendars::ShowForm < ApplicationForm
-  KINDS = { "meetings" => "meeting", "family_studies" => "study" }.freeze
+  KINDS = { "meetings" => "meeting", "family_studies" => "study", "assemblies" => "assembly", "field_service" => "field-service",
+            "other_events" => "other" }.freeze
 
   def initialize(household:, period:, hide:)
     @household = household

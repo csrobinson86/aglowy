@@ -1,8 +1,16 @@
 <% content_for :title, "Calendar" %>
+<%# A saved household event refreshes the page, keeping the place on it. %>
+<% turbo_refreshes_with method: :replace, scroll: :preserve %>
+<% manage_events = policy(Household::Event).create? %>
 
 <%= render Primer::Beta::Subhead.new(hide_border: true, mb: 0) do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Calendar" } %>
   <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
+  <% if manage_events %>
+    <% subhead.with_actions do %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_calendar_event_path, scheme: :primary, data: { turbo_frame: "calendar_event_dialog" })) { "Add household event" } %>
+    <% end %>
+  <% end %>
 <% end %>
 <% if @calendar.viewer_in_another_zone? %>
   <p class="color-fg-muted">Times are in <%= @calendar.zone_name %>, the household's time zone.</p>
@@ -42,14 +50,20 @@
         <% if policy(Current.household).manage_meetings? %>
           <% blankslate.with_primary_action(href: household_settings_meetings_path) { "Set your meeting times" } %>
         <% end %>
+        <% if manage_events %>
+          <% blankslate.with_secondary_action(href: new_household_calendar_event_path, data: { turbo_frame: "calendar_event_dialog" }) { "Add household event" } %>
+        <% end %>
       <% end %>
     <% end %>
 
     <% today = Current.household.today %>
     <% if @period.month? %>
-      <%= render "calendars/month", calendar: @calendar, period: @period, today:, hide: @hide, meeting_helper: @meeting_helper %>
+      <%= render "calendars/month", calendar: @calendar, period: @period, today:, hide: @hide, meeting_helper: @meeting_helper, manage_events: %>
     <% else %>
-      <%= render "calendars/week", calendar: @calendar, period: @period, today:, meeting_helper: @meeting_helper %>
+      <%= render "calendars/week", calendar: @calendar, period: @period, today:, meeting_helper: @meeting_helper, manage_events: %>
     <% end %>
   </div>
 </div>
+
+<%# The household event dialog loads here (Calendar::EventsController). %>
+<%= turbo_frame_tag "calendar_event_dialog" %>

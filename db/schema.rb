@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -264,6 +264,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_010000) do
     t.index ["user_id"], name: "index_goals_on_user_id"
     t.check_constraint "kind::text = 'milestone'::text", name: "goals_kind_check"
     t.check_constraint "num_nonnulls(household_id, user_id) = 1", name: "goals_one_owner_check"
+  end
+
+  create_table "household_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.string "kind", null: false
+    t.string "title", null: false
+    t.date "starts_on", null: false
+    t.integer "days", limit: 2, default: 1, null: false
+    t.time "time_of_day"
+    t.integer "duration_minutes"
+    t.string "frequency", default: "once", null: false
+    t.integer "interval", default: 1, null: false
+    t.integer "week_of_month", limit: 2
+    t.date "repeats_until"
+    t.string "location"
+    t.string "note"
+    t.uuid "created_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_household_events_on_created_by_id"
+    t.index ["household_id"], name: "index_household_events_on_household_id"
+    t.check_constraint "(time_of_day IS NULL) = (duration_minutes IS NULL)", name: "household_events_timed_duration_check"
+    t.check_constraint "\"interval\" > 0", name: "household_events_interval_check"
+    t.check_constraint "char_length(location::text) <= 120", name: "household_events_location_length_check"
+    t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 80", name: "household_events_title_length_check"
+    t.check_constraint "days = 1 OR time_of_day IS NULL AND frequency::text = 'once'::text", name: "household_events_several_days_check"
+    t.check_constraint "days >= 1 AND days <= 14", name: "household_events_days_check"
+    t.check_constraint "duration_minutes > 0 AND duration_minutes <= 720", name: "household_events_duration_minutes_check"
+    t.check_constraint "frequency::text <> 'monthly'::text OR week_of_month IS NOT NULL", name: "household_events_monthly_week_of_month_check"
+    t.check_constraint "frequency::text = ANY (ARRAY['once'::character varying, 'weekly'::character varying, 'monthly'::character varying]::text[])", name: "household_events_frequency_check"
+    t.check_constraint "kind::text = ANY (ARRAY['circuit_assembly'::character varying, 'regional_convention'::character varying, 'co_visit'::character varying, 'memorial'::character varying, 'field_service'::character varying, 'other'::character varying]::text[])", name: "household_events_kind_check"
+    t.check_constraint "week_of_month = ANY (ARRAY[1, 2, 3, 4, 5, '-1'::integer])", name: "household_events_week_of_month_check"
   end
 
   create_table "household_meeting_helpers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -704,6 +736,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_010000) do
   add_foreign_key "goals", "households", on_delete: :cascade
   add_foreign_key "goals", "users", column: "set_by_id"
   add_foreign_key "goals", "users", on_delete: :cascade
+  add_foreign_key "household_events", "households"
+  add_foreign_key "household_events", "users", column: "created_by_id"
   add_foreign_key "household_meeting_helpers", "households", on_delete: :cascade
   add_foreign_key "household_meeting_helpers", "users", column: "enabled_by_id"
   add_foreign_key "identities", "users"

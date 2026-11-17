@@ -1,0 +1,18 @@
+# The home household's circuit overseer's visit, and another household's field service.
+co_visit:
+  household: home
+  kind: co_visit
+  title: Circuit overseer's visit
+  starts_on: 2026-11-17
+  days: 6
+  created_by: spouse
+
+other_field_service:
+  household: other
+  kind: field_service
+  title: Field service
+  starts_on: 2026-11-21
+  time_of_day: "09:30"
+  duration_minutes: 90
+  frequency: weekly
+  created_by: outsider
