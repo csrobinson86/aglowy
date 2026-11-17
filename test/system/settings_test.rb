@@ -17,7 +17,7 @@ class SettingsTest < ApplicationSystemTestCase
     capture_screens("settings-profile")
 
     fill_in "Name", with: "Hannah Rivera"
-    click_on "Save profile"
+    click_button_after_prefetch "Save profile"
     assert_text "Your profile is saved."
     assert_field "Name", with: "Hannah Rivera"
     within("aside") { assert_text "Hannah Rivera" }

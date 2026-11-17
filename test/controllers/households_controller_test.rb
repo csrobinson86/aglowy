@@ -25,7 +25,7 @@ class HouseholdsControllerTest < ActionDispatch::IntegrationTest
     get households_path
 
     assert_response :success
-    assert_select "header a[href='/'] svg.octicon-sun"
+    assert_select "header a[href='/'] img[src*='aglowy-mark']", count: 1
     assert_select "main h1", text: "Your households"
     assert_select "aside", count: 0
     assert_select "nav[aria-label='Main']", count: 0

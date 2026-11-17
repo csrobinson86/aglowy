@@ -32,7 +32,7 @@ class FocusedLayoutTest < ApplicationSystemTestCase
   private
     # The Aglowy mark in the header, one h1 in main, and no sidebar.
     def assert_focused_page(title)
-      assert_selector "header a[href='/'] svg.octicon-sun"
+      assert_selector "header a[href='/'] img[src*='aglowy-mark']", count: 1
       assert_selector "h1", count: 1
       assert_selector "main h1", text: title
       assert_no_selector "aside"

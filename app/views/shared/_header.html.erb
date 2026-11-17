@@ -1,7 +1,7 @@
 <%# locals: () %>
 <%# household_id: nil keeps HouseholdScoped#default_url_options out of non-household URLs. %>
 <header class="d-flex flex-items-center flex-justify-between px-3 py-2 border-bottom">
-  <%= render(Primer::Beta::Link.new(href: root_path(household_id: nil), scheme: :primary, font_weight: :bold)) { "Aglowy" } %>
+  <%= render LogoComponent.new(href: root_path(household_id: nil)) %>
 
   <nav aria-label="Account" class="d-flex flex-items-center gap-2">
     <%= render "shared/household_switcher", user: Current.user %>

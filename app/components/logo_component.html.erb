@@ -1,0 +1,8 @@
+<%= render(Primer::Beta::Link.new(href:, scheme: :primary, font_weight: :bold, font_size: 3, display: :inline_flex, align_items: :center, classes: "no-underline")) do %>
+  <% if large? %>
+    <%= image_tag("aglowy-mark.svg", alt: "Aglowy", width: 48, height: 48) %>
+  <% else %>
+    <%= image_tag("aglowy-mark.svg", alt: "", width: 24, height: 24, class: "mr-2") %>
+    Aglowy
+  <% end %>
+<% end %>

@@ -1,10 +1,7 @@
 <div class="d-flex flex-column flex-auto height-full p-3">
   <%# Plain divs: in the phone menu a <header> or <footer> would be a second banner or contentinfo. %>
   <div class="mb-3">
-    <%= render(Primer::Beta::Link.new(href: home_path, scheme: :primary, font_weight: :bold, font_size: 3, display: :flex, align_items: :center, mb: 3, classes: "no-underline")) do %>
-      <%= render Primer::Beta::Octicon.new(:sun, color: :attention, size: :medium, mr: 2) %>
-      Aglowy
-    <% end %>
+    <div class="mb-3"><%= render LogoComponent.new(href: home_path) %></div>
 
     <%= render AppShell::HouseholdSwitcherComponent.new(membership:, menu_id: switcher_menu_id) %>
   </div>
