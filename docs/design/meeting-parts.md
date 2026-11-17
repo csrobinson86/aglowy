@@ -262,7 +262,7 @@ Then, after the lock block returns, it calls `write_later` on a saved draft, as 
 
 What counts toward the day's 15 is whether the draft still has its `Ai::Use`. `failed` and `flagged` delete it; every other status keeps it.
 
-- **The queue refuses the job** (`perform_later` returns false, or Solid Queue raises `SolidQueue::Job::EnqueueError`): `write_later` ends the draft `failed` and deletes its use, as `FamilyStudy::Draft::Writable#write_later` does. The panel shows the family study helper's "Couldn't make a draft right now. Try again in a moment."
+- **The queue refuses the job** (`perform_later` returns false, or Solid Queue raises `SolidQueue::Job::EnqueueError`): `write_later` ends the draft `failed` and deletes its use, as `PersonalStudy::Question::Answerable#answer_later` does for a question. (Family study drafts fail the same way, but have no `Ai::Use`: their limit counts drafts by status.) The panel shows the family study helper's "Couldn't make a draft right now. Try again in a moment."
 - **The job raises,** at the provider or anywhere else: `failed`, and the use is deleted.
 - **Stop** ends a `drafting` draft as `stopped` and keeps its use. A stopped request counts, as a stopped personal study question does, because the AI may already have been called.
 - **Accepted gap: the app process dies after the draft is saved and before `write_later` runs.** No job exists, nothing retries it, and the draft stays `drafting`. The panel shows Drafting with Stop, so the person stops it and asks again, and that one request still counts for the day. Family study drafts and personal study questions have the same gap. It's too rare to earn a job that sweeps up old `drafting` rows; if it does happen, add one sweep for all three features.
