@@ -68,6 +68,7 @@ households or roles. The non-negotiables:
 - Pundit for authorization (household roles on `Membership`; platform staff via `identities.staff`)
 - Hotwire (Turbo + Stimulus) for frontend — no React, no HTMX, no GraphQL
 - Lexxy for the Action Text notes editors. Scripture picker extension: run `test/system/scripture_links_test.rb` before any Lexxy upgrade.
+- `image_processing` with libvips, for avatars only (`docs/design/avatars.md`; Active Storage variants stay off)
 - Sass via `dartsass-rails` (standalone binary; reads Primer CSS from `node_modules`)
 - ViewComponent for reusable UI components
 - Primer ViewComponents (`primer_view_components`) as the design system
@@ -241,16 +242,18 @@ households or roles. The non-negotiables:
   ask Casey before building it by hand.
 - Devise's generated views still use plain `form_for`. Convert them only in a
   story that asks for it.
-- **Five approved exceptions** (decided Nov 2026): the file drop zone (Active
+- **Six approved exceptions** (decided Nov 2026): the file drop zone (Active
   Storage direct upload, Stimulus, BEM Sass from primitives) and the Lexxy notes
   editor (`rich_text_area`), both in `docs/design/family-studies.md`; the
   meeting helper's child screens and drawing canvas (large touch targets in BEM
   Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`;
   the scripture picker anchored at the caret in a notes editor (BEM Sass
   from primitives, Stimulus, a Lexxy extension), in
-  `docs/design/scripture-links.md`; and the note color picker (a radio group
-  drawn as swatches, BEM Sass from Primer's display color primitives), in
-  `docs/design/notes.md`. Primer has none of these. Each keeps a real
+  `docs/design/scripture-links.md`; the color picker (a radio group drawn as
+  swatches, BEM Sass from Primer's display color primitives), for notes in
+  `docs/design/notes.md` and avatars in `docs/design/avatars.md`; and the
+  avatar photo picker (a file input opened by a Primer `Button`, with a
+  Stimulus preview), in `docs/design/avatars.md`. Primer has none of these. Each keeps a real
   labelled input inside a Primer form and uses Primer `Button` for buttons;
   nothing else is hand-built.
 

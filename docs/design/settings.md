@@ -14,7 +14,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 
 | Group | Section | Head | Adult | Child | What's on it |
 | --- | --- | --- | --- | --- | --- |
-| You | Profile | yes | yes | yes | Name, your time zone |
+| You | Profile | yes | yes | yes | Avatar (photo, or your initial's color; `docs/design/avatars.md`, AVATAR-01), name, your time zone |
 | You | Appearance | yes | yes | yes | Theme: Match my device, Light, Dark (`docs/design/app-shell.md`, Theming and appearance) |
 | You | Signing in | yes | yes | password only, username read-only | Email, new password, current password (`docs/design/invitations.md`) |
 | You | My households | yes | yes | yes, without Leave | Each household with the person's role, and Leave |
@@ -22,7 +22,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Calendar | yes | yes | yes | Share my times with a household; the phone calendar link (`docs/design/calendar.md`, CAL-01) |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
-| | Children | yes | yes, meeting helper only | no | The meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
+| | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
 | | Members and roles | yes | no | no | Each member's role, and Remove |
 
 - The household group's heading is the household's name ("Rivera household"), because these settings belong to that household and nobody else's.
