@@ -41,6 +41,9 @@ Rails.application.routes.draw do
   # A scripture link for the notes editor, /scriptures/19:37:8-9, signed on the server (docs/design/scripture-links.md, Pieces).
   # No household: a Bible reference isn't anyone's record.
   resources :scriptures, only: :show
+  # A person's phone calendar, /calendar/<token>.ics, with no session: the token is the authorization
+  # (docs/design/calendar.md, The phone feed). Outside the household scope, since it covers all their households.
+  get "calendar/:token", to: "calendar_feeds#show", as: :calendar_feed, format: true, constraints: { format: "ics" }
   # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
   # Only for a person with no household: with one, GET /account opens Settings (docs/design/settings.md, /account stays).
   # The appearance and sign-in details forms on the same page post to /account/appearance and /account/sign_in;
@@ -81,6 +84,7 @@ Rails.application.routes.draw do
       resources :tags, only: :index                        # Tags and collections
       resource :calendar, only: :show                      # Calendar: who sees your times (docs/design/calendar.md)
       resource :time_sharing, only: :update                # Share my times
+      resource :calendar_feed, only: :update               # Reset link
       resource :household, only: %i[ show update ]         # Heads
       resource :meetings, only: %i[ show update ]          # Heads and adults
       resource :children, only: :show                      # Heads and adults

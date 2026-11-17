@@ -11,5 +11,37 @@
         <% end %>
       <% end %>
     <% end %>
+
+    <%# webcal:// so a phone offers to subscribe; household_id: nil keeps HouseholdScoped#default_url_options out of it. %>
+    <% link = calendar_feed_url(token: @calendar_feed.token, format: :ics, protocol: "webcal", household_id: nil) %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Add to your phone's calendar" } } %>
+      <% box.with_body do %>
+        <p class="color-fg-muted">Subscribe to this link in your phone's calendar app to see your households' events and your own times there, with reminders for your times. Anyone with the link can see them, so keep it to yourself.</p>
+        <div class="d-flex flex-items-end">
+          <div class="flex-1 min-width-0 mr-2">
+            <%= render(Primer::Alpha::TextField.new(name: :calendar_feed_url, id: "calendar-feed-url", label: "Your private link",
+                                                    value: link, readonly: true, full_width: true, monospace: true)) %>
+          </div>
+          <%= render(Primer::Beta::ClipboardCopyButton.new(id: "calendar-feed-copy", for: "calendar-feed-url", "aria-label": "Copy your private link")) %>
+        </div>
+        <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, font_size: :small, mt: 2)) do %>
+          Your phone checks it every few hours. It includes everyone's household events and only your own times.
+        <% end %>
+
+        <%= render(Primer::Alpha::Dialog.new(id: "reset-calendar-feed", title: "Reset your calendar link?")) do |dialog| %>
+          <% dialog.with_show_button(scheme: :danger) { "Reset link" } %>
+          <% dialog.with_body do %>
+            <p class="mb-0">Your old link stops working. Subscribe again on each device with the new one.</p>
+          <% end %>
+          <% dialog.with_footer do %>
+            <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "reset-calendar-feed" })) { "Cancel" } %>
+            <%= primer_form_with(url: household_settings_calendar_feed_path, method: :patch) do |f| %>
+              <%= render Settings::CalendarFeedForm.new(f) %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
   <% end %>
 <% end %>
