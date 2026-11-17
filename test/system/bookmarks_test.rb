@@ -104,7 +104,10 @@ class BookmarksTest < ApplicationSystemTestCase
     article = bookmarks(:head_suffering_article)
 
     visit household_bookmarks_url(household_id: households(:home))
-    within("##{ActionView::RecordIdentifier.dom_id(article)}") { click_on "Edit" }
+    within("##{ActionView::RecordIdentifier.dom_id(article)}") do
+      assert_no_selector "button[aria-label^='Bookmark actions:']" # the phone's "⋯" menu
+      click_on "Edit"
+    end
 
     within("dialog[open]") do
       assert_selector "h1", text: "Edit bookmark"

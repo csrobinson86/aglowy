@@ -121,6 +121,7 @@ class BookmarksPhoneTest < ApplicationSystemTestCase
 
     visit household_personal_note_url(household_id: households(:home), id: note)
     within("section[aria-labelledby=note-scriptures]") { assert_tap_target find("button[aria-label='Bookmark: Psalm 83:18']") }
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
 
     visit household_personal_study_url(household_id: households(:home), id: personal_studies(:head_suffering))
     find("[role=tab]", text: "Sources").click
@@ -130,6 +131,7 @@ class BookmarksPhoneTest < ApplicationSystemTestCase
       find("button[aria-label='Bookmark: Bible Questions Answered']").click
       assert_tap_target find("button[aria-label='Remove bookmark: Bible Questions Answered']")
     end
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
     assert_accessible
   end
 
