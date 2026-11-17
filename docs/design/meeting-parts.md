@@ -269,7 +269,7 @@ Frames `part-prepare.png`, `part-ai-outline.png` and `part-ai-wording.png`. The 
 4. **No verse text.** The wording says "(Read …)" and stops. Two checks back the instructions up, and neither is complete:
    - `scripture` and `read` hold a reference or nothing. One that doesn't parse as a reference, verse text included, is dropped (`docs/design/ai.md`, Scripture references).
    - In every other field, the copy check's quotation rule (`docs/design/ai.md`, safety measure 5) removes a sentence holding a quotation of more than 5 words.
-   - A quotation of 5 words or fewer, and verse text written without quotation marks, pass both. Aglowy never fetches verse text, so it has nothing to compare them against. Those rest on the instructions and on the warning shown with every draft.
+   - A quotation of 5 words or fewer, and verse text written without quotation marks, pass both. The copy check's overlap rule catches them only when 8 words in a row match an excerpt the search returned. Aglowy never fetches verse text, so it has nothing else to compare them against. Otherwise they rest on the instructions and on the warning shown with every draft.
 5. **Don't show a draft's text while it's drafting,** and don't let a finished job override Stop (`docs/design/ai.md`, Traps).
 6. **The time line is a guide.** Don't block a save, or an AI draft, for being over.
 7. **A shared part is found through `MeetingPart.shared_with(Current.household)`,** which also checks the owner is still active there. Another household's part is a 404.
