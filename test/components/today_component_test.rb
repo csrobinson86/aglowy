@@ -69,10 +69,22 @@ class TodayComponentTest < ViewComponent::TestCase
     assert_link "Open calendar"
   end
 
+  test "a child's event isn't a link, and today's meeting opens Today's meeting" do
+    households(:home).change_meeting_times(midweek_wday: 2, midweek_time: "19:30", weekend_wday: 0, weekend_time: "10:00")
+    households(:home).events.create!(kind: "field_service", title: "Field service", starts_on: Date.new(2026, 11, 17), time_of_day: "09:30",
+                                     duration_minutes: 90, created_by: users(:spouse))
+
+    render_today(meeting_helper: true, manage_events: false)
+
+    assert_selector ".today__item div.calendar-item--field-service", text: "Field service"
+    assert_no_selector ".today__item a.calendar-item--field-service"
+    assert_selector ".today__item a.calendar-item--meeting[href='/#{households(:home).id}/todays_meeting']", text: "Midweek meeting"
+  end
+
   private
-    def render_today
+    def render_today(meeting_helper: false, manage_events: true)
       with_request_url("/#{households(:home).id}/calendar") do
-        render_inline(TodayComponent.new(household: households(:home), viewer: users(:head), meeting_helper: false, manage_events: true))
+        render_inline(TodayComponent.new(household: households(:home), viewer: users(:head), meeting_helper:, manage_events:))
       end
     end
 

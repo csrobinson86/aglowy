@@ -11,12 +11,12 @@ class TodayComponent < ApplicationComponent
   def initialize(household:, viewer:, meeting_helper:, manage_events:)
     @household = household
     @today = household.today
-    @calendar = Household::Calendar.new(household, viewer:, range: today..today)
+    @calendar = Household::Calendar.new(household, viewer:, range: today..today, hide: %w[ shared_times ])
     @meeting_helper = meeting_helper
     @manage_events = manage_events
   end
 
   def items
-    @items ||= @calendar.items_on(today).reject(&:shared?)
+    @items ||= @calendar.items_on(today)
   end
 end

@@ -4,7 +4,8 @@
 // and only this box lays it out.
 .today__item .calendar-item {
   display: grid;
-  grid-template-columns: var(--base-size-80) minmax(0, 1fr) auto;
+  // A multi-day event's days ("Tue 17 – Sun 22") widen its own row's first column rather than wrap.
+  grid-template-columns: minmax(var(--base-size-80), max-content) minmax(0, 1fr) auto;
   column-gap: var(--base-size-12);
   align-items: center;
   padding: var(--base-size-4) 0 var(--base-size-4) var(--base-size-12);
@@ -15,6 +16,7 @@
 .today__item .calendar-item__time {
   grid-row: 1 / span 2;
   grid-column: 1;
+  white-space: nowrap;
 }
 
 // The done box and the title become cells of the row, the box on the right.

@@ -105,7 +105,10 @@ class Household::Calendar
     end
 
     # Other members' times shared with this household, never the viewer's, in one query for the members shown.
+    # hide "shared_times" leaves them all out without asking, as Today on Home does.
     def shared_times
+      return [] unless shown?("shared_times")
+
       members = members_sharing.select { shown?(shared_group(it)) }
       return [] if members.empty?
 
