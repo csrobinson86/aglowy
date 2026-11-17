@@ -243,10 +243,12 @@ Frames `part-prepare.png`, `part-ai-outline.png` and `part-ai-wording.png`. The 
 
 ### How a request runs
 
-`part.draft(kind:, request:, revises:, by: user)` runs inside `user.with_lock`:
+`part.draft(kind:, request:, revises:, by: user)` does this inside `user.with_lock`:
 
 - refuses with `:limit` at 15, and with `:not_allowed` unless `may_prepare_parts_with_ai?` and `accepted_ai_terms?`
-- makes the draft (`drafting`) with its own chat, its `Ai::Use` and, when it revises a draft, the copy in `revised_result`, then calls `write_later`
+- makes the draft (`drafting`) with its own chat, its `Ai::Use` and, when it revises a draft, the copy in `revised_result`
+
+Then, after the lock block returns, it calls `write_later` on a saved draft, as `FamilyStudy::Draft.start` and `PersonalStudy#ask` do. The job is queued in another database, so queuing it inside the lock could let a worker start before the draft is committed.
 
 `MeetingPart::WriteDraftJob` → `draft.write_now`, the same five steps as `FamilyStudy::Draft#write_now` (`docs/design/family-studies.md`): moderation; `chat.ask_within_purpose` with progress lines only; the checks; the final status with a conditional update that applies only while `drafting`; one broadcast of the result.
 
