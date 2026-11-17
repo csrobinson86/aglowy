@@ -34,14 +34,15 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=checkbox][value=email]", count: 3
   end
 
-  test "a child's form has no Email" do
+  test "a child's form has no Email, and a Phone box for each kind" do
     sign_in identities(:eli)
 
     get household_settings_notifications_path(household_id: @home)
 
     assert_response :success
     assert_equal [ "Weekly preview", "Shared with you" ], css_select("main fieldset legend").map { it.text.strip }
-    assert_select "input[type=checkbox]", count: 0
+    assert_select "input[type=checkbox][value=email]", count: 0
+    assert_select "input[type=checkbox][value=push]", count: 2
     assert_select "main", text: /Children get notifications in Aglowy and on their phone, never by email\./
     assert_select "main", text: /Emails go to/, count: 0
     assert_select "select[name='user[quiet_hours_start]']"
@@ -53,7 +54,8 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
 
     get household_settings_notifications_path(household_id: @home)
 
-    assert_select "input[type=checkbox]", count: 0
+    assert_select "input[type=checkbox][value=email]", count: 0
+    assert_select "input[type=checkbox][value=push]", count: 3
     assert_select "main", text: /Your login has no email address, so nothing is emailed\./
   end
 
@@ -86,6 +88,14 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
     sign_in identities(:eli)
     patch household_settings_notifications_path(household_id: @home), params: { notification_settings: { weekly_preview: [ "email" ] } }
     assert_empty users(:eli).notification_settings
+  end
+
+  test "a child's Phone saves, and their email is still ignored" do
+    sign_in identities(:eli)
+
+    patch household_settings_notifications_path(household_id: @home), params: { notification_settings: { weekly_preview: %w[ email push ], shared_with_you: [ "push" ] } }
+
+    assert_equal [ %w[ shared_with_you push ], %w[ weekly_preview push ] ], users(:eli).notification_settings.pluck(:kind, :channel).sort
   end
 
   test "a form that isn't the page's saves nothing and doesn't fail" do

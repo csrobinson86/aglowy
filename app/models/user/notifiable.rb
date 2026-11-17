@@ -29,6 +29,19 @@ module User::Notifiable
       end
     end
 
+    has_many :push_subscriptions, dependent: :delete_all do
+      # Turns push on for this browser. A browser has one subscription, so turning it on again updates its keys, and
+      # one that was someone else's (a family's shared iPad) moves to whoever turned it on last. create_or_find_by!
+      # leans on the unique endpoint, so two clicks at once make one.
+      def subscribe(endpoint:, p256dh_key:, auth_key:, user_agent:, standalone:)
+        attributes = { user: proxy_association.owner, p256dh_key:, auth_key:, label: PushSubscription::Device.new(user_agent, standalone:).label }
+        subscription = PushSubscription.create_or_find_by!(endpoint:) { it.assign_attributes(attributes) }
+        subscription.update!(attributes)
+        reset
+        subscription
+      end
+    end
+
     # Signed and never stored; they don't expire, so the link in an old email still works.
     UNSUBSCRIBE_SCOPES.each { generates_token_for :"unsubscribe_#{it}" }
 
@@ -87,10 +100,10 @@ module User::Notifiable
     Notification::Kind.all.select { it.offered_to?(self) }
   end
 
-  # The [kind, channel] pairs Settings → Notifications offers them. Email only for those who can get it; push comes
-  # with its own story.
+  # The [kind, channel] pairs Settings → Notifications offers them: push to everyone, children included, and email only
+  # to those who can get it.
   def notification_choices
-    notification_kinds.map(&:name).product(emailable? ? [ "email" ] : [])
+    notification_kinds.map(&:name).product(emailable? ? %w[ email push ] : %w[ push ])
   end
 
   # Children never get email, even with an address, and a username-only login has none (Trap 3).

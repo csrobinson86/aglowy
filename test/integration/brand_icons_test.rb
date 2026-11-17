@@ -44,7 +44,7 @@ class BrandIconsTest < ActionDispatch::IntegrationTest
     assert_select "head link[rel=icon][href='/icon.png'][type='image/png'][sizes='32x32']", count: 1
     assert_select "head link[rel=apple-touch-icon][href='/apple-touch-icon.png']", count: 1
     assert_select "head meta[name=theme-color][content='#1F2328']", count: 1
-    assert_select "head link[rel=manifest]", count: 0
+    assert_select "head link[rel=manifest][href='/manifest.json']", count: 1
   end
 
   test "every file in the Files table is where the app serves it, byte for byte" do

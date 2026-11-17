@@ -1,8 +1,8 @@
 require "application_system_test_case"
 
 # Settings → Notifications and the "Turn off this email" page (docs/design/notifications.md, Settings → Notifications
-# and Emails; frames settings-notifications.png and settings-notifications-child.png, without the Phone column and
-# the Phones and browsers box, which come with push).
+# and Emails; frames settings-notifications.png and settings-notifications-child.png). The Phone column and the
+# Phones and browsers box are in push_settings_test.rb.
 class NotificationSettingsTest < ApplicationSystemTestCase
   test "a head turns on the weekly email and changes quiet hours" do
     users(:head).update!(time_zone: "Central Time (US & Canada)")

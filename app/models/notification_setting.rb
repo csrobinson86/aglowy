@@ -6,4 +6,5 @@ class NotificationSetting < ApplicationRecord
   belongs_to :user
 
   scope :email, -> { where(channel: "email") }
+  scope :push, -> { where(channel: "push") }
 end

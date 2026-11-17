@@ -1,0 +1,39 @@
+<%# locals: (push_subscriptions:, zone:) %>
+<%# Phones and browsers (frames settings-notifications.png and settings-notifications-child.png): Turn on for this
+    browser, which the push_subscription controller shows only where push works and this browser isn't listed yet; the
+    person's devices with Remove; and the iPhone help line. %>
+<%= render(Primer::Beta::BorderBox.new(id: "push-subscriptions",
+                                       data: { controller: "push-subscription",
+                                               push_subscription_public_key_value: Rails.configuration.x.web_push[:public_key],
+                                               push_subscription_subscribed_value: push_subscriptions.map { Digest::SHA256.hexdigest(it.endpoint) }.to_json })) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "Phones and browsers" } } %>
+  <% box.with_row(hidden: true, data: { push_subscription_target: "offer" }) do %>
+    <div class="d-flex flex-items-center flex-wrap gap-2">
+      <div class="flex-auto">
+        <p class="text-bold mb-1">This browser isn't set up yet</p>
+        <p class="color-fg-muted mb-0">Turn it on here, then allow notifications when your browser asks.</p>
+      </div>
+      <%= render(Primer::Beta::Button.new(scheme: :primary, data: { action: "push-subscription#subscribe" })) { "Turn on for this browser" } %>
+    </div>
+    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mt: 3, hidden: true, data: { push_subscription_target: "refused" })) do %>
+      Your browser blocked notifications for Aglowy. Allow them in its settings, then try again.
+    <% end %>
+    <%= primer_form_with(scope: :push_subscription, url: household_push_subscriptions_path, data: { push_subscription_target: "form" }) do |f| %>
+      <%= render PushSubscriptions::SubscriptionForm.new(f) %>
+    <% end %>
+  <% end %>
+  <% push_subscriptions.each do |subscription| %>
+    <% box.with_row(id: dom_id(subscription), display: :flex, align_items: :center) do %>
+      <div class="flex-auto min-width-0 mr-2">
+        <p class="mb-1 css-truncate css-truncate-overflow d-block"><%= subscription.label %></p>
+        <p class="color-fg-muted f6 mb-0"><%= push_subscription_dates(subscription, zone) %></p>
+      </div>
+      <%= primer_form_with(url: household_push_subscription_path(subscription), method: :delete) do |f| %>
+        <%= render PushSubscriptions::RemovalForm.new(f, label: subscription.label) %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% box.with_footer(font_size: :small, color: :muted) do %>
+    On an iPhone or iPad, add Aglowy to your Home Screen first (Share, then Add to Home Screen), open it from there, and turn notifications on.
+  <% end %>
+<% end %>

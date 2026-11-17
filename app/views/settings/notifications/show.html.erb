@@ -21,7 +21,7 @@
       <% end %>
     <% end %>
 
-    <%= render(Primer::Beta::BorderBox.new(id: "quiet-hours")) do |box| %>
+    <%= render(Primer::Beta::BorderBox.new(id: "quiet-hours", mb: 4)) do |box| %>
       <% box.with_header { |header| header.with_title(tag: :h3) { "Quiet hours" } } %>
       <% box.with_body do %>
         <%= primer_form_with(model: @user, scope: :user, url: household_settings_quiet_hours_path, method: :patch) do |f| %>
@@ -32,5 +32,7 @@
         <% end %>
       <% end %>
     <% end %>
+
+    <%= render "settings/notifications/push_subscriptions", push_subscriptions: @user.push_subscriptions.newest_first, zone: @user.calendar_time_zone %>
   <% end %>
 <% end %>

@@ -11,6 +11,8 @@ meeting_note_part_key = /\Ameeting_note[\.\[\]]+parts_attributes[\.\[\]]+(?:[^\.
 
 Rails.application.config.filter_parameters += [
   :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc, :notes, :insight,
+  # A push subscription's address works as a secret (docs/design/notifications.md, PushSubscription).
+  :endpoint,
   # AI prompts, chat messages and draft outlines (docs/design/ai.md, Traps).
   :prompt, :content, :outline,
   meeting_note_part_key,

@@ -1,26 +1,19 @@
-// Add a service worker for processing Web Push notifications:
-//
-// self.addEventListener("push", async (event) => {
-//   const { title, options } = await event.data.json()
-//   event.waitUntil(self.registration.showNotification(title, options))
-// })
-//
-// self.addEventListener("notificationclick", function(event) {
-//   event.notification.close()
-//   event.waitUntil(
-//     clients.matchAll({ type: "window" }).then((clientList) => {
-//       for (let i = 0; i < clientList.length; i++) {
-//         let client = clientList[i]
-//         let clientPath = (new URL(client.url)).pathname
-//
-//         if (clientPath == event.notification.data.path && "focus" in client) {
-//           return client.focus()
-//         }
-//       }
-//
-//       if (clients.openWindow) {
-//         return clients.openWindow(event.notification.data.path)
-//       }
-//     })
-//   )
-// })
+// Shows Aglowy's pushes and opens them (docs/design/notifications.md, Push). It caches nothing: Aglowy isn't an offline
+// app. The payload is { title, body, url, tag }, one line and never personal text.
+self.addEventListener("push", (event) => {
+  const { title, body, url, tag } = event.data.json()
+  event.waitUntil(self.registration.showNotification(title, { body, tag, icon: "/icon-192.png", data: { url } }))
+})
+
+// Tapping one focuses an Aglowy window already on its page, or opens one there.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const url = new URL(event.notification.data.url, self.location.origin).href
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => client.url === url && "focus" in client)
+      return open ? open.focus() : clients.openWindow(url)
+    })
+  )
+})

@@ -54,6 +54,10 @@ gem "ruby_llm"
 # Active Storage variants stay off (config/application.rb).
 gem "image_processing", "~> 1.14"
 
+# ─── Notifications ────────────────────────────────────────────────────────────
+# Web Push with VAPID, encrypted end to end (RFC 8291), for phones and browsers (docs/design/notifications.md, Push).
+gem "web-push"
+
 # ─── Admin ────────────────────────────────────────────────────────────────────
 # Lightweight Rails admin engine by Chris Oliver (GoRails).
 gem "madmin"

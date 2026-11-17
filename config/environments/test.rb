@@ -58,6 +58,12 @@ Rails.application.configure do
   ENV["ANTHROPIC_API_KEY"] = "test-anthropic-key-not-a-secret"
   ENV["OPENAI_API_KEY"] = "test-openai-key-not-a-secret"
 
+  # A VAPID key pair made for tests only, so tests and CI need no credentials. Not secrets: WebPush.payload_send is
+  # stubbed and nothing is ever sent with them. Set before config/initializers/web_push.rb reads them.
+  ENV["VAPID_PUBLIC_KEY"] = "BMSOFvKDI90Q57kNhqrU522AxcT4Qfsjxn3tfBDSa-HYR157zNhB-RLpsHji7QzJvJGJG4T0t1ebZjzIazRhwfs="
+  ENV["VAPID_PRIVATE_KEY"] = "rU3u5_ZAGZwap6eTfpsBsQ2VdMYmA4xr1VDHk3n1x9Q="
+  ENV["VAPID_SUBJECT"] = "mailto:test@example.com"
+
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 

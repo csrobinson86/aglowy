@@ -9,8 +9,9 @@
 
 <%= content_for :head %>
 
-<%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-<%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+<%# The manifest makes Aglowy installable, which an iPhone needs for push (docs/design/notifications.md, Push).
+    household_id: nil keeps HouseholdScoped#default_url_options out of it. %>
+<%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json, household_id: nil) %>
 
 <%# The Two flames: the SVG mark, a 32 px PNG for browsers without SVG favicons, and the app icon for an iPhone's
     Home Screen. theme-color is the logo's ink (docs/design/brand.md, Files and Colours). %>
