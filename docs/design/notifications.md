@@ -194,7 +194,7 @@ Notifications are reached through `Current.user.notifications.visible`, so someo
 A section in the "You" group after Calendar (`docs/design/settings.md`). The note under the title is "What reaches you, and where. Follows you to every household."
 
 - **What you get** (`Settings::NotificationsForm`): one Primer `check_box_group` per kind the person can get. Its legend is the kind's name, its caption says what the kind is and when its email goes ("Right away" or "In your daily summary"), and it holds two checkboxes, Email and Phone. The mockup draws this as a table; build it from Primer check box groups, not a hand-built table.
-  - Heads see all four. Adults see the weekly preview and shared. A person who is a head in any household sees the topic and invitation kinds.
+  - Everyone sees the weekly preview and shared. A head or adult in any household also sees the invitation kind, since both can invite. Only a person who is a head in some household sees the topic kind. Children see the weekly preview and shared.
   - Children, and people with no email address, get no Email checkbox. The line under the box says "Children get notifications in Aglowy and on their phone, never by email," or names the email address and says when the daily summary comes.
   - "In Aglowy: always" shows as a line, not a disabled checkbox.
 - **People with no household** get no notifications, since every kind comes from a household, so `/account` has no Notifications section. Their settings stay as they were for when they join one, and the unsubscribe links in old emails still work.
