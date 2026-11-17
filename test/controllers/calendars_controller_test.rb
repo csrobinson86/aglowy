@@ -16,7 +16,8 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "title", "Calendar · The Head Family · Aglowy"
     assert_select "h1", "Calendar"
-    assert_select "h2", "November 16 – 22, 2026Nov 16 – 22"
+    assert_select "h2 .d-none", "November 16 – 22, 2026"
+    assert_select "h2 .d-md-none", "Nov 16 – 22"
     assert_select "section.calendar-day", 7
     assert_select "section.calendar-day h3", count: 7
     assert_select "section.calendar-day[aria-current=date] h3", /Tue 17/ do
@@ -35,7 +36,7 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     get household_calendar_path(household_id: households(:home), view: "month")
 
     assert_response :success
-    assert_select "h2", "November 2026November 2026"
+    assert_select "h2", "November 2026"
     assert_select ".calendar-month__day", 42
     assert_select ".calendar-month__day a[href=?]", household_calendar_path(household_id: households(:home), view: "week", date: "2026-11-02"), "2"
     assert_select "a[aria-label='Previous month'][href=?]", household_calendar_path(household_id: households(:home), view: "month", date: "2026-10-01")
@@ -88,11 +89,11 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
 
     get household_calendar_path(household_id: households(:home), date: "next tuesday", view: "year")
 
-    assert_select "h2", "November 16 – 22, 2026Nov 16 – 22"
+    assert_select "h2 .d-none", "November 16 – 22, 2026"
 
     get household_calendar_path(household_id: households(:home), date: "1" * 200)
 
-    assert_select "h2", "November 16 – 22, 2026Nov 16 – 22"
+    assert_select "h2 .d-none", "November 16 – 22, 2026"
   end
 
   test "a study session links to its page; a later one not stored yet links to Family studies" do

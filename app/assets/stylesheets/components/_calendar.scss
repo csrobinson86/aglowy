@@ -20,6 +20,12 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
   border-bottom: var(--borderWidth-thin) solid var(--borderColor-default);
 }
 
+.calendar-toolbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-8);
+}
+
 // Primer's coarse-pointer menu items are 40px tall, so the Add menu's are raised to the 44px touch target, as Bookmarks'
 // are.
 .calendar-add-menu .ActionListContent {

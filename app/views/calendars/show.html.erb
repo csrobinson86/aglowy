@@ -33,13 +33,17 @@
 <%# Today, previous and next, the range, and Week or Month; each a link keeping view, date and hide (frame calendar-week.png).
     On a phone the range is shorter, Month isn't offered, and Show opens its dialog (frame phone-calendar.png). %>
 <div class="calendar-toolbar">
-  <div class="d-flex flex-items-center gap-2">
+  <div class="calendar-toolbar__nav">
     <%= render(Primer::Beta::Button.new(tag: :a, href: calendar_page_path(@period.view, Current.household.today, hide: @hide))) { "Today" } %>
     <% unit = @period.month? ? "month" : "week" %>
     <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.previous_date, hide: @hide), icon: :"chevron-left", "aria-label": "Previous #{unit}", show_tooltip: false) %>
     <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.next_date, hide: @hide), icon: :"chevron-right", "aria-label": "Next #{unit}", show_tooltip: false) %>
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, ml: 2)) do %>
-      <span class="d-none d-md-inline"><%= @period.title %></span><span class="d-md-none"><%= @period.short_title %></span>
+      <% if @period.short_title == @period.title %>
+        <%= @period.title %>
+      <% else %>
+        <span class="d-none d-md-inline"><%= @period.title %></span><span class="d-md-none"><%= @period.short_title %></span>
+      <% end %>
     <% end %>
   </div>
   <%= render Primer::Beta::IconButton.new(icon: :filter, "aria-label": "Show on the calendar", show_tooltip: false, display: [ nil, nil, :none ], data: { show_dialog_id: "calendar-show-dialog" }) %>
