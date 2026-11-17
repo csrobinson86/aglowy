@@ -45,7 +45,7 @@ class SettingsTest < ApplicationSystemTestCase
 
     within("nav[aria-label='Settings']") { click_on "Appearance" }
     assert_selector "nav[aria-label='Settings'] a[aria-current=page]", text: "Appearance"
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections" ], all("nav[aria-label='Settings'] a").map(&:text)
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar" ], all("nav[aria-label='Settings'] a").map(&:text)
     assert_accessible
     capture_screens("settings-child")
 
@@ -65,7 +65,7 @@ class SettingsTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_settings_url(household_id: households(:home))
 
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Household", "Meetings", "Children", "Members and roles" ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Household", "Meetings", "Children", "Members and roles" ],
                  all("nav[aria-label='Settings'] a").map(&:text)
     within("nav[aria-label='Settings']") { click_on "Household" }
     assert_selector "h2", text: "Household"
@@ -109,7 +109,7 @@ class SettingsTest < ApplicationSystemTestCase
 
     within("nav[aria-label='Settings']") do
       assert_selector "h2", text: "The Head Family"
-      assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Meetings", "Children" ], all("a").map(&:text)
+      assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Meetings", "Children" ], all("a").map(&:text)
       click_on "Meetings"
     end
     assert_accessible

@@ -1,7 +1,8 @@
 <%# locals: (item:, today:, meeting_helper:, manage_events:, chip:) -%>
 <%# A meeting opens the viewer's note for it, or Today's meeting for a child with the helper on its day; a study session
     opens its page, and one not stored yet opens Family studies; a household event opens its edit dialog for heads and
-    adults, and for children isn't a link, with its location and note under the title (docs/design/calendar.md, Links).
+    adults, and for children isn't a link, with its location and note under the title; another member's shared time is
+    never a link (docs/design/calendar.md, Links).
     An all-day event in the week's band names its days in place of a time. The title says what it is, so color is never
     the only cue. %>
 <% classes = [ "calendar-item", "calendar-item--#{item.kind.dasherize}", { "calendar-item--chip": chip } ] %>
@@ -19,7 +20,9 @@
     <span class="calendar-item__subtitle"><%= item.source.note %></span>
   <% end %>
 <% end %>
-<% if item.event? && manage_events %>
+<% if item.shared? %>
+  <%= tag.div content, class: classes %>
+<% elsif item.event? && manage_events %>
   <%= link_to content, edit_household_calendar_event_path(id: item.source), class: classes, data: { turbo_frame: "calendar_event_dialog" } %>
 <% elsif item.event? %>
   <%= tag.div content, class: classes %>

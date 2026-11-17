@@ -111,6 +111,19 @@ class User < ApplicationRecord
     households.merge(Membership.active)
   end
 
+  # The active households whose calendars show their times, by name (docs/design/calendar.md, The page).
+  def households_seeing_times
+    active_households.merge(Membership.sharing_times).order(:name, :id)
+  end
+
+  # Settings → Calendar: shares their times with the active households ticked and stops with the rest, in one
+  # transaction. Any other household is ignored.
+  def share_times_only_with(household_ids)
+    transaction do
+      memberships.active.each { it.household_id.in?(household_ids) ? it.share_times : it.stop_sharing_times }
+    end
+  end
+
   # One of this person's active households, or nil: how AiAcceptancesController checks its return_to.
   def active_household(id)
     active_households.find_by(id: id)

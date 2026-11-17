@@ -65,6 +65,15 @@
   --calendar-kind-fgColor: var(--display-orange-fgColor);
 }
 
+// Another member's times, shared with the household: pink, with a dashed border, as they aren't the viewer's own
+// (docs/design/calendar.md, What's on the calendar).
+.calendar-item--shared,
+.calendar-show__check--shared {
+  --calendar-kind-bgColor: var(--display-pink-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-pink-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-pink-fgColor);
+}
+
 // A ticked Show check box is filled with its group's color, in place of Primer's accent.
 .calendar-show__check {
   --control-checked-bgColor-rest: var(--calendar-kind-borderColor);
@@ -224,6 +233,12 @@
 // it opens is a link under them (docs/design/calendar.md, My time's done box).
 .calendar-item--my-time {
   cursor: auto;
+}
+
+// Another member's shared time isn't a link, and its dashed border says it isn't the viewer's own.
+.calendar-item--shared {
+  cursor: auto;
+  border: var(--borderWidth-thin) dashed var(--calendar-kind-borderColor);
 }
 
 .calendar-item__done {

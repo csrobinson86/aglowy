@@ -33,3 +33,7 @@ reading = seed_personal_time(maria, rivera, kind: "bible_reading", title: "Daily
 seed_personal_time(maria, rivera, kind: "personal_study", title: "Personal study", wdays: [ 2 ], time_of_day: "20:30", duration_minutes: 60, opens: listening)
 seed_personal_time(maria, rivera, kind: "meeting_prep", title: "Meeting prep", wdays: [ 3 ], time_of_day: "19:00", duration_minutes: 45)
 seed_personal_time(lucia, rivera, kind: "bible_reading", title: "Read a Bible story", wdays: [ 0, 1, 2, 3, 4, 5, 6 ], time_of_day: "19:30", duration_minutes: 15)
+
+# Lucia shares her times with the Riveras, so Maria sees "Lucia's time" on the calendar (docs/design/calendar.md,
+# Membership::TimeSharing).
+rivera.memberships.find_by!(user: lucia).share_times

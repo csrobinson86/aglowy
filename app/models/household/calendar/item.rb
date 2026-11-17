@@ -1,6 +1,7 @@
 # One thing on the calendar, with its times in the household's zone. kind picks the color (.calendar-item--<kind>);
 # source is what it comes from, a Household::Meeting, a FamilyStudy::Session (unsaved past the generator's horizon), a
-# Household::Event or a PersonalTime::Occurrence, so the page can link to it. An all-day item runs from the midnight it starts to the midnight after
+# Household::Event or a PersonalTime::Occurrence, so the page can link to it; for another member's shared time it's the
+# person, so nothing about the time itself reaches the page. An all-day item runs from the midnight it starts to the midnight after
 # its last day.
 Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :ends_at, :all_day, :source) do
   def self.from_meeting(meeting)
@@ -25,8 +26,21 @@ Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :e
         ends_at: occurrence.ends_at.in_time_zone(zone), all_day: false, source: occurrence)
   end
 
+  # Another member's time, shared with the household: its title and when it is, and "<First name>'s time" under it.
+  # Never its done mark or what it opens, and never a link (Trap 3).
+  def self.from_shared_time(occurrence, household:)
+    zone = household.time_zone
+    new(kind: "shared", title: occurrence.title, subtitle: "#{occurrence.personal_time.user.first_name}'s time",
+        starts_at: occurrence.starts_at.in_time_zone(zone), ends_at: occurrence.ends_at.in_time_zone(zone), all_day: false,
+        source: occurrence.personal_time.user)
+  end
+
   def my_time?
     kind == "my_time"
+  end
+
+  def shared?
+    kind == "shared"
   end
 
   def meeting?

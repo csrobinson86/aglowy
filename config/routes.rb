@@ -79,6 +79,8 @@ Rails.application.routes.draw do
       resource :sign_in, only: %i[ show update ]
       resources :memberships, only: %i[ index destroy ]   # My households
       resources :tags, only: :index                        # Tags and collections
+      resource :calendar, only: :show                      # Calendar: who sees your times (docs/design/calendar.md)
+      resource :time_sharing, only: :update                # Share my times
       resource :household, only: %i[ show update ]         # Heads
       resource :meetings, only: %i[ show update ]          # Heads and adults
       resource :children, only: :show                      # Heads and adults

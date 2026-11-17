@@ -40,10 +40,20 @@
 <div class="d-flex flex-column flex-lg-row gap-4">
   <div class="col-lg-3 flex-shrink-0">
     <%= primer_form_with(url: household_calendar_path, method: :get, data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
-      <%= render Calendars::ShowForm.new(f, household: Current.household, period: @period, hide: @hide) %>
+      <%= render Calendars::ShowForm.new(f, calendar: @calendar, period: @period, hide: @hide) %>
       <noscript><%= render(Primer::Beta::Button.new(type: :submit, mt: 2)) { "Show" } %></noscript>
     <% end %>
-    <p class="text-small color-fg-muted mt-3">Only you see your times.</p>
+    <%# Who sees the viewer's times, and where to change it (docs/design/calendar.md, The page). %>
+    <% households_seeing = Current.user.households_seeing_times.map(&:name) %>
+    <p class="text-small color-fg-muted mt-3">
+      <% if households_seeing.any? %>
+        Your times are shared with <%= households_seeing.to_sentence %>.
+        <%= render(Primer::Beta::Link.new(href: household_settings_calendar_path, underline: true)) { "Change" } %>
+      <% else %>
+        Only you see your times.
+        <%= render(Primer::Beta::Link.new(href: household_settings_calendar_path, underline: true)) { "Share them" } %>
+      <% end %>
+    </p>
   </div>
 
   <div class="flex-auto min-width-0">

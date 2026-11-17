@@ -20,7 +20,13 @@
       <%= tag.div class: "mt-3", hidden: !personal_time.kind.in?(PersonalTime::OPENING_KINDS), data: { personal_time_target: "opens" } do %>
         <%= render PersonalTimes::Form.new(f, section: :opens, user: Current.user) %>
       <% end %>
-      <p class="text-small color-fg-muted my-3">Only you see your times. You can share them with a household in Settings → Calendar.</p>
+      <p class="text-small color-fg-muted my-3">
+        <% if Current.membership.shares_times? %>
+          <%= Current.household.name %> sees this time's title and when it is.
+        <% else %>
+          Only you see your times. You can share them with a household in Settings → Calendar.
+        <% end %>
+      </p>
       <% if Current.user.time_zone.nil? %>
         <p class="text-small color-fg-muted mb-3">Your times are in <%= personal_time.zone_shown.sub(/ \(.*\)\z/, "") %>. Change it in Settings → Profile.</p>
       <% end %>

@@ -57,6 +57,15 @@ class PersonalTimesControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-stream[action=refresh]"
   end
 
+  test "when the person shares with this household, the dialog says it sees the time" do
+    sign_in identities(:eli)
+    memberships(:eli_in_home).share_times
+
+    get new_household_personal_time_path(household_id: @home)
+
+    assert_select "p", "The Head Family sees this time's title and when it is."
+  end
+
   test "without Turbo, a saved time goes back to the calendar" do
     time = spouse_time
     sign_in identities(:spouse)

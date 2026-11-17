@@ -3,6 +3,8 @@ class Membership < ApplicationRecord
   belongs_to :user
   # The database deletes it with the seat (on_delete: :cascade).
   has_one :study_ai_grant, dependent: :delete
+  # The same.
+  has_one :time_sharing, dependent: :delete
 
   enum :role, %i[ head adult child ].index_by(&:itself), default: :adult, validate: true
 
@@ -11,6 +13,7 @@ class Membership < ApplicationRecord
   scope :by_role, -> { in_order_of(:role, roles.keys).order(:created_at) }
   scope :by_household_name, -> { includes(:household).order("households.name") }
   scope :with_study_ai_grant, -> { where(id: Membership::StudyAiGrant.select(:membership_id)) }
+  scope :sharing_times, -> { where(id: Membership::TimeSharing.select(:membership_id)) }
 
   def sole_head?
     head? && active? && household.memberships.active.head.where.not(id: id).none?
@@ -80,6 +83,21 @@ class Membership < ApplicationRecord
 
   def study_ai_grant?
     study_ai_grant.present?
+  end
+
+  # The person's own times on this household's calendar (docs/design/calendar.md, Membership::TimeSharing). Sharing twice
+  # finds the first row: the unique index settles a double save.
+  def share_times
+    Membership::TimeSharing.create_or_find_by!(membership: self).tap { reset_time_sharing }
+  end
+
+  def stop_sharing_times
+    Membership::TimeSharing.where(membership: self).delete_all
+    reset_time_sharing
+  end
+
+  def shares_times?
+    time_sharing.present?
   end
 
   private
