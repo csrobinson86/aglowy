@@ -159,7 +159,7 @@ A person's private subscribe link.
 - the viewer's own times
 - other members' times, for each member in `household.members_sharing_times`, leaving out the viewer
 
-The page asks for one week (or one month's 6 weeks) at a time, so each source is one query; occurrences are expanded in Ruby.
+The page asks for one week (or one month's 6 weeks) at a time, so each source is one query; occurrences are expanded in Ruby. Personal times are expanded over the person's own dates that cover the range's first and last instants (one day either side is enough), and only occurrences whose start falls inside the range are kept. A 12:30 AM Monday time in Tokyo is Sunday afternoon in Los Angeles, and still lands in the Los Angeles week.
 
 **One clock per page.** The calendar shows everything in the household's zone, like every other household page. A personal time is converted from the person's own zone. When the viewer's zone differs from the household's, a muted line under the title says so: "Times are in Central Time, the household's time zone."
 
@@ -275,7 +275,7 @@ end
 - no session: it skips `authenticate_identity!` and `verify_authorized`; the token is the authorization. An unknown token is a 404.
 - `rate_limit to: 30, within: 1.minute`, and `Cache-Control: private, max-age=900`
 - content: for every active household the person is in, its meetings, family study sessions and events; and the person's own times. Never anyone else's times. From 30 days back to 180 days ahead.
-- `CalendarFeed::Document`, a PORO, writes RFC 5545 by hand (no gem): one `VEVENT` per occurrence with a stable `UID` (`<source id>-<date>@aglowy`), `DTSTAMP`, `DTSTART`/`DTEND` in UTC (or `VALUE=DATE` for all day), `SUMMARY` and `LOCATION`. The household's name goes in each household item's summary ("Midweek meeting · Rivera household"). Escape `\`, `;`, `,` and newlines; fold lines at 75 octets; end lines with CRLF.
+- `CalendarFeed::Document`, a PORO, writes RFC 5545 by hand (no gem): one `VEVENT` per occurrence with a stable `UID` (`<source id>-<date>@aglowy`). The source id is the event's or the personal time's id, `<household id>-midweek` or `-weekend` for a meeting, and the study's id for a family study, both before and after the daily task stores its session. The date is the occurrence's slot date (a session's `recurrence_at`, in the household's zone), so a moved session or a newly stored one keeps its UID. Then `DTSTAMP`, `DTSTART`/`DTEND` in UTC (or `VALUE=DATE` for all day), `SUMMARY` and `LOCATION`. The household's name goes in each household item's summary ("Midweek meeting · Rivera household"). Escape `\`, `;`, `,` and newlines; fold lines at 75 octets; end lines with CRLF.
 - each of the person's own times gets a `VALARM` (`ACTION:DISPLAY`, `TRIGGER:PT0M`, and the `DESCRIPTION` RFC 5545 requires on a display alarm, which is the same text as the event's `SUMMARY`), so the phone reminds them when it starts.
 - **No notes and no links in the feed.** No `DESCRIPTION` on any `VEVENT` and no `URL`: a feed link can leak, so it carries titles, times and places only. The alarm's `DESCRIPTION` repeats the title and nothing more.
 - `webcal://` in Settings is the same URL with `webcal` in place of `https`.
