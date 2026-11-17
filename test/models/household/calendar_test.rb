@@ -114,6 +114,8 @@ class Household::CalendarTest < ActiveSupport::TestCase
     assert_not item.my_time?
     assert_equal({ "my_times" => "My times", "times_#{users(:head).id}" => "Hannah's times" }, calendar(WEEK).time_groups)
     assert_empty calendar(WEEK, hide: [ "times_#{users(:head).id}" ]).items_on(Date.new(2026, 11, 16))
+    # Today on Home leaves every member's shared times out at once.
+    assert_empty calendar(WEEK, hide: %w[ shared_times ]).items_on(Date.new(2026, 11, 16))
   end
 
   test "an unshared time doesn't appear" do

@@ -1,0 +1,24 @@
+<%= render Primer::Beta::BorderBox.new(mb: 3, classes: "today") do |box| %>
+  <% box.with_header(display: :flex, justify_content: :space_between, align_items: :baseline) do |header| %>
+    <% header.with_title(tag: :h3) { "Today" } %>
+    <span class="color-fg-muted text-small"><%= today.strftime("%A, %B %-d") %></span>
+  <% end %>
+  <% items.each do |item| %>
+    <% box.with_row(classes: "today__item") do %>
+      <% if item.my_time? %>
+        <%= render "personal_times/card", item: %>
+      <% else %>
+        <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: false %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% if items.empty? %>
+    <% box.with_row(color: :muted) { "Nothing on your calendar today." } %>
+  <% end %>
+  <% box.with_footer do %>
+    <%= render(Primer::Beta::Link.new(href: household_calendar_path(household_id: household))) { "Open calendar" } %>
+  <% end %>
+<% end %>
+<%# A time's title and a household event open their dialogs here, as on the calendar; saving one refreshes Home. %>
+<%= helpers.turbo_frame_tag "calendar_event_dialog" %>
+<%= helpers.turbo_frame_tag "personal_time_dialog" %>

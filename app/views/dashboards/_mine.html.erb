@@ -2,6 +2,8 @@
 <%# Personal content follows the person, so these come from Current.user, never the household (docs/design/users.md). %>
 <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 6, color: :muted, mb: 2)) { "Mine · follows you to every household" } %>
 
+<%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: meeting_helper?, manage_events: policy(Household::Event).create?) %>
+
 <%= render Primer::Beta::BorderBox.new(mb: 3) do |box| %>
   <% box.with_header { |header| header.with_title(tag: :h3) { "My goals" } } %>
   <% goals.each do |goal| %>

@@ -1,4 +1,6 @@
 <% content_for :title, "Home" %>
+<%# Saving a time or an event from Today's dialogs refreshes Home, keeping the place on it. %>
+<% turbo_refreshes_with method: :replace, scroll: :preserve %>
 
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Home" } %>

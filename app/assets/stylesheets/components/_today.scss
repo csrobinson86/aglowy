@@ -1,0 +1,37 @@
+// Today at the top of Home's Mine column (docs/design/calendar.md, Today on Home; frame home-today.png). Each row is a
+// calendar card (_calendar.scss) laid flat in the box: the kind's color bar, the time, the title over its subtitle, and
+// a time's done box on the right. Marking a time done swaps its card for the calendar's, so the card keeps its markup
+// and only this box lays it out.
+.today__item .calendar-item {
+  display: grid;
+  // A multi-day event's days ("Tue 17 – Sun 22") widen its own row's first column rather than wrap.
+  grid-template-columns: minmax(var(--base-size-80), max-content) minmax(0, 1fr) auto;
+  column-gap: var(--base-size-12);
+  align-items: center;
+  padding: var(--base-size-4) 0 var(--base-size-4) var(--base-size-12);
+  background-color: transparent;
+  border-radius: 0;
+}
+
+.today__item .calendar-item__time {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  white-space: nowrap;
+}
+
+// The done box and the title become cells of the row, the box on the right.
+.today__item .calendar-item__done {
+  display: contents;
+
+  form {
+    grid-row: 1 / span 2;
+    grid-column: 3;
+  }
+}
+
+.today__item .calendar-item__title,
+.today__item .calendar-item__subtitle,
+.today__item .calendar-item__opens,
+.today__item .calendar-item__form {
+  grid-column: 2;
+}
