@@ -7,53 +7,60 @@
   <% subhead.with_heading(tag: :h1) { "Calendar" } %>
   <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
   <% subhead.with_actions do %>
-    <div class="d-flex flex-wrap">
+    <div class="d-none d-md-flex flex-wrap">
       <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_time_path, mr: 2, data: { turbo_frame: "personal_time_dialog" })) { "Add my time" } %>
       <% if manage_events %>
         <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_calendar_event_path, scheme: :primary, data: { turbo_frame: "calendar_event_dialog" })) { "Add household event" } %>
       <% end %>
     </div>
+    <%# On a phone the two buttons are one Add menu, opening the same dialogs (docs/design/calendar.md, On a phone). %>
+    <%= render(Primer::Alpha::ActionMenu.new(menu_id: "calendar-add-menu", anchor_align: :end, display: [ nil, nil, :none ], classes: "calendar-add-menu")) do |menu| %>
+      <% menu.with_show_button(scheme: :primary) do |button| %>
+        <% button.with_trailing_action_icon(icon: :"triangle-down") %>
+        Add
+      <% end %>
+      <% menu.with_item(label: "Add my time", href: new_household_personal_time_path, content_arguments: { data: { turbo_frame: "personal_time_dialog" } }) %>
+      <% if manage_events %>
+        <% menu.with_item(label: "Add household event", href: new_household_calendar_event_path, content_arguments: { data: { turbo_frame: "calendar_event_dialog" } }) %>
+      <% end %>
+    <% end %>
   <% end %>
 <% end %>
 <% if @calendar.viewer_in_another_zone? %>
   <p class="color-fg-muted">Times are in <%= @calendar.zone_name %>, the household's time zone.</p>
 <% end %>
 
-<%# Today, previous and next, the range, and Week or Month; each a link keeping view, date and hide (frame calendar-week.png). %>
+<%# Today, previous and next, the range, and Week or Month; each a link keeping view, date and hide (frame calendar-week.png).
+    On a phone the range is shorter, Month isn't offered, and Show opens its dialog (frame phone-calendar.png). %>
 <div class="calendar-toolbar">
-  <div class="d-flex flex-items-center gap-2">
+  <div class="calendar-toolbar__nav">
     <%= render(Primer::Beta::Button.new(tag: :a, href: calendar_page_path(@period.view, Current.household.today, hide: @hide))) { "Today" } %>
     <% unit = @period.month? ? "month" : "week" %>
     <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.previous_date, hide: @hide), icon: :"chevron-left", "aria-label": "Previous #{unit}", show_tooltip: false) %>
     <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.next_date, hide: @hide), icon: :"chevron-right", "aria-label": "Next #{unit}", show_tooltip: false) %>
-    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, ml: 2)) { @period.title } %>
-  </div>
-  <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "View")) do |control| %>
-    <% { "week" => "Week", "month" => "Month" }.each do |view, label| %>
-      <% control.with_item(tag: :a, href: calendar_page_path(view, @period.date, hide: @hide), label:, selected: @period.view == view) %>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, ml: 2)) do %>
+      <% if @period.short_title == @period.title %>
+        <%= @period.title %>
+      <% else %>
+        <span class="d-none d-md-inline"><%= @period.title %></span><span class="d-md-none"><%= @period.short_title %></span>
+      <% end %>
     <% end %>
-  <% end %>
+  </div>
+  <%= render Primer::Beta::IconButton.new(icon: :filter, "aria-label": "Show on the calendar", show_tooltip: false, display: [ nil, nil, :none ], data: { show_dialog_id: "calendar-show-dialog" }) %>
+  <div class="d-none d-md-block">
+    <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "View")) do |control| %>
+      <% { "week" => "Week", "month" => "Month" }.each do |view, label| %>
+        <% control.with_item(tag: :a, href: calendar_page_path(view, @period.date, hide: @hide), label:, selected: @period.view == view) %>
+      <% end %>
+    <% end %>
+  </div>
 </div>
 
-<%# Show beside the calendar, or above it on narrower screens. Not Primer's Layout: the app shell's own Layout hides
-    any sidebar inside it below md. %>
+<%# Show beside the calendar, above it on narrower screens, and in a dialog on a phone. Not Primer's Layout: the app
+    shell's own Layout hides any sidebar inside it below md. %>
 <div class="d-flex flex-column flex-lg-row gap-4">
-  <div class="col-lg-3 flex-shrink-0">
-    <%= primer_form_with(url: household_calendar_path, method: :get, data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
-      <%= render Calendars::ShowForm.new(f, calendar: @calendar, period: @period, hide: @hide) %>
-      <noscript><%= render(Primer::Beta::Button.new(type: :submit, mt: 2)) { "Show" } %></noscript>
-    <% end %>
-    <%# Who sees the viewer's times, and where to change it (docs/design/calendar.md, The page). %>
-    <% households_seeing = Current.user.households_seeing_times.map(&:name) %>
-    <p class="text-small color-fg-muted mt-3">
-      <% if households_seeing.any? %>
-        Your times are shared with <%= households_seeing.to_sentence %>.
-        <%= render(Primer::Beta::Link.new(href: household_settings_calendar_path, underline: true)) { "Change" } %>
-      <% else %>
-        Only you see your times.
-        <%= render(Primer::Beta::Link.new(href: household_settings_calendar_path, underline: true)) { "Share them" } %>
-      <% end %>
-    </p>
+  <div class="col-lg-3 flex-shrink-0 d-none d-md-block">
+    <%= render "calendars/show_choices", calendar: @calendar, period: @period, hide: @hide %>
   </div>
 
   <div class="flex-auto min-width-0">
@@ -72,9 +79,15 @@
 
     <% today = Current.household.today %>
     <% if @period.month? %>
-      <%= render "calendars/month", calendar: @calendar, period: @period, today:, hide: @hide, meeting_helper: @meeting_helper, manage_events: %>
+      <%# A phone has no month grid: it lists the month's weeks day by day, as it does a week. %>
+      <div class="d-none d-md-block">
+        <%= render "calendars/month", calendar: @calendar, period: @period, today:, hide: @hide, meeting_helper: @meeting_helper, manage_events: %>
+      </div>
+      <div class="d-md-none">
+        <%= render "calendars/week", calendar: @calendar, days: @period.days, today:, meeting_helper: @meeting_helper, manage_events: %>
+      </div>
     <% else %>
-      <%= render "calendars/week", calendar: @calendar, period: @period, today:, meeting_helper: @meeting_helper, manage_events: %>
+      <%= render "calendars/week", calendar: @calendar, days: @period.days, today:, meeting_helper: @meeting_helper, manage_events: %>
     <% end %>
   </div>
 </div>
@@ -82,3 +95,9 @@
 <%# The household event dialog loads here (Calendar::EventsController), and the "my time" dialog (PersonalTimesController). %>
 <%= turbo_frame_tag "calendar_event_dialog" %>
 <%= turbo_frame_tag "personal_time_dialog" %>
+
+<%= render(Primer::Alpha::Dialog.new(id: "calendar-show-dialog", title: "Show on the calendar")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= render "calendars/show_choices", calendar: @calendar, period: @period, hide: @hide, namespace: "phone" %>
+  <% end %>
+<% end %>
