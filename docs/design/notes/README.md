@@ -9,3 +9,8 @@ Rendered at 2× from the approved mockup. `docs/design/notes.md` says what each 
 | `notes-new-collection.png` | New collection: name, and "Use in" Notes and Personal study, or Notes only | NOTES-01 (the model comes with PSTUDY-01) |
 | `home-pinned-notes.png` | Home's Mine column with Pinned notes | NOTES-01 |
 | `phone-notes.png` | Notes on a phone | NOTES-01 |
+| `notes-three-tabs.png` | Notes with its three tabs: Notes, Meeting notes and Bookmarks; no "Meeting notes" in the sidebar | NOTES-01 (Bookmarks tab with BOOKMARKS-01) |
+| `notes-meeting-notes.png` | The Meeting notes tab: Meetings and My tags beside This week, the Show switch and earlier notes | NOTES-01 |
+| `notes-meeting-notes-shared.png` | The Meeting notes tab showing notes shared in the household | NOTES-01 |
+| `notes-meeting-notes-dark.png` | The Meeting notes tab in dark mode | NOTES-01 |
+| `phone-notes-meeting-notes.png` | The Meeting notes tab on a phone | NOTES-01 |

@@ -4,7 +4,7 @@ Each person's own notes to come back to: a title, a body with scripture links, a
 
 Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on the design canvas.
 
-> Since BOOKMARKS-01, Notes has two tabs, Notes and Bookmarks, and "Scriptures in this note" has a bookmark button on each scripture (`docs/design/bookmarks.md`).
+> Notes has three tabs: Notes, Meeting notes and Bookmarks (see Notes, Meeting notes and Bookmarks below). Since BOOKMARKS-01, "Scriptures in this note" also has a bookmark button on each scripture (`docs/design/bookmarks.md`).
 
 ## Decisions (Casey, 16 Nov)
 
@@ -16,6 +16,43 @@ Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on
   - save a Personal study answer as a new note
   - show pinned notes on Home
 - **Private**, like everything in Mine. Nobody else sees a person's notes; there's no sharing.
+
+## Notes, Meeting notes and Bookmarks
+
+Meeting notes and bookmarks live in Notes, as tabs, so Mine stays short (decided by Casey, 16 Nov). Frames `notes-three-tabs.png`, `notes-meeting-notes.png`, `notes-meeting-notes-shared.png`, `notes-meeting-notes-dark.png` and `phone-notes-meeting-notes.png`, in the "Meeting notes as a tab in Notes" row on the design canvas.
+
+- **The sidebar's Mine group** is Today's meeting, Personal study, Notes and My goals. "Meeting notes" goes away. "Notes" is selected on every page in this section: the three tabs, a note, a meeting note (with its steps and summary), and the shared list.
+- **One header for all three tabs:** the `h1` "Notes" in a Primer `Subhead`, a line that fits the tab, and the tab's action:
+
+  | Tab | Route | Line under the title | Action |
+  | --- | --- | --- | --- |
+  | Notes | `/:household_id/notes` | Your own notes to come back to. Only you can see them. | New note |
+  | Meeting notes | `/:household_id/meeting_notes`, and `/:household_id/shared_meeting_notes` | Your meeting notes are private to you. Share one with your household when you want to. | My spiritual gems, only once that page exists (it's under Later in `docs/design/meeting-notes.md`); none until then |
+  | Bookmarks | `/:household_id/bookmarks` (BOOKMARKS-01) | Pages and scriptures you saved to come back to. Only you can see them. | none |
+
+- **`NotesTabsComponent.new(selected:)`** renders the tabs: a Primer `UnderlineNav` labelled "Notes, meeting notes and bookmarks", each tab a link with its icon (`pencil`, `note`, `bookmark`) and a `Counter`:
+  - Notes counts the person's notes, Meeting notes their own meeting notes, Bookmarks their bookmarks
+  - the current tab is `aria-current="page"`; the shared list selects Meeting notes
+  - Bookmarks appears only once its page exists (#226 adds it)
+  - below `md` the tabs fill the width and the counters are hidden
+- **URLs don't change.** Meeting notes keep `/meeting_notes` and `/shared_meeting_notes`; only where they're reached from changes.
+
+### The Meeting notes tab
+
+Frame `notes-meeting-notes.png`. The same two columns as the Notes tab (`Primer::Alpha::Layout`, the side column folding behind a "Meetings and tags" `Details` on a phone):
+- **Side column:**
+  - **Meetings:** "All meetings", "Life and Ministry" and "Weekend meeting", each with its dot and count, setting `?kind=` (`MeetingNote.kinds`; an unknown kind is ignored)
+  - **My tags:** the person's tags that are on a meeting note, with counts, setting `?tag=` (as today). Hidden on the shared list, where tags belong to their authors
+- **Main column:**
+  - "This week" with its two cards, as today, with a left bar in the meeting's color. Hidden while a filter is set, as today
+  - "Earlier", with a Primer `SegmentedControl` labelled "Show": "Mine" and "Shared in <household>" with its count. They're links to `/meeting_notes` and `/shared_meeting_notes`, keeping `?kind=`. If the pinned `SegmentedControl` can't render links, use two `Button`s with `aria-current`, and record it here
+  - the list as today: dot, meeting, week, summary, tags (`tags_for(Current.user)`), "Shared", and Newer / Older notes
+- The old "My notes" / "Shared in" `UnderlineNav` (`meeting_notes/_tabs`) goes away; a second row of tabs under the first is what the switch replaces.
+- No search box: meeting notes are encrypted, and the meeting and tag filters cover finding one.
+
+### A meeting note
+
+Its breadcrumb starts "Notes / Meeting notes", linking to the Notes tab and the Meeting notes tab. Home's "All meeting notes" and Today's meeting's links still go to `/meeting_notes`, now the Meeting notes tab.
 
 ## Models
 
