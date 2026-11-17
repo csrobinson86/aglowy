@@ -83,14 +83,14 @@ class PersonalTime < ApplicationRecord
 
   # Saves the dialog's fields. Under the person's lock, a zone changed elsewhere since the dialog showed it is refused
   # with the new one to show; otherwise the first time settles the person's zone, in the same transaction
-  # (docs/design/calendar.md, The person's own zone). Only study and other times keep what they open.
+  # (docs/design/calendar.md, The person's own zone). Only study and other times keep what they open. Validated under the
+  # lock, so two saves at once can't both pass the limit.
   def plan(attributes, household:)
     assign_attributes(attributes)
     self.opens = nil unless kind.in?(OPENING_KINDS)
-    return false unless valid?
 
     user.with_lock do
-      next false unless zone_still_shown?(household)
+      next false unless valid? && zone_still_shown?(household)
 
       user.settle_time_zone(household)
       self.starts_on ||= today
@@ -99,10 +99,11 @@ class PersonalTime < ApplicationRecord
   end
 
   # The meeting this time prepares for on a date: the next one after it that week, as a Household::Meeting (kind and
-  # week_of, for the meeting note), or nil. Nothing is stored for it.
+  # week_of, for the meeting note), or nil. Nothing is stored for it. The week is the household's, where the calendar
+  # shows the time, as the person's date can be a day off.
   def meeting_note_for(date, household:)
     starts_at = occurrence_on(date, done: false).starts_at
-    monday = date.beginning_of_week(:monday)
+    monday = starts_at.in_time_zone(household.time_zone).to_date.beginning_of_week(:monday)
     household.meetings_between(monday..monday + 6).find { it.starts_at > starts_at }
   end
 

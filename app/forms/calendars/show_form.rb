@@ -15,7 +15,8 @@ class Calendars::ShowForm < ApplicationForm
     f.hidden(name: :view, value: @period.view)
     f.hidden(name: :date, value: @period.date.iso8601)
     f.hidden(name: "show[]", value: "", id: "calendar-show-sent")
-    { @household.name => Household::Calendar::GROUPS, "Times" => Household::Calendar::TIME_GROUPS }.each do |legend, groups|
+    # Pairs, not a hash, so a household named "Times" keeps both groups.
+    [ [ @household.name, Household::Calendar::GROUPS ], [ "Times", Household::Calendar::TIME_GROUPS ] ].each do |legend, groups|
       f.check_box_group(name: :show, label: legend) do |group|
         groups.each do |key, label|
           group.check_box(value: key, label:, checked: !key.in?(@hide), classes: "calendar-show__check calendar-show__check--#{KINDS.fetch(key)}")

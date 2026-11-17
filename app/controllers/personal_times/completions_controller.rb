@@ -31,13 +31,12 @@ class PersonalTimes::CompletionsController < ApplicationController
       raise ActionController::BadRequest, "the day must be a date"
     end
 
+    # The calendar's week is in the household's zone, where the person's day can fall on another date.
     def render_card
+      @item = Household::Calendar::Item.from_time(@personal_time.occurrence_on(@day), household: Current.household)
       respond_to do |format|
-        format.turbo_stream do
-          @item = Household::Calendar::Item.from_time(@personal_time.occurrence_on(@day), household: Current.household)
-          render :card
-        end
-        format.html { redirect_to household_calendar_path(date: @day.iso8601), status: :see_other }
+        format.turbo_stream { render :card }
+        format.html { redirect_to household_calendar_path(date: @item.starts_at.to_date.iso8601), status: :see_other }
       end
     end
 end

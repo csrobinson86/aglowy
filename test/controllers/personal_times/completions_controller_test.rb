@@ -51,6 +51,15 @@ class PersonalTimes::CompletionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to household_calendar_path(household_id: @home, date: "2026-11-17")
   end
 
+  test "without Turbo, a time on another date in the household's zone goes back to that date's week" do
+    users(:spouse).update!(time_zone: "Tokyo")
+    @time.update!(time_of_day: "00:30")
+
+    post household_personal_time_completions_path(household_id: @home, personal_time_id: @time), params: { on: "2026-11-16" }
+
+    assert_redirected_to household_calendar_path(household_id: @home, date: "2026-11-15")
+  end
+
   test "another person's time is a 404" do
     sign_in identities(:head)
 

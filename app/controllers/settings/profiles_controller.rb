@@ -9,7 +9,8 @@ class Settings::ProfilesController < ApplicationController
   end
 
   def update
-    if @user.update(user_params)
+    # Under the person's lock, as saving a first time is, so clearing the zone can't pass while one is being added.
+    if @user.with_lock { @user.update(user_params) }
       redirect_to household_settings_profile_path, notice: "Your profile is saved."
     else
       render :show, status: :unprocessable_content

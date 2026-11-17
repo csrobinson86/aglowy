@@ -27,8 +27,10 @@ class PersonalTime::CompletionTest < ActiveSupport::TestCase
 
   test "today is the day in the person's zone" do
     travel_to Time.utc(2026, 11, 18, 3)
+    @time.update!(wdays: [ 2, 3, 4 ])
 
     assert @time.completions.new(on: Date.new(2026, 11, 17)).valid?
+    assert_not @time.completions.new(on: Date.new(2026, 11, 18)).valid?
   end
 
   test "complete twice makes one row; uncomplete deletes it" do

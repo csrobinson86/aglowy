@@ -179,6 +179,17 @@ class PersonalTimeTest < ActiveSupport::TestCase
     assert_nil prep.meeting_note_for(Date.new(2026, 11, 19), household: households(:other))
   end
 
+  test "meeting_note_for takes the week in the household's zone: a Monday 5:00 AM time in Tokyo is Sunday evening in UTC" do
+    @user.update!(time_zone: "Tokyo")
+    household = households(:home)
+    household.change_meeting_times(midweek_wday: 5, midweek_time: "19:00", weekend_wday: 0, weekend_time: "21:00")
+    prep = personal_time(kind: "meeting_prep", title: "Meeting prep", wdays: [ 1 ], time_of_day: "05:00")
+
+    meeting = prep.meeting_note_for(Date.new(2026, 11, 23), household:)
+
+    assert_equal [ "weekend", Date.new(2026, 11, 16) ], [ meeting.kind, meeting.week_of ]
+  end
+
   test "deleting a study keeps the time, opening nothing" do
     time = personal_time(kind: "personal_study", title: "Personal study", opens: personal_studies(:spouse_ransom))
 
