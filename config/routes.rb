@@ -46,13 +46,13 @@ Rails.application.routes.draw do
   # A person's phone calendar, /calendar/<token>.ics, with no session: the token is the authorization
   # (docs/design/calendar.md, The phone feed). Outside the household scope, since it covers all their households.
   get "calendar/:token", to: "calendar_feeds#show", as: :calendar_feed, format: true, constraints: { format: "ics" }
+  # "Turn off this email", from an email's footer and its one-click header, with no session: the signed token is the
+  # authorization, good only for its scope, a right-away kind or "summary" (docs/design/notifications.md, Emails).
+  resource :email_unsubscribe, only: %i[ show create ], path: "unsubscribe/:scope/:token"
   # Account settings at /account, always the signed-in person's own: no id in the URL (docs/design/invitations.md).
   # Only for a person with no household: with one, GET /account opens Settings (docs/design/settings.md, /account stays).
   # The appearance and sign-in details forms on the same page post to /account/appearance and /account/sign_in;
   # leaving a household deletes /account/memberships/:id, one of the person's own active seats.
-  # "Turn off this email", from an email's footer and its one-click header, with no session: the signed token is the
-  # authorization, good only for its scope, a right-away kind or "summary" (docs/design/notifications.md, Emails).
-  resource :email_unsubscribe, only: %i[ show create ], path: "unsubscribe/:scope/:token"
   resource :account, only: %i[ edit update ], path_names: { edit: "" } do
     resource :appearance, only: :update, module: :accounts
     resource :sign_in, only: %i[ edit update ], module: :accounts, path_names: { edit: "" }

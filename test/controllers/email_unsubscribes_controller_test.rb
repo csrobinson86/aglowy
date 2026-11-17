@@ -47,6 +47,21 @@ class EmailUnsubscribesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "an old browser or mail client can still open the page and turn the email off" do
+    old_chrome = { "User-Agent" => "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36" }
+    path = email_unsubscribe_path(scope: "weekly_preview", token: @head.unsubscribe_token("weekly_preview"))
+
+    get root_path, headers: old_chrome
+    assert_response :not_acceptable, "the rest of the app still asks for a modern browser"
+
+    get path, headers: old_chrome
+    assert_response :success
+
+    post path, headers: old_chrome
+    assert_response :success
+    assert_not @head.notification_settings.exists?(kind: "weekly_preview")
+  end
+
   test "forgery protection stays on for every other form" do
     sign_in identities(:head)
 

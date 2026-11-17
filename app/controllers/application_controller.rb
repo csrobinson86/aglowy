@@ -1,7 +1,8 @@
 class ApplicationController < ActionController::Base
   include Pundit::Authorization
 
-  allow_browser versions: :modern
+  # Every page but the ones an email links to, which must work from any mail client or old browser.
+  allow_browser versions: :modern, unless: :any_browser?
 
   layout :layout_for_request
 
@@ -47,5 +48,9 @@ class ApplicationController < ActionController::Base
 
   def skip_authorization?
     devise_controller?
+  end
+
+  def any_browser?
+    false
   end
 end

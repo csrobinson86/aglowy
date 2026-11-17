@@ -88,6 +88,16 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_empty users(:eli).notification_settings
   end
 
+  test "a form that isn't the page's saves nothing and doesn't fail" do
+    users(:head).notification_settings.change([ %w[ weekly_preview email ] ])
+    sign_in identities(:head)
+
+    patch household_settings_notifications_path(household_id: @home), params: { notification_settings: "email" }
+
+    assert_redirected_to household_settings_notifications_path(household_id: @home)
+    assert_empty users(:head).notification_settings
+  end
+
   test "quiet hours are shown on the half hour in the person's zone, and saved" do
     users(:head).update!(time_zone: "Central Time (US & Canada)")
     sign_in identities(:head)

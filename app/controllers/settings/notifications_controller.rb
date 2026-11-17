@@ -20,6 +20,6 @@ class Settings::NotificationsController < ApplicationController
     # notification_settings[weekly_preview][]=email becomes [ "weekly_preview", "email" ]. Nothing ticked sends nothing.
     def chosen_pairs
       kinds = @user.notification_kinds.map(&:name)
-      params.fetch(:notification_settings, {}).permit(kinds.index_with { [] }).to_h.flat_map { |kind, channels| [ kind ].product(channels) }
+      params.permit(notification_settings: kinds.index_with { [] })[:notification_settings].to_h.flat_map { |kind, channels| [ kind ].product(channels) }
     end
 end

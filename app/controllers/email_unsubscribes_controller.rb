@@ -28,6 +28,11 @@ class EmailUnsubscribesController < ApplicationController
       render :invalid, status: :not_found unless @user
     end
 
+    # A mail client's one-click POST, or a person on an old phone, must still be able to turn an email off.
+    def any_browser?
+      true
+    end
+
     # What the link turns off, as the page says it: "your daily summary email" or "Weekly preview emails".
     def email_name
       params[:scope] == "summary" ? "your daily summary email" : "#{Notification::Kind.all.find { it.name == params[:scope] }.label} emails"
