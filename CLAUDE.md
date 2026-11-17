@@ -51,6 +51,7 @@ households or roles. The non-negotiables:
   `bin/rails test:all`, `bin/rubocop` and `bin/brakeman` are clean → run the
   `code-reviewer` subagent and fix its Blockers and Majors → open the PR with
   `Closes #N`.
+- A story that adds something a person sees adds its sample data in `db/seeds/`.
 - **Removal-only stories** (taking out gems, files or config) get no new
   tests. Check the acceptance criteria with a one-off search and
   `bin/rails test:all`, and say in the PR that you verified by search.

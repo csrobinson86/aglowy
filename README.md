@@ -83,6 +83,25 @@
   bin/rails db:prepare
   ```
 
+  ## Sample data
+
+  `db/seeds.rb` and `db/seeds/` fill every page with sample data in development: two households, family studies, meeting notes, goals, tags, collections, personal studies and notes. Dates are relative to today. Running it again the same week adds nothing; in a later week it adds that week's meeting notes.
+
+  ```bash
+  bin/rails db:seed            # Add the sample data
+  bin/rails db:seed:replant    # Empty the database and seed a fresh copy
+  ```
+
+  Every login's password is `password123`:
+
+  | Login | Who |
+  | --- | --- |
+  | `head@example.com` | Hannah Demo, head of The Demo Family |
+  | `spouse@example.com` | Sam Demo, an adult in both households |
+  | `rivera@example.com` | Maria Rivera, head of The Rivera Family |
+  | `lucia.rivera` | Lucia Rivera, a child with a username login and the meeting helper |
+  | `staff@example.com` | Stella Staff, platform staff (Madmin) |
+
   ## Tests
 
   ```bash
