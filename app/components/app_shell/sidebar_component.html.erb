@@ -46,9 +46,13 @@
   <% end %>
 
   <div class="mt-auto pt-3 border-top">
-    <% if show_household_settings? %>
-      <%= render(Primer::Beta::NavList.new(aria: { label: "#{label} settings" }, selected_item_id: selected_item, mb: 2)) do |list| %>
-        <% list.with_item(label: "Household settings", href: household_settings_path, selected_by_ids: :households) do |item| %>
+    <%# Settings, for everyone, selected on every settings page (docs/design/settings.md, The sidebar). %>
+    <%= render(Primer::Beta::NavList.new(aria: { label: "#{label} settings" }, selected_item_id: selected_item, mb: 2)) do |list| %>
+      <% list.with_item(label: "Settings", href: settings_path, selected_by_ids: :settings) do |item| %>
+        <% item.with_leading_visual_icon(icon: :gear) %>
+      <% end %>
+      <% if show_household_settings? %>
+        <% list.with_item(label: "Household settings", href: household_settings_page_path, selected_by_ids: :households) do |item| %>
           <% item.with_leading_visual_icon(icon: :gear) %>
         <% end %>
       <% end %>
@@ -56,9 +60,7 @@
 
     <div class="d-flex flex-items-center">
       <span class="avatar avatar-5 circle d-flex flex-shrink-0 flex-items-center flex-justify-center mr-2 color-bg-accent color-fg-accent text-bold" aria-hidden="true"><%= initial %></span>
-      <%= render(Primer::Beta::Link.new(href: account_settings_path, scheme: :primary, flex: :auto, mr: 2, classes: "min-width-0 Truncate")) do %>
-        <span class="Truncate-text"><%= user.name %></span>
-      <% end %>
+      <span class="flex-auto min-width-0 mr-2 Truncate"><span class="Truncate-text"><%= user.name %></span></span>
       <%= primer_form_with(url: destroy_identity_session_path, method: :delete) do |f| %>
         <%= render Sessions::SignOutForm.new(f) %>
       <% end %>

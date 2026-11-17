@@ -1,9 +1,10 @@
 require "application_system_test_case"
 
+# Settings → My households (docs/design/settings.md, Leaving).
 class LeaveHouseholdTest < ApplicationSystemTestCase
-  test "an adult opens the dialog, leaves, and lands on the households page without that household" do
+  test "an adult opens the dialog, leaves another household, and comes back to My households without it" do
     sign_in identities(:head)
-    visit edit_account_url
+    visit my_households_url
 
     within_my_households do
       assert_text "The Grandparent Family"
@@ -20,21 +21,36 @@ class LeaveHouseholdTest < ApplicationSystemTestCase
       assert_text "Your own notes and goals aren't touched."
       assert_text "Anyone who runs the The Grandparent Family can invite you again later."
     end
+    wait_for_transitions # the Dialog fades in
     assert_accessible
     capture_screens("leave-household")
 
     within("dialog[open]") { click_on "Leave household" }
 
-    assert_selector "h1", text: "Your households"
     assert_text "You left the The Grandparent Family."
-    assert_link "The Head Family"
-    assert_no_link "The Grandparent Family"
+    assert_selector "h2", text: "My households"
+    within_my_households do
+      assert_text "The Head Family"
+      assert_no_text "The Grandparent Family"
+    end
     assert_not memberships(:head_in_parents).reload.active?
+  end
+
+  test "leaving the household in the URL lands on the households page" do
+    sign_in identities(:spouse)
+    visit my_households_url
+
+    click_leave "The Head Family"
+    within("dialog[open]") { click_on "Leave household" }
+
+    assert_selector "h1", text: "Your households"
+    assert_text "You left the The Head Family."
+    assert_not memberships(:spouse_in_home).reload.active?
   end
 
   test "cancel closes the dialog and leaves nothing" do
     sign_in identities(:head)
-    visit edit_account_url
+    visit my_households_url
 
     click_leave "The Grandparent Family"
     within("dialog[open]") { click_on "Cancel" }
@@ -45,7 +61,7 @@ class LeaveHouseholdTest < ApplicationSystemTestCase
 
   test "the last head is told to make someone else a head first" do
     sign_in identities(:head)
-    visit edit_account_url
+    visit my_households_url
 
     click_leave "The Head Family"
 
@@ -53,12 +69,13 @@ class LeaveHouseholdTest < ApplicationSystemTestCase
       assert_text "Make someone else a head before you leave."
       assert_no_button "Leave household"
     end
+    wait_for_transitions # the Dialog fades in
     assert_accessible
   end
 
   test "a child sees their households without Leave" do
     sign_in identities(:eli)
-    visit edit_account_url
+    visit my_households_url
 
     within_my_households do
       assert_text "The Head Family"
@@ -69,8 +86,12 @@ class LeaveHouseholdTest < ApplicationSystemTestCase
   end
 
   private
+    def my_households_url
+      household_settings_memberships_url(household_id: households(:home))
+    end
+
     def within_my_households(&)
-      within(:xpath, "//*[contains(concat(' ', @class, ' '), ' Box ')][.//h2[normalize-space()='My households']]", &)
+      within(:xpath, "//*[contains(concat(' ', @class, ' '), ' Box ')][.//h3[normalize-space()='My households']]", &)
     end
 
     # Every row's button says only "Leave"; its aria-label names the household.

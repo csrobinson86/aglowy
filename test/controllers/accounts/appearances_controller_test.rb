@@ -1,23 +1,14 @@
 require "test_helper"
 
 class Accounts::AppearancesControllerTest < ActionDispatch::IntegrationTest
-  test "choosing dark saves it and redirects to account settings with the notice, keeping return_to" do
+  test "choosing dark saves it and redirects to account settings with the notice" do
     sign_in identities(:head)
 
-    patch account_appearance_path(return_to: households(:home).id), params: { user: { appearance: "dark" } }
-
-    assert_redirected_to edit_account_path(return_to: households(:home).id)
-    assert_equal "Your appearance is saved.", flash[:notice]
-    assert_equal "dark", users(:head).reload.appearance
-  end
-
-  test "a return_to that isn't one of the person's households is dropped" do
-    sign_in identities(:head)
-
-    patch account_appearance_path(return_to: households(:other).id), params: { user: { appearance: "light" } }
+    patch account_appearance_path, params: { user: { appearance: "dark" } }
 
     assert_redirected_to edit_account_path
-    assert_equal "light", users(:head).reload.appearance
+    assert_equal "Your appearance is saved.", flash[:notice]
+    assert_equal "dark", users(:head).reload.appearance
   end
 
   test "an invalid value re-renders account settings with 422 and saves nothing" do

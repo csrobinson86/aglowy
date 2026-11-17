@@ -1,0 +1,10 @@
+<%# locals: (user:, url:, heading: :h3) %>
+<%# The Profile box, in Settings and on /account (frames settings-profile.png, account-settings.png). %>
+<%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: heading) { "Profile" } } %>
+  <% box.with_body do %>
+    <%= primer_form_with(model: user, url:, method: :patch) do |f| %>
+      <%= render Settings::ProfileForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>

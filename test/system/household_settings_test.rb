@@ -50,7 +50,7 @@ class HouseholdSettingsTest < ApplicationSystemTestCase
 
   test "an adult turns the helper on and sees who turned it on" do
     sign_in identities(:spouse)
-    visit edit_household_settings_url(household_id: households(:home))
+    visit edit_household_settings_household_url(household_id: households(:home))
 
     check "Meeting helper for children"
     within("#children") { click_on "Save" }

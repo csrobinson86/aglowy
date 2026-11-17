@@ -8,7 +8,7 @@ class Households::MeetingTimesControllerTest < ActionDispatch::IntegrationTest
 
     patch household_meeting_times_path(household_id: households(:home)), params: { household: MEETING_TIMES }
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert_equal "Meeting times saved.", flash[:notice]
     household = households(:home).reload
     assert_equal [ 5, 0 ], [ household.midweek_meeting_wday, household.weekend_meeting_wday ]
@@ -20,7 +20,7 @@ class Households::MeetingTimesControllerTest < ActionDispatch::IntegrationTest
 
     patch household_meeting_times_path(household_id: households(:home)), params: { household: MEETING_TIMES }
 
-    assert_redirected_to edit_household_settings_path(household_id: households(:home))
+    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
     assert households(:home).reload.meeting_times_set?
   end
 

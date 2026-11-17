@@ -1,0 +1,15 @@
+<%= render(Primer::Beta::Subhead.new) do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Settings" } %>
+<% end %>
+
+<div class="d-flex flex-column flex-md-row">
+  <div class="col-md-3 flex-shrink-0 pr-md-4 mb-3">
+    <%= render Settings::NavComponent.new(household:, selected: section) %>
+  </div>
+  <div class="flex-auto min-width-0">
+    <%# Below md the menu button names the section, so its title is for screen readers only (frame phone-settings.png). %>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, classes: "settings-page__title")) { title } %>
+    <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, mb: 3)) { note } %>
+    <%= body %>
+  </div>
+</div>
