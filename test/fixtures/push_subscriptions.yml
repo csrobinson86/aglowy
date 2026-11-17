@@ -1,0 +1,26 @@
+# Browsers and phones that turned push on (docs/design/notifications.md, PushSubscription). Endpoints and keys are made
+# up; fixtures are stored encrypted, as the app would.
+head_iphone:
+  user: head
+  endpoint: https://web.push.apple.com/QFixtureHeadIphone
+  p256dh_key: BFixtureHeadIphoneP256dh
+  auth_key: FixtureHeadIphoneAuth
+  label: iPhone · Aglowy on the Home Screen
+  created_at: <%= Time.utc(2026, 11, 12, 15) %>
+  last_used_at: <%= Time.utc(2026, 11, 17, 15) %>
+
+head_mac:
+  user: head
+  endpoint: https://fcm.googleapis.com/fcm/send/fixture-head-mac
+  p256dh_key: BFixtureHeadMacP256dh
+  auth_key: FixtureHeadMacAuth
+  label: Chrome on Mac
+  created_at: <%= Time.utc(2026, 11, 3, 15) %>
+
+spouse_android:
+  user: spouse
+  endpoint: https://fcm.googleapis.com/fcm/send/fixture-spouse-android
+  p256dh_key: BFixtureSpouseAndroidP256dh
+  auth_key: FixtureSpouseAndroidAuth
+  label: Android · Aglowy on the Home Screen
+  created_at: <%= Time.utc(2026, 11, 10, 15) %>
