@@ -21,10 +21,11 @@
 
           <%= render(Primer::Alpha::Dialog.new(id: "avatar-preview", title: "New avatar", size: :medium_portrait,
                                                data: { avatar_preview_target: "dialog", action: "close->avatar-preview#closed" })) do |dialog| %>
+            <% dialog.with_header(show_divider: true) %>
             <% dialog.with_body(text_align: :center) do %>
               <img class="avatar-preview__photo" alt="Your new avatar" hidden data-avatar-preview-target="image"
                    data-action="error->avatar-preview#unavailable">
-              <p class="avatar-preview__unavailable color-fg-muted" hidden data-avatar-preview-target="unavailable">
+              <p class="color-fg-muted m-0 py-4" hidden data-avatar-preview-target="unavailable">
                 Preview not available for this photo. It will be cropped the same way.
               </p>
               <p class="mt-3 mb-2"><span data-avatar-preview-target="name"></span> · <span data-avatar-preview-target="size"></span></p>
@@ -38,7 +39,7 @@
                 details. Everyone in your households will see it.
               </p>
             <% end %>
-            <% dialog.with_footer do %>
+            <% dialog.with_footer(show_divider: true) do %>
               <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "avatar-preview" })) { "Cancel" } %>
               <%= render Settings::AvatarPhotoForm.new(f) %>
             <% end %>

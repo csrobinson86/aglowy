@@ -23,7 +23,7 @@ class AvatarPolicyTest < ActiveSupport::TestCase
 
   # Outside a household there's no membership: show_avatar? reads Current.user.
   test "show_avatar? for the person, a household mate, but not a stranger, whatever the membership" do
-    [ nil, memberships(:head_in_home), memberships(:eli_in_home) ].each do |membership|
+    [ nil, memberships(:head_in_home), memberships(:spouse_in_home), memberships(:eli_in_home) ].each do |membership|
       Current.identity = identities(:head)
       assert AvatarPolicy.new(membership, users(:head)).show_avatar?
       assert AvatarPolicy.new(membership, users(:eli)).show_avatar?

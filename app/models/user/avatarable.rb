@@ -1,5 +1,9 @@
 require "image_processing/vips"
 
+# Only the loaders libvips trusts with uploads (JPEG, PNG, WebP, HEIF among them), never ImageMagick, PDF, MAT, FITS or
+# OpenSlide, whatever a file's bytes claim past Marcel (Traps 2).
+Vips.block_untrusted(true)
+
 # A person's photo (docs/design/avatars.md, User): only ever the 256 × 256 WebP Aglowy made from their upload, the
 # middle square turned upright with no location or camera details. The upload is checked by its bytes and its header
 # before anything is decoded, and is never stored (Traps 1–3).

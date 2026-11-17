@@ -6,10 +6,5 @@
   height: calc(var(--base-size-80) * 2);
   margin: 0 auto;
   object-fit: cover;
-  border-radius: 50%;
-}
-
-.avatar-preview__unavailable {
-  margin: 0;
-  padding: var(--base-size-24) 0;
+  border-radius: var(--borderRadius-full);
 }
