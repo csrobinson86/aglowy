@@ -8,8 +8,8 @@ class Settings::NavComponentTest < ViewComponent::TestCase
     render_inline(Settings::NavComponent.new(membership: memberships(:child_in_home), selected: :profile))
 
     assert_selector "nav[aria-label='Settings'] h2", text: "You"
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households" ], page.all("nav[aria-label='Settings'] a").map { it.text.strip }
-    assert_equal %W[ /#{@home.id}/settings/profile /#{@home.id}/settings/appearance /#{@home.id}/settings/sign_in /#{@home.id}/settings/memberships ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections" ], page.all("nav[aria-label='Settings'] a").map { it.text.strip }
+    assert_equal %W[ /#{@home.id}/settings/profile /#{@home.id}/settings/appearance /#{@home.id}/settings/sign_in /#{@home.id}/settings/memberships /#{@home.id}/settings/tags ],
                  page.all("nav[aria-label='Settings'] a").map { it[:href] }
   end
 
@@ -26,7 +26,7 @@ class Settings::NavComponentTest < ViewComponent::TestCase
     render_inline(Settings::NavComponent.new(membership: memberships(:spouse_in_home), selected: :meetings))
 
     assert_selector "nav[aria-label='Settings'] h2", text: "The Head Family"
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Meetings", "Children" ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Meetings", "Children" ],
                  page.all("nav[aria-label='Settings'] a").map { it.text.strip }
     assert_selector ".settings-nav__menu a", text: "Children", visible: :all
     assert_no_selector ".settings-nav__menu a", text: "Members and roles", visible: :all

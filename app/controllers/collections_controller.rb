@@ -17,19 +17,26 @@ class CollectionsController < ApplicationController
     end
   end
 
-  # Taking it out of Personal study while studies are in it is refused, in the dialog.
+  # Taking it out of a section while things are in it there is refused, in the dialog. From Settings it goes back there.
   def update
     if @collection.revise(collection_params)
-      redirect_to household_personal_studies_path(collection: @collection.id), notice: "Collection saved."
+      redirect_to settings? ? household_settings_tags_path : household_personal_studies_path(collection: @collection.id), notice: "Collection saved."
+    elsif settings?
+      render_form :edit, partial: "settings/tags/collection_form"
     else
       render_form :edit
     end
   end
 
-  # The database keeps its studies, out of any collection (on_delete: :nullify).
+  # The database keeps its studies and notes, out of any collection (on_delete: :nullify).
   def destroy
     @collection.destroy!
-    redirect_to household_personal_studies_path, notice: "Deleted #{@collection.name}. Its studies are kept."
+
+    if settings?
+      redirect_to household_settings_tags_path, notice: "Deleted #{@collection.name}. Everything in it is kept."
+    else
+      redirect_to household_personal_studies_path, notice: "Deleted #{@collection.name}. Its studies are kept."
+    end
   end
 
   private
@@ -48,9 +55,14 @@ class CollectionsController < ApplicationController
     params[:section] == "notes"
   end
 
+  # Whether its Edit or Delete dialog was on Settings → Tags and collections (section=settings).
+  def settings?
+    params[:section] == "settings"
+  end
+
   # :new or :edit, whose form partial has the id new_collection or edit_collection_<id>.
-  def render_form(action, **locals)
-    render turbo_stream: turbo_stream.replace(helpers.dom_id(@collection, action), partial: "collections/#{action}_form", locals: { collection: @collection, **locals }),
+  def render_form(action, partial: "collections/#{action}_form", **locals)
+    render turbo_stream: turbo_stream.replace(helpers.dom_id(@collection, action), partial:, locals: { collection: @collection, **locals }),
            status: :unprocessable_content
   end
 end

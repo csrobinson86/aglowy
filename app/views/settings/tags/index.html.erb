@@ -1,0 +1,8 @@
+<% content_for :title, "Tags and collections · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :tags) do |page| %>
+  <% page.with_body do %>
+    <%= render "settings/tags/tags", tags: @tags %>
+    <%= render "settings/tags/collections", collections: @collections %>
+  <% end %>
+<% end %>

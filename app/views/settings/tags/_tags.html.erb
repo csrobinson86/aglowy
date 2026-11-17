@@ -1,13 +1,9 @@
-<% content_for :title, "My tags" %>
-
-<%= render Primer::Beta::Subhead.new do |subhead| %>
-  <% subhead.with_heading(tag: :h1) { "My tags" } %>
-  <% subhead.with_description { "Open a tag to see everything carrying it. Only you can see your tags." } %>
-<% end %>
-
-<%= render Primer::Beta::BorderBox.new do |box| %>
-  <% if @tags.any? %>
-    <% @tags.each do |tag| %>
+<%# locals: (tags:) %>
+<%# My tags, each with how many things carry it, then Rename and Delete in Primer Dialogs (frame settings-tags.png). %>
+<%= render(Primer::Beta::BorderBox.new(id: "my-tags", mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "My tags" } } %>
+  <% if tags.any? %>
+    <% tags.each do |tag| %>
       <% box.with_row(display: :flex, align_items: :center) do %>
         <%= render(Primer::Beta::Label.new(tag: :a, href: household_tag_path(name: tag.name), scheme: :accent, mr: 2, classes: "css-truncate css-truncate-overflow")) { "##{tag.name}" } %>
         <span class="color-fg-muted flex-auto"><%= pluralize(tag.taggings_count, "item") %></span>
@@ -31,12 +27,15 @@
         <% end %>
       <% end %>
     <% end %>
+    <% box.with_footer(font_size: :small, color: :muted) do %>
+      Add tags on any meeting note, goal, study or note. Only you see them.
+    <% end %>
   <% else %>
     <% box.with_body do %>
       <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
         <% blankslate.with_visual_icon(icon: :tag) %>
-        <% blankslate.with_heading(tag: :h2) { "No tags yet" } %>
-        <% blankslate.with_description { "Add a tag from a meeting note or a personal goal, under its title." } %>
+        <% blankslate.with_heading(tag: :h4) { "No tags yet" } %>
+        <% blankslate.with_description { "Add a tag from a meeting note, a goal, a study or a note." } %>
       <% end %>
     <% end %>
   <% end %>

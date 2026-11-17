@@ -1,7 +1,7 @@
 <% content_for :title, "##{@tag.name}" %>
 
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
-  <% breadcrumbs.with_item(href: household_tags_path) { "My tags" } %>
+  <% breadcrumbs.with_item(href: household_settings_tags_path) { "Tags and collections" } %>
   <% breadcrumbs.with_item(href: household_tag_path(name: @tag.name)) { "##{@tag.name}" } %>
 <% end %>
 

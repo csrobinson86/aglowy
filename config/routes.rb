@@ -67,6 +67,7 @@ Rails.application.routes.draw do
       resource :appearance, only: %i[ show update ]
       resource :sign_in, only: %i[ show update ]
       resources :memberships, only: %i[ index destroy ]   # My households
+      resources :tags, only: :index                        # Tags and collections
       resource :household, only: %i[ show update ]         # Heads
       resource :meetings, only: %i[ show update ]          # Heads and adults
       resource :children, only: :show                      # Heads and adults
@@ -145,7 +146,8 @@ Rails.application.routes.draw do
     # The person's folders, shared between Personal study and Notes.
     resources :collections, only: %i[ create update destroy ]
     # The signed-in person's own tags, found by name through Current.user, so another person's is a 404 (docs/design/tags.md).
-    resources :tags, only: %i[ index show update destroy ], param: :name
+    # Listed in Settings → Tags and collections.
+    resources :tags, only: %i[ show update destroy ], param: :name
     resources :direct_uploads, only: :create
     resources :resources, only: [] do
       resource :file, only: :show, module: :resources
