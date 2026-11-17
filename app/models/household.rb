@@ -15,6 +15,8 @@ class Household < ApplicationRecord
   has_one :meeting_helper, dependent: :delete
   has_many :chats, dependent: :destroy
   has_many :events, class_name: "Household::Event", dependent: :delete_all
+  # The weekly previews about it (docs/design/notifications.md, Models).
+  has_many :notifications, as: :subject, dependent: :delete_all
   # Their chats take them first (on_delete: :cascade).
   has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all do
     # The drafts that use one of today's, since midnight where the household lives (docs/design/ai.md, Traps).
@@ -32,6 +34,13 @@ class Household < ApplicationRecord
 
   # Meeting times are wall-clock times in the household's own zone, never converted through the app's.
   self.skip_time_zone_conversion_for_attributes = %i[ midweek_meeting_time weekend_meeting_time ]
+
+  # The households where it's now that hour, on that weekday (0 is Sunday) if one is given, each in its own zone: the
+  # hourly notification jobs ask for theirs (docs/design/notifications.md, Recurring jobs; Trap 2).
+  scope :at_local_hour, ->(hour, wday: nil, now: Time.current) do
+    zones = ActiveSupport::TimeZone.all.map { now.in_time_zone(it) }.select { it.hour == hour && (wday.nil? || it.wday == wday) }
+    where(time_zone: zones.map { it.time_zone.name })
+  end
 
   validates :name, presence: true
   validates :time_zone, inclusion: { in: ActiveSupport::TimeZone.all.map(&:name) }
@@ -181,6 +190,23 @@ class Household < ApplicationRecord
 
   def schedule_family_study(topic: nil, notes: nil, links: [], files: [], **attributes)
     family_studies.build(attributes).tap { it.schedule(topic: topic, notes: notes, links: links, files: files) }
+  end
+
+  # The coming week, for every active member, children too, unless nothing's in it. The dedupe key makes a second run
+  # for the same week find the first one's (docs/design/notifications.md, The kinds; Trap 1).
+  def send_weekly_preview(week_of)
+    return if Household::WeeklyPreview.new(self, week_of:).empty?
+
+    active_memberships.includes(:user).each do |membership|
+      membership.user.notify(kind: "weekly_preview", household: self, subject: self, data: { week_of: }, dedupe_key: "weekly_preview:#{id}:#{week_of}")
+    end
+  end
+
+  # Each session three days ahead by the household's own date, not cancelled and with no topic, asks the heads for one.
+  def ask_heads_for_study_topics(on: today + 3)
+    zone = ActiveSupport::TimeZone[time_zone]
+    family_study_sessions.without_topic.where(scheduled_at: zone.local(on.year, on.month, on.day)...on.next_day.then { zone.local(it.year, it.month, it.day) })
+      .preloaded.each(&:ask_heads_for_topic)
   end
 
   private

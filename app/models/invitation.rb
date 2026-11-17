@@ -3,12 +3,18 @@ class Invitation < ApplicationRecord
 
   belongs_to :household
   belongs_to :invited_by, class_name: "User", inverse_of: :sent_invitations
+  # Its "hasn't been accepted" notification, deleted with it when it's accepted, declined or cancelled
+  # (docs/design/notifications.md, Models).
+  has_many :notifications, as: :subject, dependent: :delete_all
 
   # Children get usernames, not invitations (docs/design/invitations.md).
   enum :role, %w[ adult head ].index_by(&:itself), default: :adult, validate: true
 
   scope :preloaded, -> { includes(:invited_by) }
   scope :newest_first, -> { order(created_at: :desc) }
+  # Still pending five days after it was sent, and not yet expired. The window is a day wide, as the daily follow-up
+  # job runs once a day (docs/design/notifications.md, Recurring jobs).
+  scope :unaccepted_after_five_days, -> { where(created_at: 6.days.ago..5.days.ago, expires_at: Time.current..) }
 
   attribute :expires_at, default: -> { VALID_FOR.from_now }
 
@@ -43,6 +49,11 @@ class Invitation < ApplicationRecord
   def masked_email
     name, domain = email.split("@", 2)
     "#{name.first}•••••@#{domain}"
+  end
+
+  # "Your invitation hasn't been accepted", to whoever sent it, once (Trap 1).
+  def follow_up
+    invited_by.notify(kind: "invitation_unaccepted", household:, subject: self, dedupe_key: "invitation_unaccepted:#{id}")
   end
 
   def deliver_later

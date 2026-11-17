@@ -4,6 +4,8 @@ class FamilyStudy::Session < ApplicationRecord
   belongs_to :family_study
   belongs_to :conductor, class_name: "User", optional: true
   has_many :resources, -> { order(:position) }, dependent: :destroy
+  # Its "no topic yet" notifications (docs/design/notifications.md, Models).
+  has_many :notifications, as: :subject, dependent: :delete_all
 
   has_rich_text :notes, encrypted: true
   scripture_linkable :notes
@@ -12,6 +14,7 @@ class FamilyStudy::Session < ApplicationRecord
   scope :ahead, -> { where(scheduled_at: Time.current..).order(:scheduled_at) }
   scope :upcoming, -> { ahead.where(canceled_at: nil) }
   scope :preloaded, -> { includes(family_study: :household) }
+  scope :without_topic, -> { where(canceled_at: nil, topic: [ nil, "" ]) }
 
   validates :recurrence_at, :scheduled_at, presence: true
   validates :recurrence_at, uniqueness: { scope: :family_study_id }
@@ -37,8 +40,22 @@ class FamilyStudy::Session < ApplicationRecord
   end
 
   # Skips this session only; the row stays, so the generator never recreates it (scheduling rule 6).
+  # Its "no topic yet" notifications go too, since there's nothing left to choose a topic for.
   def cancel
-    update!(canceled_at: Time.current) unless canceled?
+    return if canceled?
+
+    transaction do
+      update!(canceled_at: Time.current)
+      notifications.withdraw
+    end
+  end
+
+  # "Tuesday's family study has no topic yet", to each of the household's heads, once per session (Trap 1).
+  def ask_heads_for_topic
+    household = family_study.household
+    household.memberships.active.head.includes(:user).each do |membership|
+      membership.user.notify(kind: "study_topic_needed", household:, subject: self, dedupe_key: "study_topic_needed:#{id}")
+    end
   end
 
   def restore

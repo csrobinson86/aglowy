@@ -19,8 +19,10 @@
   margin-right: var(--base-size-12);
   border-radius: var(--borderRadius-full);
 
-  &--pink {
-    color: var(--display-pink-fgColor);
-    background-color: var(--display-pink-bgColor-muted);
+  @each $color in "pink", "purple", "blue", "gray" {
+    &--#{$color} {
+      color: var(--display-#{$color}-fgColor);
+      background-color: var(--display-#{$color}-bgColor-muted);
+    }
   }
 }
