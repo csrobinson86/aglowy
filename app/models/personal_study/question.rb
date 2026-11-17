@@ -34,6 +34,19 @@ class PersonalStudy::Question < ApplicationRecord
     end
   end
 
+  # A new note holding the answer, made from the same partial as save_to_notes, titled with the question cut to a
+  # note title's length. It takes the study's collection when Notes uses it, and the study's tags, in color none
+  # (docs/design/notes.md, Save an AI answer as a note). It's a copy: nothing links it back, so it stays if the study goes.
+  def save_as_note
+    raise NotAnswered, "Only an answered question can be saved as a note" unless answered?
+
+    personal_study.user.personal_notes.new(title: prompt.squish.truncate(PersonalNote::TITLE_MAX, separator: " "), body: notes_html, color: "none",
+      collection: personal_study.collection&.then { it if it.for_notes? }, tags: personal_study.tags).tap do |note|
+      note.link_scriptures
+      note.save!
+    end
+  end
+
   def stop
     (self.class.asking.where(id: id).update_all(status: "stopped", updated_at: Time.current) == 1).tap { reload }
   end

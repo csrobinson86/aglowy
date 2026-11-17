@@ -156,6 +156,30 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     within("section[aria-labelledby=my-notes] lexxy-editor") { assert_text "Jehovah never causes suffering" }
   end
 
+  test "Save as a note opens the new note with the answer" do
+    @study.tag_with("suffering", by: users(:head))
+    personal_study_question(@study, status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [] })
+    visit household_personal_study_url(household_id: households(:home), id: @study)
+    within(question_card("Why does Jehovah allow suffering?")) { assert_button "Save to notes" }
+    capture_screens("personal-study-save-as-note")
+
+    within(question_card("Why does Jehovah allow suffering?")) { click_on "Save as a note" }
+
+    assert_text "Saved as a note."
+    assert_field "Title", with: "Why does Jehovah allow suffering?"
+    within("nav[aria-label=Breadcrumb]") { assert_link "Bible questions" }
+    within("lexxy-editor[name='personal_note[body]']") do
+      assert_text "Jehovah never causes suffering"
+      assert_selector ".scripture-link", text: "James 1:13"
+      assert_text "Pages:"
+      assert_link "Why Does God Allow Suffering?"
+    end
+    assert_text "#suffering"
+    assert_accessible
+    capture_screens("personal-note-saved-from-study")
+  end
+
   test "plan a family study and see the prefilled box" do
     personal_study_question(@study, prompt: "How does the ransom fit in?")
     visit household_personal_study_url(household_id: households(:home), id: @study)

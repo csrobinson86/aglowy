@@ -123,6 +123,8 @@ Rails.application.routes.draw do
       resources :questions, only: %i[ create destroy ], module: :personal_studies do
         # Save to notes on an answer card: appends the answer to the study's notes.
         resource :note_saving, only: :create
+        # Save as a note: a new note holding the answer (docs/design/notes.md, Save an AI answer as a note).
+        resource :personal_note, only: :create
       end
     end
     # The signed-in person's own notes at /notes, found through Current.user (docs/design/notes.md, Pages and routes).
