@@ -77,8 +77,10 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal 8, head.personal_notes.count
     assert_equal PersonalNote.colors.keys.sort, head.personal_notes.distinct.pluck(:color).sort
     assert_equal 2, head.personal_notes.pinned.count
-    assert_equal 2, head.bookmarks.count
-    assert head.bookmarks.all? { it.source.present? && it.title.present? }
+    assert_equal 2, head.bookmarks.pages.count
+    assert head.bookmarks.pages.all? { it.source.present? && it.title.present? }
+    assert_equal [ "Daniel 6:10", "Revelation 21:4" ], head.bookmarks.scriptures.map { it.reference.to_s }.sort
+    assert_equal %w[ PersonalNote PersonalStudy ], head.bookmarks.scriptures.map(&:source_type).sort
     assert head.personal_notes.any? { it.scripture_references.any? }
 
     assert_equal 0, Ai::Use.count

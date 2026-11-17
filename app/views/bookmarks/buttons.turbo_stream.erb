@@ -1,6 +1,6 @@
-<% bookmarked = @bookmark.destroyed? ? {} : { @bookmark.url => @bookmark.id } %>
+<% bookmarked = @bookmark.destroyed? ? {} : { @bookmark.key => @bookmark.id } %>
 <%= turbo_stream.replace_all "[data-bookmark-key='#{BookmarkButtonComponent.key(@bookmark.key)}']" do %>
-  <%= render BookmarkButtonComponent.new(url: @bookmark.url, title: @bookmark.title, source: @source, bookmarked:) %>
+  <%= render BookmarkButtonComponent.new(url: @bookmark.url, title: @bookmark.title, scripture: @bookmark.reference, source: @source, bookmarked:) %>
 <% end %>
 <%# Without a request id: with this request's, Turbo would skip the refresh as an echo of its own. %>
 <% if @refresh_list %>

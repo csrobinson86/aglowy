@@ -1,12 +1,16 @@
-<%# locals: (personal_note:) %>
-<%# The scriptures linked in the note, in order and once each (frame note.png), each a scripture link. %>
+<%# locals: (personal_note:, bookmarked:) %>
+<%# The scriptures linked in the note, in order and once each (frame note.png), each a scripture link with a bookmark
+    button beside it (frame note-bookmarks.png). bookmarked is the owner's bookmarks, read once for the page. %>
 <section aria-labelledby="note-scriptures" class="mb-3">
   <%= render(Primer::Beta::BorderBox.new) do |box| %>
     <% box.with_header do %>
       <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "note-scriptures")) { "Scriptures in this note" } %>
     <% end %>
     <% personal_note.scripture_references.each do |reference| %>
-      <% box.with_row { render "bible/references/reference", reference: } %>
+      <% box.with_row(display: :flex, align_items: :baseline) do %>
+        <%= render "bible/references/reference", reference: %>
+        <%= render BookmarkButtonComponent.new(scripture: reference, source: personal_note, bookmarked:) %>
+      <% end %>
     <% end %>
     <% box.with_footer(font_size: :small, color: :muted) do %>
       <% if personal_note.scripture_references.none? %>The scriptures you link in the note show here. <% end %>Each opens on jw.org, or in JW Library if it's installed.

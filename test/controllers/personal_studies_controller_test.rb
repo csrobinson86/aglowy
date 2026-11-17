@@ -217,6 +217,26 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "section[aria-labelledby=study-sources] button[aria-pressed=false][aria-label=?]", "Bookmark: The Issue Raised in Eden"
   end
 
+  # docs/design/bookmarks.md, The bookmark button: a Scriptures in this study box above Sources in this study, each
+  # reference the answers link with its bookmark button.
+  test "show: Scriptures in this study, above Sources in this study, a bookmark button beside each" do
+    answer = { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Sin spread (Romans 5:12; Revelation 21:3, 4)." ], "next_questions" => [] }
+    personal_study_question(@study, status: "answered", answer:)
+    users(:head).bookmark(scripture: "66:21:3-4", source: @study)
+    sign_in identities(:head)
+
+    get household_personal_study_path(household_id: @home, id: @study)
+
+    assert_select "section[aria-labelledby=study-scriptures]" do
+      assert_select "h2", "Scriptures in this study"
+      assert_select "a.scripture-link[href=?]", Bible::Reference.find("45:5:12").jw_url, text: "Romans 5:12"
+      assert_select "button[aria-pressed=false][aria-label=?]", "Bookmark: Romans 5:12"
+      assert_select "button[aria-pressed=true][aria-label=?]", "Remove bookmark: Revelation 21:3, 4"
+      assert_select "*", text: /Each opens on jw.org, or in JW Library if it's installed./
+    end
+    assert_select "section[aria-labelledby=study-scriptures] ~ section[aria-labelledby=study-sources]"
+  end
+
   test "show with no questions yet" do
     users(:head).accept_ai_terms(understood: true)
     sign_in identities(:head)

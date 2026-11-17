@@ -56,6 +56,12 @@ class PersonalStudy < ApplicationRecord
     conversation.select(&:answered?).flat_map(&:sources).uniq { it["url"] }
   end
 
+  # Every scripture linked across the study's answers, in order and once each: exactly the links the answers show, so a
+  # chapter alone stays out (Bible::Linker). Never its own notes (docs/design/bookmarks.md, PersonalStudy#scripture_references).
+  def scripture_references
+    conversation.select(&:answered?).flat_map(&:scripture_references).uniq
+  end
+
   # What "Plan a family study from this" puts in the AI panel's Describe box: "<title>: <last question>", cut to the
   # box's length (docs/design/personal-study.md, Plan a family study from this).
   def family_study_prompt
