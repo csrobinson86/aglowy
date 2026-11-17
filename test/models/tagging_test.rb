@@ -25,6 +25,16 @@ class TaggingTest < ActiveSupport::TestCase
     assert_includes tagging.errors[:taggable], "isn't yours to tag"
   end
 
+  test "a bookmark can be tagged by its owner only" do
+    bookmark = bookmarks(:head_suffering_article)
+
+    assert Tagging.create!(tag: tags(:head_ministry), taggable: bookmark)
+
+    tagging = Tagging.new(tag: tags(:spouse_ministry), taggable: bookmark)
+    assert_not tagging.valid?
+    assert_includes tagging.errors[:taggable], "isn't yours to tag"
+  end
+
   test "the 11th tag on one note is invalid" do
     note = meeting_notes(:head_midweek)
     9.times { note.tag_with("tag-#{it}", by: users(:head)) }
@@ -47,6 +57,10 @@ class TaggingTest < ActiveSupport::TestCase
     assert_raises ActiveRecord::CheckViolation do
       Tagging.insert!({ tag_id: tags(:head_ministry).id, taggable_type: "Household", taggable_id: households(:home).id })
     end
+  end
+
+  test "database: a tagging on a bookmark is allowed" do
+    assert Tagging.insert!({ tag_id: tags(:head_ministry).id, taggable_type: "Bookmark", taggable_id: bookmarks(:head_suffering_article).id })
   end
 
   test "database: the same tag twice on one thing raises RecordNotUnique" do

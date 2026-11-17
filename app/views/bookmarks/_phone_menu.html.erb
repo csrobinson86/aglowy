@@ -1,0 +1,24 @@
+<%# locals: (collections:, selected:, tags:, tag:, filters:) %>
+<%# Below md, the sidebar's collections and my tags in one menu, named for the collection showing (frame
+    phone-bookmarks.png). Each item links where its sidebar link does. %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: "bookmarks-menu", anchor_align: :start, display: [ nil, nil, :none ], classes: "bookmarks__menu")) do |menu| %>
+  <% menu.with_show_button(label_wrap: true) do |button| %>
+    <% button.with_trailing_action_icon(icon: :"triangle-down") %>
+    <span class="wb-break-word"><%= selected&.name || "All bookmarks" %></span>
+  <% end %>
+  <% menu.with_group do |group| %>
+    <% group.with_heading(title: "Collections") %>
+    <% notes_menu_item(group, label: "All bookmarks", href: household_bookmarks_path(**filters.except(:collection)), current: selected.nil?) %>
+    <% collections.each do |collection| %>
+      <% notes_menu_item(group, label: collection.name, href: household_bookmarks_path(**filters, collection: collection.id), current: collection == selected) %>
+    <% end %>
+  <% end %>
+  <% if tags.any? %>
+    <% menu.with_group do |group| %>
+      <% group.with_heading(title: "My tags") %>
+      <% tags.each do |each_tag| %>
+        <% notes_menu_item(group, label: "##{each_tag.name}", href: household_bookmarks_path(**filters, tag: each_tag.name), current: each_tag.name == tag) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -81,6 +81,9 @@ class SeedsTest < ActiveSupport::TestCase
     assert head.bookmarks.pages.all? { it.source.present? && it.title.present? }
     assert_equal [ "Daniel 6:10", "Revelation 21:4" ], head.bookmarks.scriptures.map { it.reference.to_s }.sort
     assert_equal %w[ PersonalNote PersonalStudy ], head.bookmarks.scriptures.map(&:source_type).sort
+    assert_equal 2, head.bookmarks.where.not(collection: nil).count
+    assert_equal 2, head.bookmarks.count { it.comment.present? }
+    assert_equal %w[ courage hope ], head.tags.carried_by("Bookmark").map(&:name).sort
     assert head.personal_notes.any? { it.scripture_references.any? }
 
     assert_equal 0, Ai::Use.count

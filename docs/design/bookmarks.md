@@ -75,7 +75,7 @@ Under `/:household_id`, so they use the household layout. Bookmarks are always f
 | Save | `POST /:household_id/bookmarks` with `url` or `scripture`, plus `source_type` and `source_id` | `personal-study-bookmarks.png`, `note-bookmarks.png` |
 | Edit | `PATCH /:household_id/bookmarks/:id` (title for a page, comment, collection) | `bookmark-edit.png` |
 | Remove | `DELETE /:household_id/bookmarks/:id` | |
-| Tags | `POST`/`DELETE /:household_id/bookmarks/:bookmark_id/taggings` (`Taggings::BookmarksController`, sharing the `Tagging` concern) | |
+| Tags | `POST`/`DELETE /:household_id/bookmarks/:bookmark_id/taggings` (`Bookmarks::TaggingsController`, like the other parents' tagging controllers, sharing the `TaggableScoped` concern) | |
 | On a phone | the same pages | `phone-bookmarks.png` |
 
 ### The tabs
@@ -107,7 +107,8 @@ A Primer `Dialog` "Edit bookmark" from the row's Edit button (frame `bookmark-ed
 - a muted line: the host (or "Scripture") and "saved from "<source>""
 - `Bookmarks::EditForm` (a Primer form class): Title (pages only; required, up to 120; the person's own rename of an existing bookmark, which never changes its URL), Comment (optional, up to 280, with the caption "Up to 280 characters."), Collection (`for_notes` plus None)
 - the tag editor (`TagEditorComponent`) for the bookmark
-- footer: "Remove bookmark" (danger) on the left; Cancel and Save on the right
+- Save ends the form, above the tag editor, since every Primer form's submit is in its form (`CLAUDE.md`, Forms) and the tag editor's own forms sit between the fields and the footer; tags save as they're added (#228)
+- footer: "Remove bookmark" (danger) on the left; Cancel on the right
 
 Saving replaces the row with a Turbo Stream and closes the dialog. A refused save shows its errors by the fields, in the dialog.
 

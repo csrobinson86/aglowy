@@ -121,6 +121,33 @@ class CollectionTest < ActiveSupport::TestCase
     assert_equal [ "Collection isn't one of yours" ], study.errors.full_messages
   end
 
+  test "moving away from Notes is refused while it holds a bookmark" do
+    collection = collections(:head_bible_questions)
+    bookmarks(:head_suffering_article).update!(collection:)
+
+    assert_not collection.update(used_in: "studies")
+    assert_equal [ "1 bookmark is in this collection. Move it first." ], collection.errors.full_messages
+  end
+
+  test "three bookmarks in it say so" do
+    collection = collections(:head_bible_questions)
+    bookmarks(:head_suffering_article).update!(collection:)
+    users(:head).bookmarks.create!(scripture: "19:23:4", collection:)
+    users(:head).bookmarks.create!(scripture: "43:17:3", collection:)
+
+    assert_not collection.update(used_in: "studies")
+    assert_includes collection.errors.full_messages, "3 bookmarks are in this collection. Move them first."
+  end
+
+  test "deleting a collection keeps its bookmarks" do
+    bookmark = bookmarks(:head_suffering_article)
+    bookmark.update!(collection: collections(:head_quick_references))
+
+    collections(:head_quick_references).destroy!
+
+    assert_nil bookmark.reload.collection_id
+  end
+
   test "database: a duplicate name for the same person raises RecordNotUnique" do
     assert_raises(ActiveRecord::RecordNotUnique) do
       Collection.insert!({ user_id: users(:head).id, name: "Bible questions", used_in: "both", position: 9 })

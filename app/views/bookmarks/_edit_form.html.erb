@@ -1,0 +1,6 @@
+<%# locals: (bookmark:, collections:) %>
+<%# In a bookmark's Edit dialog. A refused save comes back as this form by Turbo Stream, so the dialog stays open with
+    the reasons. %>
+<%= primer_form_with(model: bookmark, url: household_bookmark_path(id: bookmark), method: :patch, id: dom_id(bookmark, :edit), namespace: dom_id(bookmark, :edit)) do |f| %>
+  <%= render Bookmarks::EditForm.new(f, page: bookmark.url.present?, collections:, collection_error: bookmark.errors.full_messages_for(:collection).to_sentence.presence) %>
+<% end %>

@@ -99,6 +99,60 @@ class BookmarksTest < ApplicationSystemTestCase
     capture_screens("bookmarks-scriptures")
   end
 
+  test "open Edit, add a comment, pick a collection, add a tag and save; then filter by the tag and search the comment" do
+    users(:head).bookmarks.create!(scripture: "19:23:4", source: personal_notes(:head_return_visit))
+    article = bookmarks(:head_suffering_article)
+
+    visit household_bookmarks_url(household_id: households(:home))
+    within("##{ActionView::RecordIdentifier.dom_id(article)}") { click_on "Edit" }
+
+    within("dialog[open]") do
+      assert_selector "h1", text: "Edit bookmark"
+      assert_text "jw.org · saved from “Why does Jehovah allow suffering?”"
+      assert_field "Title", with: "Why Does God Allow Suffering?"
+      fill_in "Comment", with: "Good for return visits. The video at the end helps."
+      select "Quick references", from: "Collection"
+      find_field("Add a tag").send_keys("Comfort", :enter)
+      assert_selector "a.Label", text: "#comfort"
+    end
+    assert_accessible
+    capture_screens("bookmark-edit")
+
+    within("dialog[open]") { click_on "Save" }
+
+    assert_no_selector "dialog[open]"
+    within("##{ActionView::RecordIdentifier.dom_id(article)}") do
+      assert_text "Good for return visits. The video at the end helps."
+      assert_selector "a.Label", text: "#comfort"
+      assert_text "Quick references ·"
+    end
+    article.reload
+    assert_equal "Good for return visits. The video at the end helps.", article.comment
+    assert_equal collections(:head_quick_references), article.collection
+    assert_equal [ "comfort" ], article.tags.map(&:name)
+
+    # Saving replaces the row only, so the new tag reaches My tags with the next visit.
+    visit household_bookmarks_url(household_id: households(:home))
+    within("nav[aria-label='My tags']") { click_on "#comfort" }
+    assert_selector "a[aria-label='Remove filter #comfort']"
+    assert_selector "main .Box-row", count: 1
+    assert_selector "main .Box-row", text: "Why Does God Allow Suffering?"
+
+    visit household_bookmarks_url(household_id: households(:home))
+    assert_selector "main .Box-row", count: 2
+    fill_in "Search titles, comments, collections and tags", with: "video at the end\n"
+    assert_selector "main .Box-row", count: 1
+    assert_selector "main .Box-row", text: "Why Does God Allow Suffering?"
+    assert_accessible
+
+    users(:head).update!(appearance: "dark")
+    visit household_bookmarks_url(household_id: households(:home))
+    assert_selector "body[data-color-mode=dark]"
+    assert_selector "main .Box-row", text: "Good for return visits."
+    assert_accessible
+    capture_screens("bookmarks-dark")
+  end
+
   test "no bookmarks yet" do
     users(:head).bookmarks.delete_all
 

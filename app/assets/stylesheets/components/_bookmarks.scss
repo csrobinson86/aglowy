@@ -1,0 +1,25 @@
+// The Bookmarks tab's search, then Show beside it (frame bookmarks.png), or under it, after the "All bookmarks ▾" menu,
+// when there isn't room (frame phone-bookmarks.png).
+.bookmarks__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-12) var(--base-size-16);
+  margin-bottom: var(--base-size-16);
+}
+
+.bookmarks__search {
+  flex: 1 1 calc(var(--base-size-128) * 2);
+}
+
+.bookmarks__show {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base-size-12);
+}
+
+// Primer's coarse-pointer menu items are 40px tall, so they're raised to the 44px touch target, as Notes' are.
+.bookmarks__menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
+}

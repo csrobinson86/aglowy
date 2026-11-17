@@ -12,6 +12,7 @@ class TagsController < ApplicationController
     @personal_studies = @tag.personal_studies
     @personal_notes = @tag.personal_notes
     @goals = @tag.goals.preloaded
+    @bookmarks = @tag.bookmarks
   end
 
   # A taken name, or one that normalizes to nothing, comes back in the rename dialog, which stays open.

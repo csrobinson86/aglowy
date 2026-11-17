@@ -40,12 +40,11 @@ class BookmarkTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordNotUnique) { users(:head).bookmarks.create!(scripture: "19:23:4") }
   end
 
-  test "a title over 120 characters and a comment over 280 are invalid" do
-    bookmark = users(:head).bookmarks.new(url: PAGE, title: "x" * 121, comment: "x" * 281)
+  test "a title over 120 characters is invalid" do
+    bookmark = users(:head).bookmarks.new(url: PAGE, title: "x" * 121)
 
     assert_not bookmark.valid?
     assert bookmark.errors.of_kind?(:title, :too_long)
-    assert bookmark.errors.of_kind?(:comment, :too_long)
   end
 
   test "a person can have at most 2,000 bookmarks" do
@@ -103,6 +102,71 @@ class BookmarkTest < ActiveSupport::TestCase
   test "kind is page or scripture" do
     assert_equal :page, bookmarks(:head_suffering_article).kind
     assert_equal :scripture, Bookmark.new(scripture: "19:23:4").kind
+  end
+
+  test "a studies-only collection is invalid" do
+    bookmark = bookmarks(:head_suffering_article)
+
+    bookmark.collection = collections(:head_talks)
+
+    assert_not bookmark.valid?
+    assert_equal [ "Collection is only used in Personal study" ], bookmark.errors.full_messages
+  end
+
+  test "another person's collection is invalid" do
+    bookmark = bookmarks(:head_suffering_article)
+
+    bookmark.collection = collections(:spouse_ministry)
+
+    assert_not bookmark.valid?
+    assert_equal [ "Collection isn't one of yours" ], bookmark.errors.full_messages
+  end
+
+  test "a collection for notes, or one used in both, is fine" do
+    bookmark = bookmarks(:head_suffering_article)
+
+    assert bookmark.update(collection: collections(:head_quick_references))
+    assert bookmark.update(collection: collections(:head_bible_questions))
+  end
+
+  test "a comment over 280 characters is invalid" do
+    bookmark = bookmarks(:head_suffering_article)
+
+    bookmark.comment = "x" * 281
+
+    assert_not bookmark.valid?
+    assert bookmark.errors.of_kind?(:comment, :too_long)
+    bookmark.comment = "x" * 280
+    assert bookmark.valid?
+  end
+
+  # Titles and comments are encrypted, so they're matched in Ruby on the decrypted values; the rest in SQL
+  # (docs/design/bookmarks.md, Bookmark).
+  test "matching finds by title, comment (both encrypted), tag, collection and a scripture's book" do
+    head = users(:head)
+    article = bookmarks(:head_suffering_article)
+    article.update!(comment: "Good for RETURN visits", collection: collections(:head_quick_references))
+    psalm = head.bookmarks.create!(scripture: "19:23:4", comment: "Comfort when grieving")
+    psalm.tag_with("comfort", by: head)
+    john = head.bookmarks.create!(scripture: "43:17:3")
+
+    assert_equal [ article ], head.bookmarks.matching("allow suffering").to_a
+    assert_equal [ article ], head.bookmarks.matching("return visits").to_a
+    assert_equal [ article ], head.bookmarks.matching("Quick ref").to_a
+    assert_equal [ psalm ], head.bookmarks.matching("#Comfort").to_a
+    assert_equal [ psalm ], head.bookmarks.matching("Psalm").to_a
+    assert_equal [ john ], head.bookmarks.matching("John").to_a
+    assert_empty head.bookmarks.matching("ransom").to_a
+    assert_empty users(:spouse).bookmarks.matching("suffering").to_a
+  end
+
+  test "matching never reads title or comment in SQL" do
+    queries = []
+    callback = ->(*, payload) { queries << payload[:sql] }
+
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { users(:head).bookmarks.matching("suffering").to_a }
+
+    assert queries.none? { it.match?(/"bookmarks"\."(title|comment)"\s+I?LIKE/i) }, queries.join("\n")
   end
 
   test "database: both a url and a scripture raises CheckViolation" do

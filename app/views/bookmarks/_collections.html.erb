@@ -1,0 +1,14 @@
+<%# locals: (collections:, selected:, total_count:, filters:) %>
+<%# The person's collections for Notes, which hold bookmarks too, each with how many bookmarks are in it, then the tags
+    on their bookmarks (frame bookmarks.png). Each keeps the other filters but the page. %>
+<h2 class="f5 mb-1 color-fg-muted">Collections</h2>
+<%= render(Primer::Beta::NavList.new(aria: { label: "Collections" }, selected_item_id: selected ? dom_id(selected) : :all_bookmarks, mb: 4)) do |list| %>
+  <% list.with_item(label: "All bookmarks", href: household_bookmarks_path(**filters.except(:collection)), selected_by_ids: :all_bookmarks) do |item| %>
+    <% item.with_trailing_visual_counter(count: total_count, scheme: :secondary) %>
+  <% end %>
+  <% collections.each do |collection| %>
+    <% list.with_item(label: collection.name, href: household_bookmarks_path(**filters, collection: collection.id), selected_by_ids: dom_id(collection), truncate_label: true) do |item| %>
+      <% item.with_trailing_visual_counter(count: collection.bookmarks_count, scheme: :secondary) %>
+    <% end %>
+  <% end %>
+<% end %>
