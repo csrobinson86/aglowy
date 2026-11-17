@@ -25,4 +25,11 @@ class Household::Calendar::PeriodTest < ActiveSupport::TestCase
     assert period.in_month?(Date.new(2026, 11, 30))
     assert_not period.in_month?(Date.new(2026, 12, 1))
   end
+
+  test "the phone's short title shortens the months and drops the year" do
+    assert_equal "Nov 16 – 22", Household::Calendar::Period.new(view: "week", date: Date.new(2026, 11, 19)).short_title
+    assert_equal "Nov 30 – Dec 6", Household::Calendar::Period.new(view: "week", date: Date.new(2026, 12, 1)).short_title
+    assert_equal "Dec 28 – Jan 3", Household::Calendar::Period.new(view: "week", date: Date.new(2026, 12, 31)).short_title
+    assert_equal "November 2026", Household::Calendar::Period.new(view: "month", date: Date.new(2026, 11, 19)).short_title
+  end
 end
