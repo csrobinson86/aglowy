@@ -1,0 +1,29 @@
+<%# locals: (form:, id:, title:, image_alt:, seen_by:) %>
+<%# The preview dialog (docs/design/avatars.md, The preview dialog; frames avatar-preview.png and child-avatar-preview.png),
+    inside the photo's form and its avatar-preview controller: the chosen photo as it will look. Nothing is uploaded
+    until Save avatar. seen_by ends "Everyone in … will see it.": "your households", or "Sofia's households". %>
+<%= render(Primer::Alpha::Dialog.new(id:, title:, size: :medium_portrait,
+                                     data: { avatar_preview_target: "dialog", action: "close->avatar-preview#closed" })) do |dialog| %>
+  <% dialog.with_header(show_divider: true) %>
+  <% dialog.with_body(text_align: :center) do %>
+    <img class="avatar-preview__photo" alt="<%= image_alt %>" hidden data-avatar-preview-target="image"
+         data-action="error->avatar-preview#unavailable">
+    <p class="color-fg-muted m-0 py-4" hidden data-avatar-preview-target="unavailable">
+      Preview not available for this photo. It will be cropped the same way.
+    </p>
+    <p class="mt-3 mb-2"><span data-avatar-preview-target="name"></span> · <span data-avatar-preview-target="size"></span></p>
+    <p class="FormControl-inlineValidation flex-justify-center mb-2" hidden data-avatar-preview-target="error">
+      <%= render(Primer::Beta::Octicon.new(icon: :"alert-fill", size: :xsmall)) %>
+      <span><%= User::Avatarable::PHOTO_REFUSED %></span>
+    </p>
+    <%= render(Primer::Beta::Button.new(type: :button, size: :small, mb: 3, data: { action: "avatar-preview#choose" })) { "Choose another photo" } %>
+    <p class="mb-0">
+      This is how it will look. Aglowy keeps the middle as a square and removes the photo's location and camera
+      details. Everyone in <%= seen_by %> will see it.
+    </p>
+  <% end %>
+  <% dialog.with_footer(show_divider: true) do %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: id })) { "Cancel" } %>
+    <%= render Settings::AvatarPhotoForm.new(form) %>
+  <% end %>
+<% end %>

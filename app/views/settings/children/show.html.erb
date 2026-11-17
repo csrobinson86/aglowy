@@ -3,6 +3,7 @@
 <% meeting_helper = Current.household.meeting_helper %>
 <%= render Settings::PageComponent.new(membership: Current.membership, section: :children) do |page| %>
   <% page.with_body do %>
+    <%= render "settings/children/avatars", children: @children, refused: @child %>
     <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
       <% box.with_header { |header| header.with_title(tag: :h3) { "Children" } } %>
       <% box.with_body do %>

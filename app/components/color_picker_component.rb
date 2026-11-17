@@ -11,20 +11,22 @@
 # legend:        the fieldset's legend, like "Color"
 # swatch_label:  text drawn in each swatch, like the person's initial; the swatch then takes the avatar's colors
 # legend_beside: the legend on the swatches' line, as on a note, rather than above them
+# id_prefix:     the radios' ids before the color, when a page has several pickers of one name (Settings → Children)
 class ColorPickerComponent < ApplicationComponent
   attr_reader :name, :selected, :colors, :legend, :swatch_label, :legend_beside
 
-  def initialize(name:, selected:, colors:, legend:, swatch_label: nil, legend_beside: false)
+  def initialize(name:, selected:, colors:, legend:, swatch_label: nil, legend_beside: false, id_prefix: nil)
     @name = name
     @selected = selected
     @colors = colors
     @legend = legend
     @swatch_label = swatch_label
     @legend_beside = legend_beside
+    @id_prefix = id_prefix || name.parameterize(separator: "_")
   end
 
   def input_id(color)
-    "#{name.parameterize(separator: "_")}_#{color}"
+    "#{@id_prefix}_#{color}"
   end
 
   def swatch_classes(color)

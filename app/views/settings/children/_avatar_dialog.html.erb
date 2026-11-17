@@ -1,0 +1,52 @@
+<%# locals: (child:, error: false) %>
+<%# Change avatar and the child's dialog (docs/design/avatars.md, Children's avatars): their avatar, a photo to upload,
+    change or remove, and the color for their initial. Choosing a file closes this dialog and opens the preview (frame
+    child-avatar-preview.png). error: the row shows a refusal, which the file input points to. %>
+<% url = household_settings_child_avatar_path(child_id: child) %>
+<% photo = child.avatar.attached? %>
+<div class="flex-shrink-0 ml-2" data-controller="avatar-preview" data-avatar-preview-max-size-value="<%= User::Avatarable::PHOTO_MAX_SIZE %>">
+  <%= render(Primer::Alpha::Dialog.new(id: "child-avatar-#{child.id}", title: "Avatar for #{child.first_name}", size: :medium_portrait,
+                                       data: { avatar_preview_target: "chooser" })) do |dialog| %>
+    <% dialog.with_show_button do %>Change avatar<span class="sr-only"> for <%= child.first_name %></span><% end %>
+    <% dialog.with_header(show_divider: true) %>
+    <% dialog.with_body do %>
+      <div class="d-flex flex-items-center mb-3">
+        <%= render AvatarComponent.new(user: child, size: 80, alone: true, classes: "flex-shrink-0 mr-3") %>
+        <div>
+          <%# Inside this dialog, so Upload photo opens a picker for an input that isn't inert behind it; it belongs to the
+              photo's form below by its form attribute. %>
+          <label for="child_avatar_photo_<%= child.id %>" class="sr-only">Avatar photo for <%= child.first_name %></label>
+          <input type="file" id="child_avatar_photo_<%= child.id %>" name="avatar[photo]" form="child-avatar-photo-<%= child.id %>"
+                 class="sr-only" tabindex="-1" accept="<%= User::Avatarable::PHOTO_TYPES.join(",") %>"
+                 aria-describedby="<%= [ "child-avatar-hint-#{child.id}", ("child-avatar-error-#{child.id}" if error) ].compact.join(" ") %>"
+                 data-avatar-preview-target="input" data-action="avatar-preview#preview">
+          <div class="d-flex flex-wrap mb-2">
+            <%= render(Primer::Beta::Button.new(type: :button, mr: 2, data: { action: "avatar-preview#choose" })) { photo ? "Change photo" : "Upload photo" } %>
+            <% if photo %>
+              <%= primer_form_with(url:, method: :delete) do |f| %>
+                <%= render Settings::AvatarRemovalForm.new(f) %>
+              <% end %>
+            <% end %>
+          </div>
+          <p id="child-avatar-hint-<%= child.id %>" class="f6 color-fg-muted mb-0">
+            JPEG, PNG, WebP or HEIC, up to 10 MB. Aglowy keeps the middle of the photo as a square and removes its location
+            and camera details.
+          </p>
+        </div>
+      </div>
+      <%= primer_form_with(scope: :avatar, url:, method: :patch) do |f| %>
+        <div class="mb-3">
+          <%= render ColorPickerComponent.new(name: "avatar[color]", id_prefix: "child_avatar_color_#{child.id}", selected: child.avatar_color,
+                                              colors: Avatar::Palette::COLORS, legend: "Color for #{child.first_name}'s initial",
+                                              swatch_label: child.initial) %>
+        </div>
+        <%= render Settings::AvatarForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <%# The photo's own form, outside the dialog above: choosing a file closes that dialog for the preview. %>
+  <%= primer_form_with(scope: :avatar, url:, method: :patch, multipart: true, id: "child-avatar-photo-#{child.id}") do |f| %>
+    <%= render "settings/avatars/preview_dialog", form: f, id: "child-avatar-preview-#{child.id}", title: "Avatar for #{child.first_name}",
+                                                  image_alt: "#{child.first_name}'s new avatar", seen_by: "#{child.first_name}'s households" %>
+  <% end %>
+</div>

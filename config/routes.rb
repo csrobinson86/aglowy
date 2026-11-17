@@ -91,6 +91,9 @@ Rails.application.routes.draw do
       resource :household, only: %i[ show update ]         # Heads
       resource :meetings, only: %i[ show update ]          # Heads and adults
       resource :children, only: :show                      # Heads and adults
+      resources :children, only: [] do                     # A child's photo and initial's color, heads and adults
+        resource :avatar, only: %i[ update destroy ], module: :children
+      end
       resource :meeting_helper, only: :update              # Children's meeting helper switch
       resources :members, only: :index                     # Members and roles, heads
     end
