@@ -20,7 +20,7 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ "The Demo Family", "The Rivera Family" ], Household.order(:name).pluck(:name)
     assert_equal 5, Identity.count
     assert Identity.find_by(username: "lucia.rivera").email.nil?
-    assert_equal 1, Invitation.count
+    assert_equal 2, Invitation.count
     assert_equal 2, user("spouse@example.com").households.count
     # Each person has a color, and no two in a household share one (docs/design/avatars.md, Elsewhere).
     Household.find_each { |household| assert_equal household.users.count, household.users.distinct.count(:avatar_color) }
@@ -113,11 +113,14 @@ class SeedsTest < ActiveSupport::TestCase
     assert_operator my_times.size, :>=, 9
     assert_equal [ "Lucia's time" ], Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:shared?).map(&:subtitle).uniq
 
-    # Maria's inbox: Lucia's helper note, then Sam's two notes and a goal, the two oldest read (09_notifications.rb).
-    assert_equal 4, maria.notifications.visible.count
-    assert_equal 2, maria.unread_notifications_count
+    # Maria's inbox: Lucia's helper note, then Sam's two notes and a goal, the two oldest read, and one of each
+    # scheduled kind (09_notifications.rb).
+    assert_equal 7, maria.notifications.visible.count
+    assert_equal 5, maria.unread_notifications_count
     assert_equal [ "Sam shared a meeting note", "Sam shared a goal", "Sam shared a meeting note" ], maria.notifications.where(actor: user("spouse@example.com")).newest_first.map(&:title)
-    assert maria.notifications.all? { it.kind == "shared_with_you" && it.household == rivera }
+    assert_equal %w[ invitation_unaccepted shared_with_you study_topic_needed weekly_preview ], maria.notifications.distinct.pluck(:kind).sort
+    assert maria.notifications.all? { it.household == rivera }
+    assert_match "was invited 5 days ago", maria.notifications.find_by!(kind: "invitation_unaccepted").body
 
     assert_equal 0, Ai::Use.count
   end

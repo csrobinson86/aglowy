@@ -20,3 +20,17 @@ shares.each do |subject, ago|
   notification.update_column(:created_at, ago.ago)
   notification.read if ago > 1.day
 end
+
+# The three scheduled kinds, as the jobs would make them (docs/design/notifications.md, Recurring jobs): last Sunday's
+# look at this week, a session three days out with no topic yet, and an invitation Maria sent five days ago. Unread.
+week = maria.notify(kind: "weekly_preview", household: rivera, subject: rivera, data: { week_of: this_week },
+  dedupe_key: "weekly_preview:#{rivera.id}:#{this_week}")
+week.update_column(:created_at, ActiveSupport::TimeZone[rivera.time_zone].local(this_week.year, this_week.month, this_week.day) - 6.hours)
+
+# On a rerun every upcoming session may have a topic by now, and then there's nothing to ask about.
+session = rivera.family_study_sessions.upcoming.without_topic.first
+maria.notify(kind: "study_topic_needed", household: rivera, subject: session, dedupe_key: "study_topic_needed:#{session.id}") if session
+
+invitation = rivera.invitations.find_by(email: "grandpa@example.com") ||
+  rivera.invitations.create!(email: "grandpa@example.com", invited_by: maria).tap { it.update_columns(created_at: 5.days.ago, expires_at: 2.days.from_now) }
+maria.notify(kind: "invitation_unaccepted", household: rivera, subject: invitation, dedupe_key: "invitation_unaccepted:#{invitation.id}")

@@ -21,6 +21,18 @@ class Settings::ChildrenControllerTest < ActionDispatch::IntegrationTest
     assert_no_match "Only a head can turn this on.", response.body
   end
 
+  test "a head sees a child's AI that's on, with who turned it on and a Turn off button" do
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+    sign_in identities(:head)
+
+    get household_settings_children_path(household_id: @home)
+
+    assert_select "#study-ai .Label", text: "On"
+    assert_select "#study-ai", text: /Turned on by Hannah on/
+    assert_select "#study-ai form[action=?] input[name=_method][value=delete]", household_membership_study_ai_grant_path(household_id: @home, membership_id: memberships(:eli_in_home))
+    assert_select "#study-ai button[aria-label=?]", "Turn off personal study with AI for Eli Child", text: "Turn off"
+  end
+
   test "an adult sees the meeting helper switch and the AI state, but can't change the AI" do
     memberships(:eli_in_home).grant_study_ai(by: users(:head))
     sign_in identities(:spouse)

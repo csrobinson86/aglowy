@@ -4,7 +4,8 @@ class Notification::Kind
   include Rails.application.routes.url_helpers
 
   def self.for(notification)
-    { "shared_with_you" => SharedWithYou }.fetch(notification.kind).new(notification)
+    { "weekly_preview" => WeeklyPreview, "study_topic_needed" => StudyTopicNeeded, "shared_with_you" => SharedWithYou,
+      "invitation_unaccepted" => InvitationUnaccepted }.fetch(notification.kind).new(notification)
   end
 
   attr_reader :notification

@@ -112,6 +112,8 @@ class SettingsTest < ApplicationSystemTestCase
       assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Meetings", "Children" ], all("a").map(&:text)
       click_on "Meetings"
     end
+    assert_selector "h2", text: "Meetings"
+    assert_turbo_idle
     assert_accessible
     capture_screens("settings-adult-meetings")
     set_meeting_times
@@ -175,6 +177,7 @@ class SettingsTest < ApplicationSystemTestCase
     visit household_settings_tags_url(household_id: households(:home))
 
     find("button[aria-label='Edit Bible questions']").click
+    wait_for_dialog
     within("dialog[open]") do
       choose "Notes only"
       click_on "Save collection"
@@ -193,6 +196,7 @@ class SettingsTest < ApplicationSystemTestCase
     assert_selector "#collections .Box-row", text: /Questions\s+· 1 study\s+Used in Notes and Personal study/
 
     find("button[aria-label='Edit Quick references']").click
+    wait_for_dialog
     within("dialog[open]") do
       choose "Personal study only"
       click_on "Save collection"
@@ -204,6 +208,7 @@ class SettingsTest < ApplicationSystemTestCase
     assert_selector "#collections .Box-row", text: /References\s+· 1 note\s+Used in Notes only/
 
     find("button[aria-label='Delete Preparing a talk']").click
+    wait_for_dialog
     within("dialog[open]") do
       assert_text "Everything in it stays; it just leaves the folder."
       click_on "Delete collection"
@@ -222,7 +227,7 @@ class SettingsTest < ApplicationSystemTestCase
       fill_in "Midweek starts at", with: Time.zone.parse("19:00")
       select "Sunday", from: "Weekend day"
       fill_in "Weekend starts at", with: Time.zone.parse("10:00")
-      click_on "Save"
+      click_button_after_prefetch "Save"
 
       assert_text "Meeting times saved."
       assert_selector "h2", text: "Meetings"

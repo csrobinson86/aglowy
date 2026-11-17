@@ -22,6 +22,15 @@ production:
   purge_expired_ai_uses:
     class: Ai::PurgeExpiredUsesJob
     schedule: every day at 4:30am
+  send_weekly_previews:
+    class: Notification::WeeklyPreviewJob
+    schedule: every hour at minute 5
+  ask_for_study_topics:
+    class: Notification::StudyTopicJob
+    schedule: every hour at minute 10
+  follow_up_invitations:
+    class: Notification::InvitationFollowUpJob
+    schedule: every day at 2pm
   purge_old_notifications:
     class: Notification::PurgeJob
     schedule: every day at 4:45am

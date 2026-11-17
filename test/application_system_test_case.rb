@@ -19,6 +19,34 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   # The full suite runs in parallel workers, so pages can take longer than the 2s default.
   Capybara.default_max_wait_time = 5
 
+  # Devise's sign_in logs in whoever makes the app's next request, and the open page can still make one (or rewrite the
+  # session cookie) as the person signed in before. Clear the browser first so switching people mid-test can't race.
+  def sign_in(...)
+    Capybara.reset_session!
+    super
+  end
+
+  # Turbo pre-loads a link the pointer rests on, and a page that shifts under a still pointer can put one there. If
+  # that response lands after a form's, it overwrites the session cookie the form's response set and the flash is
+  # lost. Rest the pointer on the button, where no pre-load can start, let one in flight finish, then click.
+  def click_button_after_prefetch(locator)
+    button = find_button(locator)
+    button.hover
+    page.server.wait_for_pending_requests
+    button.click
+  end
+
+  # A Primer Dialog scales up for 0.2s as it opens, and a click aimed while it moves can land beside its target.
+  # Wait for the open Dialog to stop before working in it.
+  def wait_for_dialog
+    assert_selector "dialog[open]"
+    page.evaluate_async_script(<<~JS)
+      const done = arguments[arguments.length - 1]
+      const animations = document.querySelector("dialog[open]").getAnimations().filter(animation => animation instanceof CSSAnimation)
+      Promise.allSettled(animations.map(animation => animation.finished)).then(() => done())
+    JS
+  end
+
   # Turbo marks <html aria-busy> until a visit completes and may move focus as
   # it finishes, which closes an open menu. Wait for it before interacting.
   def assert_turbo_idle

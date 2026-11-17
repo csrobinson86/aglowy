@@ -509,4 +509,52 @@ class HouseholdTest < ActiveSupport::TestCase
 
     assert_equal [ users(:spouse) ], households(:home).members_sharing_times.to_a
   end
+
+  # docs/design/notifications.md, The kinds (weekly_preview).
+  test "send_weekly_preview notifies each active member once, children included, and lists the week's meetings, sessions and events" do
+    plan_the_week_of_november_23
+
+    travel_to(Time.utc(2026, 11, 22, 18, 5)) { households(:home).send_weekly_preview(Date.new(2026, 11, 23)) }
+
+    previews = Notification.where(kind: "weekly_preview")
+    assert_equal users(:head, :spouse, :child, :eli, :sofia).map(&:id).sort, previews.pluck(:user_id).sort
+    preview = previews.find_by!(user: users(:child))
+    assert_equal households(:home), preview.subject
+    assert_equal({ "week_of" => "2026-11-23" }, preview.data)
+    assert_equal "weekly_preview:#{households(:home).id}:2026-11-23", preview.dedupe_key
+    assert_equal "2 meetings · family study Tuesday · Circuit overseer's visit from Tuesday", preview.body
+  end
+
+  test "an empty week sends nothing" do
+    assert_no_difference -> { Notification.count } do
+      households(:parents).send_weekly_preview(Date.new(2026, 11, 23))
+    end
+  end
+
+  test "running it twice makes no second notification" do
+    plan_the_week_of_november_23
+
+    travel_to(Time.utc(2026, 11, 22, 18, 5)) do
+      households(:home).send_weekly_preview(Date.new(2026, 11, 23))
+      assert_no_difference -> { Notification.count } do
+        households(:home).send_weekly_preview(Date.new(2026, 11, 23))
+      end
+    end
+  end
+
+  private
+    # Two meetings, a family study on Tuesday and the circuit overseer's visit from Tuesday, and Sam's shared time,
+    # which never shows (docs/design/notifications.md, The kinds).
+    def plan_the_week_of_november_23
+      household = households(:home)
+      household.family_studies.destroy_all
+      household.events.delete_all
+      household.change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+      travel_to(Time.utc(2026, 11, 17)) do
+        assert household.schedule_family_study(topic: "Proverbs 3", frequency: "once", starts_on: Date.new(2026, 11, 24), time_of_day: "19:00").persisted?
+      end
+      household.events.create!(kind: "co_visit", title: "Circuit overseer's visit", starts_on: Date.new(2026, 11, 24), days: 6, created_by: users(:spouse))
+      memberships(:spouse_in_home).share_times
+      users(:spouse).personal_times.create!(kind: "bible_reading", title: "Daily Bible reading", wdays: [ 3 ], time_of_day: "06:30", starts_on: Date.new(2026, 11, 1))
+    end
 end
