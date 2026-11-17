@@ -36,7 +36,7 @@ this document says otherwise.
 | --- | --- | --- |
 | `household` | Every controller that includes `HouseholdScoped`, except the meeting helper's pages for a child | The app shell: sidebar + main |
 | `meeting_helper` | The meeting helper's pages for a child with the helper on (`docs/design/meeting-helper.md`) | Full screen, always dark, no sidebar |
-| `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark (`LogoComponent`, `docs/design/brand.md`) at the top left, then one centred column. No sidebar, because there is no household to navigate |
+| `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark (`LogoComponent`, `docs/design/brand.md`), then one centred column. Signed out, the mark is centred above the column; signed in, it's at the top left. No sidebar, because there is no household to navigate |
 
 Every layout keeps `lang` on `<html>` and the `<body>` theming attributes
 described next.
@@ -104,11 +104,12 @@ changes when it does.
 
 - `/` is the sign-in page for visitors. A signed-in person who visits `/` goes where signing in would send them: their household, the chooser, or new household.
 - **Sign in** (frame `sign-in.png`):
+  - The Aglowy mark, 48 px, centred above the heading (`docs/design/brand.md`). There's no logo in the top-left corner.
   - The heading "Sign in to Aglowy", with "To be aglow with the spirit" underneath.
   - One box holding Email, Password (with "Forgot password?" beside its label), "Remember me" and a full-width primary "Sign in" button.
   - Under the box: "New to Aglowy? Create an account", then a small "Didn't get the confirmation email?" link.
 - **Create an account** (frame `sign-up.png`):
-  - The heading "Create your account", with a line saying you'll be the head of your household.
+  - The same centred mark, then the heading "Create your account", with a line saying you'll be the head of your household.
   - Your name, Email and Password; a divider; then Household name (with a hint) and Time zone.
   - "Create account", with a note that a confirmation email comes first.
   - Under the box: "Already have an account? Sign in".
