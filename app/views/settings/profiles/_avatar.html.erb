@@ -19,31 +19,8 @@
                  data-avatar-preview-target="input" data-action="avatar-preview#preview">
           <%= render(Primer::Beta::Button.new(type: :button, data: { action: "avatar-preview#choose" })) { photo ? "Change photo" : "Upload photo" } %>
 
-          <%= render(Primer::Alpha::Dialog.new(id: "avatar-preview", title: "New avatar", size: :medium_portrait,
-                                               data: { avatar_preview_target: "dialog", action: "close->avatar-preview#closed" })) do |dialog| %>
-            <% dialog.with_header(show_divider: true) %>
-            <% dialog.with_body(text_align: :center) do %>
-              <img class="avatar-preview__photo" alt="Your new avatar" hidden data-avatar-preview-target="image"
-                   data-action="error->avatar-preview#unavailable">
-              <p class="color-fg-muted m-0 py-4" hidden data-avatar-preview-target="unavailable">
-                Preview not available for this photo. It will be cropped the same way.
-              </p>
-              <p class="mt-3 mb-2"><span data-avatar-preview-target="name"></span> · <span data-avatar-preview-target="size"></span></p>
-              <p class="FormControl-inlineValidation flex-justify-center mb-2" hidden data-avatar-preview-target="error">
-                <%= render(Primer::Beta::Octicon.new(icon: :"alert-fill", size: :xsmall)) %>
-                <span><%= User::Avatarable::PHOTO_REFUSED %></span>
-              </p>
-              <%= render(Primer::Beta::Button.new(type: :button, size: :small, mb: 3, data: { action: "avatar-preview#choose" })) { "Choose another photo" } %>
-              <p class="mb-0">
-                This is how it will look. Aglowy keeps the middle as a square and removes the photo's location and camera
-                details. Everyone in your households will see it.
-              </p>
-            <% end %>
-            <% dialog.with_footer(show_divider: true) do %>
-              <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "avatar-preview" })) { "Cancel" } %>
-              <%= render Settings::AvatarPhotoForm.new(f) %>
-            <% end %>
-          <% end %>
+          <%= render "settings/avatars/preview_dialog", form: f, id: "avatar-preview", title: "New avatar",
+                                                        image_alt: "Your new avatar", seen_by: "your households" %>
         <% end %>
         <% if photo %>
           <%= primer_form_with(url: household_settings_avatar_path, method: :delete) do |f| %>

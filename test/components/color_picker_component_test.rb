@@ -41,4 +41,12 @@ class ColorPickerComponentTest < ViewComponent::TestCase
     assert_selector "input[type=radio][checked]", count: 1, visible: :all
     assert_selector ".color-picker__chosen", text: "Green"
   end
+
+  # Settings → Children has a picker per child, all named avatar[color].
+  test "id_prefix keeps each picker's ids apart under one name" do
+    render_inline(ColorPickerComponent.new(name: "avatar[color]", selected: "blue", colors: Avatar::Palette::COLORS, legend: "Color", id_prefix: "child_avatar_color_1"))
+
+    assert_selector "input#child_avatar_color_1_blue[name='avatar[color]'][checked]", visible: :all
+    assert_selector "label[for=child_avatar_color_1_blue]", visible: :all
+  end
 end

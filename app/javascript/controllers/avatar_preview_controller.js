@@ -4,8 +4,9 @@ import { Controller } from "@hotwired/stimulus"
 // a file shows it at 160px in a circle, cropped to its middle square with object-fit: cover as the server will, from a
 // local object URL. Nothing is uploaded until Save avatar submits the form. Over the size limit the error shows at once
 // and Save is disabled; a photo the browser can't draw (HEIC on most desktops) gets a line instead, and still saves.
+// A child's avatar is changed from a dialog of its own (the chooser), which closes as the preview opens.
 export default class extends Controller {
-  static targets = [ "input", "dialog", "image", "unavailable", "name", "size", "error", "save" ]
+  static targets = [ "input", "dialog", "chooser", "image", "unavailable", "name", "size", "error", "save" ]
   static values = { maxSize: Number }
 
   #url = null
@@ -35,6 +36,7 @@ export default class extends Controller {
       this.#url = URL.createObjectURL(file)
       this.imageTarget.src = this.#url
     }
+    if (this.hasChooserTarget && this.chooserTarget.open) this.chooserTarget.close()
     if (!this.dialogTarget.open) this.dialogTarget.showModal()
   }
 

@@ -1,0 +1,33 @@
+<%# locals: (children:, refused: nil) %>
+<%# Settings → Children → "Children's avatars", first in the section (docs/design/avatars.md, Children's avatars; frame
+    settings-children-avatars.png): a row per child, how they sign in, and Change avatar. refused is the child whose
+    photo or color was just refused; the reason shows on their row. %>
+<%= render(Primer::Beta::BorderBox.new(id: "children-avatars", mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "Children's avatars" } } %>
+  <% children.each do |seat| %>
+    <% child = seat.user %>
+    <% error = (refused.errors.messages_for(:avatar).first || refused.errors.full_messages_for(:avatar_color).first) if refused&.id == child.id %>
+    <% box.with_row(display: :flex, align_items: :center) do %>
+      <%= render AvatarComponent.new(user: child, size: 32, classes: "flex-shrink-0 mr-3") %>
+      <div class="flex-1 min-width-0">
+        <div class="text-bold css-truncate css-truncate-overflow"><%= child.name %></div>
+        <div class="text-small color-fg-muted">
+          <%= child.identity ? "Signs in as #{child.identity.login} · can change it too" : "No login" %>
+        </div>
+        <% if error %>
+          <p id="child-avatar-error-<%= child.id %>" class="FormControl-inlineValidation mt-1 mb-0">
+            <%= render(Primer::Beta::Octicon.new(icon: :"alert-fill", size: :xsmall)) %>
+            <span><%= error %></span>
+          </p>
+        <% end %>
+      </div>
+      <%= render "settings/children/avatar_dialog", child:, error: error.present? %>
+    <% end %>
+  <% end %>
+  <% box.with_row(font_size: 6, color: :muted) do %>
+    <% if children.none? %><p class="mb-1">Children in the household show here.</p><% end %>
+    <p class="mb-0">
+      A child's avatar follows them to every household they're in. Children who sign in can change their own in Settings → Profile.
+    </p>
+  <% end %>
+<% end %>

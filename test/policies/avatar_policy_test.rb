@@ -1,8 +1,51 @@
 require "test_helper"
 
 # Changing your own avatar (docs/design/avatars.md, Who can do what): every active member, children included, and only
-# their own.
+# their own. A child's, from Settings → Children: heads and adults of a household the child is in, and only a child's.
 class AvatarPolicyTest < ActiveSupport::TestCase
+  test "update? and destroy? for a head and an adult, on a child of their household" do
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      %i[ eli sofia ].each do |child|
+        policy = AvatarPolicy.new(memberships(membership), users(child))
+
+        assert policy.update?, "expected #{membership} to change #{child}'s avatar"
+        assert policy.destroy?, "expected #{membership} to remove #{child}'s photo"
+      end
+    end
+  end
+
+  test "update? and destroy? never for a child, on another child or themselves" do
+    [ AvatarPolicy.new(memberships(:eli_in_home), users(:sofia)), AvatarPolicy.new(memberships(:eli_in_home), users(:eli)) ].each do |policy|
+      assert_not policy.update?
+      assert_not policy.destroy?
+    end
+  end
+
+  # Traps 5: only children, even for a head.
+  test "update? and destroy? never on an adult's or a head's, by anyone" do
+    %i[ head_in_home spouse_in_home eli_in_home ].each do |membership|
+      %i[ head spouse ].each do |adult|
+        policy = AvatarPolicy.new(memberships(membership), users(adult))
+
+        assert_not policy.update?, "expected #{membership} not to change #{adult}'s avatar"
+        assert_not policy.destroy?, "expected #{membership} not to remove #{adult}'s photo"
+      end
+    end
+  end
+
+  test "update? never on a child of another household, or a child who's left this one" do
+    assert_not AvatarPolicy.new(memberships(:head_in_parents), users(:eli)).update?
+    memberships(:eli_in_home).update!(active: false)
+    assert_not AvatarPolicy.new(memberships(:head_in_home), users(:eli)).update?
+  end
+
+  test "update? and destroy? are false for a nil or inactive membership" do
+    [ nil, memberships(:former_in_home) ].each do |membership|
+      assert_not AvatarPolicy.new(membership, users(:eli)).update?
+      assert_not AvatarPolicy.new(membership, users(:eli)).destroy?
+    end
+  end
+
   test "update_own? for a head, an adult and a child, on themselves" do
     %i[ head_in_home spouse_in_home eli_in_home ].each do |membership|
       seat = memberships(membership)
