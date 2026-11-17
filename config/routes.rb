@@ -29,6 +29,8 @@ Rails.application.routes.draw do
   end
 
   resource :signup, only: %i[ new create ]
+  # A person's photo, one URL on every page, outside the household scope: it's the same in each (docs/design/avatars.md).
+  get "people/:user_id/avatar", to: "avatars#show", as: :avatar
   # /invitation?token=…: the token is a query parameter, never a path segment, so filtered_path keeps it out of
   # the Rails log and Lograge (docs/design/invitations.md, Traps). Destroy is declining.
   resource :invitation_acceptance, path: "invitation", only: %i[ show create destroy ]
@@ -78,7 +80,7 @@ Rails.application.routes.draw do
     # may change it (docs/design/settings.md, Sections and who sees them).
     namespace :settings do
       resource :profile, only: %i[ show update ]
-      resource :avatar, only: :update                      # Your initial's color, in Profile (docs/design/avatars.md)
+      resource :avatar, only: %i[ update destroy ]         # Your photo and initial's color, in Profile (docs/design/avatars.md)
       resource :appearance, only: %i[ show update ]
       resource :sign_in, only: %i[ show update ]
       resources :memberships, only: %i[ index destroy ]   # My households

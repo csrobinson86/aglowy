@@ -24,7 +24,7 @@ class Goal < ApplicationRecord
   scope :active, -> { where.missing(:completion, :archival).order(:target_on) }
   scope :completed, -> { joins(:completion).where.missing(:archival).order(Goal::Completion.arel_table[:created_at].desc) }
   scope :archived, -> { joins(:archival).order(Goal::Archival.arel_table[:created_at].desc) }
-  scope :preloaded, -> { includes(:user, :sharings, :shared_households, completion: :completed_by, archival: :archived_by, steps: [ { assignments: :user }, :completions, { family_study: :first_session } ], household: { active_memberships: :user }) }
+  scope :preloaded, -> { includes(:user, :sharings, :shared_households, completion: :completed_by, archival: :archived_by, steps: [ { assignments: { user: { avatar_attachment: :blob } } }, :completions, { family_study: :first_session } ], household: { active_memberships: { user: { avatar_attachment: :blob } } }) }
 
   # The goals a person works on from this household: its family goals and their own personal goals.
   # Every change to a goal finds it here, so a goal someone shared with them is a 404 to change.

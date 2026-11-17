@@ -1,1 +1,5 @@
-<%= tag.span user.initial, class: html_classes, **label_attributes %>
+<% if photo? %>
+  <%= render Primer::Beta::Avatar.new(src: photo_path, alt:, size:, shape: :circle, classes:) %>
+<% else %>
+  <%= tag.span user.initial, class: html_classes, **label_attributes %>
+<% end %>

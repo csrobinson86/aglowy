@@ -9,7 +9,7 @@ class Membership < ApplicationRecord
   enum :role, %i[ head adult child ].index_by(&:itself), default: :adult, validate: true
 
   scope :active, -> { where(active: true) }
-  scope :preloaded, -> { includes(user: :identity) }
+  scope :preloaded, -> { includes(user: [ :identity, { avatar_attachment: :blob } ]) }
   scope :by_role, -> { in_order_of(:role, roles.keys).order(:created_at) }
   scope :by_household_name, -> { includes(:household).order("households.name") }
   scope :with_study_ai_grant, -> { where(id: Membership::StudyAiGrant.select(:membership_id)) }

@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  include Avatarable
+
   has_one :identity, dependent: :destroy
   has_many :memberships, dependent: :destroy
   has_many :households, through: :memberships

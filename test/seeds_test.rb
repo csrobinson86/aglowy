@@ -25,6 +25,9 @@ class SeedsTest < ActiveSupport::TestCase
     # Each person has a color, and no two in a household share one (docs/design/avatars.md, Elsewhere).
     Household.find_each { |household| assert_equal household.users.count, household.users.distinct.count(:avatar_color) }
     assert_equal %w[ green ], User.joins(:identity).where(identity: { email: "rivera@example.com" }).pluck(:avatar_color)
+    # One adult has a photo Aglowy made, from a gradient drawn in the seed.
+    assert_equal [ "image/webp" ], User.joins(:avatar_attachment).map { it.avatar.content_type }
+    assert user("spouse@example.com").avatar.attached?
     assert Household.find_by!(name: "The Rivera Family").meeting_helper?
 
     assert_equal 4, FamilyStudy.count

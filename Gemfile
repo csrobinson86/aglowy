@@ -49,6 +49,11 @@ gem "mission_control-jobs"        # Web UI for Solid Queue
 # acts_as_message ActiveRecord mixins, Rails generator for chat UI.
 gem "ruby_llm"
 
+# ─── Images ───────────────────────────────────────────────────────────────────
+# libvips, for avatars only: crop, resize and strip a photo on the server (docs/design/avatars.md).
+# Active Storage variants stay off (config/application.rb).
+gem "image_processing", "~> 1.14"
+
 # ─── Admin ────────────────────────────────────────────────────────────────────
 # Lightweight Rails admin engine by Chris Oliver (GoRails).
 gem "madmin"

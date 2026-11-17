@@ -1,0 +1,10 @@
+// The avatar preview dialog (docs/design/avatars.md, The preview dialog; frame avatar-preview.png): the chosen photo at
+// 160px in a circle, its middle square kept as the server will keep it.
+.avatar-preview__photo {
+  display: block;
+  width: calc(var(--base-size-80) * 2);
+  height: calc(var(--base-size-80) * 2);
+  margin: 0 auto;
+  object-fit: cover;
+  border-radius: var(--borderRadius-full);
+}

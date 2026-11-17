@@ -20,4 +20,32 @@ class AvatarPolicyTest < ActiveSupport::TestCase
     assert_not AvatarPolicy.new(nil, users(:eli)).update_own?
     assert_not AvatarPolicy.new(memberships(:former_in_home), users(:former)).update_own?
   end
+
+  # Outside a household there's no membership: show_avatar? reads Current.user.
+  test "show_avatar? for the person, a household mate, but not a stranger, whatever the membership" do
+    [ nil, memberships(:head_in_home), memberships(:spouse_in_home), memberships(:eli_in_home) ].each do |membership|
+      Current.identity = identities(:head)
+      assert AvatarPolicy.new(membership, users(:head)).show_avatar?
+      assert AvatarPolicy.new(membership, users(:eli)).show_avatar?
+
+      Current.identity = identities(:outsider)
+      assert_not AvatarPolicy.new(membership, users(:eli)).show_avatar?
+    end
+  end
+
+  test "show_avatar? for an adult and a child signed in: themselves and a household mate, not a stranger" do
+    %i[ spouse eli ].each do |viewer|
+      Current.identity = identities(viewer)
+
+      [ nil, memberships(:"#{viewer}_in_home") ].each do |membership|
+        assert AvatarPolicy.new(membership, users(viewer)).show_avatar?, "expected #{viewer} to see their own"
+        assert AvatarPolicy.new(membership, users(:head)).show_avatar?, "expected #{viewer} to see a household mate's"
+        assert_not AvatarPolicy.new(membership, users(:outsider)).show_avatar?, "expected #{viewer} not to see a stranger's"
+      end
+    end
+  end
+
+  test "show_avatar? is false signed out" do
+    assert_not AvatarPolicy.new(nil, users(:eli)).show_avatar?
+  end
 end
