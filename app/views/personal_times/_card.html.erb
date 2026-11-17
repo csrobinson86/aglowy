@@ -1,8 +1,8 @@
-<%# locals: (item:) -%>
+<%# locals: (item:, focused: false) -%>
 <%# The viewer's own time on one day (frame calendar-week.png): the time, the done box with the title, which opens the
     edit dialog, and a link to what it opens, a study or a note, or for meeting prep that week's note through
     POST /meeting_notes. No done box on a day that hasn't come yet; a done title has a line through it
-    (docs/design/calendar.md, My time's done box). %>
+    (docs/design/calendar.md, My time's done box). focused keeps the box focused after marking replaces the card. %>
 <% occurrence, time = item.source, item.source.personal_time %>
 <%= tag.div id: personal_time_card_id(occurrence), class: [ "calendar-item", "calendar-item--my-time", { "calendar-item--done": occurrence.done? } ] do %>
   <span class="calendar-item__time"><%= calendar_time(item.starts_at) %></span>
@@ -10,7 +10,7 @@
     <% unless occurrence.future? %>
       <%= primer_form_with(url: occurrence.done? ? household_personal_time_completion_path(personal_time_id: time, id: occurrence.on.iso8601) : household_personal_time_completions_path(personal_time_id: time),
             method: occurrence.done? ? :delete : :post, data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
-        <%= render PersonalTimes::CompletionForm.new(f, occurrence:) %>
+        <%= render PersonalTimes::CompletionForm.new(f, occurrence:, focused:) %>
       <% end %>
     <% end %>
     <%= link_to item.title, edit_household_personal_time_path(id: time), class: "calendar-item__title calendar-item__edit", data: { turbo_frame: "personal_time_dialog" } %>

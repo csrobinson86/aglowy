@@ -41,10 +41,10 @@ class PersonalTime < ApplicationRecord
   validate :at_most_per_person, on: :create
 
   # Every occurrence of these times starting inside the range of instants, in order, each knowing whether it's done.
-  # One query for the times and one for their done marks.
+  # One query for the times and one for their done marks, two days either side, as zones can be over a day apart.
   def self.occurring_between(range)
     times = all.to_a
-    done = PersonalTime::Completion.where(personal_time: times, on: (range.begin - 1.day).to_date..(range.end + 1.day).to_date)
+    done = PersonalTime::Completion.where(personal_time: times, on: (range.begin - 2.days).to_date..(range.end + 2.days).to_date)
                                    .pluck(:personal_time_id, :on).to_set
     times.flat_map { it.occurrences_between(range, done:) }.sort_by(&:starts_at)
   end

@@ -19,7 +19,7 @@ class PersonalTimes::CompletionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "turbo-stream[action=replace][target=?]", "personal_time_#{@time.id}_2026-11-17" do
       assert_select "template .calendar-item--my-time.calendar-item--done"
-      assert_select "template form[action=?] input[type=checkbox][checked]",
+      assert_select "template form[action=?] input[type=checkbox][checked][autofocus]",
                     household_personal_time_completion_path(household_id: @home, personal_time_id: @time, id: "2026-11-17")
     end
 

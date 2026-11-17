@@ -60,7 +60,7 @@ class PersonalTimesTest < ApplicationSystemTestCase
       fill_in "At", with: "07:00PM"
       select "45 minutes", from: "For"
       assert_accessible
-      capture_screens("calendar-new-time")
+      capture_screens("calendar-new-time", scroll_to: "[data-personal-time-target=meetingPrep]")
       click_on "Add time"
     end
 

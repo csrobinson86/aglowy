@@ -7,8 +7,8 @@
   <% subhead.with_heading(tag: :h1) { "Calendar" } %>
   <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
   <% subhead.with_actions do %>
-    <div class="d-flex flex-wrap gap-2">
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_time_path, data: { turbo_frame: "personal_time_dialog" })) { "Add my time" } %>
+    <div class="d-flex flex-wrap">
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_time_path, mr: 2, data: { turbo_frame: "personal_time_dialog" })) { "Add my time" } %>
       <% if manage_events %>
         <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_calendar_event_path, scheme: :primary, data: { turbo_frame: "calendar_event_dialog" })) { "Add household event" } %>
       <% end %>

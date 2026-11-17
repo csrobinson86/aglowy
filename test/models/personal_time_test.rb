@@ -23,6 +23,10 @@ class PersonalTimeTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::CheckViolation) { PersonalTime.insert!(row(wdays: [ 7 ])) }
   end
 
+  test "the database refuses a kind outside the four" do
+    assert_raises(ActiveRecord::CheckViolation) { PersonalTime.insert!(row(kind: "walk")) }
+  end
+
   test "the database refuses a duration outside 5 to 240 minutes" do
     assert_raises(ActiveRecord::CheckViolation) { PersonalTime.insert!(row(duration_minutes: 241)) }
   end
