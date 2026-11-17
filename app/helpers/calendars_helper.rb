@@ -1,0 +1,16 @@
+module CalendarsHelper
+  # The calendar for a view and date, keeping the groups the Show checkboxes hide (docs/design/calendar.md, The page).
+  def calendar_page_path(view, date, hide:)
+    household_calendar_path(view:, date: date.iso8601, hide: hide.presence)
+  end
+
+  # "Tue 17" for the eye, "Tuesday, November 17" for a screen reader.
+  def calendar_day_heading(day)
+    shown = safe_join([ day.strftime("%a "), tag.span(day.day, class: "calendar-day__number") ])
+    safe_join([ tag.span(shown, aria: { hidden: true }), tag.span(day.strftime("%A, %B %-d"), class: "sr-only") ])
+  end
+
+  def calendar_time(time)
+    time.strftime("%-l:%M %p")
+  end
+end

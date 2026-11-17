@@ -15,12 +15,21 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Home"
   end
 
-  test "Family studies follows Home, with the book icon, and is the current item when selected_item is :family_studies" do
-    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :family_studies))
+  test "Calendar follows Home, with the calendar icon, and is the current item when selected_item is :calendars" do
+    render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :calendars))
 
     assert_selector "nav[aria-label='Main'] li:nth-of-type(1) a", text: "Home"
-    assert_selector "nav[aria-label='Main'] li:nth-of-type(2) a[aria-current='page'][href='/#{households(:home).id}/family_studies']", text: "Family studies"
-    assert_selector "nav[aria-label='Main'] li:nth-of-type(2) svg.octicon-book"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(2) a[aria-current='page'][href='/#{households(:home).id}/calendar']", text: "Calendar"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(2) svg.octicon-calendar"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
+  end
+
+  test "Family studies follows Calendar, with the book icon, and is the current item when selected_item is :family_studies" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :family_studies))
+
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(2) a", text: "Calendar"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(3) a[aria-current='page'][href='/#{households(:home).id}/family_studies']", text: "Family studies"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(3) svg.octicon-book"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
@@ -28,7 +37,7 @@ class AppShellComponentTest < ViewComponent::TestCase
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :members))
 
     assert_selector "nav[aria-label='Main'] li:nth-of-type(1) a", text: "Home"
-    assert_selector "nav[aria-label='Main'] li:nth-of-type(3) a[aria-current='page']", text: "Members"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(4) a[aria-current='page']", text: "Members"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
     assert_selector "nav[aria-label='Menu'] a[aria-current='page']", text: "Members", count: 1
   end
@@ -36,8 +45,8 @@ class AppShellComponentTest < ViewComponent::TestCase
   test "Family goals follows Members, with the goal icon, and is the current item when selected_item is :goals" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :goals))
 
-    assert_selector "nav[aria-label='Main'] li:nth-of-type(4) a[aria-current='page'][href='/#{households(:home).id}/goals']", text: "Family goals"
-    assert_selector "nav[aria-label='Main'] li:nth-of-type(4) svg.octicon-goal"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(5) a[aria-current='page'][href='/#{households(:home).id}/goals']", text: "Family goals"
+    assert_selector "nav[aria-label='Main'] li:nth-of-type(5) svg.octicon-goal"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 

@@ -1,0 +1,55 @@
+<% content_for :title, "Calendar" %>
+
+<%= render Primer::Beta::Subhead.new(hide_border: true, mb: 0) do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Calendar" } %>
+  <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
+<% end %>
+<% if @calendar.viewer_in_another_zone? %>
+  <p class="color-fg-muted">Times are in <%= @calendar.zone_name %>, the household's time zone.</p>
+<% end %>
+
+<%# Today, previous and next, the range, and Week or Month; each a link keeping view, date and hide (frame calendar-week.png). %>
+<div class="calendar-toolbar">
+  <div class="d-flex flex-items-center gap-2">
+    <%= render(Primer::Beta::Button.new(tag: :a, href: calendar_page_path(@period.view, Current.household.today, hide: @hide))) { "Today" } %>
+    <% unit = @period.month? ? "month" : "week" %>
+    <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.previous_date, hide: @hide), icon: :"chevron-left", "aria-label": "Previous #{unit}", show_tooltip: false) %>
+    <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.next_date, hide: @hide), icon: :"chevron-right", "aria-label": "Next #{unit}", show_tooltip: false) %>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, ml: 2)) { @period.title } %>
+  </div>
+  <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "View")) do |control| %>
+    <% { "week" => "Week", "month" => "Month" }.each do |view, label| %>
+      <% control.with_item(tag: :a, href: calendar_page_path(view, @period.date, hide: @hide), label:, selected: @period.view == view) %>
+    <% end %>
+  <% end %>
+</div>
+
+<%# Show beside the calendar, or above it on narrower screens. Not Primer's Layout: the app shell's own Layout hides
+    any sidebar inside it below md. %>
+<div class="d-flex flex-column flex-lg-row gap-4">
+  <div class="col-lg-3 flex-shrink-0">
+    <%= primer_form_with(url: household_calendar_path, method: :get, data: { controller: "auto-submit", action: "change->auto-submit#submit" }) do |f| %>
+      <%= render Calendars::ShowForm.new(f, household: Current.household, period: @period, hide: @hide) %>
+      <noscript><%= render(Primer::Beta::Button.new(type: :submit, mt: 2)) { "Show" } %></noscript>
+    <% end %>
+  </div>
+
+  <div class="flex-auto min-width-0">
+    <% if @calendar.nothing_planned? %>
+      <%= render Primer::Beta::Blankslate.new(border: true, mb: 3) do |blankslate| %>
+        <% blankslate.with_visual_icon(icon: :calendar) %>
+        <% blankslate.with_heading(tag: :h2) { "Nothing on the calendar yet." } %>
+        <% if policy(Current.household).manage_meetings? %>
+          <% blankslate.with_primary_action(href: household_settings_meetings_path) { "Set your meeting times" } %>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% today = Current.household.today %>
+    <% if @period.month? %>
+      <%= render "calendars/month", calendar: @calendar, period: @period, today:, hide: @hide, meeting_helper: @meeting_helper %>
+    <% else %>
+      <%= render "calendars/week", calendar: @calendar, period: @period, today:, meeting_helper: @meeting_helper %>
+    <% end %>
+  </div>
+</div>

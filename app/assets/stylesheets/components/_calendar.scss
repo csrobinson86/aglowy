@@ -1,0 +1,230 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// The calendar page (docs/design/calendar.md, The page; frames calendar-week.png, calendar-month.png, calendar-dark.png).
+// Each kind takes its color from Primer's display primitives, so dark mode comes from Primer. Below lg the week and the
+// month become one day after another.
+
+// Today, previous, next and the range on the left, Week and Month on the right.
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--base-size-12);
+  padding-bottom: var(--base-size-16);
+  margin: var(--base-size-16) 0;
+  border-bottom: var(--borderWidth-thin) solid var(--borderColor-default);
+}
+
+// Each kind's three colors, read by the item and by its Show check box.
+.calendar-item--meeting,
+.calendar-show__check--meeting {
+  --calendar-kind-bgColor: var(--display-red-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-red-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-red-fgColor);
+}
+
+.calendar-item--study,
+.calendar-show__check--study {
+  --calendar-kind-bgColor: var(--display-blue-bgColor-muted);
+  --calendar-kind-borderColor: var(--display-blue-borderColor-emphasis);
+  --calendar-kind-fgColor: var(--display-blue-fgColor);
+}
+
+// A ticked Show check box is filled with its group's color, in place of Primer's accent.
+.calendar-show__check {
+  --control-checked-bgColor-rest: var(--calendar-kind-borderColor);
+  --control-checked-bgColor-hover: var(--calendar-kind-borderColor);
+  --control-checked-bgColor-active: var(--calendar-kind-borderColor);
+  --control-checked-borderColor-rest: var(--calendar-kind-borderColor);
+  --control-checked-borderColor-hover: var(--calendar-kind-borderColor);
+  --control-checked-borderColor-active: var(--calendar-kind-borderColor);
+}
+
+.calendar-week {
+  display: grid;
+  overflow: hidden;
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    min-height: calc(var(--base-size-128) * 4);
+  }
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-8);
+  min-width: 0;
+  padding: var(--base-size-8);
+  border-bottom: var(--borderWidth-thin) solid var(--borderColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    border-bottom: 0;
+
+    & + & {
+      border-left: var(--borderWidth-thin) solid var(--borderColor-muted);
+    }
+  }
+}
+
+// Today's number is circled, as in the month, on a faint column that keeps the study cards' blue apart.
+.calendar-day--today {
+  background-color: var(--bgColor-muted);
+
+  .calendar-day__number {
+    color: var(--fgColor-onEmphasis);
+    background-color: var(--bgColor-accent-emphasis);
+  }
+}
+
+.calendar-day__number {
+  display: inline-block;
+  min-width: var(--base-size-24);
+  padding: 0 var(--base-size-4);
+  text-align: center;
+  border-radius: var(--borderRadius-full);
+}
+
+.calendar-day__heading {
+  margin: 0;
+  font-size: var(--text-body-size-medium);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+// A card: a colored bar on the left, the time, the title and a subtitle. A meeting's is a button in a form, a study's
+// a link, so both are reset to look the same.
+.calendar-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  padding: var(--base-size-8);
+  font: inherit;
+  color: var(--fgColor-default);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  background-color: var(--calendar-kind-bgColor);
+  border: 0;
+  border-left: var(--borderWidth-thicker) solid var(--calendar-kind-borderColor);
+  border-radius: var(--borderRadius-medium);
+
+  &:hover {
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--outline-focus-offset);
+  }
+}
+
+.calendar-item__form {
+  min-width: 0;
+}
+
+.calendar-item__time {
+  font-size: var(--text-body-size-small);
+  color: var(--calendar-kind-fgColor);
+}
+
+.calendar-item__title {
+  font-weight: var(--base-text-weight-semibold);
+  overflow-wrap: break-word;
+}
+
+.calendar-item__subtitle {
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+  overflow-wrap: break-word;
+}
+
+// The month's one-line chip: time and title on one line, cut short with an ellipsis.
+.calendar-item--chip {
+  display: block;
+  padding: var(--base-size-2) var(--base-size-4);
+  overflow: hidden;
+  font-size: var(--text-body-size-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .calendar-item__time {
+    margin-right: var(--base-size-4);
+  }
+
+  .calendar-item__title {
+    font-weight: var(--base-text-weight-normal);
+  }
+}
+
+.calendar-month {
+  display: grid;
+  overflow: hidden;
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+.calendar-month__weekday {
+  display: none;
+  padding: var(--base-size-8);
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+  background-color: var(--bgColor-muted);
+  border-bottom: var(--borderWidth-thin) solid var(--borderColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    display: block;
+  }
+}
+
+.calendar-month__day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-4);
+  min-width: 0;
+  padding: var(--base-size-8);
+  border-bottom: var(--borderWidth-thin) solid var(--borderColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    min-height: var(--base-size-128);
+    border-right: var(--borderWidth-thin) solid var(--borderColor-muted);
+  }
+}
+
+// Days of the months either side, muted; on a phone only the month's own days are listed.
+.calendar-month__day--outside {
+  display: none;
+  background-color: var(--bgColor-muted);
+
+  @media (min-width: map.get(primer.$breakpoints, lg)) {
+    display: flex;
+  }
+}
+
+.calendar-month__day--today .calendar-month__number {
+  color: var(--fgColor-onEmphasis);
+  background-color: var(--bgColor-accent-emphasis);
+}
+
+.calendar-month__number {
+  align-self: flex-start;
+  min-width: var(--base-size-24);
+  padding: 0 var(--base-size-4);
+  font-weight: var(--base-text-weight-semibold);
+  color: var(--fgColor-default);
+  text-align: center;
+  border-radius: var(--borderRadius-full);
+}
+
+.calendar-month__more {
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+}

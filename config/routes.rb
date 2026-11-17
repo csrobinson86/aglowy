@@ -58,6 +58,8 @@ Rails.application.routes.draw do
   scope "/:household_id", as: :household,
         constraints: { household_id: /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/ } do
     get "/", to: "dashboards#show", as: :root
+    # Meetings and family studies by week or month: ?view=week|month&date=2026-11-17&hide[]=meetings (docs/design/calendar.md).
+    resource :calendar, only: :show
     # Settings, a page per section, opening on Profile for everyone (docs/design/settings.md, Pages and routes).
     get "settings", to: redirect("/%{household_id}/settings/profile"), as: :settings
     # The person's own sections, the same person from any household; then the household's, each for the roles that

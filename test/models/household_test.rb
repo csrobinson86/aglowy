@@ -400,6 +400,23 @@ class HouseholdTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 11, 16), meeting.week_of
   end
 
+  test "meetings_between gives both meetings in a week" do
+    meetings = household_meeting.meetings_between(Date.new(2026, 11, 16)..Date.new(2026, 11, 22))
+
+    assert_equal [ [ "midweek", chicago(11, 19, 19) ], [ "weekend", chicago(11, 22, 10) ] ], meetings.map { [ it.kind, it.starts_at ] }
+  end
+
+  test "meetings_between gives none before meeting times are set" do
+    assert_empty households(:home).meetings_between(Date.new(2026, 11, 16)..Date.new(2026, 11, 22))
+  end
+
+  test "meetings_between in the week daylight saving time ends keeps 7:00 PM" do
+    meetings = household_meeting(weekend: [ 0, "19:00" ]).meetings_between(Date.new(2026, 10, 26)..Date.new(2026, 11, 1))
+
+    assert_equal [ chicago(10, 29, 19), chicago(11, 1, 19) ], meetings.map(&:starts_at)
+    assert_equal [ [ 19, 0 ] ], meetings.map { [ it.starts_at.hour, it.starts_at.min ] }.uniq
+  end
+
   # Daylight saving time ends at 2:00 AM on Sunday 1 November 2026 in Chicago (Trap 5).
   test "the week daylight saving time ends, a meeting is still at 7:00 PM local" do
     meeting = household_meeting(weekend: [ 0, "19:00" ]).current_or_next_meeting(chicago(10, 30, 12))
