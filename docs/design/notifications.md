@@ -72,7 +72,7 @@ State as a record (CLAUDE.md). `notification_id`, unique, `on_delete: :cascade`.
 A claim that it goes out on a channel: `notification_id`, `channel` (check in `email`, `push`), unique together, `on_delete: :cascade`.
 
 - **Claim, then send.** The job inserts the delivery first (`insert` that returns nothing on conflict), and only the job whose insert succeeded sends. Two jobs at once can't both send, and a retry after a send finds the claim and stops.
-- **At most once, not exactly once.** Neither SES nor Web Push takes an idempotency key. So a crash after the claim and before the send drops that one email or push (the inbox still has it), rather than risking a second. A send that fails with a temporary error (SES throttling, a push service 5xx) deletes the claim and raises, so the job retries.
+- **At most once, not exactly once.** Neither SES nor Web Push takes an idempotency key. So a crash after the claim and before the send drops that one email or push (the inbox still has it), rather than risking a second. A send the provider clearly refused with a temporary error (an SES throttling or service-unavailable response, a push service 429 or 5xx) deletes the claim and raises, so the job retries. When the outcome is unknown (a timeout, a dropped connection, no response), the provider may have accepted it, so the claim stays and the job doesn't retry: a lost email beats a second one.
 - **Push to several devices** sends to each in turn under the one `push` claim. A device that fails doesn't stop the others, and the failed device isn't retried. Expired devices are deleted (`PushSubscription`).
 
 ### `NotificationSetting`
@@ -119,7 +119,7 @@ A push that comes back `404` or `410` deletes the subscription (`WebPush::Expire
    - **Starting the cursor:** when `notification_settings.change` turns on the person's first summary-kind email and the cursor is NULL, it sets the cursor to `Time.current`, so the first summary comes at the next quiet-hours end. The job also reads a NULL cursor as earlier than any time (`COALESCE(summary_sent_through, '-infinity')`), so a person with a summary email and no cursor is due rather than never sent.
    - **Never inside quiet hours:** a due person for whom `user.quiet_now?` is true is skipped. Nothing is claimed or sent and the cursor stays, so they're still due on the first run after quiet hours end. This covers quiet hours changed so the last end falls inside the new hours.
    - For a due person, it gathers every visible notification that is a summary kind, has an email setting, and has no `email` delivery. There's no age limit: a notification waits until it's sent or purged at 90 days.
-   - It claims an `email` delivery for each, sends one `NotificationMailer.daily_summary(user, notifications)`, and moves the cursor to that quiet-hours end. With nothing to send, it only moves the cursor.
+   - It claims an `email` delivery for each in one `insert_all` that skips conflicts and returns the claimed `notification_id`s, and the summary holds **only the notifications this job claimed**, so two runs that gathered the same ones can't both send them. If it claimed any, it sends one `NotificationMailer.daily_summary(user, notifications)` (a temporary refusal deletes this job's claims and raises, as above), and moves the cursor to that quiet-hours end. With nothing gathered or nothing claimed, it only moves the cursor.
 
 Read notifications still go in the summary: the summary is a record of what happened, and reading it in the app doesn't mean the email was unwanted.
 
@@ -256,6 +256,6 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
 - Push: turned on, refused, removed, an expired endpoint
 - Unsubscribe by link and by one-click POST, from a right-away email and from a summary; a one-click POST with no session and no CSRF token (works); a token used with the wrong scope; a bad or old token
 - The first summary after turning on a summary email (comes at the next quiet-hours end); a summary held while quiet hours run, including quiet hours just moved over the last end
-- Two delivery jobs for one notification at once (one sends); a temporary send failure (retried); one of two devices failing
+- Two delivery jobs for one notification at once (one sends); a temporary send failure (retried); a timeout (claim kept, not retried); one of two devices failing; two summary runs at once (one summary)
 - Leaving the household while a push waits out quiet hours (nothing sent); quiet hours ending at 7:30; a missed summary run
 - Desktop and phone; light and dark
