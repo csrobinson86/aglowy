@@ -40,6 +40,9 @@
               <li class="d-flex flex-items-baseline mb-1">
                 <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
                 <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || helpers.source_host(source["url"]) } %> <span class="color-fg-muted">· <%= helpers.source_host(source["url"]) %></span></span>
+                <% if (button = bookmark_button(source)) %>
+                  <%= render button %>
+                <% end %>
               </li>
             <% end %>
           </ul>

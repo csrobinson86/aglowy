@@ -1,4 +1,4 @@
-# Hannah's tags, collections, personal studies and notes, and Lucia's own study. Answers are stored as the answer job
+# Hannah's tags, collections, personal studies, notes and bookmarks, and Lucia's own study. Answers are stored as the answer job
 # writes them, in sample text written here, so no AI is asked and no one's daily questions are used. Their sources
 # are jw.org and wol.jw.org addresses with placeholder titles; nothing fetches them.
 head, lucia = seeded_person("head@example.com"), seeded_person("lucia.rivera")
@@ -54,6 +54,10 @@ seed_personal_study(head, title: "Why does God allow suffering?", collection: co
       answer: seed_answer([ "Sample answer: James 1:13 says God never tries anyone with bad things." ]),
       sources: [ seed_source("www.jw.org/en/bible-teachings/", "Why does God allow suffering?") ] }
   ])
+
+# Daniel's pages bookmarked, as the study's bookmark buttons save them, so Notes' Bookmarks tab has rows
+# (docs/design/bookmarks.md). Saving again finds each one.
+daniel.sources.each { seeded!(head.bookmark(url: it["url"], source: daniel)) }
 
 seed_personal_study(lucia, title: "Brave like Daniel", notes: "<p>Dan 6:22: the angel shut the lions' mouths!</p>")
 

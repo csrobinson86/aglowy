@@ -1,0 +1,5 @@
+// The bookmark button beside a page (BookmarkButtonComponent): filled in the accent color once saved, as in frame
+// personal-study-bookmarks.png.
+.bookmark-button__button--saved .octicon {
+  color: var(--fgColor-accent);
+}

@@ -31,6 +31,7 @@ class Members::PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#study-notes", text: /Ask about Genesis 1/
     assert_select "main form", count: 0
     assert_select "main button", count: 0
+    assert_select "[data-bookmark-key]", count: 0
   end
 
   test "a study still being answered shows that it's answering, with no Stop" do

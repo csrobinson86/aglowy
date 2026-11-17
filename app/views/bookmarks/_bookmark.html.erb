@@ -1,0 +1,19 @@
+<%# locals: (bookmark:, bookmarked:) %>
+<%# One bookmark on the Bookmarks tab (frame bookmarks.png): the title linking out, its site, when it was saved and the
+    study it came from while that exists, then the filled button that removes it. The title came from a search
+    result, so it's escaped like any AI text. %>
+<% host = source_host(bookmark.url) %>
+<%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, mt: 1, flex_shrink: 0)) %>
+<div class="flex-auto min-width-0">
+  <p class="mb-1 wb-break-word">
+    <%= render(Primer::Beta::Link.new(href: bookmark.url, target: "_blank", rel: "noopener", font_weight: :bold)) { bookmark.title.presence || host } %>
+    <span class="color-fg-muted">· <%= host %></span>
+  </p>
+  <p class="text-small color-fg-muted mb-0">
+    <%= l(bookmark.created_at.to_date, format: :short) %>
+    <% if bookmark.source %>
+      · from <%= render(Primer::Beta::Link.new(href: polymorphic_path([ :household, bookmark.source ]), muted: true, underline: true)) { bookmark.source.title } %>
+    <% end %>
+  </p>
+</div>
+<%= render BookmarkButtonComponent.new(url: bookmark.url, title: bookmark.title, source: bookmark.source, bookmarked:, from_list: true) %>

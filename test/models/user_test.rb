@@ -168,4 +168,81 @@ class UserTest < ActiveSupport::TestCase
     assert users(:eli).personal_study_read_by_heads?
     assert_not users(:head).personal_study_read_by_heads?
   end
+
+  # Bookmarks (docs/design/bookmarks.md, User). The study's sources are what Aglowy showed the person.
+  ARTICLE = { "url" => "https://www.jw.org/en/library/books/bible-questions-answered/", "title" => "Bible Questions Answered" }.freeze
+
+  def study_with_article
+    personal_studies(:head_suffering).tap do |study|
+      personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "One." ] }, sources: [ ARTICLE ])
+    end
+  end
+
+  test "bookmark takes the title from the study's sources" do
+    bookmark = users(:head).bookmark(url: "#{ARTICLE["url"]}#top", source: study_with_article)
+
+    assert bookmark.persisted?
+    assert_equal ARTICLE["url"], bookmark.url
+    assert_equal "Bible Questions Answered", bookmark.title
+    assert_equal personal_studies(:head_suffering), bookmark.source
+  end
+
+  test "bookmark refuses a URL that isn't in the study's sources" do
+    study = study_with_article
+
+    assert_no_difference -> { Bookmark.count } do
+      bookmark = users(:head).bookmark(url: "https://www.jw.org/en/whats-new/", source: study)
+
+      assert_not bookmark.persisted?
+      assert_includes bookmark.errors[:url], "isn't one of the pages in this study"
+    end
+  end
+
+  test "bookmarking a saved page again finds the first bookmark" do
+    study = study_with_article
+    first = users(:head).bookmark(url: ARTICLE["url"], source: study)
+
+    assert_no_difference -> { Bookmark.count } do
+      assert_equal first, users(:head).bookmark(url: "#{ARTICLE["url"]}?utm_source=x", source: study)
+    end
+  end
+
+  test "bookmark cuts a long title to 120 characters" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, status: "answered", answer: { "paragraphs" => [ "One." ] }, sources: [ ARTICLE.merge("title" => "x" * 200) ])
+
+    assert_equal 120, users(:head).bookmark(url: ARTICLE["url"], source: study).title.size
+  end
+
+  test "bookmark_for finds the person's own bookmark for a page or a scripture" do
+    scripture = users(:head).bookmarks.create!(scripture: "19:23:4")
+    page = bookmarks(:head_suffering_article)
+
+    assert_equal page, users(:head).bookmark_for(url: "#{page.url}#top")
+    assert_equal scripture, users(:head).bookmark_for(scripture: "19:23:4")
+    assert_nil users(:spouse).bookmark_for(url: page.url)
+    assert_nil users(:head).bookmark_for(url: "https://example.com/")
+    assert_nil users(:head).bookmark_for
+  end
+
+  test "bookmarked holds the saved URLs in one query" do
+    users(:head).bookmarks.create!(scripture: "19:23:4")
+    page = bookmarks(:head_suffering_article)
+
+    bookmarked = assert_queries_count(1) { users(:head).bookmarked }
+
+    assert bookmarked.include?(page.url)
+    assert bookmarked.include?("19:23:4")
+    assert_not bookmarked.include?(bookmarks(:spouse_ransom_article).url)
+    assert_equal page.id, bookmarked[page.url]
+  end
+
+  test "deleting a person deletes their bookmarks" do
+    user = User.create!(name: "Ann")
+    user.bookmarks.create!(url: ARTICLE["url"])
+
+    assert_difference -> { Bookmark.count }, -1 do
+      user.destroy!
+    end
+  end
 end

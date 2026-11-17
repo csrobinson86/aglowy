@@ -1,4 +1,7 @@
 <% content_for :title, @personal_study.title_in_database %>
+<%# The person's bookmarks, read once for every bookmark button on the page (docs/design/bookmarks.md, The bookmark
+    button). Only the owner reaches this page. %>
+<% bookmarked = Current.user.bookmarked %>
 
 <%# The study-layout controller arranges the header and the tabs for a phone or md up. %>
 <div data-controller="study-layout">
@@ -18,7 +21,7 @@
           <section aria-labelledby="study-conversation" class="mb-3">
             <%= render(Primer::Beta::Heading.new(tag: :h2, classes: "sr-only", id: "study-conversation")) { "Conversation" } %>
             <% @personal_study.conversation.each do |question| %>
-              <%= render "personal_studies/questions/question", question:, household: Current.household %>
+              <%= render "personal_studies/questions/question", question:, household: Current.household, bookmarked: %>
             <% end %>
           </section>
           <%= render "personal_studies/ask", personal_study: @personal_study, question: @question || PersonalStudy::Question.new %>
@@ -33,7 +36,7 @@
       <% panels.with_tab(id: "study-tab-sources", data: { study_ask_target: "sourcesTab" }) do |tab| %>
         <% tab.with_text { "Sources" } %>
         <% tab.with_panel(classes: "personal-study-tabs__sources", data: { study_layout_target: "panel" }) do %>
-          <%= render "personal_studies/sources", personal_study: @personal_study %>
+          <%= render "personal_studies/sources", personal_study: @personal_study, bookmarked: %>
         <% end %>
       <% end %>
     <% end %>

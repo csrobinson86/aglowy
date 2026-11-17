@@ -143,6 +143,9 @@ Rails.application.routes.draw do
       resources :taggings, only: %i[ create destroy ], module: :personal_notes
       resource :pin, only: %i[ create destroy ], module: :personal_notes
     end
+    # The signed-in person's own bookmarks, the third tab of Notes, found through Current.user (docs/design/bookmarks.md).
+    # Saving from a study posts the page and the study; the title comes from the study, never the form.
+    resources :bookmarks, only: %i[ index create destroy ]
     # The person's folders, shared between Personal study and Notes.
     resources :collections, only: %i[ create update destroy ]
     # The signed-in person's own tags, found by name through Current.user, so another person's is a 404 (docs/design/tags.md).

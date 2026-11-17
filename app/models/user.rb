@@ -5,6 +5,8 @@ class User < ApplicationRecord
   has_many :meeting_notes, dependent: :destroy
   # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
   has_many :goals, dependent: :destroy
+  # Before their studies and notes, which would otherwise nullify each one first.
+  has_many :bookmarks, dependent: :delete_all
   # Destroyed one by one, so their notes and taggings go too; before collections, whose studies the database would keep.
   has_many :personal_studies, dependent: :destroy
   # The same, for their bodies and taggings.
@@ -104,6 +106,37 @@ class User < ApplicationRecord
   def can_start_household?
     seats = memberships.to_a
     seats.none? || !seats.all?(&:child?)
+  end
+
+  # Their bookmark for a page or a scripture, or nil (docs/design/bookmarks.md, User). A URL is normalized as saving
+  # would, so one Bookmark refuses finds nothing.
+  def bookmark_for(url: nil, scripture: nil)
+    key = url ? { url: Bookmark.normalize_value_for(:url, url) } : { scripture: }
+    bookmarks.find_by(key) if key.values.first
+  end
+
+  # Everything they've bookmarked, in one query, for a page with many bookmark buttons to pass to each: each key (a
+  # normalized URL or a scripture id) with its bookmark's id, so a filled button can remove it. include? reads it like
+  # a Set.
+  def bookmarked
+    bookmarks.pluck(:url, :scripture, :id).to_h { |url, scripture, id| [ url || scripture, id ] }
+  end
+
+  # Finds or saves their bookmark for a page the source showed them. The title comes from the source's own sources,
+  # never from a form, and a page that isn't among them is refused: a bookmark only ever holds a link Aglowy showed
+  # (docs/design/bookmarks.md, Traps). The unique index settles two saves at once. Scriptures come with #227.
+  def bookmark(url:, source:)
+    url = Bookmark.normalize_value_for(:url, url)
+    page = source.sources.find { Bookmark.normalize_value_for(:url, it["url"]) == url } if url
+
+    if page
+      bookmarks.create_or_find_by(url:) do |bookmark|
+        bookmark.title = page["title"].presence&.truncate(Bookmark::TITLE_MAX)
+        bookmark.source = source
+      end
+    else
+      bookmarks.new(url:, source:).tap { it.errors.add(:url, "isn't one of the pages in this study") }
+    end
   end
 
   # Finds this person's note for the meeting that week, or creates it with its parts in the same
