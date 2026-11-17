@@ -502,4 +502,11 @@ class HouseholdTest < ActiveSupport::TestCase
       Household.insert!({ name: nil })
     end
   end
+
+  test "members_sharing_times leaves out an inactive membership" do
+    memberships(:spouse_in_home).share_times
+    memberships(:former_in_home).share_times
+
+    assert_equal [ users(:spouse) ], households(:home).members_sharing_times.to_a
+  end
 end

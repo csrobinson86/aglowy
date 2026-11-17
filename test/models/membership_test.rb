@@ -175,4 +175,30 @@ class MembershipTest < ActiveSupport::TestCase
   test "change_role locks the household row" do
     assert_queries_match(/FOR UPDATE/) { memberships(:spouse_in_home).change_role(:child) }
   end
+
+  test "share_times twice makes one row" do
+    membership = memberships(:spouse_in_home)
+
+    assert_difference -> { Membership::TimeSharing.count }, 1 do
+      membership.share_times
+      membership.share_times
+    end
+    assert membership.shares_times?
+  end
+
+  test "stop_sharing_times removes it" do
+    membership = memberships(:spouse_in_home)
+    membership.share_times
+
+    membership.stop_sharing_times
+
+    assert_not membership.shares_times?
+    assert_not Membership::TimeSharing.exists?(membership:)
+  end
+
+  test "database: a second time sharing for one membership raises RecordNotUnique" do
+    memberships(:spouse_in_home).share_times
+
+    assert_raises(ActiveRecord::RecordNotUnique) { Membership::TimeSharing.insert!({ membership_id: memberships(:spouse_in_home).id }) }
+  end
 end
