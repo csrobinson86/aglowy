@@ -17,9 +17,12 @@ class Settings::NotificationsController < ApplicationController
   end
 
   private
-    # notification_settings[weekly_preview][]=email becomes [ "weekly_preview", "email" ]. Nothing ticked sends nothing.
+    # notification_settings[weekly_preview][]=email becomes [ "weekly_preview", "email" ]. Nothing ticked sends nothing,
+    # and neither does anything that isn't the form's hash of kinds: permit lets a list of hashes through as a list.
     def chosen_pairs
-      kinds = @user.notification_kinds.map(&:name)
-      params.permit(notification_settings: kinds.index_with { [] })[:notification_settings].to_h.flat_map { |kind, channels| [ kind ].product(channels) }
+      settings = params[:notification_settings]
+      return [] unless settings.is_a?(ActionController::Parameters)
+
+      settings.permit(@user.notification_kinds.to_h { [ it.name, [] ] }).to_h.flat_map { |kind, channels| [ kind ].product(channels) }
     end
 end

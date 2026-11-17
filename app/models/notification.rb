@@ -50,13 +50,14 @@ class Notification < ApplicationRecord
 
   # The email part of delivery (docs/design/notifications.md, Delivery): only while it's still the person's to see,
   # only a right-away kind they turned email on for, and never to a child. Inside quiet hours it comes back when they
-  # end and checks everything again. Then it claims the email and sends only if the claim is its own. Push comes with
+  # end and checks everything again; the clock is read once, so quiet hours ending in between can't cost it a day. Then it claims the email and sends only if the claim is its own. Push comes with
   # its own story.
   def deliver_now
     return unless user.notifications.visible.exists?(id) && emailed_right_away?
 
-    if user.quiet_now?
-      Notification::DeliveryJob.set(wait_until: user.quiet_hours_end_after(Time.current)).perform_later(self)
+    now = Time.current
+    if user.quiet_now?(now)
+      Notification::DeliveryJob.set(wait_until: user.quiet_hours_end_after(now)).perform_later(self)
     elsif Delivery.claim(self, "email")
       Delivery.sending([ id ], "email") { NotificationMailer.notification(self).deliver_now }
     end

@@ -431,6 +431,42 @@ class UserTest < ActiveSupport::TestCase
     assert_equal chicago.local(2026, 11, 23, 7), head.last_quiet_hours_end_before(chicago.local(2026, 11, 23, 23))
   end
 
+  test "quiet_now? reads the time it's given, so a caller can ask about one moment" do
+    head = users(:head)
+    head.update!(time_zone: "Central Time (US & Canada)")
+    chicago = ActiveSupport::TimeZone[head.time_zone]
+    travel_to chicago.local(2026, 11, 23, 12)
+
+    assert head.quiet_now?(chicago.local(2026, 11, 23, 6, 59, 59))
+    assert_not head.quiet_now?(chicago.local(2026, 11, 23, 7))
+  end
+
+  # Sunday, November 1, 2026 in Chicago: 2 AM goes back to 1 AM, so 1:30 AM comes twice, at 6:30 and 7:30 UTC.
+  test "quiet hours that end in the hour the clocks go back over end both times it comes" do
+    head = users(:head)
+    head.update!(time_zone: "Central Time (US & Canada)", quiet_hours_end: "01:30")
+    first, second = Time.utc(2026, 11, 1, 6, 30), Time.utc(2026, 11, 1, 7, 30)
+
+    assert head.quiet_now?(Time.utc(2026, 11, 1, 6, 15))
+    assert_equal first, head.quiet_hours_end_after(Time.utc(2026, 11, 1, 6, 15))
+    assert head.quiet_now?(Time.utc(2026, 11, 1, 7, 15)), "the second 1:15 AM"
+    assert_equal second, head.quiet_hours_end_after(Time.utc(2026, 11, 1, 7, 15))
+    assert_equal second, head.quiet_hours_end_after(first)
+    assert_equal Time.utc(2026, 11, 2, 7, 30), head.quiet_hours_end_after(second)
+
+    assert_equal first, head.last_quiet_hours_end_before(Time.utc(2026, 11, 1, 7, 15))
+    assert_equal second, head.last_quiet_hours_end_before(Time.utc(2026, 11, 1, 12))
+  end
+
+  # Sunday, March 8, 2026 in Chicago: 2 AM goes forward to 3 AM, so there is no 2:30 AM and they end at 3:30.
+  test "quiet hours that end in the hour the clocks go forward over end once, an hour on" do
+    head = users(:head)
+    head.update!(time_zone: "Central Time (US & Canada)", quiet_hours_end: "02:30")
+
+    assert_equal Time.utc(2026, 3, 8, 8, 30), head.quiet_hours_end_after(Time.utc(2026, 3, 8, 7))
+    assert_equal Time.utc(2026, 3, 9, 7, 30), head.quiet_hours_end_after(Time.utc(2026, 3, 8, 8, 30))
+  end
+
   test "quiet hours default to 9 PM until 7 AM and are on the half hour" do
     head = users(:head)
 

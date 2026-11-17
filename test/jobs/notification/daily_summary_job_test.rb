@@ -273,6 +273,30 @@ class Notification::SummaryJobConcurrencyTest < ActiveJob::TestCase
     @head.update_columns(time_zone: nil, quiet_hours_end: "07:00", summary_sent_through: nil)
   end
 
+  # A share ending deletes its notification (Notification.withdraw). The summary holds the ones it's claiming until
+  # the claims are in, so the delete waits and the insert's foreign key can't fail and lose the others their summary.
+  # The withdrawn one's claim goes with it; whether the summary still lists it depends on which finishes first.
+  test "a notification withdrawn while the summary claims waits for the claims, and the rest are still sent" do
+    travel_to @through - 1.hour
+    doomed = @head.notify(kind: "shared_with_you", household: households(:home), subject: meeting_notes(:head_weekend), actor: users(:spouse), dedupe_key: "shared_with_you:2")
+    travel_to @through
+    claim_all = Notification::Delivery.method(:claim_all)
+    withdrawal = nil
+    claim_while_withdrawn = ->(ids, channel) do
+      withdrawal = Thread.new { ActiveRecord::Base.connection_pool.with_connection { Notification.where(id: doomed.id).delete_all } }
+      withdrawal.join(0.5)
+      claim_all.call(ids, channel)
+    end
+
+    assert_emails 1 do
+      Notification::Delivery.stub(:claim_all, claim_while_withdrawn) { Notification::SummaryJob.perform_now(@head, @through) }
+      withdrawal.value
+    end
+
+    assert_not Notification.exists?(doomed.id), "the withdrawal went through once the claims were in"
+    assert_equal 1, Notification::Delivery.email.where(notification: @head.notifications).count
+  end
+
   test "two jobs at once for the same person send one summary, even when a new notification arrives between them" do
     ready = Concurrent::CountDownLatch.new(2)
     go = Concurrent::CountDownLatch.new(1)

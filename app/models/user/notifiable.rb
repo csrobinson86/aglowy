@@ -113,8 +113,8 @@ module User::Notifiable
   end
 
   # Nothing is emailed during quiet hours, which usually run over midnight. Starting and ending together is none.
-  def quiet_now?
-    now = Time.current.in_time_zone(calendar_time_zone)
+  def quiet_now?(time = Time.current)
+    now = time.in_time_zone(calendar_time_zone)
     at, start, finish = [ now, quiet_hours_start, quiet_hours_end ].map { it.hour * 60 + it.min }
     start <= finish ? (start...finish).cover?(at) : !(finish...start).cover?(at)
   end
@@ -132,8 +132,9 @@ module User::Notifiable
   # The quiet-hours end a summary is due for now, or nil: when their last one is later than the cursor (none yet counts
   # as earlier than any time), and never inside quiet hours, where it waits for them to end.
   def summary_due_through
-    through = last_quiet_hours_end_before(Time.current)
-    through if (summary_sent_through.nil? || summary_sent_through < through) && !quiet_now?
+    now = Time.current
+    through = last_quiet_hours_end_before(now)
+    through if (summary_sent_through.nil? || summary_sent_through < through) && !quiet_now?(now)
   end
 
   def send_daily_summary_later(through:)
@@ -142,13 +143,16 @@ module User::Notifiable
 
   # One email with every visible summary-kind notification from before through that they have email on for and that
   # hasn't been emailed (docs/design/notifications.md, Delivery, step 3). The claims go in first, in their own
-  # statement, and the summary holds only the ones this call claimed, so two jobs at once send one summary. Then the
-  # cursor moves forward to through, never backward, whether or not there was anything to send; a throttled send
-  # raises before that, and its retry sends them.
+  # statement, and the summary holds only the ones this call claimed, so two jobs at once send one summary. FOR SHARE
+  # holds the notifications until the claims are in, so one deleted meanwhile (its share ending) can't fail the insert's
+  # foreign key. Then the cursor moves forward to through, never backward, whether or not there was anything to send; a
+  # throttled send raises before that, and its retry sends them.
   def send_daily_summary_now(through:)
     return if quiet_now?
 
-    claimed = Notification::Delivery.claim_all(summary_notifications_before(through).pluck(:id), "email")
+    claimed = transaction do
+      Notification::Delivery.claim_all(summary_notifications_before(through).lock("FOR SHARE OF notifications").pluck(:id), "email")
+    end
     if claimed.any?
       Notification::Delivery.sending(claimed, "email") do
         NotificationMailer.daily_summary(self, notifications.preloaded.where(id: claimed).order(:created_at, :id)).deliver_now
@@ -167,12 +171,20 @@ module User::Notifiable
   end
 
   private
-    # When quiet hours end the day before, that day and the day after, in their zone. Each is built with zone.local
-    # from a local date, never by adding hours, so a clock change doesn't move it.
+    # When quiet hours end the day before, that day and the day after, in their zone, in order. Each is built from a
+    # local date, never by adding hours, so a clock change doesn't move it.
     def quiet_hours_ends_around(time)
       zone = ActiveSupport::TimeZone[calendar_time_zone]
       date = time.in_time_zone(zone).to_date
-      (date.prev_day..date.next_day).map { zone.local(it.year, it.month, it.day, quiet_hours_end.hour, quiet_hours_end.min) }
+      (date.prev_day..date.next_day).flat_map { quiet_hours_ends_on(it, zone) }
+    end
+
+    # Usually one. Two when the clocks go back over that time of day, so it comes twice and quiet_now? is true before
+    # each. None by the clock when they go forward over it, and then zone.local moves it on to the time that exists.
+    def quiet_hours_ends_on(date, zone)
+      clock = Time.utc(date.year, date.month, date.day, quiet_hours_end.hour, quiet_hours_end.min)
+      ends = zone.tzinfo.periods_for_local(clock).map { zone.at(clock.to_i - it.observed_utc_offset) }.sort
+      ends.presence || [ zone.local(date.year, date.month, date.day, quiet_hours_end.hour, quiet_hours_end.min) ]
     end
 
     # No kinds at all for someone who can't get email, such as a person who became a child since turning it on.

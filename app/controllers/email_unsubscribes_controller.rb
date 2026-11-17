@@ -33,6 +33,13 @@ class EmailUnsubscribesController < ApplicationController
       true
     end
 
+    # The token is in the path, and Lograge logs the path, so the log gets it filtered like the token param
+    # (CalendarFeedsController does the same). The whole last segment goes, however it was encoded.
+    def append_info_to_payload(payload)
+      super
+      payload[:path] = payload[:path].sub(%r{\A(/unsubscribe/[^/?]+)/[^/?]+}, '\1/[FILTERED]')
+    end
+
     # What the link turns off, as the page says it: "your daily summary email" or "Weekly preview emails".
     def email_name
       params[:scope] == "summary" ? "your daily summary email" : "#{Notification::Kind.all.find { it.name == params[:scope] }.label} emails"

@@ -47,6 +47,21 @@ class EmailUnsubscribesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The link is a bearer secret in the path, and Lograge logs the path (docs/design/invitations.md, Traps).
+  test "the token is filtered from the logged path, on the page, the POST and a refused link" do
+    paths = []
+    subscriber = ActiveSupport::Notifications.subscribe("process_action.action_controller") { paths << it.payload[:path] }
+    path = email_unsubscribe_path(scope: "weekly_preview", token: @head.unsubscribe_token("weekly_preview"))
+
+    get path
+    post path
+    get "#{email_unsubscribe_path(scope: "summary", token: "nonsense")}?utm=1"
+
+    assert_equal [ "/unsubscribe/weekly_preview/[FILTERED]", "/unsubscribe/weekly_preview/[FILTERED]", "/unsubscribe/summary/[FILTERED]?utm=1" ], paths
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber)
+  end
+
   test "an old browser or mail client can still open the page and turn the email off" do
     old_chrome = { "User-Agent" => "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36" }
     path = email_unsubscribe_path(scope: "weekly_preview", token: @head.unsubscribe_token("weekly_preview"))
