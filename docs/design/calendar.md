@@ -158,6 +158,7 @@ A person's private subscribe link.
 - household events: `household.events.preloaded`, each expanded with `occurrences_between(range)`
 - the viewer's own times
 - other members' times, for each member in `household.members_sharing_times`, leaving out the viewer
+- meeting parts (`docs/design/meeting-parts.md`, On the calendar and the meeting note): the viewer's own parts and the parts shared with this household, on their meeting day
 
 The page asks for one week (or one month's 6 weeks) at a time, so each source is one query; occurrences are expanded in Ruby. Personal times are expanded over the person's own dates that cover the range's first and last instants (one day either side is enough), and only occurrences whose start falls inside the range are kept. A 12:30 AM Monday time in Tokyo is Sunday afternoon in Los Angeles, and still lands in the Los Angeles week.
 

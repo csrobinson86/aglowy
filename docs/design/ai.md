@@ -22,10 +22,10 @@ RubyLLM's Rails models, as `CLAUDE.md` asks (`acts_as_chat`, `acts_as_message`).
 | --- | --- | --- |
 | `chats` | `user_id` (FK → users, not null) | Whose request it was. AI content is personal until the person uses it |
 | `chats` | `household_id` (FK → households, nullable) | Set when the feature is inside a household |
-| `chats` | `purpose` (string, not null, check in the known purposes) | Which `Ai::Purpose` it ran under: `family_study_draft`, and `personal_study` (`docs/design/personal-study.md`) |
+| `chats` | `purpose` (string, not null, check in the known purposes) | Which `Ai::Purpose` it ran under: `family_study_draft`, `personal_study` (`docs/design/personal-study.md`) and `meeting_part` (`docs/design/meeting-parts.md`) |
 | `messages` | `content` encrypted (`encrypts :content`) | Prompts and replies are private family text, like notes |
 
-A feature's own record points at its chat (`FamilyStudy::Draft belongs_to :chat`) and keeps the feature's data. The chat keeps only the conversation.
+A feature's own record points at its chat (`FamilyStudy::Draft belongs_to :chat`) and keeps the feature's data. The chat keeps only the conversation. A draft has a chat of its own, one request and one reply (family study drafts, meeting part drafts), so the purge can delete it without touching another draft. Only a personal study keeps one chat for many questions.
 
 ### What each feature is allowed to do: `Ai::Purpose`
 
@@ -36,8 +36,8 @@ A PORO per purpose in `app/models/ai/purpose/`, for example `Ai::Purpose::Family
 - `allowed_hosts`: `www.jw.org`, `jw.org` and `wol.jw.org`
 - `max_searches`: the most web searches one request may run (5 for family study drafts)
 - `max_output_tokens`
-- `daily_limit` and what it counts (10 a day for the household for family study drafts; 30 a day per person for personal study, counted from `Ai::Use` rows in the person's time zone)
-- `keep_for`: how long its records and chats are kept (7 days for family study drafts; `nil`, kept until the person deletes them, for personal study)
+- `daily_limit` and what it counts (10 a day for the household for family study drafts; 30 a day per person for personal study and 15 a day per person for meeting parts, both counted from `Ai::Use` rows in the person's time zone)
+- `keep_for`: how long its records and chats are kept (7 days for family study drafts; 60 days for meeting part drafts; `nil`, kept until the person deletes them, for personal study)
 - `copy_overlap_words` (8) and `quote_max_words` (5), the copy check's policy values (safety measure 5)
 
 `Chat#ask_within_purpose(text)` is the only way a feature calls the AI. It applies the purpose's instructions, schema and web-search settings, then returns the parsed reply and its sources. No feature calls `RubyLLM.chat` itself.
@@ -91,21 +91,21 @@ Every AI feature has all of these. A feature's design doc only adds to them.
 5. **No copying, checked before anyone sees the reply.** The instructions say to write in its own words and never to quote pages or verse text. `Ai::CopyCheck` then runs on every text field of the finished reply, before any of it is shown or saved:
    - **Measuring.** Text is compared as words: lower-cased, with punctuation removed and runs of whitespace treated as one space.
    - **Overlap with a source.** A sentence that shares 8 or more consecutive words with any citation's `cited_text` is removed.
-   - **Quotations and verse text.** A sentence holding a quotation (text in straight or curly quotation marks) longer than 5 words is removed, whatever its source. Aglowy has no verse text to compare against, because it never fetches it, so a quoted scripture is caught by this rule and by the instructions. References stay; only the quoted words go.
+   - **Quotations and verse text.** A sentence holding a quotation (text in straight or curly quotation marks) longer than 5 words is removed, whatever its source. Aglowy has no verse text to compare against, because it never fetches it. So a quoted scripture of more than 5 words is caught by this rule. A shorter one, and verse text written without quotation marks, rest on the instructions alone. References stay; only the quoted words go.
    - **Policy values.** 8 words and 5 words live on `Ai::Purpose` (`copy_overlap_words`, `quote_max_words`) and are Casey's call to tune.
    - **Too thin.** Each purpose sets its minimum. A family study draft fails when the checks leave fewer than 2 points ("Couldn't make a draft this time. Try again."). A personal study answer fails when they leave no paragraphs; a `not_found` note with no paragraphs is a valid answer (`docs/design/personal-study.md`).
    - **What it can't see.** `cited_text` is a short excerpt (up to about 150 characters per citation), so the check can only compare against what the search returned. The instructions, the quotation rule and "AI can get things wrong. Check each point against its source" cover the rest.
    - **Citations without an excerpt.** A source whose citations carry no `cited_text` can't be checked for overlap. Its link may still be shown (requirements 1–3 of `Ai::SourceLink` still apply), but the quotation rule then applies to the whole draft with no exceptions. `AI_MODEL` must name a provider whose citations carry excerpts; a provider that returns none for any citation isn't supported for AI features. The first story's check above enforces this.
 6. **AI output is untrusted text.** Every field is rendered through ERB escaping or Primer components, never `html_safe` and never `raw`. Notes HTML built from a draft comes from our own template filled with escaped fields, then goes through Action Text's sanitizer like any note.
 7. **Never send more than the request needs.** Only what the person typed and the feature's options go to the provider. Never names, household names, notes, goals or other records. The prompt box says so.
-8. **Heads and adults, unless a feature decides otherwise.** Children don't see AI features by default, and the policies refuse them. Personal study is the one exception so far: a head can allow it per child, and then can read everything in that child's personal studies (`docs/design/personal-study.md`). Any other feature for children needs its own decision.
+8. **Heads and adults, unless a feature decides otherwise.** Children don't see AI features by default, and the policies refuse them. Personal study is the one exception so far: a head can allow it per child, and then can read everything in that child's personal studies (`docs/design/personal-study.md`). Meeting part help (`docs/design/meeting-parts.md`) is for heads and adults only, with no switch for children (Casey, 17 Nov). Any other feature for children needs its own decision.
 9. **Limits.** Each purpose sets a daily limit, counted under a lock so two requests at once can't both take the last one. A household limit (family study drafts) counts inside the household lock. A per-person limit (personal study) counts inside the person's lock (`user.with_lock`), because a person can ask from more than one household at once. A request that failed at the provider, or was stopped by moderation, doesn't count.
-10. **Kept only as long as the purpose says.** Each purpose's `keep_for` decides. Family study drafts and their chats are deleted after 7 days by a daily recurring job (`config/recurring.yml`), and what the person chose to use is copied into their own records first. Personal studies are the person's own records and are kept until they delete them. The job only deletes purposes with a `keep_for`.
+10. **Kept only as long as the purpose says.** Each purpose's `keep_for` decides. Family study drafts and their chats are deleted after 7 days, and meeting part drafts and their chats after 60, by a daily recurring job (`config/recurring.yml`). What the person chose to use is copied into their own records first. Personal studies are the person's own records and are kept until they delete them. The job only deletes purposes with a `keep_for`.
 
 ## Privacy and cost
 
 - The provider receives only what's listed in safety measure 7. Choose provider settings that don't use API data for training, and check each provider's terms before turning AI on in production. That's Casey's call before launch.
-- Aglowy keeps no analytics (`docs/product/vision.md`). RubyLLM records token counts on each message. They're used only to see the cost of a request and are deleted with the chat after 7 days.
+- Aglowy keeps no analytics (`docs/product/vision.md`). RubyLLM records token counts on each message. They're used only to see the cost of a request and are deleted with their chat, so they follow the purpose's `keep_for`: 7 days for family study drafts, 60 days for meeting part drafts, and until the person deletes them for personal study.
 - With no billing, the daily limits are the cost control. If costs rise, lower the limits in `Ai::Purpose`.
 
 ## Traps
