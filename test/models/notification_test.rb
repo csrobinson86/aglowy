@@ -119,6 +119,27 @@ class NotificationTest < ActiveSupport::TestCase
     end
   end
 
+  test "withdraw deletes them and broadcasts each person's new count" do
+    notification = shared_with_spouse
+
+    assert_turbo_stream_broadcasts [ users(:spouse), :notifications ], count: 2 do
+      Notification.where(id: notification).withdraw
+    end
+    assert_not Notification.exists?(notification.id)
+  end
+
+  test "withdraw inside a transaction broadcasts only once it commits, so a rollback publishes nothing" do
+    notification = shared_with_spouse
+
+    assert_no_difference -> { capture_turbo_stream_broadcasts([ users(:spouse), :notifications ]).size } do
+      Notification.transaction do
+        Notification.where(id: notification).withdraw
+        raise ActiveRecord::Rollback
+      end
+    end
+    assert Notification.exists?(notification.id)
+  end
+
   private
     def shared_with_spouse
       users(:spouse).notify(kind: "shared_with_you", household: households(:home), subject: @note, actor: users(:head), dedupe_key: "shared_with_you:1")

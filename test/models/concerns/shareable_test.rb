@@ -56,4 +56,33 @@ class ShareableTest < ActiveSupport::TestCase
     assert_not Notification.exists?(subject: [ note, goal ])
     assert Notification.exists?(subject: meeting_notes(:head_midweek), user: users(:child))
   end
+
+  test "stopping sharing refreshes the counters of the people whose notifications went" do
+    note = meeting_notes(:head_midweek)
+    note.share_with(households(:home))
+
+    assert_turbo_stream_broadcasts [ users(:spouse), :notifications ], count: 2 do
+      note.stop_sharing_with(households(:home))
+    end
+  end
+
+  test "a share that ends while its notifications are being made leaves none behind" do
+    note = meeting_notes(:head_midweek)
+    # Another request stops sharing just after the first notification is made, so its delete misses the rest.
+    made = 0
+    stop_sharing = ->(_) { MeetingNote.find(note.id).stop_sharing_with(households(:home)) if (made += 1) == 1 }
+
+    Notification::DeliveryJob.stub(:perform_later, stop_sharing) { note.share_with(households(:home)) }
+
+    assert_not Notification.exists?(subject: note)
+  end
+
+  test "a note deleted while its notifications are being made leaves none behind" do
+    note = meeting_notes(:head_midweek)
+    destroy = ->(_) { MeetingNote.find_by(id: note.id)&.destroy! }
+
+    Notification::DeliveryJob.stub(:perform_later, destroy) { note.share_with(households(:home)) }
+
+    assert_not Notification.exists?(subject_type: "MeetingNote", subject_id: note.id)
+  end
 end

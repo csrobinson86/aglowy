@@ -12,6 +12,8 @@ class NotificationsController < ApplicationController
     @unread_only = params[:show] == "unread"
     @unread_count = notifications.unread.count
     @page = Page.new((@unread_only ? notifications.unread : notifications).preloaded.newest_first, number: params[:page], size: PAGE_SIZE)
+    # Reading the last unread one on a later page leaves it empty: show the last page that has some.
+    redirect_to household_notifications_path(show: params[:show].presence, page: (@page.last_number if @page.last_number > 1)) if @page.past_the_end?
   end
 
   # Opening it is the only way one is read, so a mail scanner following an email's link reads nothing (Trap 5). It

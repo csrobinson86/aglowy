@@ -82,6 +82,25 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='#{household_notifications_path(household_id: households(:home), page: 1)}']", text: "Newer notifications"
   end
 
+  test "a later page that's become empty goes to the last page with notifications" do
+    notifications = Array.new(51) { |n| travel_to(n.minutes.ago) { notify(users(:head), meeting_notes(:head_midweek), actor: users(:spouse), key: "shared_with_you:#{n}") } }
+
+    get household_notifications_path(household_id: households(:home), show: "unread", page: 3)
+    assert_redirected_to household_notifications_path(household_id: households(:home), show: "unread", page: 2)
+
+    notifications.last.read
+    get household_notifications_path(household_id: households(:home), show: "unread", page: 2)
+    assert_redirected_to household_notifications_path(household_id: households(:home), show: "unread")
+  end
+
+  test "a row's link isn't prefetched on hover, since opening it reads it" do
+    notification = notify(users(:head), goals(:spouse_bible_reading), actor: users(:spouse), key: "shared_with_you:1")
+
+    get household_notifications_path(household_id: households(:home))
+
+    assert_select "a[href='#{household_notification_path(household_id: households(:home), id: notification)}'][data-turbo-prefetch='false']"
+  end
+
   test "show marks it read and redirects to the target, under the notification's own household" do
     notification = notify(users(:head), goals(:spouse_bible_reading), household: households(:parents), actor: users(:spouse), key: "shared_with_you:1")
 

@@ -10,7 +10,7 @@
   <%= render Primer::Beta::Octicon.new(notification.icon) %>
 </span>
 <div class="flex-auto min-width-0">
-  <%= render(Primer::Beta::Link.new(href: household_notification_path(id: notification), scheme: :primary, font_weight: (notification.read? ? :normal : :bold))) do %>
+  <%= render(Primer::Beta::Link.new(href: household_notification_path(id: notification), scheme: :primary, font_weight: (notification.read? ? :normal : :bold), data: { turbo_prefetch: false })) do %>
     <%= notification.title %><% unless notification.read? %><span class="sr-only"> (unread)</span><% end %>
   <% end %>
   <p class="color-fg-muted mb-0"><%= notification.body %></p>

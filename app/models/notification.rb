@@ -21,6 +21,14 @@ class Notification < ApplicationRecord
 
   delegate :title, :body, :icon, :color, :email, :target_path, to: :kind_definition
 
+  # Deletes these, as a share ending or the purge does, and refreshes each person's counter once that's committed, so
+  # an open page doesn't keep counting one that's gone. delete_all skips callbacks, so nothing else would.
+  def self.withdraw
+    user_ids = distinct.pluck(:user_id)
+    delete_all
+    ActiveRecord.after_all_transactions_commit { User.where(id: user_ids).find_each(&:broadcast_unread_notifications_count) }
+  end
+
   # Opening it is the only way one is read (Trap 5). create_or_find_by! leans on the unique index, so two opens make one.
   def read
     return if read?
