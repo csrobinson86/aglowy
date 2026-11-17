@@ -53,6 +53,22 @@ class FamilyStudy < ApplicationRecord
     end
   end
 
+  # What the calendar shows on the dates in the range, in the household's zone: the stored sessions that aren't
+  # cancelled, then a repeating study's slots after its last stored one, unsaved, since the generator only stores them
+  # up to its horizon (docs/design/calendar.md, How a calendar is put together).
+  def occurrences_between(range)
+    zone = ActiveSupport::TimeZone[household.time_zone]
+    stored = sessions.where(scheduled_at: range.first.in_time_zone(zone)...range.last.tomorrow.in_time_zone(zone), canceled_at: nil).order(:scheduled_at).to_a
+    return stored if once?
+
+    last_slot = sessions.maximum(:recurrence_at)
+    unstored_from = last_slot ? last_slot.in_time_zone(zone).to_date.tomorrow : starts_on
+    stored + recurrence.dates(from: [ range.first, unstored_from ].max, through: range.last).map do
+      time = session_time_on(it, zone:)
+      FamilyStudy::Session.new(family_study: self, recurrence_at: time, scheduled_at: time)
+    end
+  end
+
   # How the session page says it repeats: "Once", "Weekly on Tuesday", "Monthly on the last Tuesday".
   def repeat_description
     case frequency

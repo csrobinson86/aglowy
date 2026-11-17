@@ -141,6 +141,17 @@ class Household < ApplicationRecord
       .min_by(&:starts_at)
   end
 
+  # Every meeting on the dates in the range, a week at a time from its Monday, built like current_or_next_meeting
+  # (docs/design/calendar.md, How a calendar is put together).
+  def meetings_between(range)
+    return [] unless meeting_times_set?
+
+    range.first.beginning_of_week(:monday).step(range.last, 7).to_a.product(MEETING_KINDS)
+      .map { |week, kind| meeting_in(week, kind) }
+      .select { range.cover?(it.starts_at.to_date) }
+      .sort_by(&:starts_at)
+  end
+
   # True for the whole of the meeting's day, including after it ends.
   def meeting_day?(now = Time.current)
     current_or_next_meeting(now)&.starts_at&.to_date == now.in_time_zone(time_zone).to_date

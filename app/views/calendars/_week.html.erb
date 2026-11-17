@@ -1,0 +1,12 @@
+<%# locals: (calendar:, period:, today:, meeting_helper:) -%>
+<%# Seven days from Monday, each a list of cards in order of start; not a time grid (docs/design/calendar.md, The page). %>
+<div class="calendar-week">
+  <% period.days.each do |day| %>
+    <%= tag.section class: [ "calendar-day", { "calendar-day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
+      <h3 class="calendar-day__heading"><%= calendar_day_heading(day) %></h3>
+      <% calendar.items_on(day).each do |item| %>
+        <%= render "calendars/item", item:, today:, meeting_helper:, chip: false %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

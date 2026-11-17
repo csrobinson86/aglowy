@@ -1,0 +1,21 @@
+<%# locals: (calendar:, period:, today:, hide:, meeting_helper:) -%>
+<%# 6 × 7 days from the Monday on or before the 1st. Up to three items as one-line chips, then "+N more". The day
+    number opens its week; on a 1st it reads "Nov 1", so its label, "Sunday, Nov 1", holds what it shows
+    (docs/design/calendar.md, The page). %>
+<div class="calendar-month">
+  <% period.days.first(7).each do |day| %>
+    <div class="calendar-month__weekday" aria-hidden="true"><%= day.strftime("%a") %></div>
+  <% end %>
+  <% period.days.each do |day| %>
+    <% items = calendar.items_on(day) %>
+    <%= tag.div class: [ "calendar-month__day", { "calendar-month__day--outside": !period.in_month?(day), "calendar-month__day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
+      <%= link_to (day.day == 1 ? day.strftime("%b %-d") : day.day), calendar_page_path("week", day, hide:), class: "calendar-month__number", aria: { label: day.strftime("%A, %b %-d") } %>
+      <% items.first(3).each do |item| %>
+        <%= render "calendars/item", item:, today:, meeting_helper:, chip: true %>
+      <% end %>
+      <% if items.size > 3 %>
+        <span class="calendar-month__more">+<%= items.size - 3 %> more</span>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

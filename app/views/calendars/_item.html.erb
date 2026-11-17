@@ -1,0 +1,23 @@
+<%# locals: (item:, today:, meeting_helper:, chip:) -%>
+<%# A meeting opens the viewer's note for it, or Today's meeting for a child with the helper on its day; a study session
+    opens its page, and one not stored yet opens Family studies (docs/design/calendar.md, Links). The title says what
+    it is, so color is never the only cue. %>
+<% classes = [ "calendar-item", "calendar-item--#{item.kind}", { "calendar-item--chip": chip } ] %>
+<% content = capture do %>
+  <span class="calendar-item__time"><%= calendar_time(item.starts_at) %></span>
+  <span class="calendar-item__title"><%= item.title %></span>
+  <% if item.subtitle && !chip %>
+    <span class="calendar-item__subtitle"><%= item.subtitle %></span>
+  <% end %>
+<% end %>
+<% if item.meeting? && meeting_helper && item.on?(today) %>
+  <%= link_to content, household_todays_meeting_path, class: classes %>
+<% elsif item.meeting? %>
+  <%= button_to household_meeting_notes_path, params: { meeting_note: { kind: item.source.kind, week_of: item.source.week_of.iso8601 } }, class: classes, form_class: "calendar-item__form" do %>
+    <%= content %>
+  <% end %>
+<% elsif item.source.persisted? %>
+  <%= link_to content, household_family_study_session_path(family_study_id: item.source.family_study_id, id: item.source), class: classes %>
+<% else %>
+  <%= link_to content, household_family_studies_path, class: classes %>
+<% end %>

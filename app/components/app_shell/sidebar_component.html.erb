@@ -15,6 +15,9 @@
       <% group.with_item(label: "Home", href: home_path, selected_by_ids: :dashboards) do |item| %>
         <% item.with_leading_visual_icon(icon: :home) %>
       <% end %>
+      <% group.with_item(label: "Calendar", href: calendar_path, selected_by_ids: :calendars) do |item| %>
+        <% item.with_leading_visual_icon(icon: :calendar) %>
+      <% end %>
       <% group.with_item(label: "Family studies", href: family_studies_path, selected_by_ids: :family_studies) do |item| %>
         <% item.with_leading_visual_icon(icon: :book) %>
       <% end %>
