@@ -1,0 +1,40 @@
+<%# locals: (collections:) %>
+<%# The person's collections, each with what's in it and where it's used, then Edit and Delete in Primer Dialogs
+    (frame settings-tags.png). New ones are made on Personal study or Notes. %>
+<%= render(Primer::Beta::BorderBox.new(id: "collections", mb: 4)) do |box| %>
+  <% box.with_header { |header| header.with_title(tag: :h3) { "Collections" } } %>
+  <% if collections.none? %>
+    <% box.with_body(color: :muted) { "No collections yet." } %>
+  <% end %>
+  <% collections.each do |collection| %>
+    <% name = collection.name_in_database %>
+    <% box.with_row(display: :flex, align_items: :center) do %>
+      <div class="d-flex flex-column flex-md-row flex-md-items-center flex-md-justify-between flex-auto min-width-0 mr-2">
+        <span class="Truncate">
+          <span class="Truncate-text text-bold collection-row__name"><%= name %></span>
+          <span class="color-fg-muted ml-1 flex-shrink-0"><%= collection_contents(collection) %></span>
+        </span>
+        <span class="color-fg-muted f6 ml-md-2 flex-shrink-0"><%= collection_used_in(collection) %></span>
+      </div>
+      <%= render(Primer::Alpha::Dialog.new(id: dom_id(collection, :edit_dialog), title: "Edit #{name}")) do |dialog| %>
+        <% dialog.with_show_button(size: :small, flex_shrink: 0, "aria-label": "Edit #{name}") { "Edit" } %>
+        <% dialog.with_body(pb: 3) do %>
+          <%= render "settings/tags/collection_form", collection: %>
+        <% end %>
+      <% end %>
+      <%= render(Primer::Alpha::Dialog.new(id: dom_id(collection, :delete_dialog), title: "Delete #{name}?")) do |dialog| %>
+        <% dialog.with_show_button(scheme: :danger, size: :small, ml: 2, flex_shrink: 0, "aria-label": "Delete #{name}") { "Delete" } %>
+        <% dialog.with_body { "Everything in it stays; it just leaves the folder." } %>
+        <% dialog.with_footer do %>
+          <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dom_id(collection, :delete_dialog) })) { "Cancel" } %>
+          <%= primer_form_with(url: household_collection_path(id: collection), method: :delete) do |f| %>
+            <%= render Collections::DeleteForm.new(f, section: "settings") %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% box.with_footer(font_size: :small, color: :muted) do %>
+    Deleting a collection keeps everything in it. Create collections from Personal study or Notes.
+  <% end %>
+<% end %>

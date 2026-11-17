@@ -8,6 +8,15 @@ class CollectionTest < ActiveSupport::TestCase
     assert_equal collections(:head_bible_questions, :head_quick_references), head.collections.for_notes.positioned.to_a
   end
 
+  test "with_contents_counts counts each collection's notes and studies without multiplying them" do
+    personal_notes(:head_return_visit, :head_family_worship).each { it.update!(collection: collections(:head_bible_questions)) }
+    users(:head).personal_studies.create!(title: "Another question", collection: collections(:head_bible_questions))
+
+    counts = users(:head).collections.with_contents_counts.positioned.map { [ it.name, it.personal_notes_count, it.personal_studies_count ] }
+
+    assert_equal [ [ "Bible questions", 2, 2 ], [ "Preparing a talk", 0, 1 ], [ "Quick references", 1, 0 ] ], counts
+  end
+
   test "add puts a new collection last in the person's list, used in both by default" do
     collection = users(:head).collections.add(name: "Convention 2027")
 

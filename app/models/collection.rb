@@ -20,6 +20,12 @@ class Collection < ApplicationRecord
   scope :with_personal_studies_count, -> { left_joins(:personal_studies).group(:id).select("collections.*", "COUNT(personal_studies.id) AS personal_studies_count") }
   # The same for Notes' list, as personal_notes_count.
   scope :with_personal_notes_count, -> { left_joins(:personal_notes).group(:id).select("collections.*", "COUNT(personal_notes.id) AS personal_notes_count") }
+  # Both, for Settings → Tags and collections. A subquery each, since joining both would multiply the rows.
+  scope :with_contents_counts, -> do
+    select("collections.*",
+           "(SELECT COUNT(*) FROM personal_notes WHERE personal_notes.collection_id = collections.id) AS personal_notes_count",
+           "(SELECT COUNT(*) FROM personal_studies WHERE personal_studies.collection_id = collections.id) AS personal_studies_count")
+  end
 
   # Called on a person's collections: user.collections.add(name: "Convention 2027"). Last in their list. Two adds of
   # the same name at once both pass the uniqueness check; the unique index stops the second, which gets the same error.

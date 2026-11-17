@@ -1,7 +1,7 @@
 require "application_system_test_case"
 
 # Settings, a page per section: the person's own, then the household's (docs/design/settings.md; frames settings-profile.png,
-# settings-child.png, settings-appearance-dark.png, settings-members.png and settings-adult-meetings.png).
+# settings-child.png, settings-appearance-dark.png, settings-members.png, settings-adult-meetings.png and settings-tags.png).
 class SettingsTest < ApplicationSystemTestCase
   test "a head opens Settings from the sidebar, changes their name, picks Dark and changes their password" do
     sign_in identities(:head)
@@ -45,7 +45,7 @@ class SettingsTest < ApplicationSystemTestCase
 
     within("nav[aria-label='Settings']") { click_on "Appearance" }
     assert_selector "nav[aria-label='Settings'] a[aria-current=page]", text: "Appearance"
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households" ], all("nav[aria-label='Settings'] a").map(&:text)
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections" ], all("nav[aria-label='Settings'] a").map(&:text)
     assert_accessible
     capture_screens("settings-child")
 
@@ -65,7 +65,7 @@ class SettingsTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_settings_url(household_id: households(:home))
 
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Household", "Meetings", "Children", "Members and roles" ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Household", "Meetings", "Children", "Members and roles" ],
                  all("nav[aria-label='Settings'] a").map(&:text)
     within("nav[aria-label='Settings']") { click_on "Household" }
     assert_selector "h2", text: "Household"
@@ -109,7 +109,7 @@ class SettingsTest < ApplicationSystemTestCase
 
     within("nav[aria-label='Settings']") do
       assert_selector "h2", text: "The Head Family"
-      assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Meetings", "Children" ], all("a").map(&:text)
+      assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Meetings", "Children" ], all("a").map(&:text)
       click_on "Meetings"
     end
     assert_accessible
@@ -126,6 +126,93 @@ class SettingsTest < ApplicationSystemTestCase
     assert_text "Meeting helper turned off."
     assert_no_checked_field "Meeting helper for children"
     assert_no_text "Turned on by"
+  end
+
+  test "a person renames a tag, refused for a name they have, then deletes one" do
+    users(:head).tags.create!(name: "prayer")
+    sign_in identities(:head)
+    visit household_settings_url(household_id: households(:home))
+
+    within("nav[aria-label='Settings']") { click_on "Tags and collections" }
+    assert_selector "h2", text: "Tags and collections"
+    assert_selector "#my-tags .Box-row", count: 2
+    assert_selector "aside nav a[aria-current=page]", text: "Settings"
+    assert_accessible
+    capture_screens("settings-tags")
+
+    find("button[aria-label='Rename #ministry']").click
+    within("dialog[open]") do
+      fill_in "Name", with: "Prayer"
+      click_on "Rename"
+      assert_text "You already have #prayer."
+    end
+    assert_equal find("dialog[open]").find_field("Name")[:id], page.evaluate_script("document.activeElement.id")
+    wait_for_transitions # the pointer rests on the new Rename button, whose colour fades in
+    assert_accessible
+    capture_screens("tag-rename-taken", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
+
+    within("dialog[open]") do
+      fill_in "Name", with: "Field service"
+      click_on "Rename"
+    end
+    assert_selector ".flash", text: "Renamed to #field-service."
+    assert_selector "h2", text: "Tags and collections"
+    assert_selector "#my-tags a.Label", text: "#field-service"
+
+    find("button[aria-label='Delete #field-service']").click
+    within("dialog[open]") do
+      assert_text "It comes off 1 item."
+      click_on "Delete tag"
+    end
+    assert_selector ".flash", text: "Deleted #field-service."
+    assert_selector "h2", text: "Tags and collections"
+    assert_no_selector "#my-tags a.Label", text: "#field-service"
+    assert_empty meeting_notes(:head_midweek).tags.reload
+  end
+
+  test "a person changes a collection to Notes only, refused while it holds studies, then deletes one and its studies stay" do
+    sign_in identities(:head)
+    visit household_settings_tags_url(household_id: households(:home))
+
+    find("button[aria-label='Edit Bible questions']").click
+    within("dialog[open]") do
+      choose "Notes only"
+      click_on "Save collection"
+      assert_text "1 study is in this collection. Move it first."
+    end
+    wait_for_transitions
+    assert_accessible
+    assert collections(:head_bible_questions).reload.used_in_both?
+
+    within("dialog[open]") do
+      fill_in "Name", with: "Questions"
+      choose "Notes and Personal study"
+      click_on "Save collection"
+    end
+    assert_selector ".flash", text: "Collection saved."
+    assert_selector "#collections .Box-row", text: /Questions\s+· 1 study\s+Used in Notes and Personal study/
+
+    find("button[aria-label='Edit Quick references']").click
+    within("dialog[open]") do
+      choose "Personal study only"
+      click_on "Save collection"
+      assert_text "1 note is in this collection. Move it first."
+      choose "Notes only"
+      fill_in "Name", with: "References"
+      click_on "Save collection"
+    end
+    assert_selector "#collections .Box-row", text: /References\s+· 1 note\s+Used in Notes only/
+
+    find("button[aria-label='Delete Preparing a talk']").click
+    within("dialog[open]") do
+      assert_text "Everything in it stays; it just leaves the folder."
+      click_on "Delete collection"
+    end
+    assert_selector ".flash", text: "Deleted Preparing a talk. Everything in it is kept."
+    assert_selector "h2", text: "Tags and collections"
+    assert_no_selector "#collections .Box-row", text: "Preparing a talk"
+    assert_nil personal_studies(:head_kindness).reload.collection
+    assert PersonalStudy.exists?(personal_studies(:head_kindness).id)
   end
 
   private

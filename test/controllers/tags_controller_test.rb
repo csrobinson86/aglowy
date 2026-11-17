@@ -7,19 +7,6 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     sign_in identities(:head)
   end
 
-  test "index lists each of my tags with how many things carry it" do
-    meeting_notes(:head_weekend).tag_with("ministry", by: users(:head))
-    users(:head).tags.create!(name: "prayer")
-
-    get household_tags_path(household_id: @home)
-
-    assert_response :success
-    assert_select "main .Box-row", count: 2
-    assert_select "main .Box-row", text: /#ministry\s+2 items/
-    assert_select "main .Box-row", text: /#prayer\s+0 items/
-    assert_select "main a.Label[href=?]", household_tag_path(household_id: @home, name: "ministry")
-  end
-
   test "show groups my meeting notes and goals tagged with it, newest first" do
     meeting_notes(:head_weekend).tag_with("ministry", by: users(:head))
     goal = users(:head).goals.create!(title: "Start a Bible study", target_on: Date.new(2027, 1, 31), set_by: users(:head))
@@ -28,6 +15,7 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     get household_tag_path(household_id: @home, name: "ministry")
 
     assert_response :success
+    assert_select "nav[aria-label=Breadcrumb] a[href=?]", household_settings_tags_path(household_id: @home), text: "Tags and collections"
     assert_select "h1", text: "#ministry"
     assert_select "h2", text: /Meeting notes\s+2/
     assert_select "h2", text: /My goals\s+1/
@@ -70,10 +58,10 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "rename to a free name" do
+  test "rename to a free name returns to Settings" do
     patch household_tag_path(household_id: @home, name: "ministry"), params: { tag: { name: "Field Service" } }
 
-    assert_redirected_to household_tags_path(household_id: @home)
+    assert_redirected_to household_settings_tags_path(household_id: @home)
     assert_equal "field-service", @ministry.reload.name
     assert_equal [ @ministry ], meeting_notes(:head_midweek).tags.to_a
   end
@@ -88,17 +76,24 @@ class TagsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "ministry", @ministry.reload.name
   end
 
-  test "delete removes the tag and its taggings" do
+  test "delete removes the tag and its taggings, and returns to Settings" do
     assert_difference -> { Tagging.count } => -1, -> { Tag.count } => -1 do
       delete household_tag_path(household_id: @home, name: "ministry")
     end
 
-    assert_redirected_to household_tags_path(household_id: @home)
+    assert_redirected_to household_settings_tags_path(household_id: @home)
     assert_empty meeting_notes(:head_midweek).tags.reload
   end
 
+  test "My tags moved to Settings: GET /:household_id/tags is gone" do
+    get "/#{@home.id}/tags"
+
+    assert_response :not_found
+    assert_not respond_to?(:household_tags_path)
+  end
+
   test "not a member of the household: 404" do
-    get household_tags_path(household_id: households(:other))
+    get household_tag_path(household_id: households(:other), name: "ministry")
 
     assert_response :not_found
   end

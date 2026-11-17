@@ -64,44 +64,6 @@ class TagsTest < ApplicationSystemTestCase
     assert_current_path household_goal_path(household_id: households(:home), id: goal)
   end
 
-  test "My tags: rename a tag, refused for a name I have, then delete it" do
-    users(:head).tags.create!(name: "prayer")
-    sign_in identities(:head)
-    visit household_tags_url(household_id: households(:home))
-
-    assert_selector "main .Box-row", count: 2
-    assert_no_selector "aside nav [aria-current=page]"
-    assert_accessible
-    capture_screens("my-tags")
-
-    find("button[aria-label='Rename #ministry']").click
-    within("dialog[open]") do
-      fill_in "Name", with: "Prayer"
-      click_on "Rename"
-      assert_text "You already have #prayer."
-    end
-    assert_equal find("dialog[open]").find_field("Name")[:id], page.evaluate_script("document.activeElement.id")
-    wait_for_transitions # the pointer rests on the new Rename button, whose colour fades in
-    assert_accessible
-    capture_screens("tag-rename-taken", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
-
-    within("dialog[open]") do
-      fill_in "Name", with: "Field service"
-      click_on "Rename"
-    end
-    assert_selector ".flash", text: "Renamed to #field-service."
-    assert_selector "main a.Label", text: "#field-service"
-
-    find("button[aria-label='Delete #field-service']").click
-    within("dialog[open]") do
-      assert_text "It comes off 1 item."
-      click_on "Delete tag"
-    end
-    assert_selector ".flash", text: "Deleted #field-service."
-    assert_no_selector "main a.Label", text: "#field-service"
-    assert_empty meeting_notes(:head_midweek).tags.reload
-  end
-
   test "create a new tag from the suggestions" do
     note = meeting_notes(:head_weekend)
     sign_in identities(:head)

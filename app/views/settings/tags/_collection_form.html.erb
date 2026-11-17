@@ -1,0 +1,6 @@
+<%# locals: (collection:) %>
+<%# In a collection's Edit Dialog on Settings → Tags and collections. A refused change comes back as this form by Turbo
+    Stream, so the Dialog stays open with the reason by "Use in". %>
+<%= primer_form_with(model: collection, url: household_collection_path(id: collection), method: :patch, id: dom_id(collection, :edit), namespace: dom_id(collection, :edit)) do |f| %>
+  <%= render Settings::CollectionForm.new(f, error: collection.errors[:base].to_sentence.presence) %>
+<% end %>
