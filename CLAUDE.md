@@ -242,7 +242,8 @@ households or roles. The non-negotiables:
   ask Casey before building it by hand.
 - Devise's generated views still use plain `form_for`. Convert them only in a
   story that asks for it.
-- **Six approved exceptions** (decided Nov 2026): the file drop zone (Active
+- **Six approved exceptions** (decided Nov 2026; the avatar ones by merging the
+  avatars design, PR #253): the file drop zone (Active
   Storage direct upload, Stimulus, BEM Sass from primitives) and the Lexxy notes
   editor (`rich_text_area`), both in `docs/design/family-studies.md`; the
   meeting helper's child screens and drawing canvas (large touch targets in BEM

@@ -109,19 +109,22 @@ A "Children's avatars" box first in the section, for heads and adults: one row p
 
 `Settings::Children::AvatarsController` finds the child through `Current.household.memberships.active.child.find_by!(user_id: params[:child_id]).user`, so an adult in the household or a child elsewhere is a 404. `AvatarPolicy#update?` is head or adult.
 
+`Settings::AvatarsController` (your own avatar) always works on `Current.user` and never takes a user id. `AvatarPolicy#update_own?` is any active member, children included, so a child who signs in can change theirs. Keep the two rules apart: never reuse `update?` (head or adult) for your own avatar.
+
 ### `AvatarComponent`
 
 `AvatarComponent.new(user:, size: 24)` replaces the six hand-written initial circles (the sidebar footer, Members, Settings → Members and roles, Settings → Children, goal steps and rows, goal progress). It draws:
 - with a photo: Primer `Avatar` (`Primer::Beta::Avatar`, `shape: :circle`, `size:`) with `src: avatar_path(user, v: user.avatar.blob.checksum)` and `alt: ""` beside a visible name, or `alt: user.name` when it stands alone
 - without: the initial in `.avatar-initial--<color>` (BEM Sass from `Avatar::Palette`), `aria-hidden` when the name is beside it
 
-Sizes are Primer's (16, 20, 24, 32, 40, 48, 64, 80); 80 is Settings → Profile. The `v` parameter changes with each new photo, so a long cache is safe.
+Sizes are Primer's (16, 20, 24, 32, 40, 48, 64, 80); 80 is Settings → Profile. The `v` parameter changes with each new photo, so a new photo is never confused with an old one in the browser's cache.
 
 ### Serving the image
 
 `AvatarsController#show`, outside the household scope:
 - `user = User.find(params[:user_id])`, then 404 unless `user.visible_to?(Current.user)` and `user.avatar.attached?`. Not finding and not seeing look the same.
-- `send_data user.avatar.download, type: "image/webp", disposition: "inline"`, with `expires_in 1.year, public: false` and `fresh_when user.avatar.blob`. The image is at most 100 KB, so it's streamed rather than redirected to a short-lived storage URL, and the browser keeps it.
+- **The browser keeps it but asks every time:** `response.cache_control.merge!(private: true, no_cache: true)`, then `if stale?(user.avatar.blob, public: false)` … `send_data user.avatar.download, type: "image/webp", disposition: "inline"`. The visibility check runs on every request, so someone who leaves the household stops seeing the photo, and an unchanged photo costs only a `304 Not Modified` with no body. Never call `send_data` before `stale?`, or a fresh request raises a double render instead of sending the 304.
+- The image is at most 100 KB, so it's streamed rather than redirected to a short-lived storage URL.
 - `skip_after_action :verify_authorized` is not used: `authorize user, :show_avatar?` with `AvatarPolicy`, which reads `Current.user` (there's no membership outside a household).
 
 ## Elsewhere
