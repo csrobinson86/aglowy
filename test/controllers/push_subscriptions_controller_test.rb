@@ -26,7 +26,8 @@ class PushSubscriptionsControllerTest < ActionDispatch::IntegrationTest
            params: { push_subscription: { endpoint: "https://169.254.169.254/latest", p256dh_key: "BKey", auth_key: "Auth", standalone: "false" } }
     end
 
-    assert_response :unprocessable_entity
+    assert_redirected_to household_settings_notifications_path(household_id: households(:home))
+    assert_equal "Notifications couldn't be turned on for this browser.", flash[:alert]
   end
 
   test "a child turns it on too" do

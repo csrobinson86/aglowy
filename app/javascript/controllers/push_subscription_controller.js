@@ -4,9 +4,9 @@ import { Controller } from "@hotwired/stimulus"
 // shows only where push works and this browser isn't already one of the person's devices: the page lists a SHA-256 of
 // each of their endpoints, never the endpoints, which work as secrets. Turning it on asks for permission, registers the
 // service worker, subscribes with the VAPID public key and submits the hidden form; Turbo shows the page again with the
-// device listed. If permission is refused, it says how to allow it.
+// device listed. If permission is refused, it says how to allow it, and if the browser can't subscribe, it says so.
 export default class extends Controller {
-  static targets = [ "offer", "refused", "form" ]
+  static targets = [ "offer", "refused", "failed", "form" ]
   static values = { publicKey: String, subscribed: Array }
 
   async connect() {
@@ -20,17 +20,22 @@ export default class extends Controller {
   }
 
   async subscribe() {
-    this.refusedTarget.hidden = true
+    this.refusedTarget.hidden = this.failedTarget.hidden = true
     if (await Notification.requestPermission() !== "granted") {
       this.refusedTarget.hidden = false
       return
     }
 
-    const registration = await navigator.serviceWorker.register("/service-worker", { scope: "/" })
-    await navigator.serviceWorker.ready
-    const subscription = await registration.pushManager.getSubscription() ||
-      await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.applicationServerKey })
-    this.submit(subscription.toJSON())
+    // A private window, or a push service that's down, can refuse the worker or the subscription.
+    try {
+      const registration = await navigator.serviceWorker.register("/service-worker", { scope: "/" })
+      await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription() ||
+        await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.applicationServerKey })
+      this.submit(subscription.toJSON())
+    } catch {
+      this.failedTarget.hidden = false
+    }
   }
 
   submit({ endpoint, keys }) {

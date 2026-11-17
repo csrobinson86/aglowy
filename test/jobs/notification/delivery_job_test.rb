@@ -144,7 +144,7 @@ class Notification::DeliveryJobTest < ActiveJob::TestCase
     assert_equal [ "push" ], preview.deliveries.pluck(:channel)
     assert_empty shared.deliveries, "no push setting for shares"
     push = pushes.first
-    assert_equal [ 1.day.to_i, "normal" ], push.values_at(:ttl, :urgency)
+    assert_equal [ 1.day.to_i, "normal", 5, 10 ], push.values_at(:ttl, :urgency, :open_timeout, :read_timeout)
     assert_equal Rails.configuration.x.web_push, push[:vapid]
     assert_equal push_subscriptions(:head_iphone).p256dh_key, pushes.find { it[:endpoint] == push_subscriptions(:head_iphone).endpoint }[:p256dh]
     assert_equal({ "title" => "Aglowy", "body" => "Your week in The Head Family", "url" => household_notification_path(@home, preview), "tag" => preview.id },

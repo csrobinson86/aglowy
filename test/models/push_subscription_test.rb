@@ -40,6 +40,15 @@ class PushSubscriptionTest < ActiveSupport::TestCase
     end
   end
 
+  test "a stored address that isn't a push service is never posted to" do
+    subscription = push_subscriptions(:head_mac)
+    subscription.update_column(:endpoint, "https://169.254.169.254/latest")
+
+    WebPush.stub(:payload_send, ->(**) { flunk "posted to #{subscription.endpoint}" }) { subscription.push("{}") }
+
+    assert_nil subscription.reload.last_used_at
+  end
+
   test "the endpoint and keys are encrypted" do
     subscription = push_subscriptions(:head_mac)
 

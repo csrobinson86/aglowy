@@ -8,6 +8,8 @@ class PushSubscriptionsController < ApplicationController
     authorize PushSubscription
     Current.user.push_subscriptions.subscribe(**subscription_params, user_agent: request.user_agent)
     redirect_to household_settings_notifications_path, notice: "Notifications are on for this browser."
+  rescue ActiveRecord::RecordInvalid
+    redirect_to household_settings_notifications_path, alert: "Notifications couldn't be turned on for this browser."
   end
 
   def destroy
