@@ -230,11 +230,13 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
     }
   }
 
+  // As flex boxes their text's minimum width is its longest word, which break-word doesn't shorten and anywhere does.
   .calendar-day .calendar-item__edit,
   .calendar-day .calendar-item__opens {
     display: flex;
     align-items: center;
     min-height: var(--base-size-44);
+    overflow-wrap: anywhere;
   }
 
   // Primer's own coarse-pointer target for .Button never applies (its selector puts ::before inside :is()), so the

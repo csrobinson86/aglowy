@@ -110,6 +110,19 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     within("dialog[open]") { assert_no_checked_field "Field service" }
   end
 
+  test "a title with no spaces wraps within its row" do
+    users(:head).personal_times.create!(kind: "other", title: "W" * 80, wdays: [ 2 ], time_of_day: "08:00", starts_on: Date.new(2026, 11, 1))
+    visit calendar_url
+
+    within "section[aria-current=date]" do
+      card = find(".calendar-item--my-time", text: "W" * 80)
+      title_text = card.find(".calendar-item__title").evaluate_script(<<~JS)
+        (() => { const range = document.createRange(); range.selectNodeContents(this); return range.getBoundingClientRect().right })()
+      JS
+      assert_operator title_text, :<, rect(card.find_field("Done: #{"W" * 80}, Tuesday"), "left"), "the title runs past the done box"
+    end
+  end
+
   test "tick today's reading" do
     visit calendar_url
 
