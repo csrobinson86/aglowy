@@ -201,4 +201,12 @@ class MembershipTest < ActiveSupport::TestCase
 
     assert_raises(ActiveRecord::RecordNotUnique) { Membership::TimeSharing.insert!({ membership_id: memberships(:spouse_in_home).id }) }
   end
+
+  test "database: deleting the seat deletes its time sharing" do
+    memberships(:spouse_in_home).share_times
+
+    Membership.where(id: memberships(:spouse_in_home).id).delete_all
+
+    assert_not Membership::TimeSharing.exists?
+  end
 end

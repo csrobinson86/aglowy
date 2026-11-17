@@ -294,4 +294,10 @@ class UserTest < ActiveSupport::TestCase
       user.destroy!
     end
   end
+
+  test "households_seeing_times: only the active households they share with" do
+    memberships(:head_in_parents).share_times
+
+    assert_equal [ households(:parents) ], users(:head).households_seeing_times.to_a
+  end
 end
