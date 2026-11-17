@@ -1,0 +1,11 @@
+<% first, last = preview.days.first, preview.days.last %>
+<%= render layout: "card", locals: { title: @notification.title, lead: "#{first.strftime("%A, %B %-d")} to #{last.strftime("%A, %B %-d")}.", action: "Open the calendar",
+                                     reason: "You get this because you turned on #{@notification.label} emails." } do %>
+  <table style="width: 100%; border-collapse: collapse;">
+    <% preview.days_with_items.each do |date, items| %>
+      <% items.each_with_index do |item, index| %>
+        <%= render "row", heading: (date.strftime("%A") if index.zero?), title: "#{item.title}, #{item.all_day ? "all day" : item.starts_at.strftime("%-l:%M %p")}", detail: item.subtitle %>
+      <% end %>
+    <% end %>
+  </table>
+<% end %>

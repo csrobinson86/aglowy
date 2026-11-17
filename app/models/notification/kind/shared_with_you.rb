@@ -5,6 +5,8 @@ class Notification::Kind::SharedWithYou < Notification::Kind
   def icon = :share
   def color = :pink
   def email = :summary
+  def label = "Shared with you"
+  def description = "Someone shares a meeting note or a goal with the household."
 
   def title
     "#{actor&.first_name || "Someone"} shared #{goal? ? "a goal" : "a meeting note"}"

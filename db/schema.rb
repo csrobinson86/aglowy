@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -495,6 +495,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_060000) do
     t.index ["notification_id"], name: "index_notification_readings_on_notification_id", unique: true
   end
 
+  create_table "notification_settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "kind", null: false
+    t.string "channel", null: false
+    t.datetime "created_at", null: false
+    t.index ["user_id", "kind", "channel"], name: "index_notification_settings_on_user_id_and_kind_and_channel", unique: true
+    t.check_constraint "channel::text = ANY (ARRAY['email'::character varying, 'push'::character varying]::text[])", name: "notification_settings_channel_check"
+    t.check_constraint "kind::text = ANY (ARRAY['weekly_preview'::character varying, 'study_topic_needed'::character varying, 'shared_with_you'::character varying, 'invitation_unaccepted'::character varying]::text[])", name: "notification_settings_kind_check"
+  end
+
   create_table "notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "household_id", null: false
@@ -775,6 +785,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_060000) do
     t.datetime "updated_at", null: false
     t.string "appearance", default: "auto", null: false
     t.string "avatar_color", default: "blue", null: false
+    t.time "quiet_hours_start", default: "2000-01-01 21:00:00", null: false
+    t.time "quiet_hours_end", default: "2000-01-01 07:00:00", null: false
+    t.datetime "summary_sent_through"
+    t.check_constraint "(EXTRACT(minute FROM quiet_hours_start) = ANY (ARRAY[0::numeric, 30::numeric])) AND EXTRACT(second FROM quiet_hours_start) = 0::numeric AND (EXTRACT(minute FROM quiet_hours_end) = ANY (ARRAY[0::numeric, 30::numeric])) AND EXTRACT(second FROM quiet_hours_end) = 0::numeric", name: "users_quiet_hours_half_hour_check"
     t.check_constraint "appearance::text = ANY (ARRAY['auto'::character varying, 'light'::character varying, 'dark'::character varying]::text[])", name: "users_appearance_check"
     t.check_constraint "avatar_color::text = ANY (ARRAY['blue'::character varying, 'green'::character varying, 'purple'::character varying, 'pink'::character varying, 'orange'::character varying, 'yellow'::character varying]::text[])", name: "users_avatar_color_check"
   end
@@ -837,6 +851,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_060000) do
   add_foreign_key "messages", "chats"
   add_foreign_key "notification_deliveries", "notifications", on_delete: :cascade
   add_foreign_key "notification_readings", "notifications", on_delete: :cascade
+  add_foreign_key "notification_settings", "users", on_delete: :cascade
   add_foreign_key "notifications", "households", on_delete: :cascade
   add_foreign_key "notifications", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "notifications", "users", on_delete: :cascade

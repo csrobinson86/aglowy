@@ -1,0 +1,8 @@
+<%= render layout: "card", locals: { title: "Since yesterday", lead: "Things that waited for your daily summary.", action: "Open notifications",
+                                     reason: "You get this because you turned on emails for these notifications." } do %>
+  <table style="width: 100%; border-collapse: collapse;">
+    <% @notifications.each do |notification| %>
+      <%= render "row", heading: notification.household.name, title: notification.title, detail: notification.body %>
+    <% end %>
+  </table>
+<% end %>

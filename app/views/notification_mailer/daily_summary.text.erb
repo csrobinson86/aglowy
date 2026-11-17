@@ -1,0 +1,12 @@
+Since yesterday
+Things that waited for your daily summary.
+
+<% @notifications.each do |notification| %>
+<%= notification.household.name %>: <%= notification.title %>
+<%= notification.body %>
+
+<% end %>
+Open notifications:
+<%= @open_url %>
+
+<%= render "footer", reason: "You get this because you turned on emails for these notifications." %>

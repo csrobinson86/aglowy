@@ -1,0 +1,6 @@
+<%= render layout: "card", locals: { title: @notification.title, lead: @notification.body, action: "Choose a topic",
+                                     reason: "You get this because you turned on #{@notification.label} emails." } do %>
+  <table style="width: 100%; border-collapse: collapse;">
+    <%= render "row", heading: @household.name, title: "Family study", detail: @notification.subject.local_scheduled_at.strftime("%A, %B %-d at %-l:%M %p") %>
+  </table>
+<% end %>

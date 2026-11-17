@@ -1,10 +1,53 @@
 # A person's notifications, from every household they're in (docs/design/notifications.md, Models), and the unread
-# count the sidebar shows, kept live on the person's own stream, never a household's (Trap 6).
+# count the sidebar shows, kept live on the person's own stream, never a household's (Trap 6). Also which kinds they
+# chose to get by email, their quiet hours and their daily summary, all read in their own zone (Trap 2).
 module User::Notifiable
   extend ActiveSupport::Concern
 
+  # What an email's "Turn off this email" link can turn off: a right-away kind, or the whole daily summary. Each has its
+  # own token purpose, so a link for one can't turn off another.
+  UNSUBSCRIBE_SCOPES = %w[ weekly_preview study_topic_needed summary ].freeze
+
   included do
     has_many :notifications, dependent: :delete_all
+    has_many :notification_settings, dependent: :delete_all do
+      # Replaces the person's settings with these [kind, channel] pairs in one transaction, keeping only what they're
+      # offered. The first summary kind's email starts the summary cursor, so the first summary comes at the next
+      # quiet-hours end. The person's lock makes two saves at once take turns.
+      def change(pairs)
+        user = proxy_association.owner
+        chosen = pairs.map { |kind, channel| [ kind.to_s, channel.to_s ] } & user.notification_choices
+        created_at = Time.current
+
+        user.with_lock do
+          delete_all
+          # insert_all skips callbacks, so the UUIDv7 id is set here.
+          insert_all(chosen.map { |kind, channel| { id: SecureRandom.uuid_v7, kind:, channel:, created_at: } }) if chosen.any?
+          user.update_column(:summary_sent_through, created_at) if user.summary_sent_through.nil? && chosen.intersect?(Notification::Kind.summary_names.product([ "email" ]))
+        end
+        reset
+      end
+    end
+
+    # Signed and never stored; they don't expire, so the link in an old email still works.
+    UNSUBSCRIBE_SCOPES.each { generates_token_for :"unsubscribe_#{it}" }
+
+    # Wall-clock times in the person's own zone, so never shift them by the process zone.
+    self.skip_time_zone_conversion_for_attributes = %i[ quiet_hours_start quiet_hours_end ]
+
+    validates :quiet_hours_start, :quiet_hours_end, presence: true
+    # The database checks it too (users_quiet_hours_half_hour_check); this gives a refused time a message.
+    validate :quiet_hours_on_the_half_hour
+
+    # Everyone with a summary kind's email on: the people Notification::DailySummaryJob looks at.
+    scope :getting_summary_email, -> { where(id: NotificationSetting.email.where(kind: Notification::Kind.summary_names).select(:user_id)) }
+  end
+
+  class_methods do
+    # The person an unsubscribe link was made for, or nil for an unknown scope or a bad or wrong-scope token.
+    def find_by_unsubscribe_token(scope, token)
+      find_by_token_for(:"unsubscribe_#{scope}", token) if scope.in?(UNSUBSCRIBE_SCOPES)
+    end
   end
 
   # The only way notifications are made (Trap 1). The dedupe key makes a job that runs twice, or a second share, find the
@@ -38,6 +81,87 @@ module User::Notifiable
     notifications.visible.unread.count
   end
 
+  # The kinds they can get: everyone the weekly preview and shares, a head or adult somewhere the invitation kind, a
+  # head somewhere the topic kind (docs/design/notifications.md, Settings → Notifications).
+  def notification_kinds
+    Notification::Kind.all.select { it.offered_to?(self) }
+  end
+
+  # The [kind, channel] pairs Settings → Notifications offers them. Email only for those who can get it; push comes
+  # with its own story.
+  def notification_choices
+    notification_kinds.map(&:name).product(emailable? ? [ "email" ] : [])
+  end
+
+  # Children never get email, even with an address, and a username-only login has none (Trap 3).
+  def emailable?
+    identity&.email.present? && !child_somewhere?
+  end
+
+  def child_somewhere?
+    memberships.active.child.exists?
+  end
+
+  def unsubscribe_token(scope)
+    generate_token_for(:"unsubscribe_#{scope}")
+  end
+
+  # What an email's link turns off is what the email was: that right-away kind, or every summary kind, so the summary
+  # really stops.
+  def unsubscribe_from_email(scope)
+    notification_settings.email.where(kind: scope == "summary" ? Notification::Kind.summary_names : scope).delete_all
+  end
+
+  # Nothing is emailed during quiet hours, which usually run over midnight. Starting and ending together is none.
+  def quiet_now?(time = Time.current)
+    now = time.in_time_zone(calendar_time_zone)
+    at, start, finish = [ now, quiet_hours_start, quiet_hours_end ].map { it.hour * 60 + it.min }
+    start <= finish ? (start...finish).cover?(at) : !(finish...start).cover?(at)
+  end
+
+  # The first time quiet hours end after this one.
+  def quiet_hours_end_after(time)
+    quiet_hours_ends_around(time).find { it > time }
+  end
+
+  # The last time quiet hours ended, at or before this one: what a daily summary is due for.
+  def last_quiet_hours_end_before(time)
+    quiet_hours_ends_around(time).reverse.find { it <= time }
+  end
+
+  # The quiet-hours end a summary is due for now, or nil: when their last one is later than the cursor (none yet counts
+  # as earlier than any time), and never inside quiet hours, where it waits for them to end.
+  def summary_due_through
+    now = Time.current
+    through = last_quiet_hours_end_before(now)
+    through if (summary_sent_through.nil? || summary_sent_through < through) && !quiet_now?(now)
+  end
+
+  def send_daily_summary_later(through:)
+    Notification::SummaryJob.perform_later(self, through)
+  end
+
+  # One email with every visible summary-kind notification from before through that they have email on for and that
+  # hasn't been emailed (docs/design/notifications.md, Delivery, step 3). The claims go in first, in their own
+  # statement, and the summary holds only the ones this call claimed, so two jobs at once send one summary. FOR SHARE
+  # holds the notifications until the claims are in, so one deleted meanwhile (its share ending) can't fail the insert's
+  # foreign key. Then the cursor moves forward to through, never backward, whether or not there was anything to send; a
+  # throttled send raises before that, and its retry sends them.
+  def send_daily_summary_now(through:)
+    return if quiet_now?
+
+    claimed = transaction do
+      Notification::Delivery.claim_all(summary_notifications_before(through).lock("FOR SHARE OF notifications").pluck(:id), "email")
+    end
+    if claimed.any?
+      Notification::Delivery.sending(claimed, "email") do
+        NotificationMailer.daily_summary(self, notifications.preloaded.where(id: claimed).order(:created_at, :id)).deliver_now
+      end
+    end
+
+    User.where(id:).update_all([ "summary_sent_through = GREATEST(COALESCE(summary_sent_through, '-infinity'), ?)", through ])
+  end
+
   # Replaces the sidebar's counter and the accessible name of every Notifications link on the person's pages: the
   # desktop sidebar, the phone menu and the top bar's bell.
   def broadcast_unread_notifications_count
@@ -45,4 +169,34 @@ module User::Notifiable
     Turbo::StreamsChannel.broadcast_replace_to [ self, :notifications ], targets: ".app-shell__notifications-counter", partial: "notifications/counter", locals: { count: }
     Turbo::StreamsChannel.broadcast_update_to [ self, :notifications ], targets: ".app-shell__notifications-name", partial: "notifications/name", locals: { count: }
   end
+
+  private
+    # When quiet hours end the day before, that day and the day after, in their zone, in order. Each is built from a
+    # local date, never by adding hours, so a clock change doesn't move it.
+    def quiet_hours_ends_around(time)
+      zone = ActiveSupport::TimeZone[calendar_time_zone]
+      date = time.in_time_zone(zone).to_date
+      (date.prev_day..date.next_day).flat_map { quiet_hours_ends_on(it, zone) }
+    end
+
+    # Usually one. Two when the clocks go back over that time of day, so it comes twice and quiet_now? is true before
+    # each. None by the clock when they go forward over it, and then zone.local moves it on to the time that exists.
+    def quiet_hours_ends_on(date, zone)
+      clock = Time.utc(date.year, date.month, date.day, quiet_hours_end.hour, quiet_hours_end.min)
+      ends = zone.tzinfo.periods_for_local(clock).map { zone.at(clock.to_i - it.observed_utc_offset) }.sort
+      ends.presence || [ zone.local(date.year, date.month, date.day, quiet_hours_end.hour, quiet_hours_end.min) ]
+    end
+
+    # No kinds at all for someone who can't get email, such as a person who became a child since turning it on.
+    def summary_notifications_before(through)
+      kinds = emailable? ? notification_settings.email.where(kind: Notification::Kind.summary_names).pluck(:kind) : []
+      notifications.visible.not_emailed.where(kind: kinds, created_at: ...through)
+    end
+
+    def quiet_hours_on_the_half_hour
+      %i[ quiet_hours_start quiet_hours_end ].each do |attribute|
+        time = self[attribute]
+        errors.add(attribute, "must be on the hour or the half hour") if time && !(time.min.in?([ 0, 30 ]) && time.sec.zero?)
+      end
+    end
 end

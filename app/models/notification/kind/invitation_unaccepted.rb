@@ -7,6 +7,13 @@ class Notification::Kind::InvitationUnaccepted < Notification::Kind
   def icon = :mail
   def color = :gray
   def email = :summary
+  def label = "Invitation not accepted"
+  def description = "Five days after you invite someone, if they haven't joined."
+
+  # Heads and adults can both invite.
+  def offered_to?(user)
+    user.memberships.active.where(role: %w[ head adult ]).exists?
+  end
 
   def title
     "Your invitation hasn't been accepted"

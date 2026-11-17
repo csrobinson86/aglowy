@@ -1,0 +1,10 @@
+<%# locals: (heading:, title:, detail: nil) -%>
+<tr>
+  <th scope="row" style="width: 30%; padding: 12px 16px 12px 0; border-top: 1px solid #d1d9e0; text-align: left; vertical-align: top;"><%= heading %></th>
+  <td style="padding: 12px 0; border-top: 1px solid #d1d9e0; vertical-align: top;">
+    <%= title %>
+    <% if detail %>
+      <br><span style="color: #59636e; font-size: 14px;"><%= detail %></span>
+    <% end %>
+  </td>
+</tr>

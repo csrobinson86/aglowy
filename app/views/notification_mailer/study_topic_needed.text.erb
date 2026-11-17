@@ -1,0 +1,9 @@
+<%= @notification.title %>
+<%= @notification.body %>
+
+<%= @household.name %>: family study, <%= @notification.subject.local_scheduled_at.strftime("%A, %B %-d at %-l:%M %p") %>
+
+Choose a topic:
+<%= @open_url %>
+
+<%= render "footer", reason: "You get this because you turned on #{@notification.label} emails." %>
