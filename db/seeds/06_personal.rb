@@ -94,7 +94,7 @@ seeded!(head.bookmark(scripture: openings.scripture_references.first.id, source:
 
 # Comments, collections and tags on some of them, as the Edit dialog saves them, so the Bookmarks tab's Collections and
 # My tags have counts and search has comments to find. Updating and tagging again changes nothing.
-first_page, second_page = head.bookmarks.pages.order(:created_at, :id).to_a
+first_page, second_page = daniel.sources.map { head.bookmark(url: it["url"], source: daniel) }
 first_page.update!(comment: "Good for return visits.", collection: collections["Bible characters"])
 first_page.tag_with("courage", by: head)
 second_page.update!(collection: collections["Quick thoughts"])
