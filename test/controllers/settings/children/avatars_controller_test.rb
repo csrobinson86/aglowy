@@ -20,7 +20,9 @@ class Settings::Children::AvatarsControllerTest < ActionDispatch::IntegrationTes
         assert_select "li", text: /Sofia Child\s+No login/
         assert_select "button", text: /Change avatar/, count: 3
         assert_select "dialog", text: /Avatar for Sofia/
-        assert_select "form[action=?] input[type=file][name='avatar[photo]']", household_settings_child_avatar_path(household_id: @home, child_id: users(:sofia))
+        # The file input sits in the dialog, in the photo's form by its form attribute.
+        assert_select "form#child-avatar-photo-#{users(:sofia).id}[action=?][enctype='multipart/form-data']", household_settings_child_avatar_path(household_id: @home, child_id: users(:sofia))
+        assert_select "dialog input[type=file][name='avatar[photo]'][form=?]", "child-avatar-photo-#{users(:sofia).id}"
         assert_select "form[action=?] input[type=radio][name='avatar[color]'][value=blue][checked]", household_settings_child_avatar_path(household_id: @home, child_id: users(:sofia))
         assert_select "p", "A child's avatar follows them to every household they're in. Children who sign in can change their own in Settings → Profile."
       end
