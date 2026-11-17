@@ -4,14 +4,14 @@ class MemberRolesTest < ApplicationSystemTestCase
   setup { sign_in identities(:head) }
 
   test "a head changes a role, then removes a member through the dialog" do
-    visit edit_household_settings_household_url(household_id: households(:home))
+    visit household_settings_members_url(household_id: households(:home))
 
     within_members_and_roles do
       assert_text "Hannah Head"
       assert_text "A household always keeps at least one head."
       assert_no_text "Frances Former"
     end
-    capture_screens("household-settings-members", scroll_to: "#members-and-roles")
+    capture_screens("member-roles")
 
     select "Head", from: "Sam Spouse"
 
@@ -38,14 +38,14 @@ class MemberRolesTest < ApplicationSystemTestCase
   end
 
   test "the last head making themselves an adult sees why on their row" do
-    visit edit_household_settings_household_url(household_id: households(:home))
+    visit household_settings_members_url(household_id: households(:home))
 
     select "Adult", from: "Hannah Head"
 
     within_members_and_roles { assert_text "A household needs at least one active head" }
     assert_select "Hannah Head", selected: "Head"
     assert_accessible
-    capture_screens("member-role-refused", scroll_to: "#members-and-roles")
+    capture_screens("member-role-refused")
   end
 
   private

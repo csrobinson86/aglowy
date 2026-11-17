@@ -1,4 +1,4 @@
-# A member's role in household settings' Members and roles (frame household-settings.png). The member's name is the
+# A member's role in Settings → Members and roles (frame settings-members.png). The member's name is the
 # label, hidden because the row already shows it. A refusal from Membership (the last head) comes as validation_message.
 class Members::RoleForm < ApplicationForm
   def initialize(name:, autofocus: false, validation_message: nil)

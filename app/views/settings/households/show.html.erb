@@ -1,0 +1,14 @@
+<% content_for :title, "Household · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :household) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Household" } } %>
+      <% box.with_body do %>
+        <%= primer_form_with(model: @household, url: household_settings_household_path, method: :patch) do |f| %>
+          <%= render Settings::HouseholdForm.new(f) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

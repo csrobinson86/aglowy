@@ -84,33 +84,13 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "form[action='/identities/sign_out'] button", text: "Sign out"
   end
 
-  test "a head sees Household settings in the footer, with the gear icon, current on the settings page" do
-    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :households))
+  test "no one sees Household settings: the household's sections are in Settings" do
+    %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
+      render_inline(AppShellComponent.new(membership: memberships(membership), selected_item: :dashboards))
 
-    assert_selector "nav[aria-label='Main settings'] a[aria-current='page'][href='/#{households(:home).id}/settings/household']", text: "Household settings"
-    assert_selector "nav[aria-label='Main settings'] a[aria-current='page'] svg.octicon-gear"
-    assert_selector "nav[aria-label='Menu settings'] a[aria-current='page']", text: "Household settings", visible: :all
-    assert_no_selector "nav[aria-label='Main'] a[aria-current='page']"
-  end
-
-  test "Household settings isn't current on other pages" do
-    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
-
-    assert_selector "nav[aria-label='Main settings'] a", text: "Household settings"
-    assert_no_selector "nav[aria-label='Main settings'] a[aria-current='page']"
-  end
-
-  test "an adult sees Household settings in the footer" do
-    render_inline(AppShellComponent.new(membership: memberships(:spouse_in_home), selected_item: :dashboards))
-
-    assert_selector "nav[aria-label='Main settings'] a[href='/#{households(:home).id}/settings/household']", text: "Household settings"
-  end
-
-  test "children don't see Household settings" do
-    render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :dashboards))
-
-    assert_no_text "Household settings"
-    assert_selector "nav[aria-label='Main settings'] a", text: "Settings", count: 1
+      assert_no_text "Household settings"
+      assert_selector "nav[aria-label='Main settings'] a", text: "Settings", count: 1
+    end
   end
 
   test "the sidebar is hidden below md, where the phone menu takes over" do

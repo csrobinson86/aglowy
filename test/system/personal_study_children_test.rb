@@ -1,6 +1,6 @@
 require "application_system_test_case"
 
-# A head turns on personal study with AI for a child, in Household settings → Children, and reads the child's studies
+# A head turns on personal study with AI for a child, in Settings → Children, and reads the child's studies
 # (docs/design/personal-study.md, Children). The question's job runs here with the AI stubbed; nothing calls a provider.
 class PersonalStudyChildrenTest < ApplicationSystemTestCase
   include ActiveJob::TestHelper
@@ -12,7 +12,7 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
 
   test "a head turns it on; the child asks as a young reader; the head reads the question and notes" do
     sign_in identities(:head)
-    visit edit_household_settings_household_url(household_id: households(:home))
+    visit household_settings_children_url(household_id: households(:home))
 
     within("#study-ai") do
       assert_selector "h3", text: "Personal study with AI"
@@ -75,7 +75,7 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
   test "an adult sees the state and that only a head can turn it on" do
     memberships(:eli_in_home).grant_study_ai(by: users(:head))
     sign_in identities(:spouse)
-    visit edit_household_settings_household_url(household_id: households(:home))
+    visit household_settings_children_url(household_id: households(:home))
 
     within("#study-ai") do
       assert_text "Only a head can turn this on."
@@ -90,7 +90,7 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
     memberships(:eli_in_home).grant_study_ai(by: users(:head))
     users(:eli).accept_ai_terms(understood: "1")
     sign_in identities(:head)
-    visit edit_household_settings_household_url(household_id: households(:home))
+    visit household_settings_children_url(household_id: households(:home))
 
     within(child_row("Eli Child")) { click_on "Turn off" }
 

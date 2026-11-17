@@ -7,7 +7,7 @@ class MembershipPolicy < ApplicationPolicy
   def give_login?        = manage_login? && record.user.identity.nil?
   def new_password_link? = manage_login? && record.user.identity.present? && record.user.identity.email.nil?
 
-  # Changing a role and removing a member, from household settings: heads of the member's household only
+  # Changing a role and removing a member, from Settings → Members and roles: heads of the member's household only
   # (docs/design/invitations.md, Who can do what). The last head is refused by Membership, under the lock.
   def update?  = head? && record.household_id == membership.household_id
   def destroy? = update?

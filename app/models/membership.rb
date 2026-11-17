@@ -59,8 +59,8 @@ class Membership < ApplicationRecord
     end
   end
 
-  # Personal study with AI for this child, from Household settings → Children (docs/design/personal-study.md,
-  # Children). The grant, or an unsaved one with the reason when the seat isn't an active child's with a login.
+  # Personal study with AI for this child, from Settings → Children (docs/design/personal-study.md, Children). The
+  # grant, or an unsaved one with the reason when the seat isn't an active child's with a login.
   # Turning it on twice finds the first grant: the unique index settles two heads at once. It takes the household
   # lock and reads the seat again, as leaving and role changes do, so a copy loaded before the child left can't
   # leave a grant behind for rejoining to bring back.

@@ -1,6 +1,6 @@
-# Household settings, Children (frames household-settings-head.png and household-settings-adult.png). The frames draw a
-# switch; it's a check box and Save, because Primer's ToggleSwitch posts to one URL (docs/design/meeting-helper.md, Pages).
-class Households::MeetingHelperForm < ApplicationForm
+# Settings → Children (docs/design/settings.md). The frames draw a switch; it's a check box and Save, because Primer's
+# ToggleSwitch posts to one URL (docs/design/meeting-helper.md, Pages).
+class Settings::MeetingHelperForm < ApplicationForm
   def initialize(enabled:)
     @enabled = enabled
   end

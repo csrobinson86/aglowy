@@ -1,4 +1,4 @@
-# Household settings → Children → "Personal study with AI": a head turns it on or off for one child
+# Settings → Children → "Personal study with AI": a head turns it on or off for one child
 # (docs/design/personal-study.md, Children). Turning it off keeps the child's studies; it stops new questions and
 # ends heads' view of them.
 class Memberships::StudyAiGrantsController < ApplicationController
@@ -28,6 +28,6 @@ class Memberships::StudyAiGrantsController < ApplicationController
   end
 
   def redirect_to_children(**options)
-    redirect_to edit_household_settings_household_path(anchor: "children"), **options
+    redirect_to household_settings_children_path, **options
   end
 end

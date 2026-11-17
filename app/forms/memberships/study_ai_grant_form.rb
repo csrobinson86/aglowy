@@ -1,4 +1,4 @@
-# "Turn on" and "Turn off" on a child's row in Household settings → Children → "Personal study with AI" (frame
+# "Turn on" and "Turn off" on a child's row in Settings → Children → "Personal study with AI" (frame
 # child-study-ai-setting.png). The frame draws a switch; it's a button, because turning it on and off are a create
 # and a destroy, and Primer's ToggleSwitch posts to one URL.
 class Memberships::StudyAiGrantForm < ApplicationForm

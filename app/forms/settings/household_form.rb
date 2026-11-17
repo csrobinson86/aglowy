@@ -1,5 +1,5 @@
-# Frame household-settings.png, Household.
-class Households::SettingsForm < ApplicationForm
+# Settings → Household (docs/design/settings.md).
+class Settings::HouseholdForm < ApplicationForm
   form do |f|
     f.text_field(name: :name, label: "Name", required: true, full_width: true)
 

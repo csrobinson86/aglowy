@@ -53,30 +53,21 @@ class HouseholdPolicyTest < ActiveSupport::TestCase
     assert HouseholdPolicy.new(memberships(:head_in_home), households(:home)).update?
   end
 
-  # Household settings opens to adults for its Meetings section; the name and time zone stay heads only
-  # (docs/design/meeting-helper.md, Trap 10).
-  test "edit? and manage_meetings? yes for a head and an adult" do
+  # Settings' Meetings and Children sections are for adults too; Household and Members and roles stay heads only
+  # (docs/design/settings.md, Sections and who sees them).
+  test "manage_meetings? yes for a head and an adult" do
     %i[ head_in_home spouse_in_home ].each do |membership|
-      policy = HouseholdPolicy.new(memberships(membership), households(:home))
-
-      assert policy.edit?, "expected #{membership} to open settings"
-      assert policy.manage_meetings?, "expected #{membership} to set the meeting times"
+      assert HouseholdPolicy.new(memberships(membership), households(:home)).manage_meetings?, "expected #{membership} to set the meeting times"
     end
   end
 
-  test "edit? and manage_meetings? no for a child" do
-    policy = HouseholdPolicy.new(memberships(:child_in_home), households(:home))
-
-    assert_not policy.edit?
-    assert_not policy.manage_meetings?
+  test "manage_meetings? no for a child" do
+    assert_not HouseholdPolicy.new(memberships(:child_in_home), households(:home)).manage_meetings?
   end
 
-  test "edit? and manage_meetings? no for a nil membership, an inactive one, or a member of another household" do
+  test "manage_meetings? no for a nil membership, an inactive one, or a member of another household" do
     [ nil, memberships(:former_in_home), memberships(:outsider_in_other) ].each do |membership|
-      policy = HouseholdPolicy.new(membership, households(:home))
-
-      assert_not policy.edit?, "expected #{membership&.id.inspect} not to open settings"
-      assert_not policy.manage_meetings?, "expected #{membership&.id.inspect} not to set the meeting times"
+      assert_not HouseholdPolicy.new(membership, households(:home)).manage_meetings?, "expected #{membership&.id.inspect} not to set the meeting times"
     end
   end
 

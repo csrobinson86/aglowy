@@ -1,6 +1,6 @@
 <% content_for :title, "Appearance · Settings" %>
 
-<%= render Settings::PageComponent.new(household: Current.household, section: :appearance) do |page| %>
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :appearance) do |page| %>
   <% page.with_body do %>
     <%= render "settings/appearances/appearance", user: @user, url: household_settings_appearance_path %>
   <% end %>

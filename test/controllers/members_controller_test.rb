@@ -221,7 +221,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a head removes an adult: inactive, their shares here gone, their open steps released" do
+  test "a head removes an adult and comes back to Members and roles: inactive, their shares here gone, their open steps released" do
     note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
     note.share_with(households(:home))
     sign_in identities(:head)
@@ -230,7 +230,7 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
       delete household_member_path(household_id: households(:home), id: memberships(:spouse_in_home))
     end
 
-    assert_redirected_to edit_household_settings_household_path(household_id: households(:home))
+    assert_redirected_to household_settings_members_path(household_id: households(:home))
     assert_equal "Sam Spouse was removed from the household.", flash[:notice]
     assert_not memberships(:spouse_in_home).reload.active?
     assert_empty note.reload.shared_households
