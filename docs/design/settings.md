@@ -20,7 +20,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | My households | yes | yes | yes, without Leave | Each household with the person's role, and Leave |
 | You | Tags and collections | yes | yes | yes | Rename and delete tags; edit and delete collections |
 | You | Calendar | yes | yes | yes | Share my times with a household; the phone calendar link (`docs/design/calendar.md`, CAL-01) |
-| You | Notifications | yes | yes | yes, without email | What comes by email and to your phone, quiet hours, your devices (`docs/design/notifications.md`, NOTIFY-01) |
+| You | Notifications | yes | yes | yes, without email | What comes by email and to your phone, quiet hours, your devices (`docs/design/notifications.md`, NOTIFY-01). Not on `/account`: people with no household get no notifications |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
 | | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |

@@ -69,7 +69,11 @@ State as a record (CLAUDE.md). `notification_id`, unique, `on_delete: :cascade`.
 
 ### `Notification::Delivery`
 
-A record that it went out on a channel: `notification_id`, `channel` (check in `email`, `push`), unique together, `on_delete: :cascade`. A retried job never sends twice.
+A claim that it goes out on a channel: `notification_id`, `channel` (check in `email`, `push`), unique together, `on_delete: :cascade`.
+
+- **Claim, then send.** The job inserts the delivery first (`insert` that returns nothing on conflict), and only the job whose insert succeeded sends. Two jobs at once can't both send, and a retry after a send finds the claim and stops.
+- **At most once, not exactly once.** Neither SES nor Web Push takes an idempotency key. So a crash after the claim and before the send drops that one email or push (the inbox still has it), rather than risking a second. A send that fails with a temporary error (SES throttling, a push service 5xx) deletes the claim and raises, so the job retries.
+- **Push to several devices** sends to each in turn under the one `push` claim. A device that fails doesn't stop the others, and the failed device isn't retried. Expired devices are deleted (`PushSubscription`).
 
 ### `NotificationSetting`
 
@@ -107,9 +111,13 @@ A push that comes back `404` or `410` deletes the subscription (`WebPush::Expire
 ## Delivery
 
 `Notification::DeliveryJob` (`notification.deliver_later`):
-1. **Push:** when the person has a push setting for the kind and at least one subscription. During quiet hours the job reschedules itself (`set(wait_until: user.quiet_hours_end_after(Time.current))`). Otherwise it sends to every subscription with `WebPush.payload_send` (TTL one day, urgency `normal`) and records a `push` delivery. The payload is `{ title: "Aglowy", body: <the one-line wording>, url: notification_path(...), tag: notification.id }`.
-2. **Email right away:** for the weekly preview and the topic nudge, when the person has an email setting and can get email. It also waits out quiet hours. `NotificationMailer.notification(notification).deliver_now`, then an `email` delivery.
-3. **Summary kinds** stop here. `Notification::DailySummaryJob` runs every hour. For each person whose quiet hours ended in that hour, it gathers their visible notifications from the last 24 hours that have an email setting, are summary kinds and have no `email` delivery. It sends one `NotificationMailer.daily_summary(user, notifications)` and records a delivery for each. With nothing to send, it sends nothing.
+0. **Still theirs?** The job first checks `user.notifications.visible.exists?(notification.id)`, again after any quiet-hours wait. If the person has left the household, or the subject is gone, it sends nothing.
+1. **Push:** when the person has a push setting for the kind and at least one subscription. During quiet hours the job reschedules itself (`set(wait_until: user.quiet_hours_end_after(Time.current))`). Otherwise it claims the `push` delivery and sends to every subscription with `WebPush.payload_send` (TTL one day, urgency `normal`). The payload is `{ title: "Aglowy", body: <the one-line wording>, url: household_notification_path(notification.household, notification), tag: notification.id }`.
+2. **Email right away:** for the weekly preview and the topic nudge, when the person has an email setting and can get email. It also waits out quiet hours. It claims the `email` delivery, then `NotificationMailer.notification(notification).deliver_now`.
+3. **Summary kinds** stop here. `Notification::DailySummaryJob` runs every 15 minutes and works from a cursor, so a missed run, quiet hours ending on the half hour, or quiet hours changed in between never skip a summary:
+   - `users.summary_sent_through` (datetime, nullable) is when the last summary was due. A person is due when their most recent quiet-hours end (`user.last_quiet_hours_end_before(Time.current)`) is later than it.
+   - For a due person, it gathers every visible notification that is a summary kind, has an email setting, and has no `email` delivery. There's no age limit: a notification waits until it's sent or purged at 90 days.
+   - It claims an `email` delivery for each, sends one `NotificationMailer.daily_summary(user, notifications)`, and moves the cursor to that quiet-hours end. With nothing to send, it only moves the cursor.
 
 Read notifications still go in the summary: the summary is a record of what happened, and reading it in the app doesn't mean the email was unwanted.
 
@@ -120,7 +128,7 @@ Read notifications still go in the summary: the summary is a record of what happ
 | `Notification::WeeklyPreviewJob` | every hour at minute 5 | Each household where it's Sunday and the 6 PM hour: `household.send_weekly_preview` |
 | `Notification::StudyTopicJob` | every hour at minute 10 | Each household where it's the 8 AM hour: the sessions 3 days out with no topic, to its heads |
 | `Notification::InvitationFollowUpJob` | every day at 2pm | Pending household invitations sent 5 days ago, to whoever sent them |
-| `Notification::DailySummaryJob` | every hour at minute 15 | As above |
+| `Notification::DailySummaryJob` | every 15 minutes | As above |
 | `Notification::PurgeJob` | every day at 4:45am | Deletes notifications older than 90 days |
 
 Every job is safe to run twice, through the `dedupe_key` and the deliveries.
@@ -140,7 +148,7 @@ scope "/:household_id", as: :household do
 end
 
 # Outside the household scope: email links work without signing in.
-resource :email_unsubscribe, only: %i[ show create ], path: "unsubscribe/:token"
+resource :email_unsubscribe, only: %i[ show create ], path: "unsubscribe/:scope/:token"   # scope: a right-away kind, or "summary"
 get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 ```
@@ -185,6 +193,7 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
   - Heads see all four. Adults see the weekly preview and shared. A person who is a head in any household sees the topic and invitation kinds.
   - Children, and people with no email address, get no Email checkbox. The line under the box says "Children get notifications in Aglowy and on their phone, never by email," or names the email address and says when the daily summary comes.
   - "In Aglowy: always" shows as a line, not a disabled checkbox.
+- **People with no household** get no notifications, since every kind comes from a household, so `/account` has no Notifications section. Their settings stay as they were for when they join one, and the unsubscribe links in old emails still work.
 - **Quiet hours** (`Settings::QuietHoursForm`): From and Until, Primer selects on the half hour, then "Nothing is emailed or sent to your phone during quiet hours. It waits until they end. Times are in <zone>, your time zone in Profile."
 - **Phones and browsers:**
   - "Turn on for this browser" (primary), shown when this browser supports push and isn't subscribed. A Stimulus controller (`push_subscription`) asks for permission, registers the service worker, subscribes with the VAPID public key, and posts the subscription. If permission is refused: "Your browser blocked notifications for Aglowy. Allow them in its settings, then try again."
@@ -198,7 +207,10 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
 - **`daily_summary(user, notifications)`:** "Since yesterday", one row per notification with its household, then "Open notifications".
 - **Subjects:** "Your week in Rivera household: November 23 – 29", "Tuesday's family study needs a topic", "Your Aglowy summary: 2 new".
 - **Footer:** "You get this because you turned on <kind> emails. Turn off this email · Notification settings". Both links work without signing in.
-- **One-click unsubscribe:** the `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers (RFC 8058) point at `POST /unsubscribe/:token`. The token is `user.generate_token_for(:email_unsubscribe)` with the kind, signed and never stored. "Turn off this email" opens `GET /unsubscribe/:token`, a focused-layout page with one button, so a mail scanner that follows links can't unsubscribe anyone.
+- **One-click unsubscribe:** the `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers (RFC 8058) point at `POST /unsubscribe/:scope/:token`.
+  - **What it turns off is what the email was.** A right-away email (`weekly_preview`, `study_topic_needed`) turns off that kind's email. A daily summary turns off email for every summary kind, so the summary really stops. Per-kind choices stay in Settings → Notifications.
+  - **One token purpose per scope:** `User` declares `generates_token_for :unsubscribe_weekly_preview`, `:unsubscribe_study_topic_needed` and `:unsubscribe_summary`, each signed and never stored. The controller checks the token with the purpose named by `:scope`, so a weekly-preview link can't turn off the summary.
+  - "Turn off this email" opens `GET /unsubscribe/:scope/:token`, a focused-layout page with one button, so a mail scanner that follows links can't unsubscribe anyone.
 - **Text and HTML parts,** sent through SES. No images except the Aglowy mark.
 
 ### Push
@@ -223,7 +235,7 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
 ## Traps
 
 1. **Make notifications only through `user.notify`,** with a `dedupe_key`. Jobs run twice and shares happen twice.
-2. **Read times in the right zone.** Quiet hours and the daily summary use the person's zone (`calendar_time_zone`). The weekly preview and the topic nudge use the household's.
+2. **Read times in the right zone.** Quiet hours and the daily summary cursor use the person's zone (`calendar_time_zone`). The weekly preview and the topic nudge use the household's.
 3. **Don't email children** or username-only logins, even when they have a setting from before they became a child somewhere.
 4. **No personal text in emails or push.** Titles and dates only.
 5. **Never mark something read from an email or push link** except by opening it (`show`). Mail scanners follow links, and summaries aren't readings.
@@ -239,5 +251,7 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
 - Settings: all off (the default), some on; a child (no email); a username-only adult (no email)
 - Quiet hours: a push or email due inside them waits; the daily summary at their end; nothing to summarize
 - Push: turned on, refused, removed, an expired endpoint
-- Unsubscribe by link and by one-click POST; a bad or old token
+- Unsubscribe by link and by one-click POST, from a right-away email and from a summary; a token used with the wrong scope; a bad or old token
+- Two delivery jobs for one notification at once (one sends); a temporary send failure (retried); one of two devices failing
+- Leaving the household while a push waits out quiet hours (nothing sent); quiet hours ending at 7:30; a missed summary run
 - Desktop and phone; light and dark
