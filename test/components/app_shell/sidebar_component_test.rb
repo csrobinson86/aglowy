@@ -1,6 +1,17 @@
 require "test_helper"
 
 class AppShell::SidebarComponentTest < ViewComponent::TestCase
+  test "the top link renders the Two flames mark, and Today's meeting still has the sun icon" do
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards, label: "Main"))
+
+    home = "/#{households(:home).id}"
+    assert_selector "a[href='#{home}'] img[src*='aglowy-mark'][alt=''][width='24'][height='24']", count: 1
+    assert_equal "Aglowy", page.first("a[href='#{home}']").text.strip
+    assert_no_selector "a[href='#{home}'] svg.octicon-sun"
+    assert_selector "nav[aria-label='Main'] a[href='#{home}/todays_meeting'] svg.octicon-sun", count: 1
+    assert_selector "svg.octicon-sun", count: 1
+  end
+
   test "Today's meeting shows for a head, an adult and a child, first in the Mine group with the sun icon" do
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
