@@ -18,4 +18,13 @@ class Avatar::PaletteTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "the avatar's and the color picker's Sass draw every color in the palette" do
+    { "_avatar.scss" => /\.avatar-initial--#\{\$color\}/, "_color_picker.scss" => /\.color-picker__swatch--labelled\.color-picker__swatch--#\{\$color\}/ }.each do |file, rule|
+      sass = Rails.root.join("app/assets/stylesheets/components", file).read
+      list = sass.scan(/@each \$color in ([^{]+)\{\s*#{rule}/).sole.first
+
+      assert_equal Avatar::Palette::COLORS, list.scan(/"(\w+)"/).flatten, "#{file} draws a different list"
+    end
+  end
 end

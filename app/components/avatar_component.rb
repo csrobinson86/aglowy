@@ -19,9 +19,13 @@ class AvatarComponent < ApplicationComponent
     @classes = classes
   end
 
-  def call
-    tag.span user.initial, class: [ "avatar circle avatar-initial", "avatar-initial--#{color}", "avatar-initial--size-#{size}", classes ],
-                      **(alone ? { role: "img", aria: { label: user.name } } : { aria: { hidden: true } })
+  def html_classes
+    [ "avatar circle avatar-initial", "avatar-initial--#{color}", "avatar-initial--size-#{size}", classes ]
+  end
+
+  # Named for screen readers when it stands alone; hidden beside a visible name, so it isn't read twice.
+  def label_attributes
+    alone ? { role: "img", aria: { label: user.name } } : { aria: { hidden: true } }
   end
 
   private
