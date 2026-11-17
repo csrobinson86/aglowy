@@ -36,7 +36,7 @@ this document says otherwise.
 | --- | --- | --- |
 | `household` | Every controller that includes `HouseholdScoped`, except the meeting helper's pages for a child | The app shell: sidebar + main |
 | `meeting_helper` | The meeting helper's pages for a child with the helper on (`docs/design/meeting-helper.md`) | Full screen, always dark, no sidebar |
-| `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark at the top left, then one centred column. No sidebar, because there is no household to navigate |
+| `focused` | Pages outside a household: sign in, password reset, confirmation, sign up, the household chooser, new household | The Aglowy mark (`LogoComponent`, `docs/design/brand.md`) at the top left, then one centred column. No sidebar, because there is no household to navigate |
 
 Every layout keeps `lang` on `<html>` and the `<body>` theming attributes
 described next.
@@ -140,7 +140,7 @@ changes when it does.
 
 **Sidebar, top to bottom**
 
-1. **Aglowy mark:** Octicon `sun` in the attention colour, then "Aglowy". Links to the household home.
+1. **Aglowy mark:** `LogoComponent`, the Two flames mark then "Aglowy" (`docs/design/brand.md`). Links to the household home.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
 3. **Household group:** Home, Calendar (`docs/design/calendar.md`, once CAL-01 builds it), Family studies, Members, Family goals.
 4. **Mine group:** Today's meeting, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`, whose tabs hold notes, meeting notes and bookmarks), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
