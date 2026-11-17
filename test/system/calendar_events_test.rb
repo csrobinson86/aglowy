@@ -65,6 +65,46 @@ class CalendarEventsTest < ApplicationSystemTestCase
     capture_screens("calendar-child")
   end
 
+  test "a Repeats choice made while the date reloads is kept" do
+    sign_in identities(:head)
+    visit household_calendar_url(household_id: households(:home))
+    click_on "Add household event"
+    # Hold the Repeats frame's request until released, so the choice lands while it's in flight.
+    execute_script(<<~JS)
+      const fetch = window.fetch
+      window.fetch = (url, options) => String(url).includes("household_event")
+        ? new Promise(resolve => { window.releaseRepeatFrame = () => resolve(fetch(url, options)) })
+        : fetch(url, options)
+    JS
+
+    within "dialog[open]" do
+      fill_in "Starts", with: "11/28/2026"
+      assert_selector "turbo-frame#calendar_event_repeat[busy]"
+      select "Weekly on Tuesday", from: "Repeats"
+      execute_script("window.releaseRepeatFrame()")
+
+      assert_select "Repeats", with_options: [ "Monthly on the last Saturday" ], selected: "Weekly on Saturday"
+    end
+  end
+
+  test "the month shows a several-day visit as one bar across its days, under the day numbers" do
+    households(:home).events.create!(kind: "co_visit", title: "Circuit overseer's visit", starts_on: Date.new(2026, 11, 17), days: 6, created_by: users(:head))
+    households(:home).events.create!(kind: "circuit_assembly", title: "Circuit assembly", starts_on: Date.new(2026, 11, 28), created_by: users(:head))
+    sign_in identities(:head)
+    visit household_calendar_url(household_id: households(:home), view: "month")
+
+    bar = find(".calendar-band--month a.calendar-item--co-visit", text: "Circuit overseer's visit")
+    tuesday = find(".calendar-month__day[aria-current=date]")
+    sunday = find(".calendar-month__number[aria-label='Sunday, Nov 22']")
+    assert_in_delta tuesday.rect.x, bar.rect.x, tuesday.rect.width / 2
+    assert_operator bar.rect.x + bar.rect.width, :>, sunday.rect.x
+    assert_operator bar.rect.y, :>, sunday.rect.y
+    assert_selector ".calendar-band--month a.calendar-item--circuit-assembly", text: "Circuit assembly"
+    assert_no_selector ".calendar-month__all-day a"
+    assert_accessible
+    capture_screens("calendar-month-events")
+  end
+
   test "a refused save stays in the dialog with the reason; edit and delete an event" do
     event = households(:home).events.create!(kind: "other", title: "Kingdom Hall cleaning", starts_on: Date.new(2026, 11, 21),
                                              time_of_day: "13:00", duration_minutes: 120, created_by: users(:head))

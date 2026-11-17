@@ -11,7 +11,7 @@
                   calendar_event_url_value: new_household_calendar_event_path }) do |f| %>
       <%= render Calendar::EventForm.new(f, section: :when) %>
       <%= tag.div class: "mt-3", hidden: event.several_days?, data: { calendar_event_target: "repeatField" } do %>
-        <%= turbo_frame_tag :calendar_event_repeat, data: { calendar_event_target: "repeatFrame" } do %>
+        <%= turbo_frame_tag :calendar_event_repeat, data: { calendar_event_target: "repeatFrame", action: "turbo:before-frame-render->calendar-event#keepRepeat" } do %>
           <%= render Calendar::EventForm.new(f, section: :repeat) %>
         <% end %>
       <% end %>

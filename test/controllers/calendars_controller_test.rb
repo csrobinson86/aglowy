@@ -158,7 +158,12 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=checkbox][value=other_events].calendar-show__check--other[checked]"
 
     get household_calendar_path(household_id: households(:home), view: "month")
-    assert_select ".calendar-month__day a.calendar-item--co-visit.calendar-item--chip", 6
+    assert_select ".calendar-month__week ul.calendar-band--month[aria-label='All-day events'] li.calendar-band__item--start-2.calendar-band__item--span-6" do
+      assert_select "a.calendar-item--co-visit.calendar-item--chip", "Circuit overseer's visit"
+      assert_select ".sr-only", "Tue 17 – Sun 22"
+    end
+    assert_select "ul.calendar-band--month", 1
+    assert_select ".calendar-month__day .calendar-month__all-day a.calendar-item--co-visit.calendar-item--chip", 6
 
     sign_in identities(:eli)
     get household_calendar_path(household_id: households(:home))

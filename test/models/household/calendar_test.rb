@@ -80,6 +80,16 @@ class Household::CalendarTest < ActiveSupport::TestCase
     assert_equal [ 1, 3 ], calendar(WEEK).all_day_items.sole.columns_in(WEEK.to_a)
   end
 
+  test "the month's bars: a visit across two week rows is in each, clipped to its days" do
+    @household.events.create!(kind: "co_visit", title: "Circuit overseer's visit", starts_on: Date.new(2026, 11, 13), days: 6, created_by: users(:grandparent))
+    month = calendar(Date.new(2026, 11, 2)..Date.new(2026, 11, 29))
+    first_week, second_week, third_week = Date.new(2026, 11, 9)..Date.new(2026, 11, 15), WEEK.to_a, Date.new(2026, 11, 23)..Date.new(2026, 11, 29)
+
+    assert_equal [ 5, 3 ], month.all_day_items_in(first_week.to_a).sole.columns_in(first_week.to_a)
+    assert_equal [ 1, 3 ], month.all_day_items_in(second_week).sole.columns_in(second_week)
+    assert_empty month.all_day_items_in(third_week.to_a)
+  end
+
   test "nothing planned: no meeting times, no studies and no events" do
     assert_not calendar(WEEK).nothing_planned?
 

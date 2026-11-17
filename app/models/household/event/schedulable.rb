@@ -1,7 +1,8 @@
 # The household event dialog's fields (docs/design/calendar.md, The household event dialog): All day, then Starts and
 # Ends dates, or a Date with Starts and Ends times; and Repeats, offered from the date by the family studies rule
 # (scheduling rule 5, without Daily). schedule turns them into the event's columns and saves. An event read back
-# answers each field from its columns, so the edit dialog shows what was saved.
+# answers each field from its columns, so the edit dialog shows what was saved; a field that was sent, even blank or
+# unreadable, answers what was sent, so it's refused rather than replaced by what was saved.
 module Household::Event::Schedulable
   extend ActiveSupport::Concern
 
@@ -27,15 +28,15 @@ module Household::Event::Schedulable
   end
 
   def ends_on
-    super || (last_day if starts_on)
+    ends_on_came_from_user? ? super : (last_day if starts_on)
   end
 
   def starts_at
-    super || time_of_day
+    starts_at_came_from_user? ? super : time_of_day
   end
 
   def ends_at
-    super || (time_of_day + duration_minutes.minutes if time_of_day && duration_minutes)
+    ends_at_came_from_user? ? super : (time_of_day + duration_minutes.minutes if time_of_day && duration_minutes)
   end
 
   def repeat
@@ -86,7 +87,8 @@ module Household::Event::Schedulable
     # A timed event needs both times. They're on the same day, so an end after midnight looks like one before the start.
     def times_in_order
       if all_day
-        return unless starts_on && ends_on
+        return unless starts_on
+        return errors.add(:ends_on, :blank) unless ends_on
 
         errors.add(:ends_on, "can't be before Starts") if ends_on < starts_on
         errors.add(:ends_on, "can be at most #{Household::Event::MAX_DAYS - 1} days after Starts") if ends_on - starts_on >= Household::Event::MAX_DAYS

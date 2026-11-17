@@ -3,7 +3,8 @@ import { Controller } from "@hotwired/stimulus"
 // The household event dialog (docs/design/calendar.md, The household event dialog). Kind fills in Title until Title is
 // changed, and ticks All day for assemblies, conventions and the CO's visit. All day shows Starts and Ends dates, or a
 // Date with Starts and Ends times; the hidden group's inputs are disabled, so they aren't sent. A new date redraws the
-// Repeats frame on the server, whose choices come from the date, and an all-day event ending on a later day hides it.
+// Repeats frame on the server, whose choices come from the date, keeping a choice made while it loads; an all-day event
+// ending on a later day hides it.
 export default class extends Controller {
   static targets = [ "kind", "title", "allDay", "allDayFields", "timedFields", "startsOn", "endsOn", "date", "repeat", "repeatField", "repeatFrame" ]
   static values = { titles: Object, allDayKinds: Array, url: String }
@@ -48,6 +49,17 @@ export default class extends Controller {
     url.searchParams.set("household_event[starts_on]", startsOn)
     url.searchParams.set("household_event[repeat]", this.repeatTarget.value)
     this.repeatFrameTarget.src = url.toString()
+  }
+
+  // The request carried the Repeats choice from when the date changed; keep one made since, if the new date offers it
+  // (as family studies' repeat-field controller).
+  keepRepeat({ detail: { newFrame } }) {
+    const choice = this.repeatTarget.value
+    const options = [ ...newFrame.querySelector("select").options ]
+
+    if (options.some(option => option.value === choice)) {
+      options.forEach(option => option.toggleAttribute("selected", option.value === choice))
+    }
   }
 
   endsChanged() {

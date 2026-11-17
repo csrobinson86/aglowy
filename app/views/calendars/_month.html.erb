@@ -1,22 +1,47 @@
 <%# locals: (calendar:, period:, today:, hide:, meeting_helper:, manage_events:) -%>
-<%# 6 × 7 days from the Monday on or before the 1st. Up to three items as one-line chips, then "+N more"; an all-day
-    event of several days is a chip on each of its days, first, like a bar across them (frame calendar-month.png). The day
-    number opens its week; on a 1st it reads "Nov 1", so its label, "Sunday, Nov 1", holds what it shows
-    (docs/design/calendar.md, The page). %>
+<%# 6 × 7 days from the Monday on or before the 1st, a week to a row. All-day events run as a bar across their days in
+    each row they fall in, under the day numbers; then up to three items a day as one-line chips, and "+N more". On a
+    phone, where the days are a list, an all-day event is a chip on each of its days. The day number opens its week; on a
+    1st it reads "Nov 1", so its label, "Sunday, Nov 1", holds what it shows (docs/design/calendar.md, The page). %>
 <div class="calendar-month">
   <% period.days.first(7).each do |day| %>
     <div class="calendar-month__weekday" aria-hidden="true"><%= day.strftime("%a") %></div>
   <% end %>
-  <% period.days.each do |day| %>
-    <% items = calendar.items_on(day) %>
-    <%= tag.div class: [ "calendar-month__day", { "calendar-month__day--outside": !period.in_month?(day), "calendar-month__day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
-      <%= link_to (day.day == 1 ? day.strftime("%b %-d") : day.day), calendar_page_path("week", day, hide:), class: "calendar-month__number", aria: { label: day.strftime("%A, %b %-d") } %>
-      <% items.first(3).each do |item| %>
-        <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: true %>
+  <% period.days.each_slice(7) do |week| %>
+    <div class="calendar-month__week">
+      <% week.each.with_index(1) do |day, column| %>
+        <% all_day, timed = calendar.items_on(day).partition(&:all_day) %>
+        <%= tag.div class: [ "calendar-month__day", "calendar-month__day--column-#{column}", { "calendar-month__day--outside": !period.in_month?(day), "calendar-month__day--today": day == today } ], aria: { current: ("date" if day == today) } do %>
+          <%= link_to (day.day == 1 ? day.strftime("%b %-d") : day.day), calendar_page_path("week", day, hide:), class: "calendar-month__number", aria: { label: day.strftime("%A, %b %-d") } %>
+          <div class="calendar-month__items">
+            <% if all_day.any? %>
+              <div class="calendar-month__all-day">
+                <% all_day.each do |item| %>
+                  <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: true %>
+                <% end %>
+              </div>
+            <% end %>
+            <% timed.first(3).each do |item| %>
+              <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: true %>
+            <% end %>
+            <% if timed.size > 3 %>
+              <span class="calendar-month__more">+<%= timed.size - 3 %> more</span>
+            <% end %>
+          </div>
+        <% end %>
       <% end %>
-      <% if items.size > 3 %>
-        <span class="calendar-month__more">+<%= items.size - 3 %> more</span>
+      <% bars = calendar.all_day_items_in(week) %>
+      <% if bars.any? %>
+        <ul class="calendar-band calendar-band--month" aria-label="All-day events">
+          <% bars.each do |item| %>
+            <% start, span = item.columns_in(week) %>
+            <li class="calendar-band__item calendar-band__item--start-<%= start %> calendar-band__item--span-<%= span %>">
+              <span class="sr-only"><%= calendar_days(item.dates) %></span>
+              <%= render "calendars/item", item:, today:, meeting_helper:, manage_events:, chip: true %>
+            </li>
+          <% end %>
+        </ul>
       <% end %>
-    <% end %>
+    </div>
   <% end %>
 </div>

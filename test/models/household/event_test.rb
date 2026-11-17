@@ -152,6 +152,23 @@ class Household::EventTest < ActiveSupport::TestCase
     assert_equal [ "can't be before Starts" ], all_day.errors[:ends_on]
   end
 
+  test "schedule refuses Starts, Ends or an all-day Ends sent blank or unreadable, on a new event and a saved one" do
+    timed = @household.events.new(created_by: users(:grandparent))
+    assert_not timed.schedule(kind: "other", title: "Cleaning", all_day: "0", starts_on: "2026-11-28", starts_at: "", ends_at: "15:00", repeat: "once")
+    assert_equal [ "can't be blank" ], timed.errors[:starts_at]
+
+    saved = event(time_of_day: "09:00", duration_minutes: 60).tap(&:save!)
+    assert_not saved.schedule(all_day: "0", starts_on: "2026-11-21", starts_at: "09:00", ends_at: "", repeat: "once")
+    assert_equal [ "can't be blank" ], saved.errors[:ends_at]
+    assert_not saved.reload.schedule(all_day: "0", starts_on: "2026-11-21", starts_at: "nine", ends_at: "10:00", repeat: "once")
+    assert_equal [ "can't be blank" ], saved.errors[:starts_at]
+
+    visit = event(kind: "co_visit", starts_on: Date.new(2026, 11, 17), days: 6).tap(&:save!)
+    assert_not visit.schedule(all_day: "1", starts_on: "2026-11-17", ends_on: "", repeat: "once")
+    assert_equal [ "can't be blank" ], visit.errors[:ends_on]
+    assert_equal [ "09:00", 60, 6 ], [ saved.reload.time_of_day.strftime("%H:%M"), saved.duration_minutes, visit.reload.days ]
+  end
+
   test "schedule refuses a Repeats choice the date doesn't offer" do
     event = @household.events.new(created_by: users(:grandparent))
 

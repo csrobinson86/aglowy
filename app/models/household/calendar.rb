@@ -30,6 +30,11 @@ class Household::Calendar
     items.select(&:all_day)
   end
 
+  # The month draws them as a bar in each week row they fall in.
+  def all_day_items_in(days)
+    all_day_items.select { it.dates.overlap?(days.first..days.last) }
+  end
+
   def timed_items_on(date)
     items_on(date).reject(&:all_day)
   end
