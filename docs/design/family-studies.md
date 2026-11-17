@@ -88,7 +88,7 @@ config.x.family_studies.minimum_horizon   = 3.months
 
 1. **Creating a study creates its first session** in the same transaction, with the form's topic, notes and resources on it. A repeating study gets its later sessions from the generator. Later sessions start with no topic.
 2. **Each session's time is computed in the household's zone** (`households.time_zone`): `zone.local(date.year, date.month, date.day, time.hour, time.min)`, then stored in UTC. Never add days to a UTC timestamp (gotcha 14).
-3. **Which dates a schedule produces** (`FamilyStudy::Recurrence`, a PORO in `app/models/family_study/`):
+3. **Which dates a schedule produces** (`FamilyStudy::Recurrence`, a PORO in `app/models/family_study/`; CAL-01 moves it to `Recurrence` so household events share it, `docs/design/calendar.md`). Sessions also show on the household calendar:
    - `once`: only `starts_on`.
    - `daily`: every `interval` days from `starts_on`.
    - `weekly`: every `interval` weeks on `starts_on`'s weekday.
