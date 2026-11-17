@@ -12,8 +12,8 @@ class MembershipPolicy < ApplicationPolicy
   def update?  = head? && record.household_id == membership.household_id
   def destroy? = update?
 
-  # Leaving a household from account settings, where the membership is nil: only the person's own seat, and never a
-  # child's (a head or adult removes them). The last head is refused by Membership#deactivate, under the lock.
+  # Leaving a household from Settings or /account, without reading the membership (nil on /account): only the person's
+  # own seat, and never a child's (a head or adult removes them). The last head is refused by Membership#deactivate, under the lock.
   def leave?
     Current.user.present? && record.user == Current.user && !record.child?
   end
