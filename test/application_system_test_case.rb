@@ -19,6 +19,13 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   # The full suite runs in parallel workers, so pages can take longer than the 2s default.
   Capybara.default_max_wait_time = 5
 
+  # Devise's sign_in logs in whoever makes the app's next request, and the open page can still make one (or rewrite the
+  # session cookie) as the person signed in before. Clear the browser first so switching people mid-test can't race.
+  def sign_in(...)
+    Capybara.reset_session!
+    super
+  end
+
   # Turbo marks <html aria-busy> until a visit completes and may move focus as
   # it finishes, which closes an open menu. Wait for it before interacting.
   def assert_turbo_idle
