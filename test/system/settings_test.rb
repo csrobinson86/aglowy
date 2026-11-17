@@ -17,7 +17,7 @@ class SettingsTest < ApplicationSystemTestCase
     capture_screens("settings-profile")
 
     fill_in "Name", with: "Hannah Rivera"
-    click_button_after_prefetch "Save profile"
+    click_on "Save profile"
     assert_text "Your profile is saved."
     assert_field "Name", with: "Hannah Rivera"
     within("aside") { assert_text "Hannah Rivera" }
@@ -227,7 +227,7 @@ class SettingsTest < ApplicationSystemTestCase
       fill_in "Midweek starts at", with: Time.zone.parse("19:00")
       select "Sunday", from: "Weekend day"
       fill_in "Weekend starts at", with: Time.zone.parse("10:00")
-      click_button_after_prefetch "Save"
+      click_on "Save"
 
       assert_text "Meeting times saved."
       assert_selector "h2", text: "Meetings"

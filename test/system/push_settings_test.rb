@@ -13,7 +13,7 @@ class PushSettingsTest < ApplicationSystemTestCase
     within_fieldset("Weekly preview") { check "Email" }
     within_fieldset("Family study needs a topic") { check "Phone" }
     within_fieldset("Shared with you") { check "Phone" }
-    within("#notification-settings") { click_button_after_prefetch "Save" }
+    within("#notification-settings") { click_on "Save" }
 
     assert_text "Your notifications are saved."
     within_fieldset("Family study needs a topic") { assert_checked_field "Phone" }
@@ -32,7 +32,7 @@ class PushSettingsTest < ApplicationSystemTestCase
 
     assert_no_field "Email"
     within_fieldset("Shared with you") { check "Phone" }
-    within("#notification-settings") { click_button_after_prefetch "Save" }
+    within("#notification-settings") { click_on "Save" }
 
     assert_text "Your notifications are saved."
     assert_equal [ %w[ shared_with_you push ] ], users(:eli).notification_settings.pluck(:kind, :channel)
@@ -54,7 +54,7 @@ class PushSettingsTest < ApplicationSystemTestCase
     end
     assert_accessible
 
-    within("#push_subscription_#{push_subscriptions(:head_mac).id}") { click_button_after_prefetch "Remove" }
+    within("#push_subscription_#{push_subscriptions(:head_mac).id}") { click_on "Remove" }
 
     assert_text "Chrome on Mac is removed."
     within("#push-subscriptions") do

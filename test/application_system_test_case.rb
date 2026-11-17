@@ -28,12 +28,23 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
 
   # Turbo pre-loads a link the pointer rests on, and a page that shifts under a still pointer can put one there. If
   # that response lands after a form's, it overwrites the session cookie the form's response set and the flash is
-  # lost. Rest the pointer on the button, where no pre-load can start, let one in flight finish, then click.
-  def click_button_after_prefetch(locator)
-    button = find_button(locator)
-    button.hover
-    page.server.wait_for_pending_requests
-    button.click
+  # lost. So every button click rests the pointer on the button, where no pre-load can start, and lets one in flight
+  # finish first. A link click is a GET, which has no flash to lose.
+  def click_button(locator = nil, **options)
+    click_after_prefetch find(:button, locator, **options)
+  end
+
+  def click_on(locator = nil, **options)
+    click_after_prefetch find(:link_or_button, locator, **options)
+  end
+  alias_method :click_link_or_button, :click_on
+
+  def click_after_prefetch(element)
+    unless element.tag_name == "a"
+      element.hover
+      page.server.wait_for_pending_requests
+    end
+    element.click
   end
 
   # A Primer Dialog scales up for 0.2s as it opens, and a click aimed while it moves can land beside its target.
