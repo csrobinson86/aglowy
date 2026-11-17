@@ -127,6 +127,25 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Collections'] a[aria-current='page']", text: /Quick references/
   end
 
+  test "the phone's menu is named for the collection showing, and holds the collections and tags, the ones showing current" do
+    @note.tag_with("ministry", by: users(:head))
+    sign_in identities(:head)
+    quick_references = collections(:head_quick_references)
+
+    get household_personal_notes_path(household_id: @home)
+    assert_select "action-menu button", text: "All notes"
+    assert_select "action-menu a[aria-current=true]", count: 1, text: "All notes"
+
+    get household_personal_notes_path(household_id: @home, collection: quick_references.id, tag: "ministry")
+    assert_select "action-menu button", text: "Quick references"
+    assert_select "action-menu a[aria-current=true]", count: 2
+    assert_select "action-menu li.ActionListItem--navActive a[aria-current=true][href=?]", household_personal_notes_path(household_id: @home, collection: quick_references.id, tag: "ministry"), text: "Quick references"
+    assert_select "action-menu li.ActionListItem--navActive a[aria-current=true][href=?]", household_personal_notes_path(household_id: @home, tag: "ministry", collection: quick_references.id), text: "#ministry"
+    assert_select "action-menu a:not([aria-current])[href=?]", household_personal_notes_path(household_id: @home, tag: "ministry"), text: "All notes"
+    assert_select "action-menu a[href=?]", household_personal_notes_path(household_id: @home, collection: collections(:head_bible_questions).id, tag: "ministry"), text: "Bible questions"
+    assert_select "action-menu a", text: "Preparing a talk", count: 0
+  end
+
   test "filtered by another person's collection, or a studies-only one, shows nothing" do
     sign_in identities(:head)
 

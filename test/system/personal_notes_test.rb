@@ -13,6 +13,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
 
     assert_selector "h1", text: "Notes"
     assert_selector "aside nav [aria-current=page]", text: "Notes"
+    assert_no_selector "action-menu#personal-notes-menu"
     assert_accessible
 
     click_on "New note", match: :first
