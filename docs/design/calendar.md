@@ -102,7 +102,7 @@ A time a person sets aside on some weekdays.
 | `starts_on` | date | not null, default today | Earlier weeks don't show a time that didn't exist yet |
 | `opens_type`, `opens_id` | string, uuid | nullable together; check `opens_type` in (`PersonalStudy`, `PersonalNote`) | What a study time opens |
 
-- **The person's own zone:** `User#calendar_time_zone`, which is `users.time_zone` (Settings → Profile), or when that's blank the zone of the person's first active household by name, then by id (`Membership.by_household_name` plus `households.id` as a tie-breaker, since names needn't be unique; the same household `/account` sends them to, `docs/design/settings.md`). One rule for every household page, Today on Home and the phone feed, so a time is the same instant everywhere. Each occurrence is `zone.local(date…, time_of_day…)`, so 6:30 AM stays 6:30 AM across a DST change.
+- **The person's own zone:** `users.time_zone` (Settings → Profile). A personal time never relies on a fallback that could move it: when someone with a blank zone adds their first time, `user.settle_time_zone(Current.household)` saves that household's zone to `users.time_zone` in the same transaction, and the dialog says so ("Your times are in Central Time. Change it in Settings → Profile."). Renaming or leaving a household then never shifts a time; only changing the profile zone does. `User#calendar_time_zone` is `users.time_zone`, else the first active household by name then id, else UTC (the households table's default). Every household page, Today and the phone feed use it, so a time is the same instant everywhere. Each occurrence is `zone.local(date…, time_of_day…)`, so 6:30 AM stays 6:30 AM across a DST change.
 - **What it opens:**
   - `meeting_prep` opens the person's meeting note for the next meeting after it that week, through the existing `POST /:household_id/meeting_notes` (`kind`, `week_of`), which finds or creates it (`docs/design/meeting-notes.md`). A prep time on a Thursday before a Friday midweek meeting opens that week's Life and Ministry note. A prep time with no meeting after it that week (or with no meeting times set) opens nothing. Nothing is stored for this.
   - `personal_study` and `other` can open one of the person's own studies or notes (`opens`). Looked up through `Current.user`, so someone else's study can't be picked (validation).
@@ -241,6 +241,8 @@ A Primer `Dialog` "Add my time" (or "Edit my time", with "Delete time"). `Person
   - Bible reading: hidden
 - The muted line: "Only you see your times. You can share them with a household in Settings → Calendar." When the person already shares with this household: "Rivera household sees this time's title and when it is."
 
+When the person's profile has no time zone yet, a muted line above the footer says "Your times are in <household's zone>. Change it in Settings → Profile.", and saving the first time sets it (The person's own zone, above).
+
 Children see the same dialog. The calendar is the only place a child's times are made.
 
 ### Today on Home
@@ -314,6 +316,6 @@ Below Primer's `md` breakpoint (frame `phone-calendar.png`):
 - Meeting times not set; set; a week when daylight saving time changes
 - A personal time on a future day (no done box), today (done and not done), a past day
 - Times not shared, shared with this household, shared with another household only; a member who left
-- The viewer's zone the same as the household's, and different
+- The viewer's zone the same as the household's, and different; a blank profile zone when adding the first time (it's saved), and a person with no household left (UTC)
 - The feed: a good token, an unknown token, after Reset
 - Desktop and phone; light and dark
