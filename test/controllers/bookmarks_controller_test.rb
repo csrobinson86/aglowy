@@ -507,6 +507,7 @@ class BookmarksControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "turbo-stream[action=replace][target=?] template a.Label", dom_id(bookmark, :tag_editor), text: "#ministry"
     assert_select "turbo-stream[action=update][target=?] template a.Label", dom_id(bookmark, :tags), text: "#ministry"
+    assert_select "turbo-stream[action=update][target=?] template", dom_id(bookmark, :phone_tags), text: /· #ministry/
     assert_equal [ "ministry" ], bookmark.tags.map(&:name)
 
     delete household_bookmark_tagging_path(household_id: @home, bookmark_id: bookmark, id: tags(:head_ministry)), as: :turbo_stream

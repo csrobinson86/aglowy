@@ -1,3 +1,6 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
 // The Bookmarks tab's search, then Show beside it (frame bookmarks.png), or under it, after the "All bookmarks ▾" menu,
 // when there isn't room (frame phone-bookmarks.png).
 .bookmarks__filters {
@@ -21,5 +24,26 @@
 
 // Primer's coarse-pointer menu items are 40px tall, so they're raised to the 44px touch target, as Notes' are.
 .bookmarks__menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
+}
+
+// A bookmark's title keeps to one line on a phone (frame phone-bookmarks.png), and wraps from md up (frame
+// bookmarks.png).
+.bookmarks__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    overflow: visible;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+}
+
+// The row's "⋯" button on a phone is a 44px target on a touch screen; with a mouse --control-minTarget-auto is small
+// enough to change nothing.
+.bookmarks__actions .Button--iconOnly {
+  min-width: var(--control-minTarget-auto);
   min-height: var(--control-minTarget-auto);
 }
