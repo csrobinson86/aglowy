@@ -116,6 +116,8 @@ A push that comes back `404` or `410` deletes the subscription (`WebPush::Expire
 2. **Email right away:** for the weekly preview and the topic nudge, when the person has an email setting and can get email. It also waits out quiet hours. It claims the `email` delivery, then `NotificationMailer.notification(notification).deliver_now`.
 3. **Summary kinds** stop here. `Notification::DailySummaryJob` runs every 15 minutes and works from a cursor, so a missed run, quiet hours ending on the half hour, or quiet hours changed in between never skip a summary:
    - `users.summary_sent_through` (datetime, nullable) is when the last summary was due. A person is due when their most recent quiet-hours end (`user.last_quiet_hours_end_before(Time.current)`) is later than it.
+   - **Starting the cursor:** when `notification_settings.change` turns on the person's first summary-kind email and the cursor is NULL, it sets the cursor to `Time.current`, so the first summary comes at the next quiet-hours end. The job also reads a NULL cursor as earlier than any time (`COALESCE(summary_sent_through, '-infinity')`), so a person with a summary email and no cursor is due rather than never sent.
+   - **Never inside quiet hours:** a due person for whom `user.quiet_now?` is true is skipped. Nothing is claimed or sent and the cursor stays, so they're still due on the first run after quiet hours end. This covers quiet hours changed so the last end falls inside the new hours.
    - For a due person, it gathers every visible notification that is a summary kind, has an email setting, and has no `email` delivery. There's no age limit: a notification waits until it's sent or purged at 90 days.
    - It claims an `email` delivery for each, sends one `NotificationMailer.daily_summary(user, notifications)`, and moves the cursor to that quiet-hours end. With nothing to send, it only moves the cursor.
 
@@ -211,6 +213,7 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
   - **What it turns off is what the email was.** A right-away email (`weekly_preview`, `study_topic_needed`) turns off that kind's email. A daily summary turns off email for every summary kind, so the summary really stops. Per-kind choices stay in Settings → Notifications.
   - **One token purpose per scope:** `User` declares `generates_token_for :unsubscribe_weekly_preview`, `:unsubscribe_study_topic_needed` and `:unsubscribe_summary`, each signed and never stored. The controller checks the token with the purpose named by `:scope`, so a weekly-preview link can't turn off the summary.
   - "Turn off this email" opens `GET /unsubscribe/:scope/:token`, a focused-layout page with one button, so a mail scanner that follows links can't unsubscribe anyone.
+  - **The token is the only authentication.** The mail client's one-click POST has no session and no CSRF token, so `EmailUnsubscribesController` declares `skip_forgery_protection only: :create`, and nothing else in the app skips it. Neither action needs a sign-in or reads `Current.user`: both find the person only with `User.find_by_token_for(<the scope's purpose>, params[:token])`, and an unknown scope or a bad, old or wrong-scope token changes nothing and shows "This link no longer works. Change emails in Settings → Notifications." with `:not_found`. It's a public controller for Pundit (`skip_after_action :verify_authorized`), because the token stands in for the policy.
 - **Text and HTML parts,** sent through SES. No images except the Aglowy mark.
 
 ### Push
@@ -251,7 +254,8 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
 - Settings: all off (the default), some on; a child (no email); a username-only adult (no email)
 - Quiet hours: a push or email due inside them waits; the daily summary at their end; nothing to summarize
 - Push: turned on, refused, removed, an expired endpoint
-- Unsubscribe by link and by one-click POST, from a right-away email and from a summary; a token used with the wrong scope; a bad or old token
+- Unsubscribe by link and by one-click POST, from a right-away email and from a summary; a one-click POST with no session and no CSRF token (works); a token used with the wrong scope; a bad or old token
+- The first summary after turning on a summary email (comes at the next quiet-hours end); a summary held while quiet hours run, including quiet hours just moved over the last end
 - Two delivery jobs for one notification at once (one sends); a temporary send failure (retried); one of two devices failing
 - Leaving the household while a push waits out quiet hours (nothing sent); quiet hours ending at 7:30; a missed summary run
 - Desktop and phone; light and dark
