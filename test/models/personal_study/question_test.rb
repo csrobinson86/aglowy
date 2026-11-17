@@ -305,6 +305,70 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
     assert_not_predicate @question.personal_study.reload.notes, :persisted?
   end
 
+  test "save_as_note makes a note with the title, the paragraphs (scripture links after save) and the page links" do
+    saved_answer(paragraphs: [ "Jehovah never causes suffering. Read James 1:13.", "He will soon end it for good." ])
+
+    note = @question.save_as_note
+
+    assert_predicate note, :persisted?
+    assert_equal users(:head), note.user
+    assert_equal "Why does Jehovah allow suffering?", note.title
+    assert_equal "none", note.color
+    assert_equal collections(:head_bible_questions), note.collection
+    body = note.reload.body.body
+    assert_match(/\AJehovah never causes suffering\. Read James 1:13\.\s+He will soon end it for good\.\s+Pages:/, body.to_plain_text)
+    assert_equal [ Bible::Reference.find("59:1:13") ], body.attachables
+    assert_equal [ [ SUFFERING, "Why Does God Allow Suffering?" ], [ END_OF_SUFFERING, "The End of Suffering" ] ],
+      body.fragment.find_all("li a").map { [ it["href"], it.text ] }
+  end
+
+  test "save_as_note cuts a long question to the title's 120 characters" do
+    @question.update!(prompt: "Why does Jehovah allow suffering, #{"and what does the Bible say about it " * 5}?")
+    saved_answer
+
+    assert_equal "Why does Jehovah allow suffering, and what does the Bible say about it and what does the Bible say about it and what...",
+      @question.save_as_note.title
+  end
+
+  test "save_as_note: a studies-only collection isn't copied" do
+    @question = personal_study_question(personal_studies(:head_kindness))
+    saved_answer
+
+    assert_nil @question.save_as_note.collection
+  end
+
+  test "save_as_note: tags are copied" do
+    study = @question.personal_study
+    study.tag_with("suffering", by: users(:head))
+    study.tag_with("ministry", by: users(:head))
+    saved_answer
+
+    note = @question.save_as_note
+
+    assert_equal %w[ ministry suffering ], note.reload.tags.map(&:name).sort
+    assert_equal %w[ ministry suffering ], study.reload.tags.map(&:name).sort
+  end
+
+  test "save_as_note: deleting the study keeps the note" do
+    study = @question.personal_study
+    study.tag_with("suffering", by: users(:head))
+    saved_answer
+    note = @question.save_as_note
+
+    study.destroy!
+
+    assert_includes note.reload.body.to_plain_text, "Jehovah never causes suffering."
+    assert_equal %w[ suffering ], note.tags.map(&:name)
+  end
+
+  test "save_as_note: a stopped question raises and makes no note" do
+    @question.update!(status: "stopped")
+
+    assert_no_difference -> { PersonalNote.count } do
+      assert_raises(PersonalStudy::Question::NotAnswered) { @question.save_as_note }
+    end
+  end
+
   test "database: a status of done raises CheckViolation" do
     assert_raises(ActiveRecord::CheckViolation) { @question.update_column(:status, "done") }
   end

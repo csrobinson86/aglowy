@@ -21,7 +21,9 @@ class PersonalNote < ApplicationRecord
 
   normalizes :title, with: -> { it.squish }
 
-  validates :title, presence: true, length: { maximum: 120 }
+  TITLE_MAX = 120
+
+  validates :title, presence: true, length: { maximum: TITLE_MAX }
 
   scope :preloaded, -> { includes(:collection, :tags, :rich_text_body) }
   scope :recent_first, -> { order(updated_at: :desc, id: :desc) }

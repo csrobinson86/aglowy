@@ -31,6 +31,8 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_selector "h3", text: "Pages used"
     assert_link "Why Does God Allow Suffering?", href: SUFFERING
     assert_text "Check each point against its page."
+    assert_selector "form[action$='/note_saving'] button", text: "Save to notes"
+    assert_selector "form[action$='/personal_note'][method=post] button", text: "Save as a note"
     assert_no_selector ".color-bg-subtle", text: "I couldn't find"
     assert_no_button "Stop"
     assert_no_selector "turbo-cable-stream-source", visible: :all

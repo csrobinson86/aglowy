@@ -8,7 +8,7 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
 
   attr_reader :question, :household
 
-  # household: where Stop and Save to notes post. The job's broadcast has none. read_only: a head reading a child's
+  # household: where Stop, Save to notes and Save as a note post. The job's broadcast has none. read_only: a head reading a child's
   # study (Members::PersonalStudiesController), with nothing to press and no stream.
   def initialize(question:, household:, read_only: false)
     @question = question
@@ -35,6 +35,10 @@ class PersonalStudies::AnswerComponent < ApplicationComponent
 
   def note_saving_path
     household_personal_study_question_note_saving_path(household_id: household, personal_study_id: question.personal_study_id, question_id: question)
+  end
+
+  def personal_note_path
+    household_personal_study_question_personal_note_path(household_id: household, personal_study_id: question.personal_study_id, question_id: question)
   end
 
   def stop_path
