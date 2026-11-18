@@ -1,7 +1,8 @@
 require "test_helper"
 
 # The weekly research job and its claim (docs/design/listening-game.md, The weekly research job, When it runs; Traps 2,
-# 7 and 10). Monday 16 November 2026; each household's midweek meeting is Tuesday at 7pm. The provider answers through
+# 7 and 10). Monday 16 November 2026 at 2am; each household's midweek meeting is Tuesday at 7pm, and each is in UTC
+# unless a test moves it. The provider answers through
 # WebMock with the recorded reply: no test calls a provider.
 class ListeningGame::PrepareJobTest < ActiveJob::TestCase
   PROVIDER = "https://api.anthropic.com/v1/messages".freeze
@@ -45,7 +46,8 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
     households(:parents).enable_meeting_helper(by: users(:grandparent))
     stub_provider
 
-    travel_to(Time.utc(2026, 11, 17, 21, 1)) { ListeningGame::PrepareJob.perform_now }
+    # Wednesday at 2am: Tuesday's meeting is over.
+    travel_to(Time.utc(2026, 11, 18, 2)) { ListeningGame::PrepareJob.perform_now }
 
     assert_not_requested :post, PROVIDER
     assert_not ListeningGame.exists?(week_of: WEEK)
@@ -199,13 +201,48 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
   end
 
   test "the week follows the household's time zone" do
-    # Sunday afternoon in UTC is already Monday the 16th in Auckland, whose Tuesday meeting is still ahead.
+    # Sunday afternoon in UTC is already 2am on Monday the 16th in Auckland, whose Tuesday meeting is still ahead.
     @home.update!(time_zone: "Auckland")
     stub_provider
 
-    travel_to(Time.utc(2026, 11, 15, 14)) { ListeningGame::PrepareJob.perform_now }
+    travel_to(Time.utc(2026, 11, 15, 13)) { ListeningGame::PrepareJob.perform_now }
 
     assert_equal [ WEEK ], @home.listening_games.where.not(id: listening_games(:home_nov_9)).pluck(:week_of)
+  end
+
+  test "a household west of UTC with a Monday meeting is prepared at its own 2am, before the meeting" do
+    @home.update!(time_zone: "Eastern Time (US & Canada)")
+    @home.change_meeting_times(midweek_wday: 1, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    stub_provider
+
+    # 2am UTC is 9pm on Sunday in New York: not its hour. 7am UTC is 2am on Monday there.
+    travel_to(MONDAY) { ListeningGame::PrepareJob.perform_now }
+    assert_not_requested :post, PROVIDER
+
+    travel_to(Time.utc(2026, 11, 16, 7)) { ListeningGame::PrepareJob.perform_now }
+    assert game_this_week(@home)
+  end
+
+  test "at any other hour of the household's day it does nothing" do
+    stub_provider
+
+    travel_to(MONDAY + 1.hour) { ListeningGame::PrepareJob.perform_now }
+
+    assert_not_requested :post, PROVIDER
+  end
+
+  test "a household that has had its 3 requests today sends no fourth, and yesterday's don't count" do
+    travel_to(MONDAY - 3.hours) { listening_game_chat }
+    travel_to(MONDAY) { 2.times { listening_game_chat } }
+    stub_request(:post, PROVIDER).to_return(status: 500)
+
+    travel_to(MONDAY) do
+      assert_error_reported(RubyLLM::ServerError) { ListeningGame::PrepareJob.perform_now }
+      assert_no_difference(-> { Chat.count }) { assert_nil @home.prepare_listening_game(WEEK) }
+    end
+
+    assert_requested :post, PROVIDER, times: 1
+    assert_empty ListeningGame::Preparation.all
   end
 
   test "with a household, it prepares only that one's week" do
@@ -218,11 +255,11 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
     assert game_this_week(@home)
   end
 
-  test "it runs every day at 2am in production" do
+  test "it runs every hour in production, so every zone has its 2am" do
     task = Rails.application.config_for(:recurring, env: "production").fetch(:prepare_listening_games)
 
     assert_equal "ListeningGame::PrepareJob", task[:class]
-    assert_equal "every day at 2am", task[:schedule]
+    assert_equal "every hour at minute 0", task[:schedule]
   end
 
   private
@@ -232,6 +269,10 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
 
     def claim(created_at:)
       ListeningGame::Preparation.create!(household: @home, week_of: WEEK, token: SecureRandom.uuid, created_at:)
+    end
+
+    def listening_game_chat
+      Chat.create!(user: users(:head), household: @home, purpose: "listening_game")
     end
 
     def recorded_reply
