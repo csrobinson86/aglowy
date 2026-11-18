@@ -63,7 +63,10 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       click_on "Add focus area"
     end
 
+    # The dialog's gone and the page scrolls again; focus is on the new one's Edit, as the Add chip went with the dialog.
     assert_no_selector "dialog[open]"
+    assert_no_selector "body.has-modal-disable-scroll"
+    assert_selector "a[aria-label='Edit In the ministry']:focus"
     within("section[aria-labelledby=focus-areas]") do
       assert_selector "li", count: 6
       assert_selector "li:last-child h3", text: "In the ministry"
@@ -78,6 +81,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       click_on "Save focus area"
     end
     assert_no_selector "dialog[open]"
+    assert_selector "a[aria-label='Edit In the ministry']:focus"
     within("section[aria-labelledby=focus-areas] li:last-child") { assert_link "Matthew 24:14" }
 
     find("a[aria-label='Edit In the ministry']").click
@@ -90,6 +94,8 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     end
     # The page stays where it was, scrolled down to the settings changed above, which it kept; the notice is first in main.
     assert_no_selector "dialog[open]"
+    assert_no_selector "body.has-modal-disable-scroll"
+    assert_selector "a:focus", text: "Add a focus area"
     assert_no_checked_field "For the children"
     assert_select "Ready by", selected: "6:00 AM"
     scroll_to find("main .flash", visible: :all)

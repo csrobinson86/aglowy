@@ -19,7 +19,7 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
     @focus_area = @plan.add_focus_area(params.expect(daily_brief_focus_area: %i[ kind name gives scriptures ]))
 
     if @focus_area.persisted?
-      close_dialog "Focus area added."
+      close_dialog "Focus area added.", focus: @focus_area
     else
       render :new, status: :unprocessable_content
     end
@@ -31,7 +31,7 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
   # The kind is set when it's added and never changes.
   def update
     if @focus_area.update(params.expect(daily_brief_focus_area: %i[ name gives scriptures ]))
-      close_dialog "Focus area saved."
+      close_dialog "Focus area saved.", focus: @focus_area
     else
       render :edit, status: :unprocessable_content
     end
@@ -40,7 +40,7 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
   # Its topics come off the week with it.
   def destroy
     @focus_area.destroy!
-    close_dialog "Focus area deleted."
+    close_dialog "Focus area deleted.", focus: :add
   end
 
   private
@@ -53,11 +53,12 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
     end
 
     # Empties the dialog's frame, which closes it, and redraws the focus areas and the week with the notice, from the plan
-    # as it now is. Without Turbo, back to the plan.
-    def close_dialog(notice)
+    # as it now is, with focus on the control the focus areas list names (focus:). Without Turbo, back to the plan.
+    def close_dialog(notice, focus:)
       respond_to do |format|
         format.turbo_stream do
           flash.now[:notice] = notice
+          @focus = focus
           @plan.reload
           render :saved
         end

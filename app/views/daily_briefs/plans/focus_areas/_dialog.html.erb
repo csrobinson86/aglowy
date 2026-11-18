@@ -1,6 +1,8 @@
 <%# locals: (focus_area:) -%>
 <%# Add a focus area, or edit one with Delete on the left of the footer (docs/design/daily-brief.md, Your plan). Open as
-    soon as Your plan's frame loads it. Delete opens a second Dialog to confirm; deleting takes its topics off the week. %>
+    soon as Your plan's frame loads it. Delete opens a second Dialog to confirm; deleting takes its topics off the week.
+    Saving empties the frame with both still open, so dialog-removal lets the page scroll again. %>
+<div data-controller="dialog-removal">
 <% dialog_id = "daily-brief-focus-area-dialog" %>
 <% delete_dialog_id = "daily-brief-focus-area-delete-dialog" %>
 <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: focus_area.new_record? ? "Add a focus area" : "Edit focus area", size: :large, open: true)) do |dialog| %>
@@ -32,3 +34,4 @@
     <% end %>
   <% end %>
 <% end %>
+</div>

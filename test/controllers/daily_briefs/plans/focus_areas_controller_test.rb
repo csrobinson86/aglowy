@@ -79,6 +79,9 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
     assert_select "turbo-stream[action=update][target=daily_brief_week] template th", text: "In the ministry"
     assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: /Focus area added\./
     assert_select "turbo-stream[action=refresh]", count: 0
+    assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template [autofocus]", count: 1 do
+      assert_select "[aria-label=?]", "Edit In the ministry"
+    end
     area = @plan.focus_areas.reload.last
     assert_equal [ "In the ministry", "role", 5, "Matthew 28:19, 20" ], [ area.name, area.kind, area.position, area.scriptures ]
   end
@@ -161,6 +164,9 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
 
     assert_response :success
     assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template h3", text: "Reaching out today"
+    assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template [autofocus]", count: 1 do
+      assert_select "[aria-label=?]", "Edit Reaching out today"
+    end
     area.reload
     assert_equal [ "Reaching out today", "One reliable thing.", "1 Timothy 3:8", "role" ], [ area.name, area.gives, area.scriptures, area.kind ]
   end
@@ -187,6 +193,20 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
     assert_redirected_to household_daily_brief_plan_path(household_id: @home)
     assert_equal "Focus area deleted.", flash[:notice]
     assert @plan.days.reload.none? { it.topics.key?(area.id) }
+  end
+
+  test "destroy with Turbo redraws the focus areas with focus on Add a focus area" do
+    area = area_named("Reaching out")
+
+    delete household_daily_brief_plan_focus_area_path(household_id: @home, id: area), as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[action=update][target=daily_brief_focus_area_dialog]"
+    assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template" do
+      assert_select "li h3", text: "Reaching out", count: 0
+      assert_select "[autofocus]", count: 1, text: "Add a focus area"
+    end
+    assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: /Focus area deleted\./
   end
 
   test "another person's focus area is a 404" do

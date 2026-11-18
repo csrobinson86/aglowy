@@ -1,6 +1,8 @@
-<%# locals: (plan:) %>
+<%# locals: (plan:, focus: nil) %>
 <%# Your plan's focus areas: Edit on each, then "Add a focus area" and the library chips, or the six-at-most note. Redrawn
-    in place when the dialog saves, so the settings form below keeps what's changed and not yet saved. %>
+    in place when the dialog saves, so the settings form below keeps what's changed and not yet saved. The control that
+    opened the dialog goes with it, so focus is the saved focus area's Edit, or :add for Add a focus area after a delete;
+    Turbo focuses the one with autofocus. %>
 <section id="daily_brief_focus_areas" aria-labelledby="focus-areas" class="mb-5">
   <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "focus-areas")) { "Focus areas" } %>
   <p class="color-fg-muted mb-2">Each one gets a short section in every brief, with one thing to do that day.</p>
@@ -17,7 +19,7 @@
           <% end %>
         </div>
         <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_daily_brief_plan_focus_area_path(id: focus_area), ml: 3, flex_shrink: 0,
-              "aria-label": "Edit #{focus_area.name}", data: { turbo_frame: "daily_brief_focus_area_dialog" })) { "Edit" } %>
+              "aria-label": "Edit #{focus_area.name}", autofocus: focus == focus_area, data: { turbo_frame: "daily_brief_focus_area_dialog" })) { "Edit" } %>
       <% end %>
     <% end %>
   <% end %>
@@ -25,7 +27,7 @@
     <p class="text-small color-fg-muted mt-2 mb-0">You have six focus areas, the most a plan can have. Delete one to add another.</p>
   <% else %>
     <div class="d-flex flex-wrap flex-items-center">
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_daily_brief_plan_focus_area_path, mt: 2, mr: 3,
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_daily_brief_plan_focus_area_path, mt: 2, mr: 3, autofocus: focus == :add,
             data: { turbo_frame: "daily_brief_focus_area_dialog" })) { "Add a focus area" } %>
       <% if (offers = plan.library_offers).any? %>
         <span class="text-small color-fg-muted mt-2 mr-2">Or start from one of these:</span>
