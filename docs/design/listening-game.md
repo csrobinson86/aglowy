@@ -67,7 +67,7 @@ Kinds and their icons, our own SVGs beside the helper's (`app/assets/images/meet
 
 | Frame | What it shows |
 | --- | --- |
-| `phone-game-check.png` | "This week's listening game": a note that AI found the cards from this week's program, with the program's title and link, and a box per step listing each round as "✓ Jeremiah" with the three wrong cards below, and Change |
+| `phone-game-check.png` | "This week's listening game": a note that AI found the cards from this week's program, with a link to each page the AI used, and a box per step listing each round as "✓ Jeremiah" with the three wrong cards below, and Change |
 | `phone-game-change.png` | Change opens a Primer `Dialog`: "Heard in the talk" with its Kind, and the three other cards. Save or Cancel |
 | `phone-game-shared.png` | Her shared note: "Talk about it with Eli" now draws on what she found and her answer, then her answer, then "Listening game · found 12" with what she found in each part |
 
@@ -76,12 +76,15 @@ Kinds and their icons, our own SVGs beside the helper's (`app/assets/images/meet
 ### When it runs
 
 - `ListeningGame::PrepareJob` runs every Monday at 2am (`config/recurring.yml`). For each household with the meeting helper on, it prepares the game for the current week, unless that household has one already.
-- The same job runs every day at 2am too, so a week that failed on Monday tries again the next day. It stops trying once the week's midweek meeting has passed. It's safe to run twice: `listening_games` is unique on (`household_id`, `week_of`).
+- The same job runs every day at 2am too, so a week that failed on Monday tries again the next day. It stops trying once the week's midweek meeting has passed.
+- **One request at a time for a household and week.** Before any request, the run claims the week: inside `household.with_lock`, it checks there's no game yet and makes a `ListeningGame::Preparation` (unique on `household_id` and `week_of`). If a claim already exists and is less than 15 minutes old, another run is working on it and this one stops. An older claim belongs to a run that died, so this run takes it over by updating its `created_at`. The lock is released before the request goes out, and is never held across a network call. The claim is deleted when the game is saved, and when the request fails or returns nothing usable, so the next daily run can try again. The unique index on `listening_games` (`household_id`, `week_of`) still stops a second game row.
 - Turning the helper on prepares the current week straight away (`prepare_later`).
 
 ### What it asks
 
-`household.prepare_listening_game(week_of)` makes a chat (`purpose: "listening_game"`, `user` = the person who turned the helper on, or the first active head if that person has left the household; `household` = the household) and calls `Chat#ask_within_purpose` with the week's dates and the program's address on wol.jw.org (`MeetingNote.program_url(week_of)`, which Aglowy builds but never requests).
+**Whose request it is.** The owner is the first of these who is an active head or adult in the household and has accepted the AI terms (`accepted_ai_terms?`, `docs/design/ai.md`): the person who turned the helper on, then the heads, then the adults, oldest membership first. If none has accepted, nothing is sent: `prepare_listening_game` returns `:not_allowed` before making a chat, and the week has no game. The parent's page then says "Cards need a head or adult who has turned on AI features", with a link to where they're accepted. The check runs before the chat is made and before any provider call.
+
+`household.prepare_listening_game(week_of)` picks the chat's owner, checks the AI terms, and only then makes a chat (`purpose: "listening_game"`, that owner as `user`, `household` = the household) and calls `Chat#ask_within_purpose` with the week's dates and the program's address on wol.jw.org (`MeetingNote.program_url(week_of)`, which Aglowy builds but never requests).
 
 `Ai::Purpose::ListeningGame`, with its instructions in `config/ai/listening_game.md`:
 
@@ -97,7 +100,7 @@ Kinds and their icons, our own SVGs beside the helper's (`app/assets/images/meet
 - `daily_limit`: 3 a day per household. `keep_for`: 7 days (the chat; the game itself has its own rule below).
 - **Every safety measure in `docs/design/ai.md` applies.** Moderation is skipped because no person's text is sent. The copy check runs on every label, and a label it removes drops its round. Every label is escaped when shown.
 - **Checks before saving:** each round has exactly one answer and three others; no label repeats within a round; every kind is known. A round that fails is dropped. A step left with no rounds has no game.
-- Only the source whose address is the week's program is kept, as the game's `source_title` and `source_url`, for the parent's page. Nothing else from the search is stored.
+- **Every page the AI used is linked.** Each source that passes `Ai::SourceLink` is kept as a `ListeningGame::Source` (its title and URL only), so the parent's page links the program and the Bible Study chapter alike. Nothing else from the search is stored: no page text, no excerpts.
 
 ## Models
 
@@ -110,11 +113,29 @@ One week's game for one household.
 | `household_id` | uuid | FK → households, not null, cascade | |
 | `week_of` | date | not null; unique with `household_id` | The Monday, like `MeetingNote#week_of` |
 | `chat_id` | uuid | FK → chats, nullable, nullify | The AI request; purged after 7 days |
-| `source_title`, `source_url` | string | not null | The program's title and link, through `Ai::SourceLink` |
 | `created_at`, `updated_at` | datetime | | |
 
 - `ListeningGame::PurgeJob` deletes games more than 8 weeks old, daily at 4:45am. A child's finds keep their labels (below), so her old notes still read the same.
 - `household.listening_game_for(week_of)` reads it.
+
+### `ListeningGame::Source`
+
+| Column | Type | Constraint | Why |
+| --- | --- | --- | --- |
+| `listening_game_id` | uuid | FK, not null, cascade | |
+| `position` | smallint | not null; unique with `listening_game_id` | The order the AI cited them |
+| `title` | string | not null | From the search result, through `Ai::SourceLink` |
+| `url` | string | not null, check it starts with `https://` | On jw.org or wol.jw.org, through `Ai::SourceLink` |
+
+### `ListeningGame::Preparation`
+
+The claim that a run is asking the AI for a household's week (When it runs).
+
+| Column | Type | Constraint | Why |
+| --- | --- | --- | --- |
+| `household_id` | uuid | FK, not null, cascade | |
+| `week_of` | date | not null; unique with `household_id` | |
+| `created_at` | datetime | not null | A claim older than 15 minutes can be taken over |
 
 ### `ListeningGame::Round`
 
@@ -173,7 +194,7 @@ Her answer for the Congregation Bible Study.
 | Tap a card | `POST …/steps/:step_id/rounds/:round_id/find` (`MeetingNotes::Steps::Rounds::FindsController#create`, `card` param) | The right card makes a `Find` and the Turbo Stream shows the found state. A wrong card makes nothing and shows "Listen again" on it. Both answer 200 |
 | Her answer | `GET …/steps/congregation_bible_study/answer/edit`, `PATCH …/answer` (`MeetingNotes::Steps::AnswersController`) | Frame `tablet-game-write-answer.png`. A Primer form class (`MeetingNotes::Steps::AnswerForm`) with Paragraph and What I'll say. Reached from "Write my answer" on the step before she has one, and "Change my answer" after |
 | The end | the existing summary | Frame `tablet-game-done.png` |
-| This week's game | `GET /:household_id/listening_game` (`ListeningGamesController#show`) | Frame `phone-game-check.png`. The current week's game; "Cards for this week aren't ready yet" while there's none |
+| This week's game | `GET /:household_id/listening_game` (`ListeningGamesController#show`) | Frame `phone-game-check.png`. The current week's game, with a link to each of its sources; "Cards for this week aren't ready yet" while there's none, or the AI-terms line above when nobody can make them |
 | Change a round | `GET …/listening_game/rounds/:id/edit`, `PATCH …/rounds/:id` (`ListeningGames::RoundsController`) | Frame `phone-game-change.png`. A Primer `Dialog` with a Primer form class (`ListeningGames::RoundForm`): the answer's label and kind, and the three other labels. Saving sets `changed_by` |
 | A helper note, read | existing | Frame `phone-game-shared.png`: her answer, and "Listening game · found 12" with each step's finds |
 
@@ -203,7 +224,7 @@ Her answer for the Congregation Bible Study.
 
 ## States each story checks
 
-- **The job:** first run for a week; run twice; a week that already has a game; the AI returns fewer rounds, a bad round, a repeated label, or nothing; the copy check removes a label; the helper turned off (no job); a week whose meeting has passed (no retry)
+- **The job:** first run for a week; run twice; two runs at once (one request); a claim left by a run that died; nobody has accepted the AI terms (no chat, no request); a week that already has a game; the AI returns fewer rounds, a bad round, a repeated label, or nothing; the copy check removes a label; the helper turned off (no job); a week whose meeting has passed (no retry)
 - **A round:** nothing tapped; a wrong tap; the right tap; tapping the right card twice; the last round of a step; a step with no rounds
 - **Her answer:** none yet; written; changed; given at the meeting; a note with an answer shared and read by a head
 - **The end screen:** with and without finds; with and without an answer
