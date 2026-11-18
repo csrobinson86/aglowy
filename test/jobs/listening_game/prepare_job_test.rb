@@ -181,6 +181,8 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
     travel_to(MONDAY) do
       assert_error_reported(RubyLLM::ServerError) { ListeningGame::PrepareJob.perform_now }
       assert_empty ListeningGame::Preparation.all
+      # A request that failed at the provider doesn't count towards the daily limit (docs/design/ai.md, safety measure 9).
+      assert_empty @home.chats.where(purpose: "listening_game")
 
       ListeningGame::PrepareJob.perform_now
     end
@@ -190,9 +192,7 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
   end
 
   test "a reply with nothing usable leaves no claim" do
-    body = JSON.parse(recorded_reply[:body])
-    body["content"] = [ { "type" => "text", "text" => { off_topic: true, **ListeningGame::STEPS.index_with { [] } }.to_json } ]
-    stub_request(:post, PROVIDER).to_return(**recorded_reply, body: body.to_json)
+    stub_request(:post, PROVIDER).to_return(**unusable_reply)
 
     travel_to(MONDAY) { ListeningGame::PrepareJob.perform_now }
 
@@ -234,10 +234,10 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
   test "a household that has had its 3 requests today sends no fourth, and yesterday's don't count" do
     travel_to(MONDAY - 3.hours) { listening_game_chat }
     travel_to(MONDAY) { 2.times { listening_game_chat } }
-    stub_request(:post, PROVIDER).to_return(status: 500)
+    stub_request(:post, PROVIDER).to_return(**unusable_reply)
 
     travel_to(MONDAY) do
-      assert_error_reported(RubyLLM::ServerError) { ListeningGame::PrepareJob.perform_now }
+      ListeningGame::PrepareJob.perform_now
       assert_no_difference(-> { Chat.count }) { assert_nil @home.prepare_listening_game(WEEK) }
     end
 
@@ -281,6 +281,13 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
 
     def game_this_week(household)
       household.listening_games.find_by(week_of: WEEK)
+    end
+
+    # Off topic, with every list empty: a reply the provider answered, with no round to save.
+    def unusable_reply
+      body = JSON.parse(recorded_reply[:body])
+      body["content"] = [ { "type" => "text", "text" => { off_topic: true, **ListeningGame::STEPS.index_with { [] } }.to_json } ]
+      recorded_reply.merge(body: body.to_json)
     end
 
     def stub_provider
