@@ -56,7 +56,8 @@
 }
 
 // Morning / Evening on a phone (frame phone-brief.png): at the end of the brief, held at the bottom of the screen while
-// the brief scrolls above it. Above md it's in the header instead.
+// the brief scrolls above it. Above md it's in the header instead. It reaches the screen's edges through main's 16px
+// padding at phone width (AppShellComponent).
 .daily-brief-switch {
   position: sticky;
   bottom: 0;

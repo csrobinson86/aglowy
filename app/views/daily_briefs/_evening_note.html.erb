@@ -1,12 +1,13 @@
 <%# locals: (brief:, open:) %>
 <%# This evening, beside the morning's brief (docs/design/daily-brief.md, This evening; frame brief-today.png): how many
-    questions there are and when they open, or a link to them once they have. %>
+    questions there are and when they open, or a link to them once they have, not prefetched on hover: the brief's page
+    marks it seen (Trap 5). %>
 <section class="daily-brief-evening-note mt-4" aria-labelledby="daily-brief-evening-note-heading">
   <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, id: "daily-brief-evening-note-heading", mb: 1)) { "This evening" } %>
   <p class="color-fg-muted mb-0">
     <%= evening_title(brief.evening_questions.size) %>.
     <% if open %>
-      <%= render(Primer::Beta::Link.new(href: household_daily_brief_path(part: "evening"), underline: true)) { "Open them" } %>
+      <%= render(Primer::Beta::Link.new(href: household_daily_brief_path(part: "evening"), underline: true, data: { turbo_prefetch: false })) { "Open them" } %>
     <% else %>
       They open here at <%= evening_opens_at %>.
     <% end %>

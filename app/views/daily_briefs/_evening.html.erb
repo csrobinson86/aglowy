@@ -3,9 +3,10 @@
     the newest written writing, each with the section it looks back on, once they're open at 6:00 PM, and above that only
     when they open. They're for thinking over: no inputs, and nothing is saved (Trap 4). Write a note about today opens a
     new note titled with the date, saved only if the person saves it. Then From this morning, a short list of what the
-    morning held. Every AI field is escaped. %>
+    morning held. Every AI field is escaped. Its links to the morning aren't prefetched on hover: the brief's page marks
+    it seen (Trap 5). %>
 <% questions = brief.evening_questions %>
-<div class="daily-brief">
+<div class="daily-brief" data-turbo-prefetch="false">
   <section id="daily-brief-evening" class="daily-brief-section" aria-labelledby="daily-brief-evening-heading">
     <p class="daily-brief-section__kicker">This evening</p>
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, id: "daily-brief-evening-heading")) { evening_title(questions.size) } %>

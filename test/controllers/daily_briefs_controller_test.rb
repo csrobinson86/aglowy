@@ -190,7 +190,9 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     get household_daily_brief_path(household_id: @home, part: "evening")
 
     assert_response :success
-    assert_select "nav[aria-label='Morning or evening']" do
+    assert_select ".d-md-block nav[aria-label='Morning or evening'][data-turbo-prefetch=false]", 1, "in the header above md"
+    assert_select ".daily-brief-switch.d-md-none nav[aria-label='Morning or evening'][data-turbo-prefetch=false]", 1, "at the bottom on a phone"
+    assert_select "nav[aria-label='Morning or evening']", 2 do
       assert_select "a[href=?][aria-current=false]", household_daily_brief_path(household_id: @home), "Morning"
       assert_select "a[href=?][aria-current=true]", household_daily_brief_path(household_id: @home, part: "evening"), "Evening"
     end
@@ -201,7 +203,8 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Aglowy doesn't ask for your answers and saves nothing here\./
     assert_select "a[href=?]", new_household_personal_note_path(household_id: @home, title: "Tuesday, November 17"), "Write a note about today"
     assert_select "h2", "Today's brief"
-    assert_select "a[href=?]", household_daily_brief_path(household_id: @home), "Show the whole brief"
+    assert_select "[data-turbo-prefetch=false] a[href=?]", household_daily_brief_path(household_id: @home), "Show the whole brief"
+    assert_select "nav[aria-label=\"Today's flow\"][data-turbo-prefetch=false] a[href=?]", household_daily_brief_path(household_id: @home, anchor: "daily-brief-reading")
     assert_select "dd", text: /Matthew 16:21-23 · Peter wants a faster, kinder ending/
     assert_select "dd", text: "Abraham and Moses"
     assert_select "h2", text: "One thing in each role", count: 0
@@ -232,7 +235,7 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     travel_to central(18, 30)
     get household_daily_brief_path(household_id: @home)
 
-    assert_select "section[aria-labelledby=daily-brief-evening-note-heading] a[href=?]", household_daily_brief_path(household_id: @home, part: "evening"), "Open them"
+    assert_select "section[aria-labelledby=daily-brief-evening-note-heading] a[href=?][data-turbo-prefetch=false]", household_daily_brief_path(household_id: @home, part: "evening"), "Open them"
   end
 
   test "with evening off in the brief's copy of the plan there's no switch and no evening note, and part=evening shows the morning" do
