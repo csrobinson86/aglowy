@@ -8,8 +8,10 @@
     and the pages it used; otherwise the parts from its own copy of the plan, with a Banner when the AI part failed, was
     refused or stopped, and Try again. Being written, the progress and Stop above it; under today's, Another angle or
     Write it with AI (How a writing runs). Before the first, Prepare today's brief; with only an earlier one, it's shown
-    with its date and when today's is ready. Nothing is shown of a writing while it's being written (Trap 9). %>
-<%= render "daily_briefs/header", brief: @brief %>
+    with its date and when today's is ready. Nothing is shown of a writing while it's being written (Trap 9). With
+    evening questions, the morning has This evening beside it, and ?part=evening shows them in place of the sections
+    (This evening; frame brief-evening.png). %>
+<%= render "daily_briefs/header", brief: @brief, evening: @evening %>
 
 <% if @brief %>
   <% if @brief.on < @today %>
@@ -32,7 +34,7 @@
     <%= render "daily_briefs/writings/progress", writing: latest, earlier: writing.present? %>
   <% end %>
   <% if writing %>
-    <%= render "daily_briefs/thread", brief: @brief, writing: %>
+    <%= render "daily_briefs/thread", brief: @brief, writing:, evening: @evening %>
   <% elsif latest&.status.in?(DailyBrief::Writing::UNWRITTEN_STATUSES) %>
     <%= render(Primer::Alpha::Banner.new(scheme: latest.stopped? ? :default : :warning, icon: :info, mb: 4)) do |banner| %>
       <% if today && @brief.writings_left.positive? %>
@@ -48,7 +50,11 @@
 
   <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg)) do |layout| %>
     <% layout.with_main do %>
-      <%= render "daily_briefs/brief", brief: @brief, writing: %>
+      <% if @evening %>
+        <%= render "daily_briefs/evening", brief: @brief, writing:, open: @brief.evening_open?(Time.current) %>
+      <% else %>
+        <%= render "daily_briefs/brief", brief: @brief, writing: %>
+      <% end %>
       <% if today %>
         <%= render "daily_briefs/writings/actions", brief: @brief, latest:, write_now: params[:write] == "first" %>
       <% end %>
@@ -56,10 +62,17 @@
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
             manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
+      <% if !@evening && @brief.evening_questions.any? %>
+        <%= render "daily_briefs/evening_note", brief: @brief, open: @brief.evening_open?(Time.current) %>
+      <% end %>
       <% if writing %>
         <%= render "daily_briefs/sources", writing: %>
       <% end %>
     <% end %>
+  <% end %>
+
+  <% if @brief.evening_questions.any? %>
+    <div class="daily-brief-switch d-md-none"><%= render "daily_briefs/switch", evening: @evening, full_width: true %></div>
   <% end %>
 <% else %>
   <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>

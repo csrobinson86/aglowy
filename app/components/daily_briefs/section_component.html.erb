@@ -3,7 +3,7 @@
   <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, id: "#{id}-heading", classes: "wb-break-word")) { title } %>
   <% if link %>
     <p class="mt-2 mb-0">
-      <%= render(Primer::Beta::Link.new(href: link.href, target: "_blank", rel: "noopener", underline: true)) { link.text } %>
+      <%= render(Primer::Beta::Link.new(href: link.href, target: ("_blank" if link.external), rel: ("noopener" if link.external), underline: true)) { link.text } %>
       <% if link.note %><span class="color-fg-muted"> · <%= link.note %></span><% end %>
     </p>
   <% end %>

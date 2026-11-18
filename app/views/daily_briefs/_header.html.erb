@@ -1,11 +1,15 @@
-<%# locals: (brief: nil) %>
-<%# "Daily brief", Private, the brief's date and Your plan (docs/design/daily-brief.md, The brief). The Morning / Evening
-    switch comes with the evening questions. %>
+<%# locals: (brief: nil, evening: false) %>
+<%# "Daily brief", Private, the brief's date, the Morning / Evening switch and Your plan (docs/design/daily-brief.md, The
+    brief; frames brief-today.png and brief-evening.png). The switch is there only when the brief's writing has evening
+    questions; on a phone it's at the bottom of the screen instead (show; frame phone-brief.png). %>
 <%= render Primer::Beta::Subhead.new do |subhead| %>
   <% subhead.with_heading(tag: :h1) do %>
     Daily brief <%= render(Primer::Beta::Label.new(ml: 1, vertical_align: :middle)) { "Private" } %>
   <% end %>
-  <% subhead.with_actions do %>
+  <% subhead.with_actions(display: :flex, align_items: :center) do %>
+    <% if brief&.evening_questions.present? %>
+      <div class="d-none d-md-block mr-2"><%= render "daily_briefs/switch", evening: %></div>
+    <% end %>
     <%= render(Primer::Beta::Button.new(tag: :a, href: household_daily_brief_plan_path)) { "Your plan" } %>
   <% end %>
   <% if brief %>

@@ -1,0 +1,9 @@
+<%# locals: (evening:, full_width: false) %>
+<%# Morning / Evening (docs/design/daily-brief.md, This evening): links to the two parts of the brief, the one shown
+    current. Not prefetched on hover: the brief's page marks it seen (Trap 5). %>
+<nav aria-label="Morning or evening" data-turbo-prefetch="false">
+  <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Morning or evening", full_width:)) do |control| %>
+    <% control.with_item(tag: :a, href: household_daily_brief_path, label: "Morning", selected: !evening) %>
+    <% control.with_item(tag: :a, href: household_daily_brief_path(part: "evening"), label: "Evening", selected: evening) %>
+  <% end %>
+</nav>

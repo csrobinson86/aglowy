@@ -30,7 +30,7 @@ class DailyBriefs::HomeCardComponent < ApplicationComponent
   def note
     return unless writing
 
-    questions = brief.section?(:evening) ? Array(writing.section(:evening)).size : 0
+    questions = brief.evening_questions.size
     [ "About 10 minutes.", ("This evening it has #{NUMBER_WORDS.fetch(questions, questions)} questions to end the day." if questions.positive?) ].compact.join(" ")
   end
 

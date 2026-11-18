@@ -4,8 +4,9 @@
 # goes with it, each reference a scripture link (docs/design/daily-brief.md, The brief; frame brief-base.png). A section
 # with no title has nothing to show and isn't drawn. Everything in it is the plan's own words, escaped.
 class DailyBriefs::SectionComponent < ApplicationComponent
-  Link = Data.define(:text, :href, :note) do
-    def initialize(text:, href:, note: nil) = super
+  # A link to read at its source opens in a new tab; one to another part of the brief (external: false) doesn't.
+  Link = Data.define(:text, :href, :note, :external) do
+    def initialize(text:, href:, note: nil, external: true) = super
   end
 
   Row = Data.define(:label, :text, :references) do

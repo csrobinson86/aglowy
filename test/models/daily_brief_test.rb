@@ -124,6 +124,27 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_equal "https://wol.jw.org/en/wol/dt/r1/lp-e/2027/1/5", DailyBrief.new(on: Date.new(2027, 1, 5)).daily_text_url
   end
 
+  test "evening_open? from 6:00 PM in the person's zone, for the brief's own day" do
+    brief = DailyBrief.for(@user)
+    central = ActiveSupport::TimeZone["Central Time (US & Canada)"]
+
+    assert_not brief.evening_open?(central.local(2026, 11, 17, 17, 59))
+    assert brief.evening_open?(central.local(2026, 11, 17, 18))
+    assert brief.evening_open?(central.local(2026, 11, 18, 9)), "an earlier day's evening has opened"
+    assert_not brief.evening_open?(Time.utc(2026, 11, 17, 23, 59)), "5:59 PM in Chicago, though 6 PM has passed in UTC"
+  end
+
+  test "evening_questions are the newest writing's, only when evening is on in the brief's copy of the plan" do
+    brief = DailyBrief.for(@user)
+    assert_empty brief.evening_questions, "no writing"
+
+    daily_brief_writing(brief, status: "written", result: { "thread" => "A thread", "evening" => [ { "text" => "Where did I wait?", "from" => "quality" } ] })
+    assert_equal [ "Where did I wait?" ], brief.reload.evening_questions.pluck("text")
+
+    brief.plan["sections"] -= [ "evening" ]
+    assert_empty brief.evening_questions, "evening off"
+  end
+
   test "mark_seen sets seen_at once" do
     brief = DailyBrief.for(@user)
 
