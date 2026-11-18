@@ -64,6 +64,12 @@ module ActiveSupport
       part.drafts.create!(user: user, kind: "outline", chat: Chat.new(user: user, purpose: "meeting_part"), use: Ai::Use.new(user: user, purpose: "meeting_part"), **attributes)
     end
 
+    # A daily brief writing, writing unless +attributes+ say otherwise, with its own chat and its use, as DailyBrief#write
+    # leaves one, without asking the AI.
+    def daily_brief_writing(brief, **attributes)
+      brief.writings.create!(chat: Chat.new(user: brief.user, purpose: "daily_brief"), use: Ai::Use.new(user: brief.user, purpose: "daily_brief"), **attributes)
+    end
+
     # A question asking, with its use, as PersonalStudy#ask leaves one, without asking the AI.
     def personal_study_question(study = personal_studies(:head_suffering), **attributes)
       study.questions.create!(user: study.user, prompt: "Why does Jehovah allow suffering?", use: Ai::Use.new(user: study.user, purpose: "personal_study"), **attributes)
