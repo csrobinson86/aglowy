@@ -1,0 +1,29 @@
+// The person's own daily brief on Home (DailyBriefs::HomeCardComponent; frame brief-home.png): the thread, then the
+// day's facts side by side, each a small muted label over its value, wrapping on a phone.
+.daily-brief-home-card__thread {
+  margin-bottom: var(--base-size-16);
+  overflow-wrap: anywhere;
+}
+
+.daily-brief-home-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-12) var(--base-size-40);
+  margin: 0 0 var(--base-size-16);
+}
+
+.daily-brief-home-card__fact {
+  min-width: 0;
+}
+
+.daily-brief-home-card__label {
+  font-size: var(--text-body-size-small);
+  font-weight: var(--base-text-weight-normal);
+  color: var(--fgColor-muted);
+}
+
+.daily-brief-home-card__value {
+  margin: 0;
+  font-weight: var(--base-text-weight-medium);
+  overflow-wrap: anywhere;
+}

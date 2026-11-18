@@ -530,7 +530,8 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
 
   test "no card with only yesterday's brief" do
     travel_to Time.utc(2026, 11, 17, 15)
-    travel_to(1.day.ago) { start_daily_brief(users(:head)) }
+    travel_to(3.days.ago) { DailyBrief::Plan.start(users(:head), starter: "husband_and_father") }
+    DailyBrief.for(users(:head), on: Date.new(2026, 11, 16))
     sign_in identities(:head)
 
     get household_root_path(household_id: households(:home))
