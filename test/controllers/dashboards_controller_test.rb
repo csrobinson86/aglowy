@@ -413,6 +413,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "Today shows today's part, and a part shared here by another member" do
+    MeetingPart.delete_all # The fixture parts are dated from the real today, so one could land on this day.
     set_meeting_times
     mine = users(:spouse).meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope")
     theirs = users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Trust")
