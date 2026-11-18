@@ -104,7 +104,7 @@ An empty box means the brief chooses. The Qualities column on the page is the `q
 
 ### `DailyBrief::Pause`
 
-State as a record: `plan_id` (FK, unique, `on_delete: :cascade`), `reason` (check in `chosen`, `unseen`) and `created_at`. Present means paused: nothing is written and nothing is sent. `plan.pause(reason:)` makes it. `plan.resume` deletes it and sets the plan's `started_at` to now, so the briefs that went unseen before the pause can't pause it again.
+State as a record: `plan_id` (FK, unique, `on_delete: :cascade`), `reason` (check in `chosen`, `unseen`) and `created_at`. Present means paused: nothing is written and nothing is sent. `plan.pause(reason:)` makes it under `user.with_lock`, and in the same lock stops any writing of the person's that is still `writing` (it ends `stopped` and keeps its use, as a Stop does). A writing whose job hasn't started then sends nothing, because `write_now` starts only while its writing is `writing`. One already waiting on the provider has sent its request; its ending stays `stopped`, and nothing it returns is shown. `plan.resume` deletes it and sets the plan's `started_at` to now, so the briefs that went unseen before the pause can't pause it again.
 
 ### `DailyBrief`
 
@@ -143,11 +143,11 @@ One AI request and its checked reply, with a chat of its own, as a meeting part 
 
 1. If `plan.gone_unseen?`, it makes a `Pause` with `reason: unseen` and stops there. That's true when the person has at least 7 briefs made since `started_at` and dated before today, and the newest 7 of those all have no `seen_at`. Today's own brief never counts, so a run that picks up a brief the last run made can't pause on it. Someone who reads the card on Home each day and never opens the page isn't paused.
 2. `DailyBrief.for(user)` finds or makes the day's brief.
-3. If the person has accepted the AI terms and the brief has no writing, `brief.write(by: user)` starts the AI part (How a writing runs).
+3. If the person has accepted the AI terms and the brief has no writing, `brief.write(by: user, first: true)` starts the AI part (How a writing runs). `first: true` checks again, inside the lock, that the brief has no writing, so two runs at once start one.
 
 It starts 45 minutes before ready-by so the brief is there on time. Running twice is safe: the brief is unique per day, and the job starts a writing only for a brief that has none. A run that stopped between steps 2 and 3 is finished by the next one, because a brief with no writing is still due. The job never starts a second writing for a brief, whatever the first one's ending. At this size the job walks the unpaused plans and asks each one; give it a scope when there are thousands.
 
-If the job didn't run, the page has "Prepare today's brief" (`POST /:household_id/daily_brief`), which does steps 2 and 3 whatever `due?` says.
+If the job didn't run, the page has "Prepare today's brief" (`POST /:household_id/daily_brief`), which does steps 2 and 3 whatever `due?` says, but never for a paused plan: it shows the paused page instead. A page left open from before the pause can't get round that, because `brief.write` refuses a paused plan inside the lock that `plan.pause` takes.
 
 ## Pages and routes
 
@@ -297,6 +297,8 @@ The checks, in order:
 
 - refuses with `:limit` when 3 of the person's `daily_brief` uses are from today, or when this brief already has 6 writings whatever their endings
 - refuses with `:not_allowed` unless `may_have_daily_brief?` and `accepted_ai_terms?`
+- refuses with `:paused` while the plan is paused
+- with `first: true` (the morning job, "Prepare today's brief" and "Write it with AI"), refuses with `:written` when the brief already has a writing of any status. "Another angle" and "Try again" don't pass it
 - refuses with `:busy` while a writing of this brief is `writing`
 - makes the writing (`writing`) with its own chat and its `Ai::Use`
 
@@ -328,8 +330,9 @@ So the 3 a day are the requests that didn't end in a failure. Because a failed o
 9. **Don't show a writing's text while it's being written,** and don't let a finished job override Stop (`docs/design/ai.md`, Traps).
 10. **Children have no daily brief.** No sidebar item, and the policy refuses every action. Don't add a grant or a setting.
 11. **AI output is untrusted text.** Escape every field. The note body is built by our partial, never from AI HTML.
-12. **`started_at` is where the job and the pause rule begin.** The job's first brief is the morning after it, and only briefs made since it, and dated before today, count toward seven unseen. Set it on start and on every resume, or a plan started again after seven unseen pauses itself the next morning.
-13. **Failures are free to the person, not to us.** A failed or flagged writing gives its use back, so the 6 per brief is the only thing between a plan that keeps failing and endless paid requests. Count every writing for it.
+12. **Paused means nothing is sent.** `plan.pause` stops a running writing in the person's lock, and `brief.write` refuses a paused plan in the same lock, so neither the job, a stale page nor a queued job sends after a pause.
+13. **`started_at` is where the job and the pause rule begin.** The job's first brief is the morning after it, and only briefs made since it, and dated before today, count toward seven unseen. Set it on start and on every resume, or a plan started again after seven unseen pauses itself the next morning.
+14. **Failures are free to the person, not to us.** A failed or flagged writing gives its use back, so the 6 per brief is the only thing between a plan that keeps failing and endless paid requests. Count every writing for it.
 
 ## States each story checks
 
