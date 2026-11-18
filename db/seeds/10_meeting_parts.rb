@@ -12,7 +12,7 @@ def seed_meeting_part(user, topic:, preparation: nil, **attributes)
   end
 end
 
-seed_meeting_part(maria, kind: "starting_a_conversation", meeting_on: next_meeting + 14, minutes: 3, setting: "house_to_house",
+conversation = seed_meeting_part(maria, kind: "starting_a_conversation", meeting_on: next_meeting + 14, minutes: 3, setting: "house_to_house",
   topic: "Start a conversation about hope for the future, and offer to come back.", study_point: "lmd lesson 1 point 3",
   assistant: "Ana Ortiz", preparation: "<p>Good morning. It's been a hard year for many families.</p>" \
     "<p>Do you think problems like these will ever be solved for good? I find one promise comforting: Psalm 37:10, 11.</p>")
@@ -23,6 +23,10 @@ seed_meeting_part(maria, kind: "following_up", meeting_on: next_meeting - 56, mi
   counsel: "Good, natural conversation. Next: let the scripture do more of the talking.")
 seed_meeting_part(maria, kind: "making_disciples", meeting_on: next_meeting - 105, minutes: 5,
   topic: "Lesson on why God made the earth.", counsel: "Clear and warm. Work on asking a viewpoint question first.")
+
+# Her Life and Ministry note for that week, started, so its header shows "Your part this week" (docs/design/meeting-parts.md,
+# On the calendar and the meeting note). The parts show on the Rivera Family's calendar in their weeks.
+maria.start_meeting_note(kind: "midweek", week_of: conversation.week_of)
 
 seed_meeting_part(lucia, kind: "starting_a_conversation", meeting_on: next_meeting + 28, minutes: 2, setting: "informal_witnessing",
   topic: "Talk to a classmate about what makes a real friend.", study_point: "lmd lesson 2 point 3", assistant: "Dad",

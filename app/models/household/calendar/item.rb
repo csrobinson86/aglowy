@@ -1,6 +1,6 @@
 # One thing on the calendar, with its times in the household's zone. kind picks the color (.calendar-item--<kind>);
 # source is what it comes from, a Household::Meeting, a FamilyStudy::Session (unsaved past the generator's horizon), a
-# Household::Event or a PersonalTime::Occurrence, so the page can link to it; for another member's shared time it's the
+# Household::Event, a MeetingPart or a PersonalTime::Occurrence, so the page can link to it; for another member's shared time it's the
 # person, so nothing about the time itself reaches the page. An all-day item runs from the midnight it starts to the midnight after
 # its last day.
 Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :ends_at, :all_day, :source) do
@@ -16,6 +16,17 @@ Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :e
   def self.from_event(event, occurrence)
     new(kind: event.kind, title: event.title, subtitle: event.location.presence, starts_at: occurrence.begin, ends_at: occurrence.end,
         all_day: event.all_day?, source: event)
+  end
+
+  # On its meeting day, at the midweek meeting's own start and end when that's the household's midweek day, otherwise all
+  # day. "Your part: Talk" for the viewer's, "Daniel: Talk" for one shared here; only its kind and minutes, never what
+  # it's about, its preparation or its counsel (docs/design/meeting-parts.md, Trap 3).
+  def self.from_meeting_part(part, household:, viewer:)
+    label = part.kind_details.label
+    title = part.user_id == viewer.id ? "Your part: #{label}" : "#{part.user.first_name}: #{label}"
+    meeting = household.meetings_between(part.meeting_on..part.meeting_on).find { it.kind == "midweek" }
+    starts_at, ends_at = meeting ? [ meeting.starts_at, meeting.ends_at ] : [ part.meeting_on, part.meeting_on.next_day ].map { it.in_time_zone(household.time_zone) }
+    new(kind: "meeting_part", title:, subtitle: "#{part.minutes} min", starts_at:, ends_at:, all_day: meeting.nil?, source: part)
   end
 
   # The viewer's own time, converted to the household's zone. Its subtitle names what it opens: a study or a note, or for
@@ -45,6 +56,10 @@ Household::Calendar::Item = Data.define(:kind, :title, :subtitle, :starts_at, :e
 
   def meeting?
     kind == "meeting"
+  end
+
+  def meeting_part?
+    kind == "meeting_part"
   end
 
   def event?

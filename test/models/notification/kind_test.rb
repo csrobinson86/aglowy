@@ -20,6 +20,16 @@ class Notification::KindTest < ActiveSupport::TestCase
     assert_equal [ :calendar, :purple, :right_away ], [ notification.icon, notification.color, notification.email ]
   end
 
+  test "weekly_preview leaves out meeting parts, even one shared with the household" do
+    @household.change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 26), minutes: 5, topic: "Trust").share_with(@household)
+    users(:head).meeting_parts.create!(kind: "following_up", meeting_on: Date.new(2026, 11, 27), minutes: 4, topic: "Hope")
+
+    notification = notify(:child, kind: "weekly_preview", subject: @household, data: { week_of: Date.new(2026, 11, 23) })
+
+    assert_equal "2 meetings", notification.body
+  end
+
   test "weekly_preview names each day a study or event repeats, and one meeting in the singular" do
     @household.family_studies.destroy_all
     @household.events.delete_all

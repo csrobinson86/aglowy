@@ -57,7 +57,7 @@ class SeedsTest < ActiveSupport::TestCase
     child_note = user("lucia.rivera").meeting_notes.sole
     assert child_note.marks.any?
     assert child_note.shared_with?(Household.find_by!(name: "The Rivera Family"))
-    assert_equal 15, MeetingNote.count
+    assert_equal 16, MeetingNote.count
 
     assert_equal [ 1, 1, 1 ], [ demo.goals.active.count, demo.goals.completed.count, demo.goals.archived.count ]
     steps = demo.goals.active.sole.steps
@@ -128,6 +128,9 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ "Why we use God's name" ], MeetingPart.shared_with(rivera).map(&:topic)
     assert_equal [ "Psalm 37:10, 11" ], maria.meeting_parts.find_by!(kind: "starting_a_conversation").preparation.body.attachables.map(&:to_s)
     assert_equal 1, lucia.meeting_parts.count
+    # Her note for the week of her coming conversation, which names it under its header.
+    conversation = maria.meeting_parts.find_by!(kind: "starting_a_conversation")
+    assert_equal [ conversation ], maria.meeting_notes.find_by!(kind: "midweek", week_of: conversation.week_of).meeting_parts
 
     assert_equal 0, Ai::Use.count
   end

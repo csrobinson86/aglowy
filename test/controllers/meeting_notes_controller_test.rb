@@ -254,6 +254,48 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".Subhead a[href='#{edit_note_path(meeting_notes(:head_midweek))}']", text: "Edit notes"
   end
 
+  test "the owner's midweek note has a line for each of their parts that week, soonest first, each linking to its own part" do
+    MeetingPart.delete_all # The fixture parts are dated from the real today, so one could land in these weeks.
+    talk = users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 20), minutes: 5, topic: "Trust")
+    conversation = users(:head).meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope")
+    users(:head).meeting_parts.create!(kind: "following_up", meeting_on: Date.new(2026, 11, 23), minutes: 4, topic: "Hope")
+    users(:spouse).meeting_parts.create!(kind: "making_disciples", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Hope").share_with(households(:home))
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_equal [ [ "Your part this week: Starting a Conversation, 3 min", household_meeting_part_path(household_id: households(:home), id: conversation) ],
+                   [ "Your part this week: Talk, 5 min", household_meeting_part_path(household_id: households(:home), id: talk) ] ],
+                 css_select("main a").select { it.text.include?("Your part this week") }.map { [ it.text.squish, it["href"] ] }
+  end
+
+  test "no part line on the weekend note or on another week's midweek note" do
+    MeetingPart.delete_all # The fixture parts are dated from the real today, so one could land in these weeks.
+    users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Trust")
+    next_week = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 23))
+    sign_in identities(:head)
+
+    get note_path(meeting_notes(:head_weekend))
+    assert_response :success
+    assert_select "main", text: /Your part this week/, count: 0
+
+    get note_path(next_week)
+    assert_response :success
+    assert_select "main", text: /Your part this week/, count: 0
+  end
+
+  test "no part line on a note shared by someone else, from the owner's parts or the reader's" do
+    users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Trust").share_with(households(:home))
+    users(:spouse).meeting_parts.create!(kind: "following_up", meeting_on: Date.new(2026, 11, 19), minutes: 4, topic: "Hope")
+    meeting_notes(:head_midweek).share_with(households(:home))
+    sign_in identities(:spouse)
+
+    get note_path(meeting_notes(:head_midweek))
+
+    assert_response :success
+    assert_select "main", text: /Your part this week|Talk, 5 min|Following Up/, count: 0
+  end
+
   test "the note shows filled parts under their sections, and hides empty ones" do
     sign_in identities(:head)
 

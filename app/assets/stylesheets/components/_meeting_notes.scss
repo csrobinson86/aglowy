@@ -11,3 +11,11 @@
 .meeting-notes__show .SegmentedControl-item:first-child {
   flex-shrink: 0;
 }
+
+// A part's line under a midweek note's header is a 44px target on a touch screen; with a mouse
+// --control-minTarget-auto is small enough to change nothing.
+.meeting-notes__part {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-minTarget-auto);
+}

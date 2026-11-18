@@ -6,6 +6,8 @@ class TodayComponentTest < ViewComponent::TestCase
   setup do
     travel_to Time.utc(2026, 11, 17, 15)
     Current.identity = identities(:head)
+    # The fixture parts are dated from the real today, so as the days pass one would land in this week. Tests add their own.
+    MeetingPart.delete_all
     Current.membership = memberships(:head_in_home)
     households(:home).events.destroy_all
     households(:home).family_studies.destroy_all

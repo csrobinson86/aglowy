@@ -18,10 +18,11 @@ class CalendarFeed::Document
   private
     attr_reader :user
 
-    # Each household's items over its own days, with its name in the summary. Its calendar leaves out every time.
+    # Each household's items over its own days, with its name in the summary. Its calendar leaves out every time, and
+    # meeting parts, which the feed doesn't have yet (docs/design/meeting-parts.md, What PARTS-01 builds).
     def household_items
       user.active_households.order(:name, :id).flat_map do |household|
-        calendar = Household::Calendar.new(household, viewer: user, range: around(household.today), hide: %w[ my_times shared_times ])
+        calendar = Household::Calendar.new(household, viewer: user, range: around(household.today), hide: %w[ my_times shared_times meeting_parts ])
         calendar.items.flat_map do |item|
           vevent(uid(item, household), item.starts_at, item.ends_at, all_day: item.all_day, summary: "#{item.title} · #{household.name}",
                  location: (item.source.location if item.event?))

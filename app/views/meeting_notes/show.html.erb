@@ -3,6 +3,22 @@
 <%= render "meeting_notes/header", meeting_note: @meeting_note, edit_link: true, tags: true %>
 <% reader = !policy(@meeting_note).update? %>
 
+<%# The author's own parts that week, never on a note someone else shared (docs/design/meeting-parts.md, On the calendar
+    and the meeting note). %>
+<% parts = reader ? [] : @meeting_note.meeting_parts.to_a %>
+<% if parts.any? %>
+  <ul class="list-style-none mb-3">
+    <% parts.each do |part| %>
+      <li>
+        <%= render(Primer::Beta::Link.new(href: household_meeting_part_path(id: part), classes: "meeting-notes__part")) do %>
+          <%= render(Primer::Beta::Octicon.new(:"comment-discussion", mr: 1)) %>
+          Your part this week: <%= part.kind_details.label %>, <%= part.minutes %> min
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
 <% if reader %>
   <%= render(Primer::Alpha::Banner.new(icon: :lock, mb: 4)) do %>
     <%= @meeting_note.user.name %> shared this note with <%= Current.household.name %>. You can read it but not change it.

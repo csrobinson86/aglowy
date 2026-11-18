@@ -67,6 +67,16 @@ class CalendarFeed::DocumentTest < ActiveSupport::TestCase
     assert_no_match "Hannah's study", ics
   end
 
+  test "the feed has no meeting parts, the person's own or one shared with their household" do
+    @person.meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope")
+    @person.meeting_parts.create!(kind: "following_up", meeting_on: Date.new(2026, 11, 20), minutes: 4, topic: "Hope")
+    users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Trust").share_with(@household)
+
+    assert_includes ics, "SUMMARY:Midweek meeting · The Grandparent Family"
+    assert_no_match(/Your part|Hannah: Talk|Starting a Conversation|Following Up|\d min/, ics)
+    assert_equal vevents.size, vevents.count { it.first.match?(/\AUID:(meeting|study|event|time)-/) }
+  end
+
   test "a title with a comma and a semicolon is escaped" do
     cleaning = add_event(kind: "other", title: "Cleaning, windows; floors \\ doors", starts_on: Date.new(2026, 11, 21))
 

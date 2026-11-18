@@ -412,6 +412,25 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".todays-meeting-card + .Layout"
   end
 
+  test "Today shows today's part, and a part shared here by another member" do
+    MeetingPart.delete_all # The fixture parts are dated from the real today, so one could land on this day.
+    set_meeting_times
+    mine = users(:spouse).meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope")
+    theirs = users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Trust")
+    theirs.share_with(households(:home))
+    users(:head).meeting_parts.create!(kind: "following_up", meeting_on: Date.new(2026, 11, 20), minutes: 4, topic: "Hope").share_with(households(:home))
+    sign_in identities(:spouse)
+
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".today" do
+      assert_select "a.calendar-item--meeting-part[href=?]", household_meeting_part_path(household_id: households(:home), id: mine),
+                    /7:00 PM\s+Your part: Starting a Conversation\s+3 min/
+      assert_select "a.calendar-item--meeting-part[href=?]", household_meeting_part_path(household_id: households(:home), id: theirs), /Hannah: Talk\s+5 min/
+      assert_select ".calendar-item--meeting-part", 2
+    end
+  end
+
   test "on a meeting day a child with the helper sees Start" do
     set_meeting_times
     households(:home).enable_meeting_helper(by: users(:head))

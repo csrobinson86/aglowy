@@ -119,6 +119,13 @@ class MeetingNote < ApplicationRecord
     end
   end
 
+  # The author's own meeting parts in a midweek note's week, soonest first, for the lines under its header. The page shows
+  # them only to the author, never on a note someone else shared (docs/design/meeting-parts.md, On the calendar and the
+  # meeting note).
+  def meeting_parts
+    midweek? ? user.meeting_parts.where(meeting_on: week_of...week_of + 7).order(:meeting_on, :created_at) : MeetingPart.none
+  end
+
   # The week's program on wol.jw.org, by ISO week: week 27 of 2026 is 29 June–5 July. A meeting part links to it too.
   def self.program_url(week_of)
     "#{PROGRAM_URL}/#{week_of.cwyear}/#{week_of.cweek}"

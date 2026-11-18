@@ -140,6 +140,71 @@ class Household::CalendarTest < ActiveSupport::TestCase
     assert_equal [ "my_time" ], calendar(WEEK).items_on(Date.new(2026, 11, 16)).map(&:kind)
   end
 
+  test "the viewer's own part is an item on its day, timed on the midweek day and all day otherwise" do
+    thursday = add_part(users(:grandparent), kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3)
+    saturday = add_part(users(:grandparent), kind: "talk", meeting_on: Date.new(2026, 11, 21), minutes: 5)
+    add_part(users(:grandparent), kind: "following_up", meeting_on: Date.new(2026, 11, 26), minutes: 4)
+
+    calendar = calendar(WEEK)
+    timed = calendar.timed_items_on(Date.new(2026, 11, 19)).find { it.kind == "meeting_part" }
+    all_day = calendar.all_day_items.sole
+
+    assert_equal [ "Your part: Starting a Conversation", "3 min", CHICAGO.local(2026, 11, 19, 19), CHICAGO.local(2026, 11, 19, 21), false, thursday ],
+                 [ timed.title, timed.subtitle, timed.starts_at, timed.ends_at, timed.all_day, timed.source ]
+    assert_equal [ "Your part: Talk", "5 min", CHICAGO.local(2026, 11, 21), CHICAGO.local(2026, 11, 22), true, saturday ],
+                 [ all_day.title, all_day.subtitle, all_day.starts_at, all_day.ends_at, all_day.all_day, all_day.source ]
+    assert_equal [ thursday, saturday ], calendar.items.select(&:meeting_part?).map(&:source)
+  end
+
+  test "with no meeting times set, a part on any day is all day" do
+    part = add_part(users(:grandparent), kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5)
+    @household.update_columns(midweek_meeting_wday: nil, midweek_meeting_time: nil, weekend_meeting_wday: nil, weekend_meeting_time: nil)
+
+    assert_equal [ part ], calendar(WEEK).all_day_items.map(&:source)
+  end
+
+  test "a part shared with this household shows for another member, titled with the owner's first name" do
+    part = add_part(users(:head), kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5)
+    part.share_with(@household)
+
+    item = calendar(WEEK).items.find(&:meeting_part?)
+
+    assert_equal [ "meeting_part", "Hannah: Talk", "5 min", CHICAGO.local(2026, 11, 19, 19), part ], [ item.kind, item.title, item.subtitle, item.starts_at, item.source ]
+  end
+
+  test "the viewer's own part shared here shows once, as their own" do
+    add_part(users(:grandparent), kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5).share_with(@household)
+
+    assert_equal [ "Your part: Talk" ], calendar(WEEK).items.select(&:meeting_part?).map(&:title)
+  end
+
+  test "an unshared part of another member doesn't show; a part shared with another household doesn't show here" do
+    add_part(users(:head), kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5)
+    add_part(users(:head), kind: "following_up", meeting_on: Date.new(2026, 11, 20), minutes: 4).share_with(households(:home))
+
+    assert_empty calendar(WEEK).items.select(&:meeting_part?)
+  end
+
+  test "hiding meetings hides parts" do
+    add_part(users(:grandparent), kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5)
+    add_part(users(:head), kind: "following_up", meeting_on: Date.new(2026, 11, 20), minutes: 4).share_with(@household)
+
+    assert_equal 2, calendar(WEEK).items.count(&:meeting_part?)
+    assert_empty calendar(WEEK, hide: %w[ meetings ]).items.select(&:meeting_part?)
+    # The phone feed keeps the meetings and leaves the parts out.
+    assert_equal %w[ meeting meeting ], calendar(WEEK, hide: %w[ meeting_parts family_studies ]).items.map(&:kind)
+  end
+
+  test "the viewer's own parts and those shared here are one query each" do
+    add_part(users(:grandparent), kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5)
+    add_part(users(:head), kind: "following_up", meeting_on: Date.new(2026, 11, 20), minutes: 4).share_with(@household)
+    others = %w[ family_studies assemblies field_service other_events my_times shared_times ]
+
+    titles = assert_queries_count(2) { calendar(WEEK, hide: others).items.select(&:meeting_part?).map(&:title) }
+
+    assert_equal [ "Your part: Talk", "Hannah: Following Up" ], titles
+  end
+
   private
     def calendar(range, hide: [])
       Household::Calendar.new(@household, viewer: users(:grandparent), range:, hide:)
@@ -149,5 +214,9 @@ class Household::CalendarTest < ActiveSupport::TestCase
     def hannahs_time
       users(:head).update!(time_zone: CHICAGO.name)
       users(:head).personal_times.create!(kind: "bible_reading", title: "Daily Bible reading", wdays: [ 1 ], time_of_day: "06:30", starts_on: Date.new(2026, 11, 1))
+    end
+
+    def add_part(user, **attributes)
+      user.meeting_parts.create!(topic: "Hope for the future", **attributes)
     end
 end

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Today at the top of Home's Mine column (docs/design/calendar.md, Today on Home; frame home-today.png): the viewer's own
-# times with their done boxes, and the household's meetings, study sessions and events, drawn as on the calendar. Never
-# another member's shared time. Marking a time done replaces its card here as on the calendar, by the same id.
+# times with their done boxes, and the household's meetings, study sessions and events, drawn as on the calendar, with
+# meeting parts, the viewer's own and those shared here. Never another member's shared time. Marking a time done replaces its card here as on the calendar, by the same id.
 class TodayComponent < ApplicationComponent
   attr_reader :household, :today, :meeting_helper, :manage_events
 

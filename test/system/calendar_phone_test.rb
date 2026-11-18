@@ -7,6 +7,8 @@ class CalendarPhoneTest < ApplicationSystemTestCase
   setup do
     travel_to Time.utc(2026, 11, 17, 15)
     households(:home).change_meeting_times(midweek_wday: 5, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    # The fixture parts are dated from the real today, so as the days pass one would land in this week. Tests add their own.
+    MeetingPart.delete_all
     households(:home).events.delete_all
     households(:home).events.create!(kind: "co_visit", title: "Circuit overseer's visit", starts_on: Date.new(2026, 11, 17), days: 6, created_by: users(:head))
     households(:home).events.create!(kind: "field_service", title: "Field service", starts_on: Date.new(2026, 11, 21), time_of_day: "09:30",
