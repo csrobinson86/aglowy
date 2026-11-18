@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -164,6 +164,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_120000) do
     t.index ["plan_id"], name: "index_daily_brief_focus_areas_one_quality", unique: true, where: "((kind)::text = 'quality'::text)"
     t.check_constraint "char_length(scriptures::text) <= 120", name: "daily_brief_focus_areas_scriptures_check"
     t.check_constraint "kind::text = ANY (ARRAY['role'::character varying, 'quality'::character varying, 'appreciation'::character varying]::text[])", name: "daily_brief_focus_areas_kind_check"
+  end
+
+  create_table "daily_brief_pauses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "plan_id", null: false
+    t.string "reason", null: false
+    t.datetime "created_at", null: false
+    t.index ["plan_id"], name: "index_daily_brief_pauses_on_plan_id", unique: true
+    t.check_constraint "reason::text = ANY (ARRAY['chosen'::character varying, 'unseen'::character varying]::text[])", name: "daily_brief_pauses_reason_check"
   end
 
   create_table "daily_brief_plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -913,6 +921,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_120000) do
   add_foreign_key "daily_brief_days", "daily_brief_plans", column: "plan_id", on_delete: :cascade
   add_foreign_key "daily_brief_focus_areas", "daily_brief_plans", column: "plan_id", on_delete: :cascade
   add_foreign_key "daily_brief_focus_areas", "goals", on_delete: :nullify
+  add_foreign_key "daily_brief_pauses", "daily_brief_plans", column: "plan_id", on_delete: :cascade
   add_foreign_key "daily_brief_plans", "users", on_delete: :cascade
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"

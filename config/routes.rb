@@ -140,7 +140,9 @@ Rails.application.routes.draw do
     # Focus areas are added and edited in a dialog on Your plan, and found through the person's own plan.
     resource :daily_brief, only: [] do
       resource :plan, only: %i[ new create show update ], module: :daily_briefs do
+        resource :pause, only: %i[ create destroy ], module: :plans
         resources :focus_areas, only: %i[ new create edit update destroy ], module: :plans
+        resources :days, only: %i[ edit update ], module: :plans, param: :wday
       end
     end
     # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).

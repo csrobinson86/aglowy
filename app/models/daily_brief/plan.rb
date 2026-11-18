@@ -10,8 +10,11 @@ class DailyBrief::Plan < ApplicationRecord
   belongs_to :user
   has_many :focus_areas, -> { order(:position) }, inverse_of: :plan, dependent: :delete_all
   has_many :days, -> { order(:wday) }, inverse_of: :plan, dependent: :delete_all
+  # Not :pause, which is the method that makes it.
+  has_one :pausing, class_name: "DailyBrief::Pause", inverse_of: :plan, dependent: :delete
 
-  scope :preloaded, -> { includes(:focus_areas, :days) }
+  scope :preloaded, -> { includes(:focus_areas, :days, :pausing) }
+  scope :unpaused, -> { where.missing(:pausing) }
 
   # The starter's key, on Start's form only.
   attribute :starter, :string
@@ -48,6 +51,29 @@ class DailyBrief::Plan < ApplicationRecord
   # once can't pass six at most, take the same position, or both slip a quality past the friendly check.
   def add_focus_area(attributes)
     with_lock { focus_areas.create(attributes) }
+  end
+
+  # Pauses the plan, or finds the pause it already has, under the person's lock: the one DailyBrief.for and
+  # brief.write take, so neither makes a brief or starts a writing once it's paused (docs/design/daily-brief.md,
+  # DailyBrief::Pause). Stopping a writing still in progress joins this when writings arrive.
+  def pause(reason:)
+    user.with_lock { reload_pausing || create_pausing!(reason:) }
+  end
+
+  def paused?
+    pausing.present?
+  end
+
+  # Starts a paused plan again from now, so the briefs that went unseen before the pause can't pause it again, and the
+  # job's next brief is tomorrow morning's (Trap 13). A plan that isn't paused keeps its started_at.
+  def resume
+    user.with_lock do
+      if reload_pausing
+        pausing.destroy!
+        reset_pausing
+        update!(started_at: Time.current)
+      end
+    end
   end
 
   def full?

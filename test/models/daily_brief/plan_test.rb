@@ -117,6 +117,75 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     assert_equal [ "You can have six focus areas at most" ], seventh.errors[:base]
   end
 
+  test "pause makes one pause with its reason, and pausing again changes nothing" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    assert_not plan.paused?
+
+    pause = plan.pause(reason: "chosen")
+
+    assert plan.paused?
+    assert_equal "chosen", pause.reason
+    assert_equal pause, plan.pause(reason: "unseen")
+    assert_equal [ "chosen" ], DailyBrief::Pause.where(plan:).pluck(:reason)
+    assert plan.reload.paused?
+  end
+
+  test "resume deletes the pause and sets started_at to now; resuming a plan that isn't paused changes nothing" do
+    plan = travel_to(3.days.ago) { DailyBrief::Plan.start(users(:head), starter: "basics") }
+    started_at = plan.started_at
+    assert_no_changes -> { plan.reload.started_at } do
+      plan.resume
+    end
+    assert_equal started_at, plan.started_at
+
+    plan.pause(reason: "chosen")
+    freeze_time
+    plan.resume
+
+    assert_not plan.paused?
+    assert_not DailyBrief::Pause.exists?(plan:)
+    assert_equal Time.current, plan.reload.started_at
+    assert_not plan.paused?
+  end
+
+  test "unpaused is every plan without a pause" do
+    paused = DailyBrief::Plan.start(users(:head), starter: "basics")
+    running = DailyBrief::Plan.start(users(:spouse), starter: "basics")
+    paused.pause(reason: "unseen")
+
+    assert_includes DailyBrief::Plan.unpaused, running
+    assert_not_includes DailyBrief::Plan.unpaused, paused
+  end
+
+  test "the pause goes with the plan" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    plan.pause(reason: "chosen")
+
+    plan.destroy!
+
+    assert_not DailyBrief::Pause.exists?(plan_id: plan.id)
+  end
+
+  test "a pause's reason is chosen or unseen" do
+    pause = DailyBrief::Plan.start(users(:head), starter: "basics").build_pausing(reason: "bored")
+
+    assert_not pause.valid?
+    assert_equal [ "is not included in the list" ], pause.errors[:reason]
+  end
+
+  test "the database refuses a second pause for one plan" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    plan.pause(reason: "chosen")
+
+    assert_raises(ActiveRecord::RecordNotUnique) { DailyBrief::Pause.insert!({ plan_id: plan.id, reason: "unseen" }) }
+  end
+
+  test "the database refuses a pause reason that isn't chosen or unseen" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+
+    assert_raises(ActiveRecord::CheckViolation) { DailyBrief::Pause.insert!({ plan_id: plan.id, reason: "bored" }) }
+  end
+
   private
     def insert_plan(**attributes)
       DailyBrief::Plan.insert!({ user_id: users(:head).id, started_at: Time.current, **attributes })

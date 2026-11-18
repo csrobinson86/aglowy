@@ -31,3 +31,11 @@
 .daily-brief-week__row--today {
   background-color: var(--bgColor-accent-muted);
 }
+
+// A day's Edit is 44px on a touch screen; with a mouse --control-minTarget-auto is small enough to change nothing. The
+// text stays at the top, in line with the row's other cells.
+.daily-brief-week__edit {
+  display: inline-flex;
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}

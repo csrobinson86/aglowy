@@ -1,6 +1,7 @@
-<%# locals: (plan:, today:) %>
+<%# locals: (plan:, today:, focus: nil) %>
 <%# Your week: a row per day from Monday, with a column for Reading, each focus area that takes a topic (the quality one
-    is Qualities) and Faith examples. Today's row says "Today", not by colour alone. An empty box: the brief chooses.
+    is Qualities) and Faith examples, then the day's Edit, which opens its dialog. Today's row says "Today", not by colour
+    alone. An empty box: the brief chooses. Redrawn when a day saves, with focus on that day's Edit (focus:).
     At phone width the table scrolls inside its box, never the page; the box is focusable so a keyboard can scroll it. %>
 <% areas = plan.topic_areas %>
 <% chooses = tag.span("The brief chooses", class: "color-fg-muted") %>
@@ -14,6 +15,7 @@
           <th scope="col"><%= area.quality? ? "Qualities" : area.name %></th>
         <% end %>
         <th scope="col">Faith examples</th>
+        <th scope="col"><span class="sr-only">Change</span></th>
       </tr>
     </thead>
     <tbody>
@@ -29,6 +31,10 @@
             <td><%= day.topic_for(area) || chooses %></td>
           <% end %>
           <td><%= day.examples || chooses %></td>
+          <td>
+            <%= render(Primer::Beta::Link.new(href: edit_household_daily_brief_plan_day_path(wday: day.wday), "aria-label": "Edit #{day.name}",
+                  classes: "daily-brief-week__edit", autofocus: focus == day, data: { turbo_frame: "daily_brief_day_dialog" })) { "Edit" } %>
+          </td>
         </tr>
       <% end %>
     </tbody>

@@ -120,7 +120,7 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
       assert_select rows[2], "a.scripture-link[href^='https://www.jw.org/finder']", text: "1 Timothy 3:8-13"
     end
     assert_select "section[aria-labelledby=week] table" do
-      assert_equal [ "Day", "Reading", "Qualities", "As a husband", "As a father", "Reaching out", "Faith examples" ], css_select("thead th").map { it.text.strip }
+      assert_equal [ "Day", "Reading", "Qualities", "As a husband", "As a father", "Reaching out", "Faith examples", "Change" ], css_select("thead th").map { it.text.strip }
       assert_equal %w[ Mon Tue Wed Thu Fri Sat Sun ], css_select("tbody tr th").map { it.text.split.first }
       assert_select "tbody tr", count: 7
       assert_select "tbody tr:nth-child(2)" do

@@ -22,8 +22,32 @@ class DailyBrief::DayTest < ActiveSupport::TestCase
     assert_nil @day.topic_for(@husband)
   end
 
+  test "a topic for another plan's focus area, or for none, is refused" do
+    theirs = DailyBrief::Plan.start(users(:spouse), starter: "wife_and_mother").focus_areas.first
+
+    [ theirs.id, "not-a-focus-area" ].each do |key|
+      @day.topics = { @husband.id => "Love my wife", key => "Theirs" }
+
+      assert_not @day.valid?
+      assert_equal [ "can only be for your own focus areas" ], @day.errors[:topics]
+    end
+  end
+
+  test "revise saves the day, a blank box taking its topic off, or keeps it unsaved with the reasons" do
+    father = @plan.focus_areas.find_by!(position: 1)
+
+    assert @day.revise(reading: "Exodus", examples: "Moses", topics: { @husband.id => "", father.id => "Family worship" })
+    @day.reload
+    assert_equal [ "Exodus", "Moses", { father.id => "Family worship" } ], [ @day.reading, @day.examples, @day.topics ]
+
+    assert_not @day.revise(reading: "a" * 121)
+    assert_equal [ "is too long (maximum is 120 characters)" ], @day.errors[:reading]
+    assert_equal "Exodus", @day.reload.reading
+  end
+
   test "the name of its day, from Sunday" do
     assert_equal "Mon", @day.short_name
+    assert_equal "Monday", @day.name
     assert_equal "Sun", @plan.days.first.short_name
   end
 
