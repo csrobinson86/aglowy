@@ -211,6 +211,11 @@ class DailyBrief::WritingTest < ActiveSupport::TestCase
     assert_nil @writing.result
   end
 
+  test "a Stop refreshes the writing's own stream, and one on a finished writing broadcasts nothing" do
+    assert_equal %w[ refresh ], capture_turbo_stream_broadcasts(@writing) { @writing.stop }.map { it["action"] }
+    assert_empty capture_turbo_stream_broadcasts(@writing) { @writing.stop }
+  end
+
   test "a stopped writing keeps its use and counts" do
     assert @writing.stop
 
@@ -252,13 +257,13 @@ class DailyBrief::WritingTest < ActiveSupport::TestCase
     assert_no_match "Patience", broadcasts.map(&:to_html).join
   end
 
-  test "a finished job after Stop broadcasts no refresh" do
+  test "a finished job after Stop broadcasts no refresh of its own" do
     broadcasts = capture_turbo_stream_broadcasts(@writing) do
       write(->(*, **) { @writing.stop
                         saved_reply })
     end
 
-    assert_not_includes broadcasts.map { it["action"] }, "refresh"
+    assert_equal 1, broadcasts.count { it["action"] == "refresh" }, "only Stop's"
   end
 
   test "Stop while the reply streams ends the request there, and nothing is broadcast but the progress" do

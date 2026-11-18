@@ -27,9 +27,13 @@ class DailyBrief::Writing < ApplicationRecord
   def self.daily_limit = Ai::Purpose.find(PURPOSE).daily_limit
 
   # Keeps its use: a stopped request counts, as the AI may already have been called. Conditional, so a Stop and a job's
-  # final write never overwrite each other (docs/design/ai.md, Traps).
+  # final write never overwrite each other (docs/design/ai.md, Traps). A Stop that applies refreshes the brief's page
+  # wherever else it's open; the job it stopped writes no ending, so nothing else would.
   def stop
-    (self.class.writing.where(id: id).update_all(status: "stopped", updated_at: Time.current) == 1).tap { reload }
+    (self.class.writing.where(id: id).update_all(status: "stopped", updated_at: Time.current) == 1).tap do
+      reload
+      broadcast_refresh_to self if it
+    end
   end
 
   # The section's checked fields, or nil when the reply had none or the checks left nothing.
