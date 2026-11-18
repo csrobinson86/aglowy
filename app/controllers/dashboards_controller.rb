@@ -12,6 +12,7 @@ class DashboardsController < ApplicationController
     @welcome = [ @next_session, @family_goals, @my_goals, @meeting_notes, @pinned_notes ].all?(&:blank?)
     @todays_meeting = Current.household.current_or_next_meeting if Current.household.meeting_day?
     @daily_brief = todays_daily_brief
+    @shared_thoughts = shared_thoughts
     no_store if @daily_brief # As on the brief's page: Back can't show it to the next person to sign in.
   end
 
@@ -22,6 +23,14 @@ class DashboardsController < ApplicationController
       return unless policy(:daily_brief).show?
 
       Current.user.daily_brief_plan&.todays_brief&.tap(&:mark_seen)
+    end
+
+    # Today's thought from each other member who shared their brief here today, written; never the viewer's own, and
+    # never marked seen, as only the owner's own page or card counts (docs/design/daily-brief.md, For the children, and
+    # sharing; Traps 5 and 8). Children see them too.
+    def shared_thoughts
+      DailyBrief.shared_with(Current.household).where(on: Current.household.today).where.not(user: Current.user)
+        .includes(:user, :writings).order(:created_at).select(&:writing)
     end
 
     # Start for a child with the helper, Open my notes for everyone else (docs/design/meeting-helper.md, Pages).

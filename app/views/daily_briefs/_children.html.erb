@@ -1,0 +1,28 @@
+<%# locals: (brief:, children:, today:, evening:) %>
+<%# For the children, beside the brief (docs/design/daily-brief.md, For the children, and sharing; frames brief-today.png
+    and brief-evening.png): a question to ask them and one thing to do today. Today's has Share with the family, which
+    shows the household the thread, the reading and this box for the day, with no notification; once shared, a Label
+    and Stop sharing. %>
+<% household = Current.household %>
+<section class="mt-4" aria-labelledby="daily-brief-children-heading">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_header { |header| header.with_title(tag: :h2, id: "daily-brief-children-heading") { "For the children" } } %>
+    <% box.with_body do %>
+      <%= render "daily_briefs/children_box", children: %>
+      <% if today %>
+        <% if brief.shared_with?(household) %>
+          <%= render(Primer::Beta::Label.new(scheme: :accent, mt: 3, title: "Shared with #{household.name}", classes: "css-truncate css-truncate-overflow mw-100")) { "Shared with #{household.name}" } %>
+          <%= primer_form_with(url: household_daily_brief_sharing_path, method: :delete, class: "mt-3") do |f| %>
+            <%= render DailyBriefs::SharingForm.new(f, label: "Stop sharing", evening:) %>
+          <% end %>
+          <p class="f6 color-fg-muted mt-2 mb-0">They see today's thread, the reading and this box until tomorrow.</p>
+        <% else %>
+          <%= primer_form_with(url: household_daily_brief_sharing_path, class: "mt-3") do |f| %>
+            <%= render DailyBriefs::SharingForm.new(f, label: "Share with the family", evening:) %>
+          <% end %>
+          <p class="f6 color-fg-muted mt-2 mb-0">Shares today's thread, the reading and this box with <%= household.name %> for today. Nothing else.</p>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>

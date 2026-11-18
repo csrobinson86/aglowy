@@ -1,0 +1,13 @@
+// Today's thought on Home (DailyBriefs::SharedThoughtComponent; frame brief-family.png): the thread, the reading, and
+// the children's box in a bordered box of its own.
+.shared-thought__thread {
+  margin-bottom: var(--base-size-12);
+  overflow-wrap: anywhere;
+}
+
+.shared-thought__children {
+  padding: var(--base-size-16);
+  margin-bottom: var(--base-size-16);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}

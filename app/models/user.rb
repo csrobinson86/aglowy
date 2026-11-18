@@ -254,6 +254,11 @@ class User < ApplicationRecord
     Notification.where(household: household, subject_type: "MeetingPart", subject_id: meeting_parts.select(:id)).withdraw
   end
 
+  # And daily briefs, so today's thought is private again after leaving. They make no notifications to withdraw.
+  def stop_sharing_daily_briefs_with(household)
+    DailyBrief::Sharing.where(household: household, daily_brief: daily_briefs).delete_all
+  end
+
   # Membership#deactivate calls this under the household's lock, so a step naming only someone who left can
   # still be finished. Done steps keep their assignments and ticks as history (docs/design/goals.md,
   # "Leaving a household"). A person's tick on a named step always has an assignment beside it.

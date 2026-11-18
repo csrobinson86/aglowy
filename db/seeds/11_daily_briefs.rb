@@ -19,3 +19,7 @@ if brief && brief.writings.none?
 
   brief.writings.create!(status: "written", chat: Chat.new(user: sam, purpose: DailyBrief::Writing::PURPOSE), result:, sources:)
 end
+
+# Shared with the Demo Family, so Hannah's Home has Today's thought (For the children, and sharing; frame
+# brief-family.png). Sharing again finds the same sharing.
+brief&.share_with(seeded_household("The Demo Family", head: "head@example.com"))

@@ -1,0 +1,13 @@
+<%# locals: (children:) %>
+<%# The children's box from a written writing: a question to ask them and one thing to do today, escaped like every AI
+    field (docs/design/daily-brief.md, For the children, and sharing). On the brief, and in Today's thought on Home. %>
+<dl class="daily-brief-children">
+  <% if children["ask"].present? %>
+    <dt class="daily-brief-children__label">Ask them</dt>
+    <dd class="daily-brief-children__text"><%= children["ask"] %></dd>
+  <% end %>
+  <% if children["today"].present? %>
+    <dt class="daily-brief-children__label">Today</dt>
+    <dd class="daily-brief-children__text"><%= children["today"] %></dd>
+  <% end %>
+</dl>

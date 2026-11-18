@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -186,6 +186,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_150000) do
     t.index ["user_id"], name: "index_daily_brief_plans_on_user_id", unique: true
     t.check_constraint "ready_at_minutes >= 240 AND ready_at_minutes <= 480 AND (ready_at_minutes % 30) = 0", name: "daily_brief_plans_ready_at_minutes_check"
     t.check_constraint "sections <@ ARRAY['daily_text'::character varying, 'reading'::character varying, 'faith_example'::character varying, 'children'::character varying, 'evening'::character varying]", name: "daily_brief_plans_sections_check"
+  end
+
+  create_table "daily_brief_sharings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "daily_brief_id", null: false
+    t.uuid "household_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["daily_brief_id", "household_id"], name: "index_daily_brief_sharings_on_brief_and_household", unique: true
+    t.index ["household_id"], name: "index_daily_brief_sharings_on_household_id"
   end
 
   create_table "daily_brief_writings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -950,6 +958,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_150000) do
   add_foreign_key "daily_brief_pauses", "daily_brief_plans", column: "plan_id", on_delete: :cascade
   add_foreign_key "daily_brief_plans", "users", on_delete: :cascade
   add_foreign_key "daily_brief_writings", "chats", on_delete: :cascade
+  add_foreign_key "daily_brief_sharings", "daily_briefs", on_delete: :cascade
+  add_foreign_key "daily_brief_sharings", "households", on_delete: :cascade
   add_foreign_key "daily_brief_writings", "daily_briefs", on_delete: :cascade
   add_foreign_key "daily_briefs", "users", on_delete: :cascade
   add_foreign_key "family_studies", "households"

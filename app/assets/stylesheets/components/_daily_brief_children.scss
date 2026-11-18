@@ -1,0 +1,20 @@
+// The children's box (daily_briefs/_children_box): a small label over each line, on the brief and in Today's thought
+// on Home.
+.daily-brief-children {
+  margin: 0;
+}
+
+.daily-brief-children__label {
+  font-size: var(--text-body-size-small);
+  font-weight: var(--base-text-weight-semibold);
+  color: var(--fgColor-muted);
+}
+
+.daily-brief-children__text {
+  margin: 0 0 var(--base-size-8);
+  overflow-wrap: anywhere;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}

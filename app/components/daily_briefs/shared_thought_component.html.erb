@@ -1,0 +1,19 @@
+<%= render(Primer::Beta::BorderBox.new(mb: 4, classes: "shared-thought")) do |box| %>
+  <% box.with_header(display: :flex, align_items: :center) do |header| %>
+    <% header.with_title(tag: :h2, flex: 1) { "Today's thought" } %>
+    <%= render(Primer::Beta::Label.new(scheme: :accent, ml: 2, title: "Shared by #{sharer}", classes: "css-truncate css-truncate-overflow min-width-0")) { "Shared by #{sharer}" } %>
+  <% end %>
+  <% box.with_body do %>
+    <p class="shared-thought__thread f3 text-semibold"><%= thread %></p>
+    <% if reading %>
+      <p class="color-fg-muted">Reading: <%= render "bible/references/reference", reference: reading %></p>
+    <% end %>
+    <% if children %>
+      <section class="shared-thought__children" aria-labelledby="<%= dom_id(brief, :children_heading) %>">
+        <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 5, id: dom_id(brief, :children_heading), mb: 2)) { "For the children" } %>
+        <%= render "daily_briefs/children_box", children: %>
+      </section>
+    <% end %>
+    <p class="f6 color-fg-muted mb-0">From <%= sharer %>'s daily brief, shared with <%= household.name %> for today. The rest of the brief stays private.</p>
+  <% end %>
+<% end %>

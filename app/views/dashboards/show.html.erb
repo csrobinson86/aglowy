@@ -28,6 +28,7 @@
 <% end %>
 
 <% if @welcome %>
+  <%= render DailyBriefs::SharedThoughtComponent.with_collection(@shared_thoughts, household: Current.household) %>
   <%= render Primer::Beta::Blankslate.new(border: true, spacious: true) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :home) %>
     <% blankslate.with_heading(tag: :h2) { "Welcome to #{Current.household.name}" } %>
@@ -48,6 +49,8 @@
   <%# Family studies on the left, then family goals and the person's own content; stacked in that order below lg (frame desktop-light.png). %>
   <%= render Primer::Alpha::Layout.new(stacking_breakpoint: :lg, first_in_source: :main, classes: "household-home") do |layout| %>
     <% layout.with_main do %>
+      <%# Today's thought from other members, above the family study (frame brief-family.png). %>
+      <%= render DailyBriefs::SharedThoughtComponent.with_collection(@shared_thoughts, household: Current.household) %>
       <% if @next_session %>
         <%= render "dashboards/next_session", study_session: @next_session %>
       <% else %>
