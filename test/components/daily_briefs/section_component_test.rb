@@ -52,6 +52,17 @@ class DailyBriefs::SectionComponentTest < ViewComponent::TestCase
     assert_no_selector "section"
   end
 
+  test "a row the AI left empty is dropped, unless it carries a linked goal" do
+    render_inline DailyBriefs::SectionComponent.new(kicker: "Patience", title: "Patience", rows: [
+      Row.new(label: "How Jesus showed it", text: nil),
+      Row.new(label: "One way today", text: nil, note: "Your goal: Be more patient")
+    ])
+
+    assert_no_selector "dt", text: "How Jesus showed it"
+    assert_selector "dt", text: "One way today"
+    assert_selector "dd", text: "Your goal: Be more patient"
+  end
+
   test "what the plan says is escaped" do
     render_inline DailyBriefs::SectionComponent.new(kicker: "<b>As a husband</b>", title: "<script>x</script>", rows: [
       Row.new(label: "<i>Today</i>", text: "<img src=x>")

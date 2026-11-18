@@ -13,8 +13,8 @@ class DailyBriefs::SectionComponent < ApplicationComponent
   Row = Data.define(:label, :text, :references, :note) do
     def initialize(label:, text:, references: [], note: nil) = super
 
-    # Nothing to show: an AI field the checks left empty, with no scripture.
-    def blank? = text.blank? && references.empty?
+    # Nothing to show: an AI field the checks left empty, with no scripture and no linked goal.
+    def blank? = text.blank? && references.empty? && note.blank?
   end
 
   attr_reader :id, :kicker, :title, :link, :rows
