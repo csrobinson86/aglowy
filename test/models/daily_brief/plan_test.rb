@@ -166,6 +166,21 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     assert_not DailyBrief::Pause.exists?(plan_id: plan.id)
   end
 
+  test "the database deletes the pause with its plan" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    plan.pause(reason: "chosen")
+
+    DailyBrief::Plan.where(id: plan.id).delete_all
+
+    assert_not DailyBrief::Pause.exists?(plan_id: plan.id)
+  end
+
+  test "the database refuses a pause with no reason" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+
+    assert_raises(ActiveRecord::NotNullViolation) { DailyBrief::Pause.insert!({ plan_id: plan.id, reason: nil }) }
+  end
+
   test "a pause's reason is chosen or unseen" do
     pause = DailyBrief::Plan.start(users(:head), starter: "basics").build_pausing(reason: "bored")
 

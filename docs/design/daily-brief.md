@@ -64,7 +64,7 @@ One per person.
 | `sections` | string[] | not null, default all five, check within the five | Which of `daily_text`, `reading`, `faith_example`, `children`, `evening` are in every brief |
 | `started_at` | datetime | not null | When the plan was started, or started again after a pause. The morning job's first brief is the morning after, and the pause rule counts unseen briefs from here |
 
-- `has_many :focus_areas` (in `position` order), `has_many :days`, `has_one :pause`
+- `has_many :focus_areas` (in `position` order), `has_many :days`, `has_one :pausing` (a `DailyBrief::Pause`; not `:pause`, which is the method `plan.pause(reason:)`)
 - `Plan.start(user, starter:)` builds the plan, its seven days and its focus areas from a `DailyBrief::Starter` (a PORO): `husband_and_father`, `wife_and_mother`, `on_my_own` or `basics`.
 - `Plan.start` sets `started_at`, and so does `plan.resume`.
 - `plan.due?(now)` is true when all of these are:
