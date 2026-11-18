@@ -77,7 +77,9 @@ Kinds and their icons, our own SVGs beside the helper's (`app/assets/images/meet
 
 - `ListeningGame::PrepareJob` runs every Monday at 2am (`config/recurring.yml`). For each household with the meeting helper on, it prepares the game for the current week, unless that household has one already.
 - The same job runs every day at 2am too, so a week that failed on Monday tries again the next day. It stops trying once the week's midweek meeting has passed.
-- **One request at a time for a household and week.** Before any request, the run claims the week: inside `household.with_lock`, it checks there's no game yet and makes a `ListeningGame::Preparation` (unique on `household_id` and `week_of`). If a claim already exists and is less than 15 minutes old, another run is working on it and this one stops. An older claim belongs to a run that died, so this run takes it over by updating its `created_at`. The lock is released before the request goes out, and is never held across a network call. The claim is deleted when the game is saved, and when the request fails or returns nothing usable, so the next daily run can try again. The unique index on `listening_games` (`household_id`, `week_of`) still stops a second game row.
+- **One request at a time for a household and week.** Before any request, the run claims the week: inside `household.with_lock`, it checks there's no game yet and makes a `ListeningGame::Preparation` (unique on `household_id` and `week_of`). If a claim already exists and is less than 15 minutes old, another run is working on it and this one stops. An older claim belongs to a run that died, so this run takes it over by updating its `created_at` and giving it a new `token`. Each claim carries a `token` (a fresh UUID), and the run keeps the token it set. The lock is released before the request goes out, and is never held across a network call. The claim is deleted when the game is saved, and when the request fails or returns nothing usable, so the next daily run can try again.
+- **A request can't outlive its claim.** The provider request has a 5-minute timeout, well under the claim's 15 minutes, and a timeout counts as a failed request. As a fence besides: the run saves its game, and deletes the claim, only inside `household.with_lock` and only while the claim still holds the run's `token`. A run whose claim was taken over saves nothing and leaves the claim alone.
+- **Accepting the AI terms prepares the week.** When a head or adult accepts the AI terms (`Ai::Acceptance`), each of their households with the helper on and no game for the current week gets `prepare_later`, through the same claim. The unique index on `listening_games` (`household_id`, `week_of`) still stops a second game row.
 - Turning the helper on prepares the current week straight away (`prepare_later`).
 
 ### What it asks
@@ -135,6 +137,7 @@ The claim that a run is asking the AI for a household's week (When it runs).
 | --- | --- | --- | --- |
 | `household_id` | uuid | FK, not null, cascade | |
 | `week_of` | date | not null; unique with `household_id` | |
+| `token` | uuid | not null | Which run holds the claim; a run saves only while its token is still there |
 | `created_at` | datetime | not null | A claim older than 15 minutes can be taken over |
 
 ### `ListeningGame::Round`
@@ -224,7 +227,7 @@ Her answer for the Congregation Bible Study.
 
 ## States each story checks
 
-- **The job:** first run for a week; run twice; two runs at once (one request); a claim left by a run that died; nobody has accepted the AI terms (no chat, no request); a week that already has a game; the AI returns fewer rounds, a bad round, a repeated label, or nothing; the copy check removes a label; the helper turned off (no job); a week whose meeting has passed (no retry)
+- **The job:** first run for a week; run twice; two runs at once (one request); a claim left by a run that died; a run whose claim was taken over (saves nothing); the AI terms accepted later (prepared then); nobody has accepted the AI terms (no chat, no request); a week that already has a game; the AI returns fewer rounds, a bad round, a repeated label, or nothing; the copy check removes a label; the helper turned off (no job); a week whose meeting has passed (no retry)
 - **A round:** nothing tapped; a wrong tap; the right tap; tapping the right card twice; the last round of a step; a step with no rounds
 - **Her answer:** none yet; written; changed; given at the meeting; a note with an answer shared and read by a head
 - **The end screen:** with and without finds; with and without an answer
