@@ -59,6 +59,11 @@ module ActiveSupport
       FamilyStudy::Draft.create!(household: household, user: user, chat: chat, prompt: "Prayer as a family", length_minutes: 30, **attributes)
     end
 
+    # A meeting part draft drafting, with its own chat and its use, as MeetingPart#draft leaves one, without asking the AI.
+    def meeting_part_draft(part = meeting_parts(:head_conversation), user: part.user, **attributes)
+      part.drafts.create!(user: user, kind: "outline", chat: Chat.new(user: user, purpose: "meeting_part"), use: Ai::Use.new(user: user, purpose: "meeting_part"), **attributes)
+    end
+
     # A question asking, with its use, as PersonalStudy#ask leaves one, without asking the AI.
     def personal_study_question(study = personal_studies(:head_suffering), **attributes)
       study.questions.create!(user: study.user, prompt: "Why does Jehovah allow suffering?", use: Ai::Use.new(user: study.user, purpose: "personal_study"), **attributes)

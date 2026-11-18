@@ -1,6 +1,8 @@
 require "test_helper"
 
 class MeetingPartTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   def new_part(**attributes)
     users(:head).meeting_parts.new(kind: "following_up", meeting_on: Date.new(2026, 12, 3), minutes: 4, topic: "Return to someone who asked about prayer.", **attributes)
   end
@@ -268,5 +270,96 @@ class MeetingPartTest < ActiveSupport::TestCase
     MeetingPart.where(id: part).delete_all
 
     assert_empty MeetingPart::Sharing.all
+  end
+
+  # Prepare with AI (docs/design/meeting-parts.md, How a request runs). The test queue adapter only enqueues the job.
+  test "draft makes an outline draft with its own chat and its use, and queues MeetingPart::WriteDraftJob once" do
+    users(:head).accept_ai_terms(understood: "1")
+    part = meeting_parts(:head_conversation)
+    draft = nil
+
+    assert_enqueued_jobs 1, only: MeetingPart::WriteDraftJob do
+      draft = part.draft(kind: "outline", request: "The person is busy.", by: users(:head))
+    end
+
+    assert_predicate draft, :persisted?
+    assert_equal [ "outline", "drafting", "The person is busy.", users(:head) ], [ draft.kind, draft.status, draft.request, draft.user ]
+    assert_equal [ "meeting_part", users(:head), nil ], [ draft.chat.purpose, draft.chat.user, draft.chat.household ]
+    assert_equal [ "meeting_part", users(:head) ], [ draft.use.purpose, draft.use.user ]
+    assert_equal [ draft.id ], enqueued_jobs.last["arguments"]
+  end
+
+  test "draft refuses at 15 uses today in the person's time zone, and allows again on a new day" do
+    head = users(:head)
+    head.update!(time_zone: "Pacific Time (US & Canada)")
+    head.accept_ai_terms(understood: "1")
+    zone = ActiveSupport::TimeZone["Pacific Time (US & Canada)"]
+    part = meeting_parts(:head_conversation)
+    travel_to zone.local(2026, 11, 16, 23, 0)
+    15.times { Ai::Use.create!(user: head, purpose: "meeting_part") }
+
+    refused = nil
+    assert_no_difference [ -> { MeetingPart::Draft.count }, -> { Chat.count }, -> { Ai::Use.count } ] do
+      assert_no_enqueued_jobs { refused = part.draft(kind: "outline", request: nil, by: head) }
+    end
+    assert refused.errors.added?(:base, :limit)
+
+    # 8:01 am UTC on the 17th, and just past midnight in California.
+    travel_to zone.local(2026, 11, 17, 0, 1)
+    assert_predicate part.draft(kind: "outline", request: nil, by: head), :persisted?
+  end
+
+  test "draft doesn't count personal study's uses toward meeting parts" do
+    users(:head).accept_ai_terms(understood: "1")
+    15.times { Ai::Use.create!(user: users(:head), purpose: "personal_study") }
+
+    assert_predicate meeting_parts(:head_conversation).draft(kind: "outline", request: nil, by: users(:head)), :persisted?
+  end
+
+  test "draft refuses without the AI terms, for a child, and on someone else's part" do
+    users(:eli).accept_ai_terms(understood: "1")
+    users(:spouse).accept_ai_terms(understood: "1")
+
+    assert_no_difference [ -> { MeetingPart::Draft.count }, -> { Ai::Use.count } ] do
+      assert_no_enqueued_jobs do
+        [ [ :head_conversation, :head ], [ :eli_conversation, :eli ], [ :head_conversation, :spouse ] ].each do |part, user|
+          assert meeting_parts(part).draft(kind: "outline", request: nil, by: users(user)).errors.added?(:base, :not_allowed), "expected #{user} on #{part} to be refused"
+        end
+      end
+    end
+  end
+
+  # Two requests at once can't both take the 15th: the count runs after the person's row is locked, in the same
+  # transaction as the insert, so the second waits for the first to commit and then counts its use.
+  test "two requests racing for the last one: the count and the insert run under the person's lock" do
+    users(:head).accept_ai_terms(understood: "1")
+    14.times { Ai::Use.create!(user: users(:head), purpose: "meeting_part") }
+    part = meeting_parts(:head_conversation)
+    queries = []
+    subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") { |*, payload| queries << payload[:sql] }
+
+    part.draft(kind: "outline", request: nil, by: users(:head))
+    ActiveSupport::Notifications.unsubscribe(subscriber)
+
+    lock = queries.index { it.match?(/FROM "users" .* FOR UPDATE/) }
+    count = queries.index { it.match?(/SELECT COUNT\(\*\) FROM "ai_uses"/) }
+    insert = queries.index { it.start_with?('INSERT INTO "meeting_part_drafts"') }
+    release = queries.index { it.match?(/RELEASE SAVEPOINT/) }
+    assert_operator lock, :<, count
+    assert_operator count, :<, insert
+    assert_operator insert, :<, release
+    assert part.draft(kind: "outline", request: nil, by: users(:head)).errors.added?(:base, :limit), "the next request finds the 15th taken"
+  end
+
+  test "destroying a part destroys its drafts and their chats, and keeps today's uses, so it doesn't give requests back" do
+    part = meeting_parts(:head_conversation)
+    draft = meeting_part_draft(part, status: "drafted")
+
+    part.destroy!
+
+    assert_not MeetingPart::Draft.exists?(draft.id)
+    assert_not Chat.exists?(draft.chat_id)
+    assert_nil Ai::Use.find(draft.use.id).meeting_part_draft_id
+    assert_equal 14, users(:head).part_drafts_left_today
   end
 end
