@@ -17,9 +17,9 @@ What follows from these, and needs Casey's OK in the PR:
 
 - **References and links only.** A brief gives the reference, what to look for in the AI's own words, and a link. It never holds verse text or a publication's wording (`docs/design/ai.md`, safety measure 5). Casey's own job quotes both; Aglowy's can't.
 - **Heads and adults only.** A child has no daily brief in this version, with or without AI.
-- **Three AI writings per person per day:** the morning's, and two more ("Another angle", or trying again after a failure).
+- **Three AI writings per person per day:** the morning's, and two more ("Another angle", or trying again after one was stopped or off topic). One that failed or was flagged isn't counted, as in the other AI features, and a brief takes six requests at most whatever their endings.
 - **Kept for 60 days, shown for one.** The page shows today's brief. Earlier ones are kept 60 days only so the next briefs can avoid repeating them, then deleted. "Keep in Notes" makes a note that is the person's to keep.
-- **It pauses itself after 7 briefs in a row that were never opened.** That takes one fact per brief: when the person first opened it. Nothing else about their use is recorded.
+- **It pauses itself after 7 briefs in a row that the person never saw,** on the brief's page or on their Home card. That takes one fact per brief: when the person first saw it. Nothing else about their use is recorded.
 - **No notification when it's ready.** It's simply there. A notification kind can come later.
 - **Sharing is small and quiet.** "Share with the family" shows the household the thread, the reading and the children's box, for that day, and sends no notification.
 - **English only.** The Daily text link and the brief are in English.
@@ -62,10 +62,16 @@ One per person.
 | `user_id` | uuid | FK, not null, unique, `on_delete: :cascade` | |
 | `ready_at_minutes` | integer | not null, default 300, check 240 to 480 in steps of 30 | "Ready by", 4:00 to 8:00 AM, in the person's zone (`User#calendar_time_zone`) |
 | `sections` | string[] | not null, default all five, check within the five | Which of `daily_text`, `reading`, `faith_example`, `children`, `evening` are in every brief |
+| `started_at` | datetime | not null | When the plan was started, or started again after a pause. The morning job's first brief is the morning after, and the pause rule counts unseen briefs from here |
 
 - `has_many :focus_areas` (in `position` order), `has_many :days`, `has_one :pause`
 - `Plan.start(user, starter:)` builds the plan, its seven days and its focus areas from a `DailyBrief::Starter` (a PORO): `husband_and_father`, `wife_and_mother`, `on_my_own` or `basics`.
-- `plan.due?(now)`: not paused, the person's local time is within 45 minutes of ready-by or past it, and they have no brief for `user.today`.
+- `Plan.start` sets `started_at`, and so does `plan.resume`.
+- `plan.due?(now)` is true when all of these are:
+  - it isn't paused
+  - `user.today` is after the day of `started_at` in the person's zone, so a plan started or started again today gets the job's first brief tomorrow, as the Start page says
+  - the person's local time is within 45 minutes of ready-by, or past it
+  - today's brief isn't prepared: there's none, or it has no writing and the person has accepted the AI terms
 
 ### `DailyBrief::FocusArea`
 
@@ -98,7 +104,7 @@ An empty box means the brief chooses. The Qualities column on the page is the `q
 
 ### `DailyBrief::Pause`
 
-State as a record: `plan_id` (FK, unique, `on_delete: :cascade`), `reason` (check in `chosen`, `unopened`) and `created_at`. Present means paused: nothing is written and nothing is sent.
+State as a record: `plan_id` (FK, unique, `on_delete: :cascade`), `reason` (check in `chosen`, `unseen`) and `created_at`. Present means paused: nothing is written and nothing is sent. `plan.pause(reason:)` makes it. `plan.resume` deletes it and sets the plan's `started_at` to now, so the briefs that went unseen before the pause can't pause it again.
 
 ### `DailyBrief`
 
@@ -109,7 +115,7 @@ One day's brief.
 | `user_id` | uuid | FK, not null, `on_delete: :cascade` | |
 | `on` | date | not null, unique with `user_id` | The person's local date |
 | `plan` | jsonb | not null, encrypted | A copy of what the brief was built from: the sections, the focus areas and that day's row. Changing the plan never changes a brief already made |
-| `opened_at` | datetime | nullable | The first time the person opened it. Set once; used only to pause after 7 unopened |
+| `seen_at` | datetime | nullable | The first time the person saw it: on its page, or on their own Home card. Set once by `brief.mark_seen`; used only to pause after 7 unseen |
 
 - `DailyBrief.for(user, on: user.today)`: inside `user.with_lock`, finds the day's brief or makes it with the copy of the plan.
 - `has_many :writings`; `brief.writing` is the newest one that is `written`.
@@ -135,13 +141,13 @@ One AI request and its checked reply, with a chat of its own, as a meeting part 
 
 `DailyBrief::PrepareJob` runs every 15 minutes (`config/recurring.yml`). For each plan that is `due?`:
 
-1. If the person's last 7 briefs all have no `opened_at`, it makes a `Pause` with `reason: unopened` and stops there.
-2. `DailyBrief.for(user)` makes the day's brief.
-3. If the person has accepted the AI terms, `brief.write(by: user)` starts the AI part (How a writing runs).
+1. If the person has at least 7 briefs made since `started_at`, and the newest 7 all have no `seen_at`, it makes a `Pause` with `reason: unseen` and stops there. Someone who reads the card on Home each day and never opens the page isn't paused.
+2. `DailyBrief.for(user)` finds or makes the day's brief.
+3. If the person has accepted the AI terms and the brief has no writing, `brief.write(by: user)` starts the AI part (How a writing runs).
 
-It starts 45 minutes before ready-by so the brief is there on time. Running twice is safe: the brief is unique per day, and a brief that has a writing isn't written again. At this size the job walks the unpaused plans and asks each one; give it a scope when there are thousands.
+It starts 45 minutes before ready-by so the brief is there on time. Running twice is safe: the brief is unique per day, and the job starts a writing only for a brief that has none. A run that stopped between steps 2 and 3 is finished by the next one, because a brief with no writing is still due. The job never starts a second writing for a brief, whatever the first one's ending. At this size the job walks the unpaused plans and asks each one; give it a scope when there are thousands.
 
-If the job didn't run, the page has "Prepare today's brief" (`POST /:household_id/daily_brief`), which does steps 2 and 3.
+If the job didn't run, the page has "Prepare today's brief" (`POST /:household_id/daily_brief`), which does steps 2 and 3 whatever `due?` says.
 
 ## Pages and routes
 
@@ -182,11 +188,12 @@ end
 
 ### Start
 
-Someone with no plan lands here from the sidebar. A Blankslate-style heading, "Start from a plan" (a radio group of the four starters, each listing its focus areas), the AI notice, and "Start my daily brief". The first brief is ready the next morning. Someone who hasn't accepted the AI terms can still start: their brief has the parts from the plan, and the brief page offers "Turn on AI drafts" (`ai-terms.png`).
+Someone with no plan lands here from the sidebar. A Blankslate-style heading, "Start from a plan" (a radio group of the four starters, each listing its focus areas), the AI notice, and "Start my daily brief". The job's first brief is ready the next morning (`started_at`, above). Someone who hasn't accepted the AI terms can still start: their brief has the parts from the plan, and the brief page offers "Turn on AI drafts" (`ai-terms.png`).
 
 ### Your plan
 
 - **Focus areas:** a list with the name, what it gives, its scriptures and a linked goal; Edit on each; "Add a focus area" opens the dialog, and the chips open it filled in from the library.
+- **Every field that's sent to the AI says so.** The focus area dialog's name and what-it-gives fields, and each box in a day's dialog, carry the caption "Sent to the AI as you type it. Leave out names."
 - **Your week:** a table with a row per day and a column for Reading, each focus area that takes a topic, and Faith examples. Today's row is marked with the word "Today", not colour alone. "Edit" opens that day's dialog (`DailyBriefs::Plans::DayForm`). An empty box reads "The brief chooses".
 - **In every brief:** five check boxes for the sections.
 - **When:** "Ready by", with the person's time zone named.
@@ -215,14 +222,15 @@ States:
 | State | What the page shows |
 | --- | --- |
 | No plan | Start |
-| Paused | A Blankslate: "Your daily brief is paused", why (you paused it, or seven went unopened), and "Start it again" |
-| Before the first brief | "Your first brief is ready tomorrow morning" |
+| Paused | A Blankslate: "Your daily brief is paused", why (you paused it, or you hadn't looked at seven in a row), and "Start it again" |
+| Before the first brief | "Your first brief is ready tomorrow morning", and "Prepare today's brief" for someone who wants one now |
 | Today's isn't made yet | Yesterday's brief with its date, and "Today's brief is ready by 5:00 AM". After ready-by with none made: "Prepare today's brief" |
+| Made, with no writing yet, AI terms accepted | The parts from the plan and "Write it with AI" (`writings#create`). The next run of the morning job starts it too |
 | Being written | The parts from the plan, and the AI's progress lines with Stop |
 | Written | The whole brief |
 | No AI terms | The parts from the plan, and "Turn on AI drafts" |
 | Failed, flagged, off topic, stopped | The parts from the plan and a Banner saying so; "Try again" while requests are left (`brief-base.png`) |
-| Limit reached | "Another angle" is replaced by "No more today" |
+| Limit reached (3 counted today, or 6 writings of this brief) | "Another angle", "Try again" and "Write it with AI" are replaced by "No more today" |
 
 The parts from the plan are: the Daily text link, the day's reading books, the day's qualities and examples, and each focus area's name, topic and scriptures.
 
@@ -238,7 +246,7 @@ When `children` is among the plan's sections, the brief has a question to ask th
 
 ### On Home
 
-For the person: a "Your daily brief" card at the top of Home, with "Only you see this", the thread, the reading, the quality and the example, and "Open today's brief". Without a written brief it shows what the plan gives. No card when there's no plan or it's paused.
+For the person: a "Your daily brief" card at the top of Home, with "Only you see this", the thread, the reading, the quality and the example, and "Open today's brief". Without a written brief it shows what the plan gives. No card when there's no plan or it's paused. Showing the card counts as seeing the brief (`brief.mark_seen`).
 
 ### Keep in Notes, and print
 
@@ -253,9 +261,10 @@ Everything in `docs/design/ai.md` applies. This section only adds to it.
 
 - **Its one job:** write a daily brief from a plan of spiritual focus areas. Anything else is `off_topic`.
 - `instructions` in `config/ai/daily_brief.md`; `allowed_hosts` as always; `max_searches` 6
-- `daily_limit` 3 per person, counted from `Ai::Use` rows in the person's time zone under the person's lock
+- `daily_limit` 3 per person, counted from `Ai::Use` rows since midnight in `User#limit_time_zone` under the person's lock, as personal study counts its questions
 - `keep_for` 60 days. Each writing has its own chat, so the daily purge (`Ai::PurgeExpiredChatsJob`) deletes a chat 60 days after it was made and the writing goes with it. `DailyBrief::PurgeJob`, daily, deletes briefs more than 60 days old with their writings and chats. `daily_brief` joins the `chats` and `ai_uses` purpose checks.
-- **What's sent:** the date; which sections are on; each focus area's name, what it gives and its scriptures; the day's row (reading, examples, topics); and the passages, qualities and examples used on this weekday in the person's last 8 briefs, as references and names only, to avoid repeating them. **Never** the person's name, their family's names, their notes, a goal's wording or the household (`docs/design/ai.md`, safety measure 7). The plan page says so.
+- **What's sent:** the date; which sections are on; each focus area's name, what it gives and its scriptures; the day's row (reading, examples, topics); and the passages, qualities and examples used on this weekday in the person's last 8 briefs, as references and the names of the qualities and Bible examples only, to avoid repeating them. **Aglowy adds nothing else:** never the person's name, their family's names, their notes, a goal's wording or the household (`docs/design/ai.md`, safety measure 7). The plan page says so.
+- **What the person typed in the plan is sent as typed,** as a family study request or a personal study question is. Aglowy doesn't try to find and remove names in it. No filter does that reliably, and one that removed the household's own names would also remove qualities: Grace, Faith, Joy and Patience are names too. The control is where the text is typed: every field that's sent says so and asks for no names (Your plan), the plan page lists what's sent, and nothing is sent at all until the person has accepted the AI terms.
 - **Moderation** runs on everything the person typed that is sent, together.
 
 ### The reply
@@ -286,12 +295,16 @@ The checks, in order:
 
 `brief.write(by: user)` does this inside `user.with_lock`:
 
-- refuses with `:limit` at 3 today, `:not_allowed` unless `may_have_daily_brief?` and `accepted_ai_terms?`, and `:busy` while a writing of this brief is `writing`
+- refuses with `:limit` when 3 of the person's `daily_brief` uses are from today, or when this brief already has 6 writings whatever their endings
+- refuses with `:not_allowed` unless `may_have_daily_brief?` and `accepted_ai_terms?`
+- refuses with `:busy` while a writing of this brief is `writing`
 - makes the writing (`writing`) with its own chat and its `Ai::Use`
 
 After the lock block returns it calls `write_later`. `DailyBrief::WriteJob` → `writing.write_now`, the same five steps as `FamilyStudy::Draft#write_now`: moderation; `chat.ask_within_purpose` with progress lines only; the checks; the final status with a conditional update that applies only while `writing`; one broadcast of the result.
 
 What counts, a refused job, a job that raises, Stop, and the accepted gap are exactly as in `docs/design/meeting-parts.md`, When a request doesn't finish: `failed` and `flagged` delete the use, every other status keeps it, and whichever ending is written first stands.
+
+So the 3 a day are the requests that didn't end in a failure. Because a failed one gives its use back, a plan whose replies keep failing the checks could otherwise be tried again without end, and each try is a paid request. The cap of 6 writings per brief stops that: it counts every writing, failed or not.
 
 "Another angle" is a new writing of the same brief. The page shows the newest written one; the earlier one stays until the purge and isn't shown.
 
@@ -305,23 +318,25 @@ What counts, a refused job, a job that raises, Stop, and the accepted gap are ex
 ## Traps
 
 1. **No verse or publication text.** References, links and the AI's own words. The limits of the checks are the ones in `docs/design/meeting-parts.md`, Trap 4.
-2. **Send only the plan's own words and the date.** Not names, not a goal's title or steps, not notes, even though the brief page shows a goal's next step beside the AI's text.
+2. **Send only the plan's own words and the date.** Aglowy adds no names, no goal's title or steps and no notes, even though the brief page shows a goal's next step beside the AI's text. The plan's words go as the person typed them: don't add a name filter (The purpose says why), and keep the "Leave out names" caption on every field that's sent.
 3. **Never show a daily text the AI didn't read.** Check 4 decides, not the reply.
 4. **The evening questions have no inputs.** Don't add check boxes, a score or a history.
-5. **One fact about use.** `opened_at` is set once and read only by the pause rule. No streaks, no counts, no "you missed yesterday".
-6. **One brief a day, one writing at a time, one chat per writing.** `DailyBrief.for` and `brief.write` run under the person's lock; the job is safe to run twice.
+5. **One fact about use.** `seen_at` is set once, by the brief's page or the person's own Home card, and read only by the pause rule. A shared thought on someone else's Home never sets it. No streaks, no counts, no "you missed yesterday".
+6. **One brief a day, one writing at a time, one chat per writing.** `DailyBrief.for` and `brief.write` run under the person's lock; the job is safe to run twice, and it finishes a brief it made but didn't start writing.
 7. **A brief is a copy.** It reads its own `plan`, never the live plan, so editing the plan can't change or break today's brief.
 8. **Sharing shows three things:** the thread, the reading and the children's box. The shared card is found through `DailyBrief.shared_with(Current.household)`, on its day only.
 9. **Don't show a writing's text while it's being written,** and don't let a finished job override Stop (`docs/design/ai.md`, Traps).
 10. **Children have no daily brief.** No sidebar item, and the policy refuses every action. Don't add a grant or a setting.
 11. **AI output is untrusted text.** Escape every field. The note body is built by our partial, never from AI HTML.
+12. **`started_at` is where the job and the pause rule begin.** The job's first brief is the morning after it, and only briefs made since it count toward seven unseen. Set it on start and on every resume, or a plan started again after seven unseen pauses itself the next morning.
+13. **Failures are free to the person, not to us.** A failed or flagged writing gives its use back, so the 6 per brief is the only thing between a plan that keeps failing and endless paid requests. Count every writing for it.
 
 ## States each story checks
 
 - Person: head, adult, child (no brief), a member seeing a shared thought, a non-member (404), not yet accepted the AI terms
-- Plan: none, each starter, six focus areas, a focus area with and without scriptures and a goal, a day with every box empty, each section off, paused by choice, paused after seven unopened, started again
-- Brief: none yet, yesterday's before ready-by, made by the job, made from the page, built from an edited plan (unchanged)
-- AI: written, a section off, off topic, flagged, provider error, the daily text's page missing from the sources (link only), a reference that doesn't parse (dropped), a quotation of more than 5 words (removed), too thin, stopped, 2 used and 3 used, a new day in the person's time zone
+- Plan: none, each starter, six focus areas, a focus area with and without scriptures and a goal, a day with every box empty, each section off, paused by choice, paused after seven unseen, started again (not paused again the next morning), started today (no brief from the job until tomorrow)
+- Brief: none yet, yesterday's before ready-by, made by the job, made from the page, made by the job with no writing (the next run starts one), built from an edited plan (unchanged)
+- AI: written, a section off, off topic, flagged, provider error, the daily text's page missing from the sources (link only), a reference that doesn't parse (dropped), a quotation of more than 5 words (removed), too thin, stopped, 2 used and 3 used, 6 writings of one brief, a new day in the person's time zone
 - Evening: before and after 6:00 PM in the person's zone
 - Sharing: shared, stopped, the day after, another household
 - Kept: a writing 61 days old goes with its chat; a brief 61 days old goes; a note kept from a brief stays

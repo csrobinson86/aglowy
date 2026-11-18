@@ -36,7 +36,7 @@ A PORO per purpose in `app/models/ai/purpose/`, for example `Ai::Purpose::Family
 - `allowed_hosts`: `www.jw.org`, `jw.org` and `wol.jw.org`
 - `max_searches`: the most web searches one request may run (5 for family study drafts)
 - `max_output_tokens`
-- `daily_limit` and what it counts (10 a day for the household for family study drafts; 30 a day per person for personal study, 15 a day per person for meeting parts and 3 a day per person for the daily brief, all counted from `Ai::Use` rows in the person's time zone)
+- `daily_limit` and what it counts (10 a day for the household for family study drafts, counted in the household's time zone; per person, 30 a day for personal study, 15 for meeting parts and 3 for the daily brief, each counted from `Ai::Use` rows in the person's time zone)
 - `keep_for`: how long its records and chats are kept (7 days for family study drafts; 60 days for meeting part drafts and daily brief writings; `nil`, kept until the person deletes them, for personal study)
 - `copy_overlap_words` (8) and `quote_max_words` (5), the copy check's policy values (safety measure 5)
 
