@@ -1,0 +1,21 @@
+<%# locals: (plan:) %>
+<%# Which sections are in every brief, read-only for now (docs/design/daily-brief.md, Your plan). %>
+<% details = {
+     "daily_text" => [ "Daily text", "A link to the day's text, and three things to think about." ],
+     "reading" => [ "Bible reading", "One passage from the day's books, with what to look for." ],
+     "faith_example" => [ "Imitate their faith", "One lesson from the day's example." ],
+     "children" => [ "For the children", "A question to ask and something to do. You choose each day whether to share it with the household." ],
+     "evening" => [ "Evening questions", "Three or four questions that open at 6:00 PM. Answers are never saved." ]
+   } %>
+<ul class="list-style-none">
+  <% details.each do |section, (name, caption)| %>
+    <% on = plan.sections.include?(section) %>
+    <li class="d-flex mb-2">
+      <%= render(Primer::Beta::Octicon.new(on ? :check : :dash, color: on ? :success : :muted, mr: 2, mt: 1)) %>
+      <div>
+        <div class="text-bold"><%= name %><% unless on %> <span class="text-normal color-fg-muted">(off)</span><% end %></div>
+        <div class="text-small color-fg-muted"><%= caption %></div>
+      </div>
+    </li>
+  <% end %>
+</ul>

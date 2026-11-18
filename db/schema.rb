@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -134,6 +134,48 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_110000) do
     t.index ["user_id", "name"], name: "index_collections_on_user_id_and_name", unique: true
     t.check_constraint "char_length(name::text) >= 1 AND char_length(name::text) <= 40", name: "collections_name_length_check"
     t.check_constraint "used_in::text = ANY (ARRAY['both'::character varying, 'studies'::character varying, 'notes'::character varying]::text[])", name: "collections_used_in_check"
+  end
+
+  create_table "daily_brief_days", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "plan_id", null: false
+    t.integer "wday", null: false
+    t.string "reading"
+    t.string "examples"
+    t.jsonb "topics", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["plan_id", "wday"], name: "index_daily_brief_days_on_plan_id_and_wday", unique: true
+    t.check_constraint "wday >= 0 AND wday <= 6", name: "daily_brief_days_wday_check"
+  end
+
+  create_table "daily_brief_focus_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "plan_id", null: false
+    t.integer "position", null: false
+    t.string "kind", null: false
+    t.string "name", null: false
+    t.text "gives", null: false
+    t.string "scriptures"
+    t.uuid "goal_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["goal_id"], name: "index_daily_brief_focus_areas_on_goal_id"
+    t.index ["plan_id"], name: "index_daily_brief_focus_areas_on_plan_id"
+    t.index ["plan_id"], name: "index_daily_brief_focus_areas_one_appreciation", unique: true, where: "((kind)::text = 'appreciation'::text)"
+    t.index ["plan_id"], name: "index_daily_brief_focus_areas_one_quality", unique: true, where: "((kind)::text = 'quality'::text)"
+    t.check_constraint "char_length(scriptures::text) <= 120", name: "daily_brief_focus_areas_scriptures_check"
+    t.check_constraint "kind::text = ANY (ARRAY['role'::character varying, 'quality'::character varying, 'appreciation'::character varying]::text[])", name: "daily_brief_focus_areas_kind_check"
+  end
+
+  create_table "daily_brief_plans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.integer "ready_at_minutes", default: 300, null: false
+    t.string "sections", default: ["daily_text", "reading", "faith_example", "children", "evening"], null: false, array: true
+    t.datetime "started_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_daily_brief_plans_on_user_id", unique: true
+    t.check_constraint "ready_at_minutes >= 240 AND ready_at_minutes <= 480 AND (ready_at_minutes % 30) = 0", name: "daily_brief_plans_ready_at_minutes_check"
+    t.check_constraint "sections <@ ARRAY['daily_text'::character varying, 'reading'::character varying, 'faith_example'::character varying, 'children'::character varying, 'evening'::character varying]", name: "daily_brief_plans_sections_check"
   end
 
   create_table "family_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -868,6 +910,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_110000) do
   add_foreign_key "chats", "ruby_llm_models"
   add_foreign_key "chats", "users"
   add_foreign_key "collections", "users"
+  add_foreign_key "daily_brief_days", "daily_brief_plans", column: "plan_id", on_delete: :cascade
+  add_foreign_key "daily_brief_focus_areas", "daily_brief_plans", column: "plan_id", on_delete: :cascade
+  add_foreign_key "daily_brief_focus_areas", "goals", on_delete: :nullify
+  add_foreign_key "daily_brief_plans", "users", on_delete: :cascade
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"
   add_foreign_key "family_study_drafts", "chats", on_delete: :cascade

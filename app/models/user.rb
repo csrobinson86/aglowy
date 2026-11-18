@@ -26,6 +26,7 @@ class User < ApplicationRecord
   has_many :family_study_drafts, class_name: "FamilyStudy::Draft", dependent: :delete_all
   has_many :ai_acceptances, class_name: "Ai::Acceptance", dependent: :delete_all
   has_many :ai_uses, class_name: "Ai::Use", dependent: :delete_all
+  has_one :daily_brief_plan, class_name: "DailyBrief::Plan", dependent: :destroy
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 
@@ -117,6 +118,12 @@ class User < ApplicationRecord
   # Head or adult in any active household. Meeting parts are the person's, not one household's, and children never get
   # AI help with them (docs/design/meeting-parts.md, Who can do what).
   def may_prepare_parts_with_ai?
+    memberships.active.where(role: %w[ head adult ]).exists?
+  end
+
+  # Head or adult in any active household. The daily brief is the person's, not one household's, and children have none
+  # (docs/design/daily-brief.md, Who can do what).
+  def may_have_daily_brief?
     memberships.active.where(role: %w[ head adult ]).exists?
   end
 

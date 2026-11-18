@@ -1,0 +1,36 @@
+<%# locals: (plan:, today:) %>
+<%# Your week: a row per day from Monday, with a column for Reading, each focus area that takes a topic (the quality one
+    is Qualities) and Faith examples. Today's row says "Today", not by colour alone. An empty box: the brief chooses.
+    At phone width the table scrolls inside its box, never the page; the box is focusable so a keyboard can scroll it. %>
+<% areas = plan.topic_areas %>
+<% chooses = tag.span("The brief chooses", class: "color-fg-muted") %>
+<div class="daily-brief-week" tabindex="0">
+  <table class="daily-brief-week__table">
+    <thead>
+      <tr>
+        <th scope="col">Day</th>
+        <th scope="col">Reading</th>
+        <% areas.each do |area| %>
+          <th scope="col"><%= area.quality? ? "Qualities" : area.name %></th>
+        <% end %>
+        <th scope="col">Faith examples</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% plan.days.sort_by { (it.wday - 1) % 7 }.each do |day| %>
+        <% is_today = day.wday == today.wday %>
+        <tr class="<%= class_names("daily-brief-week__row", "daily-brief-week__row--today": is_today) %>">
+          <th scope="row">
+            <%= day.short_name %>
+            <% if is_today %><span class="d-block text-small text-normal color-fg-accent">Today</span><% end %>
+          </th>
+          <td><%= day.reading || chooses %></td>
+          <% areas.each do |area| %>
+            <td><%= day.topic_for(area) || chooses %></td>
+          <% end %>
+          <td><%= day.examples || chooses %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

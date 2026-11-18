@@ -1,0 +1,32 @@
+<% content_for :title, "Daily brief" %>
+
+<%# Start (docs/design/daily-brief.md, Start; frame brief-start.png): a Blankslate-style heading, the starters, the AI
+    notice and Start my daily brief. Someone who hasn't accepted the AI terms can start too. %>
+<div class="container-md mx-auto">
+  <%= render(Primer::Beta::Blankslate.new(narrow: true, pb: 3)) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :"north-star") %>
+    <% blankslate.with_heading(tag: :h1) { "Start your day with a daily brief" } %>
+    <% blankslate.with_description do %>
+      Each morning Aglowy puts together a short brief from your own plan: the day's text, a reading, a quality to work on,
+      and one thing to do in the roles that matter to you. It's ready before you're up, and only you see it.
+    <% end %>
+  <% end %>
+
+  <%= primer_form_with(model: @plan, url: household_daily_brief_plan_path) do |f| %>
+    <%= render DailyBriefs::StartForm.new(f, section: :starters) %>
+
+    <%= render(Primer::Box.new(border: true, border_color: :done_emphasis, border_radius: 2, p: 3, my: 4)) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, color: :done, mb: 1)) { "Written by AI, from jw.org and wol.jw.org" } %>
+      <p class="mb-2">The brief links to every page it used and never copies their text. You read the verses and articles at their source.</p>
+      <p class="color-fg-muted mb-0">
+        AI can get things wrong, so check each point against its source. Only your focus areas and the day's row of your plan
+        are sent: never your name, your family's names or your notes.
+      </p>
+    <% end %>
+
+    <div class="d-flex flex-wrap flex-items-center">
+      <%= render DailyBriefs::StartForm.new(f, section: :submit) %>
+      <span class="color-fg-muted ml-3">Your first brief is ready tomorrow morning.</span>
+    </div>
+  <% end %>
+</div>

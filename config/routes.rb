@@ -136,6 +136,10 @@ Rails.application.routes.draw do
     end
     # Turn on for this browser and Remove, in Settings → Notifications; always the person's own devices.
     resources :push_subscriptions, only: %i[ create destroy ]
+    # The signed-in person's daily brief and its plan, for heads and adults (docs/design/daily-brief.md, Pages and routes).
+    resource :daily_brief, only: [] do
+      resource :plan, only: %i[ new create show ], module: :daily_briefs
+    end
     # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).
     resource :todays_meeting, only: %i[ show create ]
     resources :meeting_notes, only: %i[ index create show edit update ] do
