@@ -1,79 +1,22 @@
 <%# locals: (brief:, writing: nil) %>
-<%# The brief's sections (docs/design/daily-brief.md, The brief; frames brief-today.png and brief-base.png): the AI's
-    words from its newest written writing where it wrote that section, and the parts from the plan, from the brief's own
-    copy, where it didn't. The Daily text keeps the AI's words only when it read that day's page (check 4); otherwise
-    it's the link alone. A section with nothing to show isn't drawn. Every AI field is escaped, and every scripture is a
-    link made by Bible::Reference. %>
-<% day, section, row, link = brief.day, DailyBriefs::SectionComponent, DailyBriefs::SectionComponent::Row, DailyBriefs::SectionComponent::Link %>
+<%# The brief's sections (docs/design/daily-brief.md, The brief; frames brief-today.png and brief-base.png), built by
+    brief_sections from the newest written writing and the brief's own copy of the plan. A section with nothing to show
+    isn't drawn. Every AI field is escaped, and every scripture is a link made by Bible::Reference. %>
+<% sections = brief_sections(brief, writing) %>
 <div class="daily-brief">
-  <% if brief.section?(:daily_text) %>
-    <% text = writing&.section(:daily_text) %>
-    <%= render section.new(kicker: "Daily text", title: text&.dig("reference") || brief.on.strftime("%A, %B %-d"),
-          link: link.new(text: "Open #{text ? "today's text" : "the Daily text"} on wol.jw.org", href: brief.daily_text_url, note: "the text and its comment are read there"),
-          rows: text ? [ row.new(label: "What's happening", text: text["happening"]), row.new(label: "What it teaches me about Jehovah", text: text["teaches"]),
-                         row.new(label: "How I can use it today", text: text["apply"], references: brief_references(text["apply_scripture"])) ] : []) %>
+  <% sections.values_at(:daily_text, :reading).compact.each do |section| %>
+    <%= render section %>
   <% end %>
 
-  <% if brief.section?(:reading) %>
-    <% if (reading = writing&.section(:reading)) %>
-      <% chapter = passage_chapter(reading["passage"]) %>
-      <%= render section.new(kicker: [ "Bible reading", ("from #{day.reading}" if day.reading.present?) ].compact.join(" · "), id: "daily-brief-reading",
-            title: [ reading["passage"], reading["title"] ].compact.join(" · ").presence || day.reading.presence || "Today's reading",
-            link: (link.new(text: "Read #{chapter} on jw.org", href: chapter.jw_url, note: "what to look for as you read:") if chapter),
-            rows: Array(reading["look_for"]).map { row.new(label: verses_label(it["verses"]), text: it["text"]) }) %>
-    <% else %>
-      <%= render section.new(kicker: "Bible reading", title: day.reading, id: "daily-brief-reading", rows: [
-            row.new(label: "From your week", text: brief.reading_start ? "Pick up where you left off, or start at" : "Pick up where you left off, or choose a chapter.",
-                    references: [ brief.reading_start ].compact) ]) %>
-    <% end %>
-  <% end %>
-
-  <% if brief.quality_area || brief.appreciation_area %>
+  <% if (pair = sections.values_at(:quality, :appreciation).compact).any? %>
     <div class="daily-brief__pair">
-      <% if (area = brief.quality_area) %>
-        <% if (quality = writing&.section(:quality)) %>
-          <%= render section.new(kicker: area.name, title: quality["name"] || area.name, id: "daily-brief-quality", rows: [
-                row.new(label: "What it is", text: quality["what"], references: brief_references(quality["what_scripture"])),
-                row.new(label: "How Jesus showed it", text: quality["jesus"], references: brief_references(quality["jesus_scripture"])),
-                row.new(label: "One way today", text: quality["today"]) ]) %>
-        <% else %>
-          <% topic = brief.topic_for(area) %>
-          <%= render section.new(kicker: area.name, title: topic || area.name, id: "daily-brief-quality", rows: [
-                row.new(label: "From your week", text: topic ? "#{day.name}'s qualities." : area.gives, references: area.scripture_references) ]) %>
-        <% end %>
-      <% end %>
-      <% if (area = brief.appreciation_area) %>
-        <% if (appreciation = writing&.section(:appreciation)) %>
-          <%= render section.new(kicker: area.name, title: appreciation["title"] || area.name, id: "daily-brief-appreciation", rows: [
-                row.new(label: "Seen today", text: appreciation["seen"], references: brief_references(appreciation["scripture"])),
-                row.new(label: "Think about", text: appreciation["think"]) ]) %>
-        <% else %>
-          <%= render section.new(kicker: area.name, title: brief.topic_for(area) || "One thing to thank him for", id: "daily-brief-appreciation", rows: [
-                row.new(label: "Think about", text: "What did I see of him in my reading today?", references: area.scripture_references) ]) %>
-        <% end %>
+      <% pair.each do |section| %>
+        <%= render section %>
       <% end %>
     </div>
   <% end %>
 
-  <% if brief.role_areas.any? %>
-    <% focus = writing&.section(:focus) %>
-    <%= render section.new(kicker: "Your focus today", title: focus ? "One thing in each role" : "From your plan", id: "daily-brief-focus",
-          rows: brief.role_areas.each_with_index.map { |area, index|
-            if (written = focus&.dig(index)&.presence)
-              row.new(label: area.name, text: written["action"], references: brief_references(written["scripture"]))
-            else
-              row.new(label: area.name, text: (topic = brief.topic_for(area)) ? "#{topic}." : area.gives, references: area.scripture_references)
-            end }) %>
-  <% end %>
-
-  <% if brief.section?(:faith_example) %>
-    <% if (faith = writing&.section(:faith)) %>
-      <% examples = Array(faith["examples"]) %>
-      <%= render section.new(kicker: "Imitate their faith", title: examples.pluck("name").to_sentence(two_words_connector: " and ", last_word_connector: " and ").presence || day.examples.presence || "For me",
-            id: "daily-brief-faith", rows: examples.map { row.new(label: it["name"], text: it["lesson"], references: brief_references(it["scriptures"])) } +
-                                           [ row.new(label: "For me", text: faith["for_me"]) ]) %>
-    <% else %>
-      <%= render section.new(kicker: "Imitate their faith", title: day.examples, id: "daily-brief-faith", rows: [ row.new(label: "From your week", text: "#{day.name}'s examples.") ]) %>
-    <% end %>
+  <% sections.values_at(:focus, :faith).compact.each do |section| %>
+    <%= render section %>
   <% end %>
 </div>

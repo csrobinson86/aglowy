@@ -1,0 +1,34 @@
+<%# locals: (brief:, writing:) -%>
+<%# A brief as Keep in Notes keeps it (DailyBrief#keep_as_note; docs/design/daily-brief.md, Keep in Notes, and print):
+    the thread, the sections the page shows (brief_sections), for the children, the evening questions and the pages it
+    used. Every field is escaped here, never the AI's own HTML (Trap 11), and each section's references are scripture
+    links; keep_as_note links any others in the text. %>
+<% if (thread = writing&.section(:thread)).present? %>
+  <h2>Today's thread</h2>
+  <p><%= thread %></p>
+<% end %>
+<% brief_sections(brief, writing).values.compact.select(&:render?).each do |section| %>
+  <h2><%= section.kicker %></h2>
+  <% if section.title != section.kicker %><p><strong><%= section.title %></strong></p><% end %>
+  <% if section.link %><p><%= link_to section.link.text, section.link.href %></p><% end %>
+  <% section.rows.each do |row| %>
+    <p><strong><%= row.label %>:</strong> <%= row.text %> <%= safe_join(row.references.map { scripture_attachment(it) }, "; ") %></p>
+  <% end %>
+<% end %>
+<% if brief.section?(:children) && (children = writing&.section(:children)&.compact_blank.presence) %>
+  <h2>For the children</h2>
+  <% if children["ask"].present? %><p><strong>Ask them:</strong> <%= children["ask"] %></p><% end %>
+  <% if children["today"].present? %><p><strong>Today:</strong> <%= children["today"] %></p><% end %>
+<% end %>
+<% if brief.evening_questions.any? %>
+  <h2>To end the day</h2>
+  <ol>
+    <% brief.evening_questions.each do |question| %><li><%= question["text"] %></li><% end %>
+  </ol>
+<% end %>
+<% if writing&.sources.present? %>
+  <h2>Pages it used</h2>
+  <ul>
+    <% writing.sources.each do |source| %><li><%= link_to source["title"].presence || source_host(source["url"]), source["url"] %></li><% end %>
+  </ul>
+<% end %>

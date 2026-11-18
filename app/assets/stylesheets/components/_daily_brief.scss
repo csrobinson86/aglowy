@@ -92,3 +92,36 @@
   border: var(--borderWidth-thin) dashed var(--borderColor-default);
   border-radius: var(--borderRadius-medium);
 }
+
+// Keep in Notes, Print and Another angle under the brief (frame brief-today.png).
+.daily-brief-page__actions {
+  gap: var(--base-size-8);
+}
+
+// Printed (docs/design/daily-brief.md, Keep in Notes, and print): the brief alone, across the page. The app shell's
+// sidebar and top bar, the side column, the Morning / Evening switch and every button are left out, and the
+// columns they leave become one.
+@media print {
+  body:has(.daily-brief-page) {
+    .app-shell__top-bar,
+    .app-shell > .Layout-sidebar,
+    main .Subhead-actions,
+    main :is(button, .Button, .btn) {
+      display: none;
+    }
+
+    .app-shell {
+      display: block;
+    }
+  }
+
+  .daily-brief-page {
+    display: block;
+  }
+
+  .daily-brief-page__side,
+  .daily-brief-page__actions,
+  .daily-brief-switch {
+    display: none;
+  }
+}

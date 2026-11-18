@@ -52,6 +52,9 @@ application.register("open-from-md", OpenFromMdController)
 import RepeatFieldController from "./repeat_field_controller"
 application.register("repeat-field", RepeatFieldController)
 
+import PrintController from "./print_controller"
+application.register("print", PrintController)
+
 import PushSubscriptionController from "./push_subscription_controller"
 application.register("push-subscription", PushSubscriptionController)
 

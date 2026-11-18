@@ -40,6 +40,11 @@ class DailyBrief < ApplicationRecord
     end
   end
 
+  # The brief the page shows on +day+: that day's, or the newest before it while that day's isn't made.
+  def self.shown_on(day)
+    where(on: ..day).order(on: :desc).first
+  end
+
   # The AI part, written, with its own chat and its use, then written in the background; or an unsaved writing with an
   # error saying why not: :not_allowed unless it's the person's own brief and they may have AI drafts, :paused while
   # their plan is paused, :written with first: true once the brief has a writing of any status, :busy while one is being
@@ -139,8 +144,23 @@ class DailyBrief < ApplicationRecord
     with_lock { update!(seen_at: Time.current) unless seen_at }
   end
 
+  # A copy kept as one of the owner's own notes, titled with its date (Keep in Notes, and print). The body is our own
+  # partial, every field escaped and every reference a scripture link (Trap 11), from the newest written writing or,
+  # with none, the parts from the plan. Nothing links it back, so it stays when the brief is purged; keeping it twice
+  # makes two.
+  def keep_as_note
+    user.personal_notes.new(title: "Daily brief · #{on.strftime("%A, %B %-d")}", body: note_html).tap do |note|
+      note.link_scriptures
+      note.save!
+    end
+  end
+
   private
     def notifies_when_shared? = false
+
+    def note_html
+      ApplicationController.render(partial: "daily_briefs/note", locals: { brief: self, writing: })
+    end
 
     def write_refusal(by, first:)
       if by != user || !(by.may_have_daily_brief? && by.accepted_ai_terms?)
