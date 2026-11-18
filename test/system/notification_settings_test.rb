@@ -19,7 +19,7 @@ class NotificationSettingsTest < ApplicationSystemTestCase
 
     within_fieldset("Weekly preview") { check "Email" }
     capture_screens("settings-notifications")
-    within("#notification-settings") { click_button_after_prefetch "Save" }
+    within("#notification-settings") { click_on "Save" }
 
     assert_text "Your notifications are saved."
     within_fieldset("Weekly preview") { assert_checked_field "Email" }
@@ -28,7 +28,7 @@ class NotificationSettingsTest < ApplicationSystemTestCase
 
     select "10:30 PM", from: "From"
     select "6:00 AM", from: "Until"
-    within("#quiet-hours") { click_button_after_prefetch "Save" }
+    within("#quiet-hours") { click_on "Save" }
 
     assert_text "Your quiet hours are saved."
     assert_field "From", with: "22:30"
