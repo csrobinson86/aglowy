@@ -16,7 +16,7 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
   end
 
   def create
-    @focus_area = @plan.add_focus_area(params.expect(daily_brief_focus_area: %i[ kind name gives scriptures ]))
+    @focus_area = @plan.add_focus_area(params.expect(daily_brief_focus_area: %i[ kind name gives scriptures goal_id ]))
 
     if @focus_area.persisted?
       close_dialog "Focus area added.", focus: @focus_area
@@ -30,7 +30,7 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
 
   # The kind is set when it's added and never changes.
   def update
-    if @focus_area.update(params.expect(daily_brief_focus_area: %i[ name gives scriptures ]))
+    if @focus_area.update(params.expect(daily_brief_focus_area: %i[ name gives scriptures goal_id ]))
       close_dialog "Focus area saved.", focus: @focus_area
     else
       render :edit, status: :unprocessable_content

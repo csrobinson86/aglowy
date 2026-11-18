@@ -399,6 +399,17 @@ class DailyBriefTest < ActiveSupport::TestCase
       "Pages it used", "Today's text and comment" ].each { assert_includes text, it }
   end
 
+  test "keep_as_note keeps a linked goal's line as the page shows it" do
+    goal = @user.goals.create!(set_by: @user, title: "Qualify as a ministerial servant", target_on: Date.new(2027, 6, 30))
+    goal.add_step(title: "Ask an elder where I can help")
+    @plan.focus_areas.find_by!(position: 2).update!(goal:)
+    brief = DailyBrief.for(@user)
+    written_writing(brief)
+
+    assert_includes brief.keep_as_note.body.to_plain_text,
+                    "Your goal: Qualify as a ministerial servant · next step: Ask an elder where I can help"
+  end
+
   test "keep_as_note makes every reference a scripture link" do
     brief = DailyBrief.for(@user)
     written_writing(brief)

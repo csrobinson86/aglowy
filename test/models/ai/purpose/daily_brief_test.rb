@@ -73,6 +73,18 @@ class Ai::Purpose::DailyBriefTest < ActiveSupport::TestCase
     [ "Sam", "Spouse", "The Head Family", "Read the whole Bible in a year", "Hosea", "Gomer" ].each { assert_not_includes sent, it }
   end
 
+  test "with a linked goal, the text sent holds neither its title nor its steps" do
+    goal = @user.goals.create!(set_by: @user, title: "Qualify as a ministerial servant", target_on: Date.new(2027, 6, 30))
+    goal.add_step(title: "Ask an elder where I can help")
+    @plan.focus_areas.find { it.name == "Reaching out" }.update!(goal:)
+    brief = DailyBrief.for(@user)
+
+    [ @purpose.sent_text(brief), @purpose.typed_text(brief) ].each do |sent|
+      assert_includes sent, "Reaching out"
+      [ "Qualify", "ministerial servant", "Ask an elder", goal.id ].each { assert_not_includes sent, it }
+    end
+  end
+
   test "moderation reads only what the person typed" do
     typed = @purpose.typed_text(DailyBrief.for(@user))
 

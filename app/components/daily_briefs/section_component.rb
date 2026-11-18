@@ -9,11 +9,12 @@ class DailyBriefs::SectionComponent < ApplicationComponent
     def initialize(text:, href:, note: nil, external: true) = super
   end
 
-  Row = Data.define(:label, :text, :references) do
-    def initialize(label:, text:, references: []) = super
+  # A note is Aglowy's own line under the row, never the AI's: a linked goal's next step.
+  Row = Data.define(:label, :text, :references, :note) do
+    def initialize(label:, text:, references: [], note: nil) = super
 
-    # Nothing to show: an AI field the checks left empty, with no scripture.
-    def blank? = text.blank? && references.empty?
+    # Nothing to show: an AI field the checks left empty, with no scripture and no linked goal.
+    def blank? = text.blank? && references.empty? && note.blank?
   end
 
   attr_reader :id, :kicker, :title, :link, :rows

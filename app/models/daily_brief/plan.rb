@@ -13,7 +13,7 @@ class DailyBrief::Plan < ApplicationRecord
   # Not :pause, which is the method that makes it.
   has_one :pausing, class_name: "DailyBrief::Pause", inverse_of: :plan, dependent: :delete
 
-  scope :preloaded, -> { includes(:focus_areas, :days, :pausing) }
+  scope :preloaded, -> { includes(:days, :pausing, focus_areas: { goal: %i[ completion archival ] }) }
   scope :unpaused, -> { where.missing(:pausing) }
 
   # The starter's key, on Start's form only.
@@ -117,6 +117,11 @@ class DailyBrief::Plan < ApplicationRecord
 
     { "sections" => sections, "focus_areas" => focus_areas.map { it.slice(:id, :kind, :name, :gives, :scriptures) },
       "day" => day.slice(:wday, :reading, :examples, :topics) }.as_json
+  end
+
+  # What a focus area can link to: the person's own goals still active, soonest target first.
+  def linkable_goals
+    user.goals.active
   end
 
   def full?
