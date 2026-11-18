@@ -57,6 +57,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 17 | **CAL-01** Calendar: the household's meetings, family studies and events for everyone; each person's own times, private unless shared; done marks, Today on Home and a private phone calendar link | Design done |
 | 18 | **AVATAR-01** Avatars: a photo or your initial in a color you pick; heads and adults set children's; photos cropped and stripped of location on the server | Design done |
 | 19 | **PARTS-01** Meeting parts: each person's student parts in Apply Yourself to the Field Ministry, with preparation, counsel and sharing; an AI outline, sample wording and changes for heads and adults, aimed at the part's time | Design done |
+| 20 | **BRIEF-01** Daily brief: a brief ready each morning from the person's own plan of focus areas, with the day's text, a reading, a quality and a faith example tied by one thread; evening questions; written by AI for heads and adults, with a plan-only brief when there's no AI | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 
