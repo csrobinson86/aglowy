@@ -6,6 +6,8 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
   setup do
     travel_to Time.utc(2026, 11, 17, 12)
     households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    # The fixture parts are dated from the real today, so as the days pass one would land in this week. Tests add their own.
+    MeetingPart.delete_all
   end
 
   test "a member sees the week, and with view=month the month" do
@@ -108,6 +110,19 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     get household_calendar_path(household_id: households(:home), date: "2027-09-07", view: "month")
 
     assert_select "a.calendar-item.calendar-item--study[href=?]", household_family_studies_path(household_id: households(:home)), minimum: 1
+  end
+
+  test "the week shows the part and links to it" do
+    part = users(:spouse).meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope for the future")
+    sign_in identities(:spouse)
+
+    get household_calendar_path(household_id: households(:home))
+
+    assert_select "section.calendar-day", text: /Thu 19/ do
+      assert_select "a.calendar-item.calendar-item--meeting-part[href=?]", household_meeting_part_path(household_id: households(:home), id: part),
+                    /7:00 PM\s+Your part: Starting a Conversation\s+3 min/
+    end
+    assert_select "body", text: /Hope for the future/, count: 0
   end
 
   test "a child with the meeting helper on: the meeting on its day opens Today's meeting; another day's opens the note" do

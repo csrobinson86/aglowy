@@ -107,6 +107,23 @@ class MeetingNotesTest < ApplicationSystemTestCase
     capture_screens("meeting-note")
   end
 
+  test "the owner's midweek note lists their parts that week, and each opens its part" do
+    travel_to Time.utc(2026, 11, 18, 12)
+    MeetingPart.delete_all # The fixture parts are dated from the real today, so one could land in this week.
+    users(:head).meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope")
+    talk = users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 19), minutes: 5, topic: "Why we can trust the Bible")
+    sign_in identities(:head)
+
+    visit household_meeting_note_url(household_id: households(:home), id: meeting_notes(:head_midweek))
+    assert_link "Your part this week: Starting a Conversation, 3 min"
+    assert_accessible
+    capture_screens("meeting-note-parts")
+
+    click_on "Your part this week: Talk, 5 min"
+
+    assert_current_path household_meeting_part_path(household_id: households(:home), id: talk)
+  end
+
   test "a note saved with a scripture link shows the link" do
     psalm = Bible::Reference.find("19:37:8-9")
     meeting_note_parts(:head_talk).update!(notes: "<p>Let go of anger, even when it feels justified. #{scripture_attachment(psalm.id)}</p>")

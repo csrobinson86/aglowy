@@ -1,6 +1,6 @@
 # A household's coming Monday to Sunday as the weekly preview says it: "2 meetings · family study Tuesday · Circuit
 # overseer's visit from Tuesday" (docs/design/notifications.md, The kinds). Built from Household::Calendar with
-# everyone's personal times left out, so it reads no one's times and needs no viewer.
+# everyone's personal times and meeting parts left out, so it reads nothing personal and needs no viewer.
 class Household::WeeklyPreview
   include ActionView::Helpers::TextHelper
 
@@ -35,7 +35,7 @@ class Household::WeeklyPreview
 
   private
     def items
-      @items ||= Household::Calendar.new(household, viewer: nil, range: days, hide: %w[ my_times shared_times ]).items
+      @items ||= Household::Calendar.new(household, viewer: nil, range: days, hide: %w[ my_times shared_times meeting_parts ]).items
     end
 
     # "family study Tuesday and Thursday", "Field service Saturday", or for one over several days "… from Tuesday", or

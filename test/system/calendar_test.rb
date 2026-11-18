@@ -8,6 +8,8 @@ class CalendarTest < ApplicationSystemTestCase
   setup do
     travel_to Time.utc(2026, 11, 17, 15)
     households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    # The fixture parts are dated from the real today, so as the days pass one would land in this week. Tests add their own.
+    MeetingPart.delete_all
     households(:home).family_studies.destroy_all
     households(:home).schedule_family_study(topic: "Proverbs 3", frequency: "weekly", starts_on: Date.new(2026, 11, 17), time_of_day: "19:00", duration_minutes: 45)
     sign_in identities(:head)
@@ -65,6 +67,22 @@ class CalendarTest < ApplicationSystemTestCase
     find("button.calendar-item--meeting", text: "Midweek meeting").click
 
     assert_current_path household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_midweek))
+  end
+
+  test "open the part from the calendar" do
+    part = users(:head).meeting_parts.create!(kind: "starting_a_conversation", meeting_on: Date.new(2026, 11, 19), minutes: 3, topic: "Hope for the future")
+    users(:head).meeting_parts.create!(kind: "talk", meeting_on: Date.new(2026, 11, 21), minutes: 5, topic: "Why we can trust the Bible")
+    visit household_calendar_url(household_id: households(:home))
+
+    assert_selector "a.calendar-item--meeting-part", text: /7:00 PM\s+Your part: Starting a Conversation\s+3 min/
+    assert_selector ".calendar-band a.calendar-item--meeting-part", text: /Your part: Talk\s+5 min/
+    assert_accessible
+    capture_screens("calendar-week-part")
+
+    click_on "Your part: Starting a Conversation"
+
+    assert_current_path household_meeting_part_path(household_id: households(:home), id: part)
+    assert_selector "h1", text: "Starting a Conversation"
   end
 
   test "the calendar is accessible in light and dark" do

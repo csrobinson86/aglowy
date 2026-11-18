@@ -32,8 +32,9 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
   min-height: var(--control-minTarget-auto);
 }
 
-// Each kind's three colors, read by the item and by its Show check box.
+// Each kind's three colors, read by the item and by its Show check box. Meeting parts are drawn with the meetings.
 .calendar-item--meeting,
+.calendar-item--meeting-part,
 .calendar-show__check--meeting {
   --calendar-kind-bgColor: var(--display-red-bgColor-muted);
   --calendar-kind-borderColor: var(--display-red-borderColor-emphasis);

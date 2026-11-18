@@ -1,7 +1,7 @@
 # Everything on a household's calendar for a range of dates in its zone, as Items in order of start
 # (docs/design/calendar.md, How a calendar is put together). Nothing is stored: each source is asked for the range.
 # The sources are meetings, family studies, household events, the viewer's own times and other members' shared times,
-# converted from their zones (Trap 2); hide leaves a group out without asking it.
+# converted from their zones (Trap 2), and meeting parts; hide leaves a group out without asking it.
 class Household::Calendar
   GROUPS = { "meetings" => "Meetings", "family_studies" => "Family studies", "assemblies" => "Assemblies and special events",
              "field_service" => "Field service", "other_events" => "Other events" }.freeze
@@ -20,8 +20,9 @@ class Household::Calendar
     @hide = hide
   end
 
+  # Stable on a tie, so a part at its meeting's time comes just after the meeting.
   def items
-    @items ||= [ *meetings, *studies, *events, *my_times, *shared_times ].sort_by(&:starts_at)
+    @items ||= [ *meetings, *meeting_parts, *studies, *events, *my_times, *shared_times ].sort_by.with_index { |item, index| [ item.starts_at, index ] }
   end
 
   # "My times", then "<First name>'s times" for each other member who shares their times here, keyed by their id.
@@ -80,6 +81,16 @@ class Household::Calendar
       return [] unless shown?("meetings")
 
       household.meetings_between(range).map { Item.from_meeting(it) }
+    end
+
+    # The viewer's own parts and the parts other members share here, one query each, drawn with the meetings and hidden
+    # with them (docs/design/meeting-parts.md, On the calendar and the meeting note). hide "meeting_parts" leaves them out
+    # and keeps the meetings, as the phone feed does.
+    def meeting_parts
+      return [] unless shown?("meetings") && shown?("meeting_parts")
+
+      shared = MeetingPart.shared_with(household).where.not(user: viewer).eager_load(:user)
+      [ viewer.meeting_parts, shared ].flat_map { it.where(meeting_on: range).to_a }.map { Item.from_meeting_part(it, household:, viewer:) }
     end
 
     def studies

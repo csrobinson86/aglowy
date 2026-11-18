@@ -1,6 +1,6 @@
 <%# locals: (item:, today:, meeting_helper:, manage_events:, chip:) -%>
 <%# A meeting opens the viewer's note for it, or Today's meeting for a child with the helper on its day; a study session
-    opens its page, and one not stored yet opens Family studies; a household event opens its edit dialog for heads and
+    opens its page, and one not stored yet opens Family studies; a meeting part opens the part; a household event opens its edit dialog for heads and
     adults, and for children isn't a link, with its location and note under the title; another member's shared time is
     never a link (docs/design/calendar.md, Links).
     An all-day event in the week's band names its days in place of a time. The title says what it is, so color is never
@@ -32,6 +32,8 @@
   <%= button_to household_meeting_notes_path, params: { meeting_note: { kind: item.source.kind, week_of: item.source.week_of.iso8601 } }, class: classes, form_class: "calendar-item__form" do %>
     <%= content %>
   <% end %>
+<% elsif item.meeting_part? %>
+  <%= link_to content, household_meeting_part_path(id: item.source), class: classes %>
 <% elsif item.source.persisted? %>
   <%= link_to content, household_family_study_session_path(family_study_id: item.source.family_study_id, id: item.source), class: classes %>
 <% else %>
