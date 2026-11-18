@@ -34,7 +34,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       assert_selector "tbody th", text: "Today", count: 1
       assert_text "The brief chooses"
     end
-    assert_text "Ready by 5:00 AM"
+    assert_select "Ready by", selected: "5:00 AM"
     assert_text "What's sent to the AI"
     assert_accessible
     capture_screens("brief-plan")
@@ -47,6 +47,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     visit household_daily_brief_plan_url(household_id: households(:home))
 
     click_on "In the ministry"
+    wait_for_animations
     within "dialog[open]" do
       assert_selector "h1", text: "Add a focus area"
       assert_field "Name", with: "In the ministry"
@@ -66,7 +67,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       assert_text "six focus areas, the most a plan can have"
     end
 
-    click_on "Edit In the ministry"
+    find("a[aria-label='Edit In the ministry']").click
     within "dialog[open]" do
       assert_selector "h1", text: "Edit focus area"
       fill_in "Scriptures (optional)", with: "Matthew 24:14"
@@ -75,8 +76,9 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     assert_no_selector "dialog[open]"
     within("section[aria-labelledby=focus-areas] li:last-child") { assert_link "Matthew 24:14" }
 
-    click_on "Edit In the ministry"
+    find("a[aria-label='Edit In the ministry']").click
     within("dialog[open]") { click_on "Delete" }
+    wait_for_animations
     within "dialog[open]", text: "Delete “In the ministry”?" do
       assert_accessible
       capture_screens("brief-focus-area-delete")
@@ -85,8 +87,9 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     assert_text "Focus area deleted."
     within("section[aria-labelledby=focus-areas]") do
       assert_selector "li", count: 5
-      assert_no_text "In the ministry"
+      assert_no_selector "li h3", text: "In the ministry"
       assert_link "Add a focus area"
+      assert_link "In the ministry", href: /from=ministry/
     end
 
     uncheck "For the children"
@@ -126,4 +129,15 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
   ensure
     page.driver.browser.manage.window.resize_to(1400, 1400)
   end
+
+  private
+    # A Primer Dialog scales up as it opens, and axe reads its colours mid-fade; the delete Dialog opens over the edit
+    # one, so wait for every animation on the page, not only the first Dialog's.
+    def wait_for_animations
+      assert_selector "dialog[open]"
+      page.evaluate_async_script(<<~JS)
+        const done = arguments[arguments.length - 1]
+        Promise.allSettled(document.getAnimations().map(animation => animation.finished)).then(() => done())
+      JS
+    end
 end

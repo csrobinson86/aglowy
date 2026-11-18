@@ -80,6 +80,7 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
 
   test "the library holds the eleven ready-made focus areas, each of whose scriptures parse" do
     library = DailyBrief::FocusArea::Library.all
+    @plan.focus_areas.where.not(kind: "role").delete_all # so its quality and appreciation have room
 
     assert_equal [ "As a husband", "As a father", "As a wife", "As a mother", "Reaching out", "In the ministry", "In the congregation",
                    "At work", "Guard your heart", "Qualities to focus on", "Growing appreciation for Jehovah" ], library.map(&:name)
@@ -90,8 +91,8 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
   end
 
   test "destroying one removes its key from every day's topics" do
-    reaching_out = @plan.focus_areas.find_by!(name: "Reaching out")
-    husband = @plan.focus_areas.find_by!(name: "As a husband")
+    reaching_out = area_named("Reaching out")
+    husband = area_named("As a husband")
     assert_equal 7, @plan.days.count { it.topics.key?(reaching_out.id) }
 
     reaching_out.destroy!
@@ -120,10 +121,14 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
     assert_not quality.valid?
     assert_equal [ "You already have a quality focus area" ], quality.errors[:kind]
     assert_not new_area(kind: "appreciation").valid?
-    assert @plan.focus_areas.find_by!(kind: "quality").valid?, "the one it has is still valid"
+    assert @plan.focus_areas.quality.sole.valid?, "the one it has is still valid"
   end
 
   private
+    def area_named(name)
+      @plan.focus_areas.find { it.name == name }
+    end
+
     def new_area(**attributes)
       @plan.focus_areas.new(position: 6, kind: "role", name: "At work", gives: "One way to show honesty at work today.", **attributes)
     end

@@ -1,5 +1,5 @@
-# The person's daily brief plan: Start, where they pick a starter, and Your plan, read-only for now
-# (docs/design/daily-brief.md, Start and Your plan). The plan is the person's, found through Current.user in any
+# The person's daily brief plan: Start, where they pick a starter, and Your plan, where they choose the sections in
+# every brief and when it's ready (docs/design/daily-brief.md, Start and Your plan). The plan is the person's, found through Current.user in any
 # household they're active in.
 class DailyBriefs::PlansController < ApplicationController
   include HouseholdScoped
@@ -30,6 +30,17 @@ class DailyBriefs::PlansController < ApplicationController
       redirect_to household_daily_brief_plan_path
     else
       render :new, status: :unprocessable_content
+    end
+  end
+
+  # The sections and "Ready by"; the focus areas have their own dialog. Changes apply from the next brief.
+  def update
+    raise ActiveRecord::RecordNotFound unless @plan
+
+    if @plan.update(params.expect(daily_brief_plan: [ :ready_at_minutes, sections: [] ]))
+      redirect_to household_daily_brief_plan_path, notice: "Plan saved. Your next brief follows it."
+    else
+      render :show, status: :unprocessable_content
     end
   end
 

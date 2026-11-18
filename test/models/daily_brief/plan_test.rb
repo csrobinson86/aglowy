@@ -69,7 +69,7 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     plan = DailyBrief::Plan.new(user: users(:head), started_at: Time.current, ready_at_minutes: 315, sections: %w[ reading prayer ])
 
     assert_not plan.valid?
-    assert_equal [ "is not included in the list" ], plan.errors[:ready_at_minutes]
+    assert_equal [ "Choose a time from 4:00 to 8:00 AM, on the half hour" ], plan.errors[:ready_at_minutes]
     assert_equal [ "can only be daily_text, reading, faith_example, children and evening" ], plan.errors[:sections]
   end
 

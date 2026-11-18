@@ -1,0 +1,4 @@
+<% content_for :title, "Edit focus area" %>
+<%= turbo_frame_tag "daily_brief_focus_area_dialog" do %>
+  <%= render "daily_briefs/plans/focus_areas/dialog", focus_area: @focus_area %>
+<% end %>

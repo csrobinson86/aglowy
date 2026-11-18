@@ -31,7 +31,7 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
 
     assert_select ".FormControl-caption", text: CAPTION, count: 2
     %w[ name gives ].each do |field|
-      caption_id = css_select("[name='daily_brief_focus_area[#{field}]']").first["aria-describedby"]
+      caption_id = css_select("[name='daily_brief_focus_area[#{field}]']").first["aria-describedby"].split.find { it.start_with?("caption-") }
       assert_select "##{caption_id}", text: CAPTION
     end
   end
@@ -128,7 +128,7 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
   end
 
   test "edit is the dialog filled in, with Delete behind a confirm" do
-    area = @plan.focus_areas.find_by!(name: "Reaching out")
+    area = area_named("Reaching out")
 
     get edit_household_daily_brief_plan_focus_area_path(household_id: @home, id: area)
 
@@ -151,7 +151,7 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
   end
 
   test "update saves its name, what it gives and scriptures, never its kind" do
-    area = @plan.focus_areas.find_by!(name: "Reaching out")
+    area = area_named("Reaching out")
 
     patch household_daily_brief_plan_focus_area_path(household_id: @home, id: area), as: :turbo_stream,
           params: { daily_brief_focus_area: { name: "Reaching out today", gives: "One reliable thing.", scriptures: "1 Timothy 3:8", kind: "quality" } }
@@ -163,7 +163,7 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
   end
 
   test "a refused update re-renders the dialog with :unprocessable_content" do
-    area = @plan.focus_areas.find_by!(name: "Reaching out")
+    area = area_named("Reaching out")
 
     patch household_daily_brief_plan_focus_area_path(household_id: @home, id: area),
           params: { daily_brief_focus_area: { name: "a" * 61, gives: "One way." } }
@@ -175,7 +175,7 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
   end
 
   test "destroy removes it and its topics from the week" do
-    area = @plan.focus_areas.find_by!(name: "Reaching out")
+    area = area_named("Reaching out")
 
     assert_difference -> { @plan.focus_areas.count }, -1 do
       delete household_daily_brief_plan_focus_area_path(household_id: @home, id: area)
@@ -189,12 +189,15 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
   test "another person's focus area is a 404" do
     theirs = DailyBrief::Plan.start(users(:spouse), starter: "wife_and_mother").focus_areas.first
 
+    # A 404 doesn't keep the session, so each request signs in again.
     get edit_household_daily_brief_plan_focus_area_path(household_id: @home, id: theirs)
     assert_response :not_found
 
+    sign_in identities(:head)
     patch household_daily_brief_plan_focus_area_path(household_id: @home, id: theirs), params: { daily_brief_focus_area: { name: "Mine now" } }
     assert_response :not_found
 
+    sign_in identities(:head)
     assert_no_difference -> { DailyBrief::FocusArea.count } do
       delete household_daily_brief_plan_focus_area_path(household_id: @home, id: theirs)
     end
@@ -225,4 +228,9 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
     assert_redirected_to household_root_path(household_id: @home)
     assert_equal 5, @plan.focus_areas.count
   end
+
+  private
+    def area_named(name)
+      @plan.focus_areas.find { it.name == name }
+    end
 end

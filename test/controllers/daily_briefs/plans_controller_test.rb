@@ -144,7 +144,7 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#daily_brief_focus_area_dialog"
     assert_select "form[action=?]", household_daily_brief_plan_path(household_id: @home) do
       assert_select "input[name=_method][value=patch]"
-      assert_select "section[aria-labelledby=sections] input[type=checkbox][name='daily_brief_plan[sections][]']:checked", count: 5
+      assert_select "section[aria-labelledby=sections] input[type=checkbox][name='daily_brief_plan[sections][]'][checked]", count: 5
       assert_select "section[aria-labelledby=sections] label", text: "Evening questions"
       assert_select "select[name='daily_brief_plan[ready_at_minutes]']" do
         assert_equal [ "4:00 AM", "4:30 AM", "5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM" ],
@@ -172,7 +172,7 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
     assert_equal 360, plan.ready_at_minutes
 
     follow_redirect!
-    assert_select "input[type=checkbox][value=children]:not(:checked)"
+    assert_select "input[type=checkbox][value=children]:not([checked])"
     assert_select "option[selected]", "6:00 AM"
   end
 

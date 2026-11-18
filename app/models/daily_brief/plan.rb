@@ -16,7 +16,10 @@ class DailyBrief::Plan < ApplicationRecord
   # The starter's key, on Start's form only.
   attribute :starter, :string
 
-  validates :ready_at_minutes, inclusion: { in: READY_AT_MINUTES }
+  # Unticked boxes send only the empty value that says the form was sent.
+  normalizes :sections, with: -> { it.compact_blank }
+
+  validates :ready_at_minutes, inclusion: { in: READY_AT_MINUTES, message: "Choose a time from 4:00 to 8:00 AM, on the half hour" }
   validate :sections_offered
 
   # Makes the plan, its focus areas and its seven days from a DailyBrief::Starter in one transaction, or returns an
@@ -37,8 +40,19 @@ class DailyBrief::Plan < ApplicationRecord
   end
 
   # "5:00 AM".
-  def ready_by
-    Time.utc(2000).advance(minutes: ready_at_minutes).strftime("%-l:%M %p")
+  def ready_by(minutes = ready_at_minutes)
+    Time.utc(2000).advance(minutes:).strftime("%-l:%M %p")
+  end
+
+  def full?
+    focus_areas.size >= DailyBrief::FocusArea::MAX
+  end
+
+  # The library entries Your plan offers as chips, and the dialog fills in from: not a role the plan already has by
+  # name, nor a second quality or appreciation (docs/design/daily-brief.md, DailyBrief::FocusArea).
+  def library_offers
+    names, kinds = focus_areas.map(&:name), focus_areas.map(&:kind)
+    DailyBrief::FocusArea::Library.all.reject { it.name.in?(names) || (it.kind != "role" && it.kind.in?(kinds)) }
   end
 
   # The focus areas with a column in Your week, Qualities first: every one but appreciation, which draws on the day's
@@ -50,7 +64,7 @@ class DailyBrief::Plan < ApplicationRecord
   # The starter's focus areas in order, then a row per weekday, each topic keyed by the id of the focus area it's for.
   def fill_from(starter)
     areas = starter.focus_areas.each_with_index.to_h do |entry, position|
-      [ entry.key, focus_areas.create!(position:, kind: entry.kind, name: entry.name, gives: entry.gives, scriptures: entry.scriptures) ]
+      [ entry.key, focus_areas.create!(position:, **entry.attributes) ]
     end
 
     starter.days.each do |row|
