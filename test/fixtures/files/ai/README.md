@@ -19,6 +19,10 @@ hands it to RubyLLM as the HTTP response would arrive.
 - `daily_brief.json`: a daily brief for Tuesday 17 November 2026 with every section filled, three search results (the
   day's text on wol.jw.org among them) and one citation carrying `cited_text`. Hand-built. The seeds use it too, for the
   written brief.
+- `listening_game.json`: the listening game cards for the week of 16–22 November 2026: 5 Treasures rounds, 2 Spiritual
+  Gems, 1 Bible Reading and 6 Congregation Bible Study, every label written for the fixture, never taken from jw.org.
+  Three search results (the week's program among them) and two citations carrying `cited_text`, one naming a page the
+  search never returned, which `Ai::SourceLink` drops. Hand-built. The seeds use it too, for this week's game.
 
 ## Recording a reply
 

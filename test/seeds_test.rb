@@ -151,6 +151,12 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ "written", 3 ], [ writing.status, writing.sources.size ]
     assert_equal "Patience", writing.section(:quality)["name"]
 
+    # This week's listening game in the Rivera Family, from the saved reply, with the pages it used (12_listening_games.rb).
+    game = rivera.listening_games.sole
+    assert_equal monday, game.week_of
+    assert_equal({ "talk" => 5, "spiritual_gems" => 2, "bible_reading" => 1, "congregation_bible_study" => 6 }, game.rounds.map(&:step).tally)
+    assert_equal 3, game.sources.count
+
     assert_equal 0, Ai::Use.count
   end
 

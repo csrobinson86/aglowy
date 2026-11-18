@@ -95,4 +95,5 @@ group :test do
   gem "axe-core-api"
   gem "simplecov", require: false   # Coverage report in coverage/ on every test run
   gem "minitest-mock"                # Minitest's stub, a gem of its own since Minitest 6. AI tests stub the provider
+  gem "webmock", require: false      # No test reaches the network: never an AI provider, jw.org or wol.jw.org
 end

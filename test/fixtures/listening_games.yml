@@ -1,0 +1,4 @@
+# The home household's game for the week of 9 November 2026 (docs/design/listening-game.md, Models).
+home_nov_9:
+  household: home
+  week_of: 2026-11-09

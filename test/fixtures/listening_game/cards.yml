@@ -1,0 +1,25 @@
+# Shuffled once when saved, so the answer isn't always first.
+home_talk_noah:
+  round: home_talk_first
+  position: 1
+  label: Noah
+  kind: person
+
+home_talk_jeremiah:
+  round: home_talk_first
+  position: 2
+  label: Jeremiah
+  kind: person
+  answer: true
+
+home_talk_moses:
+  round: home_talk_first
+  position: 3
+  label: Moses
+  kind: person
+
+home_talk_daniel:
+  round: home_talk_first
+  position: 4
+  label: Daniel
+  kind: person

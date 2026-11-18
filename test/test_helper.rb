@@ -9,6 +9,11 @@ end
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "webmock/minitest"
+
+# No test reaches the network: never an AI provider, jw.org or wol.jw.org (docs/design/ai.md, Traps). Capybara's
+# server and the browser's driver are on this machine.
+WebMock.disable_net_connect!(allow_localhost: true)
 
 # List every file under app/ in the report, whether or not CI turns on eager loading.
 Rails.application.eager_load!

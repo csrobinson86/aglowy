@@ -1,4 +1,6 @@
 class Household < ApplicationRecord
+  include ListeningGamePreparable
+
   # The roles a head can give someone they add; headship is never handed out here.
   MEMBER_ROLES = %w[ adult child ].freeze
 
