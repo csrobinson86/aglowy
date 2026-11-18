@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -66,10 +66,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
     t.string "purpose", null: false
     t.uuid "question_id"
     t.datetime "created_at", null: false
+    t.uuid "meeting_part_draft_id"
     t.index ["created_at"], name: "index_ai_uses_on_created_at"
+    t.index ["meeting_part_draft_id"], name: "index_ai_uses_on_meeting_part_draft_id", unique: true
     t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
     t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying]::text[])", name: "ai_uses_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying]::text[])", name: "ai_uses_purpose_check"
   end
 
   create_table "bookmarks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -119,7 +121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
     t.index ["household_id"], name: "index_chats_on_household_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying]::text[])", name: "chats_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying]::text[])", name: "chats_purpose_check"
   end
 
   create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -434,6 +436,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
     t.index ["user_id", "kind", "week_of"], name: "index_meeting_notes_on_user_id_and_kind_and_week_of", unique: true
     t.check_constraint "EXTRACT(isodow FROM week_of) = 1::numeric", name: "meeting_notes_week_of_monday_check"
     t.check_constraint "kind::text = ANY (ARRAY['midweek'::character varying, 'weekend'::character varying]::text[])", name: "meeting_notes_kind_check"
+  end
+
+  create_table "meeting_part_drafts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_part_id", null: false
+    t.uuid "chat_id", null: false
+    t.uuid "user_id", null: false
+    t.string "kind", null: false
+    t.text "request"
+    t.uuid "revises_id"
+    t.jsonb "revised_result"
+    t.string "status", default: "drafting", null: false
+    t.jsonb "result"
+    t.jsonb "sources", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_meeting_part_drafts_on_chat_id", unique: true
+    t.index ["meeting_part_id"], name: "index_meeting_part_drafts_on_meeting_part_id"
+    t.index ["revises_id"], name: "index_meeting_part_drafts_on_revises_id"
+    t.index ["user_id"], name: "index_meeting_part_drafts_on_user_id"
+    t.check_constraint "kind::text = ANY (ARRAY['outline'::character varying, 'wording'::character varying]::text[])", name: "meeting_part_drafts_kind_check"
+    t.check_constraint "status::text = ANY (ARRAY['drafting'::character varying, 'drafted'::character varying, 'off_topic'::character varying, 'flagged'::character varying, 'failed'::character varying, 'stopped'::character varying, 'discarded'::character varying]::text[])", name: "meeting_part_drafts_status_check"
   end
 
   create_table "meeting_part_sharings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -835,6 +858,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_acceptances", "users"
+  add_foreign_key "ai_uses", "meeting_part_drafts", on_delete: :nullify
   add_foreign_key "ai_uses", "personal_study_questions", column: "question_id", on_delete: :nullify
   add_foreign_key "ai_uses", "users"
   add_foreign_key "bookmarks", "collections", on_delete: :nullify
@@ -882,6 +906,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
   add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
+  add_foreign_key "meeting_part_drafts", "chats", on_delete: :cascade
+  add_foreign_key "meeting_part_drafts", "meeting_part_drafts", column: "revises_id", on_delete: :nullify
+  add_foreign_key "meeting_part_drafts", "meeting_parts", on_delete: :cascade
+  add_foreign_key "meeting_part_drafts", "users"
   add_foreign_key "meeting_part_sharings", "households", on_delete: :cascade
   add_foreign_key "meeting_part_sharings", "meeting_parts", on_delete: :cascade
   add_foreign_key "meeting_parts", "users"

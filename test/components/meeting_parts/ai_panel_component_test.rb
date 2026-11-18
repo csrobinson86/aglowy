@@ -146,7 +146,7 @@ class MeetingParts::AiPanelComponentTest < ViewComponent::TestCase
     assert_no_selector "script", visible: :all
     assert_text "<script>alert('aim')</script>"
     assert_link "<script>alert('source')</script>"
-    assert_includes page.find("template", visible: :all).native.inner_html, "&lt;script&gt;alert('aim')&lt;/script&gt;"
+    assert_match %r{<template data-ai-draft-target="template">.*<strong>Aim:</strong> &lt;script&gt;alert\(&#39;aim&#39;\)&lt;/script&gt;}m, rendered_content
   end
 
   private

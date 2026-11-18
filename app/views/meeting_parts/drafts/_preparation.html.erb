@@ -1,0 +1,24 @@
+<%# locals: (outline:) -%>
+<%# An outline as preparation, for "Use this outline" to put in the editor (docs/design/meeting-parts.md, How a request
+    runs). Every field is the AI's text, so it's only ever escaped by ERB, then Action Text sanitizes it like any
+    preparation. References stay plain text, and become scripture links when the part is saved. %>
+<p><strong>Aim:</strong> <%= outline["aim"] %></p>
+<% if outline["opening"].present? %>
+  <p><strong>Opening</strong></p>
+  <p><%= outline["opening"] %></p>
+<% end %>
+<ol>
+  <% outline["points"].each do |point| %>
+    <li>
+      <% if point["heading"].present? %><p><strong><%= point["heading"] %></strong></p><% end %>
+      <% if point["explain"].present? %><p><%= point["explain"] %></p><% end %>
+      <% if point["scripture"].present? %><p>Read <%= point["scripture"] %>.</p><% end %>
+    </li>
+  <% end %>
+</ol>
+<% { "question" => "Question", "close" => "Close", "study_point" => "Study point" }.each do |field, heading| %>
+  <% if outline[field].present? %>
+    <p><strong><%= heading %></strong></p>
+    <p><%= outline[field] %></p>
+  <% end %>
+<% end %>

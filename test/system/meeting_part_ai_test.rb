@@ -92,12 +92,14 @@ class MeetingPartAiTest < ApplicationSystemTestCase
 
     assert_no_selector "dialog[open]"
     click_on "Prepare with AI"
+    wait_for_dialog
     within("dialog[open]") do
       assert_field "Anything it should know? (optional)"
       fill_in "Anything it should know? (optional)", with: REQUEST
     end
     assert_accessible
     capture_screens("part-ai-start", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+    use_phone # capture_screens leaves the desktop window, which puts the panel back beside the preparation
 
     within("dialog[open]") do
       click_on "Draft outline"
@@ -109,6 +111,7 @@ class MeetingPartAiTest < ApplicationSystemTestCase
     within("dialog[open]") { assert_selector "h3", text: "Outline" }
     assert_accessible
     capture_screens("part-ai-outline", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+    use_phone # capture_screens leaves the desktop window, which puts the panel back beside the preparation
 
     within("dialog[open]") { click_on "Use this outline" }
 

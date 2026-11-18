@@ -50,3 +50,10 @@
 .meeting-parts__show .SegmentedControl-item:first-child {
   flex-shrink: 0;
 }
+
+// Prepare with AI beside the preparation is a Primer Layout inside the app shell's Layout. Below md the shell hides its
+// own sidebar with a descendant selector, which hides the panel too (see _schedule_study.scss). This shows it again under
+// the preparation, where "Prepare with AI" opens it in a dialog.
+.meeting-part-prepare.Layout > .meeting-part-prepare__ai.Layout-sidebar {
+  display: block;
+}

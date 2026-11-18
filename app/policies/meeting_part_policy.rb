@@ -8,6 +8,8 @@ class MeetingPartPolicy < ApplicationPolicy
   def update?  = owner?
   def destroy? = owner?
   def share?   = owner?
+  # Heads and adults on their own part; never a child (Trap 1).
+  def draft?   = owner? && membership.user.may_prepare_parts_with_ai?
 
   private
 

@@ -1,0 +1,138 @@
+<%= helpers.turbo_frame_tag :ai_panel, data: { controller: "ai-panel", ai_panel_beside_value: true, action: "ai-draft:used->ai-panel#used" } do %>
+  <%# Below md, "Prepare with AI" opens the panel in its dialog (frame phone-part.png). From md up the panel is beside the
+      preparation, so this never shows. %>
+  <div class="ai-panel-start d-md-none" data-ai-panel-target="start">
+    <%= render(Primer::Beta::Button.new(block: true, data: { action: "ai-panel#open" })) do |button| %>
+      <% button.with_leading_visual_icon(icon: :"sparkle-fill", color: :done) %>
+      Prepare with AI
+    <% end %>
+  </div>
+
+  <%# Progress lines come on the draft's own signed stream, then a signal to fetch the checked result (docs/design/ai.md,
+      Traps). Outside what moves into the dialog, so moving it never subscribes twice. %>
+  <% if state == :drafting %>
+    <%= helpers.turbo_stream_from draft, data: { ai_panel_target: "stream", ai_panel_url_param: draft_path } %>
+  <% end %>
+
+  <%# On a phone the ai-panel controller moves this into the dialog below, and its header gives way to the dialog's. %>
+  <div data-ai-panel-target="opened">
+    <%= render(Primer::Beta::BorderBox.new(classes: "border-0 border-md", data: { ai_draft_target: ("review" if state == :drafted) })) do |box| %>
+      <% box.with_header(display: [ :none, nil, :flex ], align_items: :center, justify_content: :space_between) do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, display: :flex, align_items: :center)) do %>
+          <%= render(Primer::Beta::Octicon.new(:"sparkle-fill", color: :done, mr: 2)) %><%= heading %>
+        <% end %>
+        <% unless state == :terms %><span class="text-small color-fg-muted"><%= left_today %> of <%= daily_limit %> left today</span><% end %>
+      <% end %>
+      <% box.with_body(border_bottom: 0) do %>
+        <% case state %>
+        <% when :drafting %>
+          <%= tag.ul id: dom_id(draft, :progress), class: "list-style-none mb-3", aria: { live: "polite" } do %>
+            <%= render "family_studies/drafts/progress", step: :searching %>
+          <% end %>
+          <p class="text-small color-fg-muted" aria-busy="true">The outline appears here once its scriptures, links and wording have been checked.</p>
+          <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+            <%= render FamilyStudies::DraftActionForm.new(f, label: "Stop") %>
+          <% end %>
+        <% when :drafted %>
+          <div class="d-flex flex-wrap flex-items-baseline flex-justify-between mb-2">
+            <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mr: 2)) { "Outline" } %>
+            <span class="text-small color-fg-muted"><%= draft.spoken_length %></span>
+          </div>
+          <%= render "meeting_parts/drafts/outline", outline: draft.result %>
+          <div class="border-top pt-3 mt-3">
+            <p class="text-small text-bold color-fg-muted mb-2">Pages it used</p>
+            <% if draft.sources.any? %>
+              <ul class="list-style-none">
+                <% draft.sources.each do |source| %>
+                  <li class="d-flex flex-items-baseline mb-1">
+                    <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
+                    <span class="wb-break-word"><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || host(source["url"]) } %> <span class="color-fg-muted">· <%= host(source["url"]) %></span></span>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="color-fg-muted mb-0">No matching pages found on jw.org or wol.jw.org.</p>
+            <% end %>
+          </div>
+          <%# The outline as preparation, for "Use this outline" to put in the editor. Our own partial, every field escaped. %>
+          <template data-ai-draft-target="template"><%= draft.preparation_html %></template>
+          <%# On a phone this moves into the dialog's footer, within thumb reach. %>
+          <div data-ai-panel-target="footerHome">
+            <div data-ai-panel-target="footer" data-ai-draft-target="review">
+              <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) { "AI can get things wrong. Check each point against its source." } %>
+              <div class="ai-draft-actions">
+                <%= render(Primer::Beta::Button.new(scheme: :primary, classes: "ai-draft-actions__use", data: { action: "ai-draft#use" })) { "Use this outline" } %>
+                <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+                  <%= render FamilyStudies::DraftActionForm.new(f, label: "Discard") %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% when :refused %>
+          <%# The refusal, and nothing else from the reply (docs/design/ai.md, safety measure 1). %>
+          <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 3, description: "Ask for an outline of this part: its points, scriptures, and ideas for the opening and the close.")) do %>
+            <strong>This helper only prepares your meeting part.</strong>
+          <% end %>
+          <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+            <%= render FamilyStudies::DraftActionForm.new(f, label: "Start again", scheme: :primary) %>
+          <% end %>
+        <% when :terms %>
+          <p>Here's how AI drafts work in Aglowy. You only see this once.</p>
+          <ul class="ml-3 mb-3">
+            <li class="mb-2"><strong>What's sent:</strong> the part's kind, minutes, setting, topic and study point, and what you type. Never your preparation, your counsel, names or your household.</li>
+            <li class="mb-2"><strong>Where it looks:</strong> the AI searches only jw.org and wol.jw.org. It links each page it used and never copies their text into Aglowy.</li>
+            <li class="mb-2"><strong>What it does:</strong> it only helps prepare your meeting part, aimed at the part's time.</li>
+            <li class="mb-2"><strong>Check its work:</strong> drafts can be wrong. Read each point against its scripture or source.</li>
+            <li><strong>Daily limit:</strong> you can make <%= daily_limit %> requests a day.</li>
+          </ul>
+          <%= render "ai_acceptances/form", acceptance: Ai::Acceptance.new, return_to: return_to, not_now: false %>
+        <% when :limit %>
+          <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3,
+                description: "You can ask again after midnight, #{time_zone_name}. You can still prepare this part yourself.")) do %>
+            <strong>You've used today's <%= daily_limit %> requests</strong>
+          <% end %>
+          <%= primer_form_with(model: draft, url: drafts_path, method: :post) do |f| %>
+            <%= render MeetingParts::DraftForm.new(f, disabled: true) %>
+          <% end %>
+        <% else %>
+          <% if failed? %>
+            <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't make a draft right now. Try again in a moment." } %>
+          <% end %>
+          <p>Get a starting point for this part. The AI searches only jw.org and wol.jw.org, writes in its own words, and links the pages it used. It aims at your <%= pluralize(meeting_part.minutes, "minute") %>.</p>
+          <%= primer_form_with(model: draft, url: drafts_path, method: :post) do |f| %>
+            <%= render MeetingParts::DraftForm.new(f) %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+    <% if state == :drafted %>
+      <%# "Use this outline" shows this in place of the outline, with the outline in the preparation. %>
+      <%= render(Primer::Beta::BorderBox.new(hidden: true, classes: "border-0 border-md", data: { ai_draft_target: "added" })) do |box| %>
+        <% box.with_body(border_bottom: 0) do %>
+          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center, tabindex: -1)) do %>
+            <%= render(Primer::Beta::Octicon.new(:check, color: :success, mr: 2)) %>Outline added
+          <% end %>
+          <p>It's at the end of your preparation. Put it in your own words, then Save.</p>
+          <%# Done with: discarded, back to Start. %>
+          <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+            <%= render FamilyStudies::DraftActionForm.new(f, label: "Draft again") %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# Below md the open panel is this full-screen dialog. Escape and its close button close it. %>
+  <%= render(Primer::Alpha::Dialog.new(id: "ai-panel-dialog", title: "Prepare with AI", position_narrow: :fullscreen,
+        classes: class_names("ai-panel-dialog", "ai-panel-dialog--open" => open?),
+        data: { ai_panel_target: "dialog", action: "close->ai-panel#dialogClosed" })) do |dialog| %>
+    <% dialog.with_header(show_divider: true, bg: :subtle) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4)) { heading } %>
+      <% unless state == :terms %><p class="text-small color-fg-muted mb-0"><%= left_today %> of <%= daily_limit %> left today</p><% end %>
+    <% end %>
+    <% dialog.with_body(p: 0, data: { ai_panel_target: "dialogBody" }) %>
+    <% if state == :drafted %>
+      <% dialog.with_footer(show_divider: true, classes: "ai-panel-dialog__footer", data: { ai_panel_target: "dialogFooter" }) %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -31,3 +31,14 @@ maria.start_meeting_note(kind: "midweek", week_of: conversation.week_of)
 seed_meeting_part(lucia, kind: "starting_a_conversation", meeting_on: next_meeting + 28, minutes: 2, setting: "informal_witnessing",
   topic: "Talk to a classmate about what makes a real friend.", study_point: "lmd lesson 2 point 3", assistant: "Dad",
   preparation: "<p>Say hi at lunch. Ask what she likes in a friend.</p><p>Read Proverbs 17:17 and say what I like about it.</p>")
+
+# A drafted AI outline on her Starting a Conversation, which its page shows in the panel, from the saved reply in
+# test/fixtures/files/ai/ rather than a provider call (docs/design/meeting-parts.md, Elsewhere). It has no use, so it
+# doesn't take one of her 15 requests for today.
+unless conversation.drafts.exists?
+  body = JSON.parse(Rails.root.join("test/fixtures/files/ai/meeting_part_outline.json").read)
+  results = body["content"].select { it["type"] == "web_search_tool_result" }.flat_map { it["content"] }.map { { url: it["url"], title: it["title"] } }
+  conversation.drafts.create!(user: maria, kind: "outline", status: "drafted", chat: Chat.new(user: maria, purpose: MeetingPart::Draft::PURPOSE),
+    request: "The person is busy and has a young family.", result: JSON.parse(body["content"].filter_map { it["text"] }.join)["outline"],
+    sources: Ai::SourceLink.keep(results, search_results: results, allowed_hosts: Ai::Purpose::ALLOWED_HOSTS))
+end

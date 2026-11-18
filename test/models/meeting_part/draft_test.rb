@@ -195,7 +195,9 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
     assert_not Ai::Use.exists?(meeting_part_draft_id: @draft.id)
   end
 
-  test "a good outline replaces the panel once, and nothing broadcast while drafting holds reply text" do
+  # The panel's links are under whichever household it's open in, which a personal draft doesn't know, so the one
+  # broadcast at the end tells the panel to fetch its result (MeetingParts::DraftsController#show).
+  test "a good outline is broadcast once, as a signal to fetch it, and no broadcast ever holds reply text" do
     during = nil
     write(lambda do |*, stream:|
       stream.call(RubyLLM::Chunk.new(role: :assistant, content: '{"off_topic":false,"outline":{"aim":"Leave the person curious'))
@@ -204,10 +206,19 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
     end)
 
     assert_equal [ "Writing the outline…" ], during.map { it.at("template strong").text }
-    assert during.none? { it.to_html.include?("curious") }
-    replaced = capture_turbo_stream_broadcasts(@draft).select { it["action"] == "replace" }
-    assert_equal [ "ai_panel" ], replaced.pluck("target")
-    assert_includes replaced.first.to_html, "Use this outline"
+    broadcasts = capture_turbo_stream_broadcasts(@draft)
+    assert broadcasts.all? { it["target"] == "progress_meeting_part_draft_#{@draft.id}" }
+    assert broadcasts.none? { it.to_html.include?("curious") || it.to_html.include?("promise") }
+    finished = broadcasts.select { it["action"] == "append" }
+    assert_equal 1, finished.size
+    assert finished.first.at("template li[hidden][data-ai-panel-target=finished]")
+  end
+
+  test "a draft stopped after the reply arrived is never broadcast as finished" do
+    write(->(*, **) { MeetingPart::Draft.find(@draft.id).stop
+                      saved_reply })
+
+    assert_empty capture_turbo_stream_broadcasts(@draft).select { it["action"] == "append" }
   end
 
   test "discard sets discarded once done, never while drafting, and never deletes" do

@@ -11,6 +11,8 @@ hands it to RubyLLM as the HTTP response would arrive.
   questions. Hand-built, like the draft.
 - `personal_study_not_found.json`: a personal study answer with a `not_found` note, one paragraph and one search
   result. Hand-built.
+- `meeting_part_outline.json`: a meeting part outline (`outline` filled, `wording` empty) with three search results and
+  two citations carrying `cited_text`. Hand-built, like the draft. The seeds use it too, for the drafted outline.
 
 ## Recording a reply
 

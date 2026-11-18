@@ -38,6 +38,7 @@ class MeetingPartsController < ApplicationController
     @meeting_part = Current.user.meeting_parts.with_rich_text_preparation.find_by(id: params[:id]) ||
       MeetingPart.shared_with(Current.household).with_rich_text_preparation.includes(:user).find(params[:id])
     authorize @meeting_part
+    @draft = @meeting_part.current_draft_for(Current.user) if policy(@meeting_part).draft?
   end
 
   def edit

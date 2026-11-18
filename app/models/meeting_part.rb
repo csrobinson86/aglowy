@@ -10,6 +10,8 @@ class MeetingPart < ApplicationRecord
   belongs_to :user
   # After Shareable, so destroying deletes the sharings before these (Shareable#take_back_notifications_of).
   has_many :notifications, as: :subject, dependent: :delete_all
+  # Each destroyed with its chat, so deleting a part leaves no AI text behind. Their uses stay and still count.
+  has_many :drafts, class_name: "MeetingPart::Draft", dependent: :destroy
 
   encrypts :topic, :study_point, :assistant, :counsel
   has_rich_text :preparation, encrypted: true
@@ -46,6 +48,34 @@ class MeetingPart < ApplicationRecord
 
   def program_url
     MeetingNote.program_url(week_of)
+  end
+
+  # An AI draft, drafting, with its own chat and its use, then written in the background; or an unsaved draft with
+  # errors: :not_allowed for anyone but the owner as a head or adult with the AI terms, :limit once they've made the
+  # day's requests. Counted under the person's lock, as they can ask from more than one household at once
+  # (docs/design/meeting-parts.md, How a request runs). The job is queued once the lock is let go: it's in another
+  # database, and a worker could otherwise start before the draft is committed.
+  def draft(kind:, request:, by:)
+    draft = by.with_lock do
+      Draft.new(meeting_part: self, user: by, kind: kind, request: request, chat: Chat.new(user: by, purpose: Draft::PURPOSE),
+                use: Ai::Use.new(user: by, purpose: Draft::PURPOSE)).tap do |draft|
+        if by != user || !(by.may_prepare_parts_with_ai? && by.accepted_ai_terms?)
+          draft.errors.add(:base, :not_allowed, message: "Only the part's owner, as a head or adult with AI drafts turned on, can ask")
+        elsif by.part_drafts_left_today.zero?
+          draft.errors.add(:base, :limit, message: "You've used today's #{Draft.daily_limit} requests")
+        else
+          draft.save
+        end
+      end
+    end
+
+    draft.tap { it.write_later if it.persisted? }
+  end
+
+  # The person's latest draft of the part while it's being written or waiting to be used, which the panel shows on a
+  # reload; nil once it's stopped, discarded or done with.
+  def current_draft_for(user)
+    drafts.where(user: user).order(:created_at, :id).last&.then { it if it.drafting? || it.drafted? }
   end
 
   # About how long the preparation takes to say, for the time line under its editor.
