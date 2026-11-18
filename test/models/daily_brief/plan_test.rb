@@ -105,6 +105,18 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     assert_not DailyBrief::Day.exists?(plan_id: plan.id)
   end
 
+  test "add_focus_area adds one at the end, or returns it unsaved with the reasons" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+
+    area = plan.add_focus_area(kind: "role", name: "At work", gives: "One honest thing.")
+    assert area.persisted?
+    assert_equal 5, area.position
+
+    seventh = plan.add_focus_area(kind: "role", name: "In the ministry", gives: "One way.")
+    assert_not seventh.persisted?
+    assert_equal [ "You can have six focus areas at most" ], seventh.errors[:base]
+  end
+
   private
     def insert_plan(**attributes)
       DailyBrief::Plan.insert!({ user_id: users(:head).id, started_at: Time.current, **attributes })

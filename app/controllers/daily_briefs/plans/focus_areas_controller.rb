@@ -16,9 +16,9 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
   end
 
   def create
-    @focus_area = @plan.focus_areas.new(params.expect(daily_brief_focus_area: %i[ kind name gives scriptures ]))
+    @focus_area = @plan.add_focus_area(params.expect(daily_brief_focus_area: %i[ kind name gives scriptures ]))
 
-    if @focus_area.save
+    if @focus_area.persisted?
       close_dialog "Focus area added."
     else
       render :new, status: :unprocessable_content

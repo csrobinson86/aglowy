@@ -44,6 +44,12 @@ class DailyBrief::Plan < ApplicationRecord
     Time.utc(2000).advance(minutes:).strftime("%-l:%M %p")
   end
 
+  # Adds a focus area at the end, or returns it unsaved with the reasons. Under the plan's lock, so two tabs adding at
+  # once can't pass six at most, take the same position, or both slip a quality past the friendly check.
+  def add_focus_area(attributes)
+    with_lock { focus_areas.create(attributes) }
+  end
+
   def full?
     focus_areas.size >= DailyBrief::FocusArea::MAX
   end
