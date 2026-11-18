@@ -247,6 +247,26 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[type=submit]", "Save note"
   end
 
+  test "new with a title fills the title field, and saves nothing" do
+    sign_in identities(:head)
+
+    assert_no_difference(-> { PersonalNote.count }) do
+      get new_household_personal_note_path(household_id: @home, title: "Tuesday, November 17")
+    end
+
+    assert_response :success
+    assert_select "input[name='personal_note[title]'][value=?]", "Tuesday, November 17"
+  end
+
+  test "new without a title leaves the title field empty, as before" do
+    sign_in identities(:head)
+
+    get new_household_personal_note_path(household_id: @home)
+
+    assert_select "input[name='personal_note[title]']"
+    assert_select "input[name='personal_note[title]'][value]", count: 0
+  end
+
   test "create a note in a collection, with a scripture reference linked on save" do
     sign_in identities(:head)
 

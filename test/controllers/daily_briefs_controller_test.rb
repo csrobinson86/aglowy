@@ -182,6 +182,96 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_household_daily_brief_plan_path(household_id: @home)
   end
 
+  test "the evening part after 6:00 PM shows the questions, with the section each looks back on, and From this morning" do
+    start_plan
+    written_brief
+    travel_to central(18)
+
+    get household_daily_brief_path(household_id: @home, part: "evening")
+
+    assert_response :success
+    assert_select "nav[aria-label='Morning or evening']" do
+      assert_select "a[href=?][aria-current=false]", household_daily_brief_path(household_id: @home), "Morning"
+      assert_select "a[href=?][aria-current=true]", household_daily_brief_path(household_id: @home, part: "evening"), "Evening"
+    end
+    assert_select "h2", "Four questions to end the day"
+    assert_select "ol li", 4
+    assert_select "ol li", text: /Where did I push for my own timing today\?\s*Patience/
+    assert_select "ol li", text: /What did I notice about Peter in my reading\?\s*Bible reading/
+    assert_select "main", text: /Aglowy doesn't ask for your answers and saves nothing here\./
+    assert_select "a[href=?]", new_household_personal_note_path(household_id: @home, title: "Tuesday, November 17"), "Write a note about today"
+    assert_select "h2", "Today's brief"
+    assert_select "a[href=?]", household_daily_brief_path(household_id: @home), "Show the whole brief"
+    assert_select "dd", text: /Matthew 16:21-23 · Peter wants a faster, kinder ending/
+    assert_select "dd", text: "Abraham and Moses"
+    assert_select "h2", text: "One thing in each role", count: 0
+  end
+
+  test "the evening part before 6:00 PM says when the questions open, and doesn't show them" do
+    start_plan
+    written_brief
+    travel_to central(17, 59)
+
+    get household_daily_brief_path(household_id: @home, part: "evening")
+
+    assert_select "h2", "Four questions to end the day"
+    assert_select "main", text: /They open here at 6:00 PM\./
+    assert_select "main", text: /Where did I push for my own timing today\?/, count: 0
+  end
+
+  test "the morning shows the This evening note, which says when they open, and once open links to them" do
+    start_plan
+    written_brief
+
+    get household_daily_brief_path(household_id: @home)
+
+    assert_select "nav[aria-label='Morning or evening'] a[aria-current=true]", "Morning"
+    assert_select "h2", "One thing in each role"
+    assert_select "section[aria-labelledby=daily-brief-evening-note-heading]", text: /This evening.*Four questions to end the day\. They open here at 6:00 PM\./m
+
+    travel_to central(18, 30)
+    get household_daily_brief_path(household_id: @home)
+
+    assert_select "section[aria-labelledby=daily-brief-evening-note-heading] a[href=?]", household_daily_brief_path(household_id: @home, part: "evening"), "Open them"
+  end
+
+  test "with evening off in the brief's copy of the plan there's no switch and no evening note, and part=evening shows the morning" do
+    start_plan.update!(sections: DailyBrief::Plan::SECTIONS - [ "evening" ])
+    written_brief
+    travel_to central(19)
+
+    get household_daily_brief_path(household_id: @home, part: "evening")
+
+    assert_select "nav[aria-label='Morning or evening']", count: 0
+    assert_select "#daily-brief-evening-note-heading", count: 0
+    assert_select "h2", text: /questions to end the day/, count: 0
+    assert_select "h2", "One thing in each role"
+  end
+
+  test "with no written writing there's no switch and no evening note" do
+    start_plan
+    DailyBrief.for(@user)
+    travel_to central(19)
+
+    get household_daily_brief_path(household_id: @home, part: "evening")
+
+    assert_select "nav[aria-label='Morning or evening']", count: 0
+    assert_select "#daily-brief-evening-note-heading", count: 0
+    assert_select "h2", "From your plan"
+  end
+
+  test "three questions are three, and the evening page has no form field for an answer" do
+    start_plan
+    written_brief { |result| result["evening"].pop }
+    travel_to central(20)
+
+    get household_daily_brief_path(household_id: @home, part: "evening")
+
+    assert_select "h2", "Three questions to end the day"
+    assert_select "ol li", 3
+    assert_select "main input:not([type=hidden]), main textarea, main select, main [contenteditable]", count: 0
+  end
+
   test "a child is refused" do
     sign_in identities(:eli)
 
@@ -207,5 +297,16 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
 
     def start_plan(at: central(9) - 16.days)
       travel_to(at) { DailyBrief::Plan.start(@user, starter: "husband_and_father") }
+    end
+
+    # Today's brief written from the saved reply (test/fixtures/files/ai/daily_brief.json), its fields as the checks keep
+    # them, after the block has changed them.
+    def written_brief
+      brief = DailyBrief.for(@user)
+      body = JSON.parse(file_fixture("ai/daily_brief.json").read)
+      result = JSON.parse(body["content"].filter_map { it["text"] }.join).except("off_topic")
+      yield result if block_given?
+      daily_brief_writing(brief, status: "written", result:)
+      brief
     end
 end

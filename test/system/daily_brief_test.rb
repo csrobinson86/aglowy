@@ -219,6 +219,51 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_predicate @brief.writings.sole, :writing?
   end
 
+  test "switch to Evening and back, and Write a note about today opens a new note titled with the date" do
+    written_writing
+    travel_to Time.utc(2026, 11, 18, 1) # 7:00 PM in Hannah's zone
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+
+    within("section[aria-labelledby=daily-brief-evening-note-heading]") { assert_text "Four questions to end the day." }
+
+    click_on "Evening"
+
+    assert_selector "h2", text: "Four questions to end the day"
+    assert_selector "[aria-current=true]", text: "Evening"
+    assert_text "Where did I push for my own timing today?"
+    assert_text "Aglowy doesn't ask for your answers and saves nothing here."
+    assert_selector "h2", text: "Today's brief"
+    assert_no_selector "h2", text: "One thing in each role"
+    assert_turbo_idle
+    assert_accessible
+    capture_screens("brief-evening")
+
+    click_on "Morning"
+
+    assert_selector "h2", text: "One thing in each role"
+    assert_no_selector "h2", text: "Four questions to end the day"
+
+    click_on "Evening"
+    click_on "Write a note about today"
+
+    assert_selector "h1", text: "New note"
+    assert_field "Title", with: "Tuesday, November 17"
+    assert_equal 0, users(:head).personal_notes.where(title: "Tuesday, November 17").count
+    assert_accessible
+  end
+
+  test "before 6:00 PM the Evening part says when its questions open" do
+    written_writing
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home), part: "evening")
+
+    assert_text "They open here at 6:00 PM."
+    assert_no_text "Where did I push for my own timing today?"
+    assert_accessible
+    capture_screens("brief-evening-closed")
+  end
+
   test "from Home, Open today's brief lands on the brief" do
     written_writing
     sign_in identities(:head)
