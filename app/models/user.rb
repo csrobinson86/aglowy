@@ -28,6 +28,7 @@ class User < ApplicationRecord
   has_many :ai_uses, class_name: "Ai::Use", dependent: :delete_all
   has_one :daily_brief_plan, class_name: "DailyBrief::Plan", dependent: :destroy
   has_many :daily_briefs, dependent: :destroy
+  has_many :daily_brief_writings, through: :daily_briefs, source: :writings
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 

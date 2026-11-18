@@ -128,13 +128,15 @@ class DailyBriefs::WritingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "another person's writing is a 404" do
-    users(:spouse).accept_ai_terms(understood: "1")
-    theirs = DailyBrief.for(users(:spouse).tap { travel_to(3.days.ago) { DailyBrief::Plan.start(it, starter: "basics") } })
-    writing = daily_brief_writing(theirs)
+    spouse = users(:spouse)
+    spouse.accept_ai_terms(understood: "1")
+    DailyBrief::Plan.start(spouse, starter: "basics")
+    writing = daily_brief_writing(DailyBrief.for(spouse))
 
     get household_daily_brief_writing_path(household_id: @home, id: writing)
     assert_response :not_found
 
+    sign_in identities(:head) # The test's sign-in doesn't outlast a 404.
     delete household_daily_brief_writing_path(household_id: @home, id: writing)
     assert_response :not_found
     assert_predicate writing.reload, :writing?

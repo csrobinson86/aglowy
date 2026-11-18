@@ -145,6 +145,8 @@ Rails.application.routes.draw do
         resources :focus_areas, only: %i[ new create edit update destroy ], module: :plans
         resources :days, only: %i[ edit update ], module: :plans, param: :wday, constraints: { wday: /[0-6]/ }
       end
+      # Another angle, Try again and Write it with AI for today's brief; show is the progress, destroy is Stop.
+      resources :writings, only: %i[ create show destroy ], module: :daily_briefs
     end
     # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).
     resource :todays_meeting, only: %i[ show create ]

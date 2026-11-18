@@ -13,6 +13,9 @@ application.register("auto-submit", AutoSubmitController)
 import AvatarPreviewController from "./avatar_preview_controller"
 application.register("avatar-preview", AvatarPreviewController)
 
+import BriefWritingController from "./brief_writing_controller"
+application.register("brief-writing", BriefWritingController)
+
 import CalendarEventController from "./calendar_event_controller"
 application.register("calendar-event", CalendarEventController)
 
