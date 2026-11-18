@@ -4,7 +4,7 @@
     At phone width the table scrolls inside its box, never the page; the box is focusable so a keyboard can scroll it. %>
 <% areas = plan.topic_areas %>
 <% chooses = tag.span("The brief chooses", class: "color-fg-muted") %>
-<div class="daily-brief-week" tabindex="0">
+<div class="daily-brief-week" tabindex="0" role="region" aria-label="Your week, a row per day">
   <table class="daily-brief-week__table">
     <thead>
       <tr>

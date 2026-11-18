@@ -118,13 +118,13 @@ class User < ApplicationRecord
   # Head or adult in any active household. Meeting parts are the person's, not one household's, and children never get
   # AI help with them (docs/design/meeting-parts.md, Who can do what).
   def may_prepare_parts_with_ai?
-    memberships.active.where(role: %w[ head adult ]).exists?
+    head_or_adult_somewhere?
   end
 
   # Head or adult in any active household. The daily brief is the person's, not one household's, and children have none
   # (docs/design/daily-brief.md, Who can do what).
   def may_have_daily_brief?
-    memberships.active.where(role: %w[ head adult ]).exists?
+    head_or_adult_somewhere?
   end
 
   # Today's meeting part requests left, counted from their uses, so deleting a draft or a part can't give any back.
@@ -264,6 +264,10 @@ class User < ApplicationRecord
   end
 
   private
+    def head_or_adult_somewhere?
+      memberships.active.where(role: %w[ head adult ]).exists?
+    end
+
     def bookmark_scripture(scripture, source:)
       id = Bookmark.normalize_value_for(:scripture, scripture)
 

@@ -33,7 +33,7 @@ class DailyBrief::Plan < ApplicationRecord
     end
     plan
   rescue ActiveRecord::RecordNotUnique
-    user.reload.daily_brief_plan
+    user.reload.daily_brief_plan or raise
   end
 
   # "5:00 AM".

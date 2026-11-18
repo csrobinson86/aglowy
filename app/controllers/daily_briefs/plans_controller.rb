@@ -20,7 +20,10 @@ class DailyBriefs::PlansController < ApplicationController
     end
   end
 
+  # Someone who already has a plan keeps it, whatever was sent.
   def create
+    return redirect_to household_daily_brief_plan_path if @plan
+
     @plan = DailyBrief::Plan.start(Current.user, starter: params.dig(:daily_brief_plan, :starter))
 
     if @plan.persisted?

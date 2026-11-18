@@ -9,7 +9,7 @@ class DailyBrief::FocusArea::Library
 
   ALL = [
     new("husband", kind: "role", name: "As a husband", gives: "One way to show love, honesty and loyalty to my wife today.",
-        scriptures: "Ephesians 5:25; Proverbs 5:18"),
+        scriptures: "Ephesians 5:25; Ephesians 5:28; Proverbs 5:18"),
     new("father", kind: "role", name: "As a father", gives: "One way to teach, be patient with, or spend time with my children today.",
         scriptures: "Deuteronomy 6:6, 7; Ephesians 6:4"),
     new("wife", kind: "role", name: "As a wife", gives: "One way to show love, respect and support to my husband today.",
