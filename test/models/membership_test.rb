@@ -94,6 +94,25 @@ class MembershipTest < ActiveSupport::TestCase
     assert_equal [ households(:parents) ], goal.reload.shared_households
   end
 
+  test "deactivate deletes the person's meeting-part sharings there and withdraws their notifications; rejoining doesn't bring them back" do
+    part = meeting_parts(:head_conversation)
+    part.share_with(households(:home))
+    part.share_with(households(:parents))
+    meeting_parts(:spouse_talk).share_with(households(:home))
+    memberships(:spouse_in_home).update!(role: :head)
+
+    assert_difference -> { MeetingPart::Sharing.count }, -1 do
+      assert memberships(:head_in_home).deactivate
+    end
+    assert_equal [ households(:parents) ], part.reload.shared_households
+    assert_equal [ households(:parents).id ], Notification.where(subject: part).distinct.pluck(:household_id)
+    assert Notification.exists?(subject: meeting_parts(:spouse_talk))
+
+    memberships(:head_in_home).update!(active: true)
+
+    assert_not_includes MeetingPart.shared_with(households(:home)), part
+  end
+
   test "a refused deactivate keeps the person's sharings" do
     meeting_notes(:head_midweek).share_with(households(:home))
 

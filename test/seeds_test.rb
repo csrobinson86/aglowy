@@ -122,8 +122,10 @@ class SeedsTest < ActiveSupport::TestCase
     assert maria.notifications.all? { it.household == rivera }
     assert_match "was invited 5 days ago", maria.notifications.find_by!(kind: "invitation_unaccepted").body
 
-    # Maria's parts, two coming up and two earlier, with scripture links in the preparation, and Lucia's.
+    # Maria's parts, two coming up and two earlier, one shared with the Rivera Family, with scripture links in the
+    # preparation, and Lucia's.
     assert_equal [ 2, 2 ], [ maria.meeting_parts.coming_up(maria.today).count, maria.meeting_parts.earlier(maria.today).count ]
+    assert_equal [ "Why we use God's name" ], MeetingPart.shared_with(rivera).map(&:topic)
     assert_equal [ "Psalm 37:10, 11" ], maria.meeting_parts.find_by!(kind: "starting_a_conversation").preparation.body.attachables.map(&:to_s)
     assert_equal 1, lucia.meeting_parts.count
 

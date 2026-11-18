@@ -1,0 +1,13 @@
+<% content_for :title, "Shared in #{Current.household.name}" %>
+
+<%= render layout: "meeting_parts/tab", locals: { shared: true, shared_count: @coming_up.size + @earlier.size } do %>
+  <% if @coming_up.none? && @earlier.none? %>
+    <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+      <% blankslate.with_visual_icon(icon: :people) %>
+      <% blankslate.with_heading(tag: :h2) { "Nothing shared yet" } %>
+      <% blankslate.with_description { "Parts members share with #{Current.household.name} will show here." } %>
+    <% end %>
+  <% else %>
+    <%= render "meeting_parts/list", coming_up: @coming_up, earlier: @earlier, shared: true %>
+  <% end %>
+<% end %>

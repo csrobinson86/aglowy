@@ -1,4 +1,4 @@
-# Maria's student parts, two coming up and two earlier, and one for Lucia, a child with a login (docs/design/meeting-parts.md,
+# Maria's student parts, two coming up and two earlier, one of them shared with the Rivera Family, and one for Lucia, a child with a login (docs/design/meeting-parts.md,
 # Elsewhere; frames meeting-parts.png, part-child.png). Each is on a midweek meeting day, counted from the Rivera Family's
 # next one. References typed in the preparation are linked on save, as the part's page does.
 rivera = seeded_household("The Rivera Family", head: "rivera@example.com")
@@ -17,7 +17,7 @@ seed_meeting_part(maria, kind: "starting_a_conversation", meeting_on: next_meeti
   assistant: "Ana Ortiz", preparation: "<p>Good morning. It's been a hard year for many families.</p>" \
     "<p>Do you think problems like these will ever be solved for good? I find one promise comforting: Psalm 37:10, 11.</p>")
 seed_meeting_part(maria, kind: "explaining_beliefs_demonstration", meeting_on: next_meeting + 56, minutes: 4,
-  topic: "Why we use God's name")
+  topic: "Why we use God's name").share_with(rivera)
 seed_meeting_part(maria, kind: "following_up", meeting_on: next_meeting - 56, minutes: 4, setting: "informal_witnessing",
   topic: "Return to someone who asked about prayer.", preparation: "<p>Remind her of what we talked about. Read Philippians 4:6, 7.</p>",
   counsel: "Good, natural conversation. Next: let the scripture do more of the talking.")

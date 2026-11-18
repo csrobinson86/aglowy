@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -434,6 +434,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_090000) do
     t.index ["user_id", "kind", "week_of"], name: "index_meeting_notes_on_user_id_and_kind_and_week_of", unique: true
     t.check_constraint "EXTRACT(isodow FROM week_of) = 1::numeric", name: "meeting_notes_week_of_monday_check"
     t.check_constraint "kind::text = ANY (ARRAY['midweek'::character varying, 'weekend'::character varying]::text[])", name: "meeting_notes_kind_check"
+  end
+
+  create_table "meeting_part_sharings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_part_id", null: false
+    t.uuid "household_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["household_id"], name: "index_meeting_part_sharings_on_household_id"
+    t.index ["meeting_part_id", "household_id"], name: "index_meeting_part_sharings_on_part_and_household", unique: true
   end
 
   create_table "meeting_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -874,6 +882,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_090000) do
   add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
+  add_foreign_key "meeting_part_sharings", "households", on_delete: :cascade
+  add_foreign_key "meeting_part_sharings", "meeting_parts", on_delete: :cascade
   add_foreign_key "meeting_parts", "users"
   add_foreign_key "membership_study_ai_grants", "memberships", on_delete: :cascade
   add_foreign_key "membership_study_ai_grants", "users", column: "granted_by_id", on_delete: :cascade

@@ -3,20 +3,38 @@
 
 <%= render "meeting_parts/summary", meeting_part: @meeting_part %>
 
-<%# Preparation and counsel, saved together by one Save (docs/design/meeting-parts.md, A part). %>
-<%= primer_form_with(model: @meeting_part, url: household_meeting_part_path(id: @meeting_part)) do |f| %>
-  <% if @meeting_part.errors[:preparation].any? %>
-    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Preparation #{@meeting_part.errors[:preparation].to_sentence}." } %>
+<% if policy(@meeting_part).update? %>
+  <%# Preparation and counsel, saved together by one Save (docs/design/meeting-parts.md, A part). %>
+  <%= primer_form_with(model: @meeting_part, url: household_meeting_part_path(id: @meeting_part)) do |f| %>
+    <% if @meeting_part.errors[:preparation].any? %>
+      <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Preparation #{@meeting_part.errors[:preparation].to_sentence}." } %>
+    <% end %>
+    <section aria-labelledby="preparation" class="mb-4">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "preparation")) { "Preparation" } %>
+      <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true,
+            placeholder: "What you'll say, in your own words. Type a scripture, or use the Scripture button." %>
+      <%= render "meeting_parts/spoken_length", meeting_part: @meeting_part %>
+    </section>
+    <section aria-labelledby="after-the-meeting">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "after-the-meeting")) { "After the meeting" } %>
+      <%= render MeetingParts::CounselForm.new(f) %>
+    </section>
   <% end %>
+<% else %>
+  <%# Shared: the preparation read-only with its time line, and never the counsel (Trap 3; frame part-shared.png). Action
+      Text sanitizes the preparation as it renders it; never html_safe. %>
   <section aria-labelledby="preparation" class="mb-4">
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "preparation")) { "Preparation" } %>
-    <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true,
-          placeholder: "What you'll say, in your own words. Type a scripture, or use the Scripture button." %>
-    <%= render "meeting_parts/spoken_length", meeting_part: @meeting_part %>
-  </section>
-  <section aria-labelledby="after-the-meeting">
-    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "after-the-meeting")) { "After the meeting" } %>
-    <%= render MeetingParts::CounselForm.new(f) %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% box.with_body(classes: "wb-break-word") do %>
+        <% if @meeting_part.preparation.present? %>
+          <%= @meeting_part.preparation %>
+        <% else %>
+          <p class="color-fg-muted mb-0">Nothing written yet.</p>
+        <% end %>
+      <% end %>
+    <% end %>
+    <%= render "meeting_parts/spoken_length", meeting_part: @meeting_part, editable: false %>
   </section>
 <% end %>
 

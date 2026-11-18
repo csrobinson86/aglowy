@@ -1,0 +1,29 @@
+<%# locals: (meeting_part:, household:) %>
+<%# Shares into the household in the URL only, as a meeting note does (meeting_notes/_sharing). Sharing asks first in a
+    Primer Dialog that says the counsel stays the owner's; stopping is one click and can be shared again. "Share part"
+    closes the dialog as it submits, since the answer replaces it in place. %>
+<% sharing_path = household_meeting_part_sharing_path(meeting_part_id: meeting_part) %>
+
+<% if meeting_part.shared_with?(household) %>
+  <%= primer_form_with(url: sharing_path, method: :delete, class: "mr-2") do |f| %>
+    <%= render MeetingParts::SharingForm.new(f, label: "Stop sharing") %>
+  <% end %>
+<% else %>
+  <% left_out = meeting_part.households_not_shared_with_besides(household).to_a %>
+  <%= render(Primer::Alpha::Dialog.new(id: "share-meeting-part", title: "Share with #{household.name}?")) do |dialog| %>
+    <% dialog.with_show_button(mr: 2) do |button| %>
+      <% button.with_leading_visual_icon(icon: :people) %>
+      Share with household
+    <% end %>
+    <% dialog.with_body do %>
+      <p>Everyone in <strong><%= household.name %></strong> will be able to read the part and your preparation, not your counsel. Nobody else can change it.</p>
+      <p class="color-fg-muted mb-0"><%= "#{left_out.map(&:name).to_sentence} won't see it. " if left_out.any? %>You can stop sharing at any time, and if you leave <%= household.name %> it stops automatically.</p>
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "share-meeting-part" })) { "Cancel" } %>
+      <%= primer_form_with(url: sharing_path) do |f| %>
+        <%= render MeetingParts::SharingForm.new(f, label: "Share part", scheme: :primary, dialog_id: "share-meeting-part") %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

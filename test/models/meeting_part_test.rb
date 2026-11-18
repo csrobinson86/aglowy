@@ -189,4 +189,84 @@ class MeetingPartTest < ActiveSupport::TestCase
       MeetingPart.insert!({ user_id: SecureRandom.uuid_v7, kind: "talk", meeting_on: Date.current, minutes: 5, topic: "x" })
     end
   end
+
+  # Sharing (docs/design/meeting-parts.md, MeetingPart; docs/design/meeting-notes.md, MeetingNote::Sharing).
+  test "share_with shares into a household the owner is active in, and tells the other members" do
+    part = meeting_parts(:head_conversation)
+
+    part.share_with(households(:home))
+
+    assert_equal [ households(:home) ], part.shared_households
+    assert part.shared_with?(households(:home))
+    assert_equal users(:spouse, :child, :eli, :sofia).map(&:id).sort, Notification.where(subject: part).pluck(:user_id).sort
+  end
+
+  test "sharing twice leaves one record and one notification each" do
+    part = meeting_parts(:head_conversation)
+
+    assert_difference -> { MeetingPart::Sharing.count } => 1, -> { Notification.where(subject: part).count } => 4 do
+      part.share_with(households(:home))
+      part.share_with(households(:home))
+    end
+  end
+
+  test "sharing with a household the owner isn't in raises RecordNotFound" do
+    assert_raises(ActiveRecord::RecordNotFound) { meeting_parts(:head_conversation).share_with(households(:other)) }
+    assert_empty MeetingPart::Sharing.all
+  end
+
+  test "stop_sharing_with ends the share in that household only, and withdraws its notifications there" do
+    part = meeting_parts(:head_conversation)
+    part.share_with(households(:home))
+    part.share_with(households(:parents))
+
+    part.stop_sharing_with(households(:home))
+
+    assert_equal [ households(:parents) ], part.shared_households
+    assert_equal [ households(:parents).id ], Notification.where(subject: part).distinct.pluck(:household_id)
+  end
+
+  test "shared_with is the parts shared there by an owner still active there" do
+    meeting_parts(:head_conversation).share_with(households(:home))
+    meeting_parts(:spouse_talk).share_with(households(:home))
+    meeting_parts(:head_disciples).share_with(households(:parents))
+
+    assert_equal meeting_parts(:head_conversation, :spouse_talk).sort_by(&:id), MeetingPart.shared_with(households(:home)).sort_by(&:id)
+    assert_equal [ meeting_parts(:head_disciples) ], MeetingPart.shared_with(households(:parents)).to_a
+  end
+
+  test "shared_with leaves out a part whose owner is inactive there, even with its sharing still there" do
+    meeting_parts(:spouse_talk).share_with(households(:home))
+    memberships(:spouse_in_home).update_column(:active, false)
+
+    assert_equal 1, MeetingPart::Sharing.count
+    assert_empty MeetingPart.shared_with(households(:home))
+  end
+
+  test "deleting a part deletes its sharings and notifications" do
+    part = meeting_parts(:head_conversation)
+    part.share_with(households(:home))
+
+    part.destroy!
+
+    assert_empty MeetingPart::Sharing.where(meeting_part_id: part.id)
+    assert_empty Notification.where(subject_type: "MeetingPart", subject_id: part.id)
+  end
+
+  test "database: a second sharing of one part with one household raises RecordNotUnique" do
+    meeting_parts(:head_conversation).share_with(households(:home))
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      MeetingPart::Sharing.insert!({ meeting_part_id: meeting_parts(:head_conversation).id, household_id: households(:home).id })
+    end
+  end
+
+  test "database: deleting a part deletes its sharings" do
+    part = meeting_parts(:head_conversation)
+    part.share_with(households(:home))
+
+    MeetingPart.where(id: part).delete_all
+
+    assert_empty MeetingPart::Sharing.all
+  end
 end

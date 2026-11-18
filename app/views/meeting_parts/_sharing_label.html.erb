@@ -1,0 +1,8 @@
+<%# locals: (meeting_part:) %>
+<%# "Private" or "Shared with <household>" in the part's heading, for the owner and for a member reading it shared;
+    replaced in place when the owner shares or stops. %>
+<% label = meeting_part_sharing_label(meeting_part) %>
+<%= render(Primer::Beta::Label.new(id: "meeting-part-sharing-label", scheme: meeting_part.shared_households.any? ? :accent : :secondary, title: label,
+      classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+  <%= label %>
+<% end %>

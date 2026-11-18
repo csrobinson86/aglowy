@@ -4,6 +4,11 @@ module MeetingPartsHelper
     [ meeting_on.strftime("%A, %B %-d"), "Midweek meeting", meeting_part_days_away((meeting_on - today).to_i) ].join(" · ")
   end
 
+  # "Private" or "Shared with <households>" beside the owner's own part.
+  def meeting_part_sharing_label(part)
+    part.shared_households.any? ? "Shared with #{part.shared_households.map(&:name).to_sentence}" : "Private"
+  end
+
   private
     def meeting_part_days_away(days)
       case days

@@ -1,12 +1,15 @@
 # One student part a person has been given in Apply Yourself to the Field Ministry: what was assigned, their own
 # preparation with scripture links, and the counsel afterwards (docs/design/meeting-parts.md, MeetingPart). Personal:
-# it belongs to the person and follows them between households, and nobody else sees it.
+# it belongs to the person and follows them between households, and nobody else sees it until they share it with a
+# household, which reads the part and its preparation, never the counsel.
 class MeetingPart < ApplicationRecord
-  include ScriptureLinkable
+  include ScriptureLinkable, Shareable
 
   SETTINGS = { "house_to_house" => "House to house", "informal_witnessing" => "Informal witnessing", "public_witnessing" => "Public witnessing" }.freeze
 
   belongs_to :user
+  # After Shareable, so destroying deletes the sharings before these (Shareable#take_back_notifications_of).
+  has_many :notifications, as: :subject, dependent: :delete_all
 
   encrypts :topic, :study_point, :assistant, :counsel
   has_rich_text :preparation, encrypted: true

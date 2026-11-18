@@ -153,8 +153,11 @@ Rails.application.routes.draw do
     end
     resources :shared_meeting_notes, only: :index
     # The signed-in person's own student parts, found through Current.user; new and edit open in a dialog
-    # (docs/design/meeting-parts.md, Pages and routes).
-    resources :meeting_parts
+    # (docs/design/meeting-parts.md, Pages and routes). A part shared into this household is read through show.
+    resources :meeting_parts do
+      resource :sharing, only: %i[ create destroy ], module: :meeting_parts
+    end
+    resources :shared_meeting_parts, only: :index
     # The signed-in person's own goals; each opens at /goals/:id like a family goal (docs/design/goals.md, Pages).
     resources :my_goals, only: %i[ index new create ], controller: "personal_goals"
     resources :goals, only: %i[ index new create show edit update destroy ] do

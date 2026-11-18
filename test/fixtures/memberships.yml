@@ -13,10 +13,13 @@ spouse_in_home:
   user: spouse
   role: adult
 
+# The children join a minute apart, so Membership.by_role lists them Charlie, Eli, Sofia every run rather than
+# in whatever order the rows happen to sit.
 child_in_home:
   household: home
   user: child
   role: child
+  created_at: <%= 3.minutes.ago %>
 
 former_in_home:
   household: home
@@ -38,8 +41,10 @@ eli_in_home:
   household: home
   user: eli
   role: child
+  created_at: <%= 2.minutes.ago %>
 
 sofia_in_home:
   household: home
   user: sofia
   role: child
+  created_at: <%= 1.minutes.ago %>

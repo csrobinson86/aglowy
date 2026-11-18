@@ -39,7 +39,7 @@ class Membership < ApplicationRecord
     todays_meetings[kind]&.iso8601 == week_of
   end
 
-  # Leaving ends the person's meeting-note and goal shares here for good, so rejoining never brings them back
+  # Leaving ends the person's meeting-note, goal and meeting-part shares here for good, so rejoining never brings them back
   # (docs/design/meeting-notes.md, "Leaving ends a share for good"), takes them off the steps not yet
   # done in the household's goals (docs/design/goals.md, "Leaving a household"), and ends a child's study AI grant
   # (docs/design/personal-study.md, Children).
@@ -49,6 +49,7 @@ class Membership < ApplicationRecord
         if deactivated
           user.stop_sharing_meeting_notes_with(household)
           user.stop_sharing_goals_with(household)
+          user.stop_sharing_meeting_parts_with(household)
           user.leave_open_goal_steps_in(household)
           revoke_study_ai
         end

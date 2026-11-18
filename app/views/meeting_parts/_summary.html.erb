@@ -7,27 +7,41 @@
     <% breadcrumbs.with_item(href: household_meeting_part_path(id: meeting_part)) { meeting_part.kind_details.label } %>
   <% end %>
 
-  <%# The kind as the heading, Private, then the date; Edit and Delete for the owner (frame part-child.png). Sharing and the
-      AI panel come in later stories. %>
+  <%# The kind as the heading, Private or Shared, then the date; Share, Edit and Delete for the owner (frame part-child.png).
+      A member reading it shared sees the household it's shared with here, never the owner's others, and who shared it,
+      with no buttons (frame part-shared.png). The AI panel comes in a later story. %>
+  <% owner = policy(meeting_part).update? %>
   <%= render Primer::Beta::Subhead.new(mb: 3) do |subhead| %>
     <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
       <span class="mr-2 wb-break-word min-width-0"><%= meeting_part.kind_details.label %></span>
-      <%= render(Primer::Beta::Label.new(scheme: :secondary)) { "Private" } %>
+      <% if owner %>
+        <%= render "meeting_parts/sharing_label", meeting_part: %>
+      <% else %>
+        <% label = "Shared with #{Current.household.name}" %>
+        <%= render(Primer::Beta::Label.new(scheme: :accent, title: label, classes: "css-truncate css-truncate-overflow min-width-0")) { label } %>
+      <% end %>
     <% end %>
-    <% subhead.with_actions(display: :flex) do %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_part_path(id: meeting_part), mr: 2, data: { turbo_frame: "meeting_part_dialog" })) { "Edit" } %>
-      <%= render(Primer::Alpha::Dialog.new(id: "delete-meeting-part", title: "Delete this part?")) do |dialog| %>
-        <% dialog.with_show_button(scheme: :danger) { "Delete" } %>
-        <% dialog.with_body { "Its preparation and counsel go too. This can't be undone." } %>
-        <% dialog.with_footer do %>
-          <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-meeting-part" })) { "Cancel" } %>
-          <%= primer_form_with(url: household_meeting_part_path(id: meeting_part), method: :delete) do |f| %>
-            <%= render MeetingParts::DeleteForm.new(f) %>
+    <% if owner %>
+      <% subhead.with_actions(display: :flex) do %>
+        <div id="meeting-part-sharing">
+          <%= render "meeting_parts/sharing", meeting_part:, household: Current.household %>
+        </div>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_part_path(id: meeting_part), mr: 2, data: { turbo_frame: "meeting_part_dialog" })) { "Edit" } %>
+        <%= render(Primer::Alpha::Dialog.new(id: "delete-meeting-part", title: "Delete this part?")) do |dialog| %>
+          <% dialog.with_show_button(scheme: :danger) { "Delete" } %>
+          <% dialog.with_body { "Its preparation and counsel go too. This can't be undone." } %>
+          <% dialog.with_footer do %>
+            <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-meeting-part" })) { "Cancel" } %>
+            <%= primer_form_with(url: household_meeting_part_path(id: meeting_part), method: :delete) do |f| %>
+              <%= render MeetingParts::DeleteForm.new(f) %>
+            <% end %>
           <% end %>
         <% end %>
       <% end %>
+      <% subhead.with_description { meeting_part_when(meeting_part.meeting_on, Current.user.today) } %>
+    <% else %>
+      <% subhead.with_description { "#{meeting_part.meeting_on.strftime("%A, %B %-d")} · Midweek meeting · shared by #{meeting_part.user.name}" } %>
     <% end %>
-    <% subhead.with_description { meeting_part_when(meeting_part.meeting_on, Current.user.today) } %>
   <% end %>
 
   <%= render "meeting_parts/details", meeting_part: meeting_part %>
