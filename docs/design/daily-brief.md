@@ -119,7 +119,7 @@ One day's brief.
 
 - `DailyBrief.for(user, on: user.today)`: inside `user.with_lock`, finds the day's brief or makes it with the copy of the plan.
 - `has_many :writings`; `brief.writing` is the newest one that is `written`.
-- `include Shareable` with `DailyBrief::Sharing`, and no notification (Sharing, below). `Shareable` always notifies today, so it gains a private `notifies_when_shared?`, true unless the record says otherwise, which `DailyBrief` turns off. `Membership#deactivate` ends the person's daily brief shares in that household, as it does for meeting notes and goals.
+- `include Shareable` with `DailyBrief::Sharing`, and no notification (Sharing, below). `Shareable` always notifies today, so it gains a private `notifies_when_shared?`, true unless the record says otherwise, which `DailyBrief` turns off. It guards both halves: the notifications `share_with` makes and the withdrawal in `stop_sharing_with`, which reads a `notifications` association a daily brief doesn't have. So `DailyBrief` declares no notifications and isn't a notification subject, and meeting notes and goals notify and withdraw as before. `Membership#deactivate` ends the person's daily brief shares in that household, as it does for meeting notes and goals.
 - `brief.daily_text_url`: `https://wol.jw.org/en/wol/dt/r1/lp-e/<year>/<month>/<day>`, built from `on`. Aglowy never fetches it.
 
 ### `DailyBrief::Writing`
