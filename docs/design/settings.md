@@ -21,6 +21,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Tags and collections | yes | yes | yes | Rename and delete tags; edit and delete collections |
 | You | Calendar | yes | yes | yes | Share my times with a household; the phone calendar link (`docs/design/calendar.md`, CAL-01) |
 | You | Notifications | yes | yes | yes, without email | What comes by email and to your phone, quiet hours, your devices (`docs/design/notifications.md`, NOTIFY-01). Not on `/account`: people with no household get no notifications |
+| You | Offline | yes | yes | yes | Keep Aglowy available offline on this device: on or off, what's kept, notes waiting to save (`docs/design/offline.md`, OFFLINE-01). Lives in this browser, not on the server. Not on `/account` |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
 | | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
@@ -94,6 +95,7 @@ A person can leave every household they're in (`docs/design/invitations.md`). Th
 | Tags and collections | Rename or delete your tags and collections. Only you see them. |
 | Calendar | Who sees your times, and your phone calendar link. |
 | Notifications | What reaches you, and where. Follows you to every household. |
+| Offline | Only this phone or computer. Turn it on separately on each one. |
 | Household | Rivera household · heads can change this. |
 | Meetings | Rivera household · heads and adults can change this. |
 | Children | Rivera household · heads and adults; AI for a child is heads only. |
@@ -104,7 +106,7 @@ The section boxes are today's boxes, moved as they are: the same Primer `BorderB
 ### The section nav
 
 `Settings::NavComponent`, a Primer `NavList` labelled "Settings" (`aria: { label: "Settings" }`), with two groups:
-- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`)
+- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`), then Offline once OFFLINE-01 adds it (`docs/design/offline.md`). On a phone the same list is the menu above the section
 - the household's name: the sections the person's role allows, in the table's order. No group at all for a child.
 
 The current section is selected (`aria-current="page"`, from Primer). Each section's controller passes its id (`:profile`, `:meetings`, …).

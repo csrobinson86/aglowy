@@ -225,7 +225,7 @@ A section in the "You" group after Calendar (`docs/design/settings.md`). The not
   - `push`: `self.registration.showNotification(payload.title, { body, icon, tag, data: { url } })`
   - `notificationclick`: focus an open Aglowy window on `url`, or open one
 
-  It caches nothing. This isn't an offline app.
+  With offline mode off, it caches nothing. Offline mode, turned on per device, adds a `fetch` handler (`docs/design/offline.md`).
 - **VAPID keys:** `web_push: { public_key:, private_key:, subject: "mailto:…" }` in credentials. The public key goes into the page for the Stimulus controller.
 
 ## Elsewhere
