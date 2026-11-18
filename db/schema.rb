@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -73,7 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_170000) do
     t.index ["meeting_part_draft_id"], name: "index_ai_uses_on_meeting_part_draft_id", unique: true
     t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
     t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying]::text[])", name: "ai_uses_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying]::text[])", name: "ai_uses_purpose_check"
   end
 
   create_table "bookmarks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -123,7 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_170000) do
     t.index ["household_id"], name: "index_chats_on_household_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying]::text[])", name: "chats_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying]::text[])", name: "chats_purpose_check"
   end
 
   create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -455,6 +455,54 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_170000) do
     t.index ["household_id", "email"], name: "index_invitations_on_household_id_and_email", unique: true
     t.index ["invited_by_id"], name: "index_invitations_on_invited_by_id"
     t.check_constraint "role::text = ANY (ARRAY['adult'::character varying, 'head'::character varying]::text[])", name: "invitations_role_check"
+  end
+
+  create_table "listening_game_cards", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "round_id", null: false
+    t.integer "position", limit: 2, null: false
+    t.string "label", null: false
+    t.string "kind", null: false
+    t.boolean "answer", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["round_id", "position"], name: "index_listening_game_cards_on_round_id_and_position", unique: true
+    t.index ["round_id"], name: "index_listening_game_cards_on_round_id_answer", unique: true, where: "answer"
+    t.check_constraint "\"position\" >= 1 AND \"position\" <= 4", name: "listening_game_cards_position_check"
+    t.check_constraint "char_length(label::text) <= 40", name: "listening_game_cards_label_check"
+    t.check_constraint "kind::text = ANY (ARRAY['person'::character varying, 'place'::character varying, 'book'::character varying, 'thing'::character varying, 'feeling'::character varying, 'action'::character varying]::text[])", name: "listening_game_cards_kind_check"
+  end
+
+  create_table "listening_game_rounds", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "listening_game_id", null: false
+    t.string "step", null: false
+    t.integer "position", limit: 2, null: false
+    t.uuid "changed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["changed_by_id"], name: "index_listening_game_rounds_on_changed_by_id"
+    t.index ["listening_game_id", "step", "position"], name: "index_listening_game_rounds_on_game_step_position", unique: true
+    t.check_constraint "step::text = ANY (ARRAY['talk'::character varying, 'spiritual_gems'::character varying, 'bible_reading'::character varying, 'congregation_bible_study'::character varying]::text[])", name: "listening_game_rounds_step_check"
+  end
+
+  create_table "listening_game_sources", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "listening_game_id", null: false
+    t.integer "position", limit: 2, null: false
+    t.string "title", null: false
+    t.string "url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["listening_game_id", "position"], name: "index_listening_game_sources_on_listening_game_id_and_position", unique: true
+    t.check_constraint "url::text ~~ 'https://%'::text", name: "listening_game_sources_url_check"
+  end
+
+  create_table "listening_games", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.date "week_of", null: false
+    t.uuid "chat_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_listening_games_on_chat_id"
+    t.index ["household_id", "week_of"], name: "index_listening_games_on_household_id_and_week_of", unique: true
   end
 
   create_table "meeting_note_drawings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -993,6 +1041,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_170000) do
   add_foreign_key "identities", "users"
   add_foreign_key "invitations", "households", on_delete: :cascade
   add_foreign_key "invitations", "users", column: "invited_by_id"
+  add_foreign_key "listening_game_cards", "listening_game_rounds", column: "round_id", on_delete: :cascade
+  add_foreign_key "listening_game_rounds", "listening_games", on_delete: :cascade
+  add_foreign_key "listening_game_rounds", "users", column: "changed_by_id", on_delete: :nullify
+  add_foreign_key "listening_game_sources", "listening_games", on_delete: :cascade
+  add_foreign_key "listening_games", "chats", on_delete: :nullify
+  add_foreign_key "listening_games", "households", on_delete: :cascade
   add_foreign_key "meeting_note_drawings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_marks", "meeting_notes", on_delete: :cascade
