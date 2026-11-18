@@ -84,6 +84,24 @@ class MeetingPartAiTest < ApplicationSystemTestCase
     assert_no_selector ".Label", text: "From an AI draft"
   end
 
+  test "Use this outline goes after the preparation there, saved or not, and saves nothing" do
+    users(:head).accept_ai_terms(understood: "1")
+    @part.update!(preparation: "<p>My saved words.</p>")
+    meeting_part_draft(@part, status: "drafted", result: { "aim" => "Leave the person curious.", "opening" => "Say hello.",
+                                                           "points" => [ { "heading" => "A promise worth hearing", "explain" => "It speaks of peace." } ] })
+    sign_in identities(:head)
+    visit household_meeting_part_url(household_id: households(:home), id: @part)
+
+    editable = find("#{EDITOR} [contenteditable='true']")
+    editable.click
+    editable.send_keys(END_OF_TEXT, " My unsaved words.")
+    click_on "Use this outline"
+
+    assert_selector EDITOR, text: "A promise worth hearing"
+    assert_selector EDITOR, text: "My saved words. My unsaved words."
+    assert_equal "My saved words.", @part.reload.preparation.to_plain_text.strip
+  end
+
   test "on a phone Prepare with AI opens the panel full-screen, and Use this outline closes it" do
     users(:head).accept_ai_terms(understood: "1")
     use_phone

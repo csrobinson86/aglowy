@@ -9,6 +9,8 @@ module MeetingPart::Draft::Writable
   OUTLINE_TEXT = %w[ aim opening question close study_point ].freeze
   POINT_TEXT = %w[ heading scripture explain ].freeze
   MAX_POINTS = 3
+  # Every string in the reply (docs/design/meeting-parts.md, The reply). The schema only describes it.
+  TEXT_MAX = 500
 
   # A job the queue refused would leave the draft drafting with nothing to write it, using one of the day's requests.
   # Active Job returns false for its own EnqueueError; Solid Queue raises its own, which it doesn't rescue.
@@ -68,7 +70,7 @@ module MeetingPart::Draft::Writable
         sources: Ai::SourceLink.keep(reply.sources, search_results: reply.search_results, allowed_hosts: purpose.allowed_hosts)
     end
 
-    # The outline's fields as strings, without references that don't parse, web addresses or copied sentences, then
+    # The outline's fields as strings, each 500 characters at most, without references that don't parse, web addresses or copied sentences, then
     # without empty points. Study point advice only when the person typed a study point.
     def checked_outline(reply)
       outline = reply.parsed["outline"].then { it.is_a?(Hash) ? it : {} }
@@ -80,8 +82,9 @@ module MeetingPart::Draft::Writable
       meeting_part.study_point ? fields : fields.except("study_point")
     end
 
+    # A field that isn't a string, or is longer than TEXT_MAX, is dropped, and the fields beside it stay.
     def strings(hash, keys)
-      keys.index_with { hash[it].is_a?(String) ? hash[it] : "" }
+      keys.index_with { hash[it].is_a?(String) && hash[it].length <= TEXT_MAX ? hash[it] : "" }
     end
 
     # Applies only while the draft is still drafting, so a Stop holds. Then, only if this write changed the row and the

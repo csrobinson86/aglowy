@@ -108,6 +108,22 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
     assert_equal "Proverbs 20:5", points.last["scripture"]
   end
 
+  test "a string over 500 characters is dropped, and the fields beside it stay; 500 is fine" do
+    write(saved_reply do |parsed|
+      parsed["outline"]["opening"] = "a" * 501
+      parsed["outline"]["close"] = "b" * 500
+      parsed["outline"]["points"][0]["explain"] = "c" * 501
+    end)
+
+    result = @draft.reload.result
+    assert_predicate @draft, :drafted?
+    assert_equal "", result["opening"]
+    assert_equal "b" * 500, result["close"]
+    assert_equal "Leave the person curious about what the Bible promises for the earth.", result["aim"]
+    assert_equal "A promise worth hearing", result["points"].first["heading"]
+    assert_equal "", result["points"].first["explain"]
+  end
+
   test "a link on another host, or not in the search results, is dropped, and so is a web address in the text" do
     others = [ RubyLLM::Citation.new(url: "https://example.com/hope", title: "Elsewhere", cited_text: "Another site."),
                RubyLLM::Citation.new(url: "https://www.jw.org/en/an-article-the-search-never-returned/", title: "Made up", cited_text: "Never returned.") ]
