@@ -29,7 +29,7 @@
 
   <% writing, latest, today = @brief.writing, @brief.writings.last, @brief.on == @today %>
   <% if latest&.writing? %>
-    <%= render "daily_briefs/writings/progress", writing: latest %>
+    <%= render "daily_briefs/writings/progress", writing: latest, earlier: writing.present? %>
   <% end %>
   <% if writing %>
     <%= render "daily_briefs/thread", brief: @brief, writing: %>

@@ -150,6 +150,7 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     click_on "Another angle"
 
     assert_selector "h2", text: "Writing with AI"
+    assert_text "Until then, here's the brief you have."
     assert_selector "li", text: "Searching jw.org and wol.jw.org"
     assert_button "Stop"
     assert_selector "turbo-cable-stream-source[connected]", visible: :all
@@ -182,8 +183,11 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     users(:head).accept_ai_terms(understood: "1")
     sign_in identities(:head)
     visit household_daily_brief_url(household_id: households(:home))
+    assert_selector "input[type=hidden][name=first][value=true]", visible: :all
 
     click_on "Write it with AI"
+
+    assert_text "Until then, here are the parts from your plan."
 
     assert_selector "h2", text: "Writing with AI"
     assert_predicate @brief.writings.sole, :writing?
