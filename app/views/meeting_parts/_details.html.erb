@@ -1,0 +1,27 @@
+<%# locals: (meeting_part:) -%>
+<%# The part (frame part-child.png): its time, setting, study point and assistant, what it's about, then that week's
+    program on wol.jw.org and the person's own note for the meeting. %>
+<section aria-labelledby="the-part" class="mb-4">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_body do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 3, id: "the-part")) { "The part" } %>
+      <dl class="meeting-part-details mb-3">
+        <% { "Time" => pluralize(meeting_part.minutes, "minute"), "Form" => meeting_part.kind_details.detail, "Setting" => meeting_part.setting_label,
+             "Study point" => meeting_part.study_point, "Assistant" => meeting_part.assistant }.compact.each do |term, value| %>
+          <div>
+            <dt class="f6 color-fg-muted"><%= term %></dt>
+            <dd class="ml-0 wb-break-word"><%= value %></dd>
+          </div>
+        <% end %>
+      </dl>
+      <p class="f6 color-fg-muted mb-0">What it's about</p>
+      <p class="wb-break-word meeting-part-details__topic"><%= meeting_part.topic %></p>
+      <div class="d-flex flex-wrap flex-items-center">
+        <%= link_to "This week's program on wol.jw.org", meeting_part.program_url, target: "_blank", rel: "noopener", class: "mr-3" %>
+        <%= primer_form_with(scope: :meeting_note, url: household_meeting_notes_path) do |f| %>
+          <%= render MeetingParts::MeetingNoteForm.new(f, week_of: meeting_part.week_of) %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</section>

@@ -168,6 +168,14 @@ class Household < ApplicationRecord
       .sort_by(&:starts_at)
   end
 
+  # The day of the next midweek meeting, today or after where the household lives, or nil before meeting times are set.
+  # A new meeting part's date starts here (docs/design/meeting-parts.md, Add or edit a part).
+  def next_midweek_meeting_on
+    return unless meeting_times_set?
+
+    today.then { it + (midweek_meeting_wday - it.wday) % 7 }
+  end
+
   # True for the whole of the meeting's day, including after it ends.
   def meeting_day?(now = Time.current)
     current_or_next_meeting(now)&.starts_at&.to_date == now.in_time_zone(time_zone).to_date

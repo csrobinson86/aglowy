@@ -1,0 +1,4 @@
+<% content_for :title, "Add a part" %>
+<%= turbo_frame_tag "meeting_part_dialog" do %>
+  <%= render "meeting_parts/dialog", meeting_part: @meeting_part %>
+<% end %>

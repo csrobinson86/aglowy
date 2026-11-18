@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -436,6 +436,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_080000) do
     t.check_constraint "kind::text = ANY (ARRAY['midweek'::character varying, 'weekend'::character varying]::text[])", name: "meeting_notes_kind_check"
   end
 
+  create_table "meeting_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "kind", null: false
+    t.date "meeting_on", null: false
+    t.integer "minutes", null: false
+    t.string "setting"
+    t.text "topic", null: false
+    t.string "study_point"
+    t.string "assistant"
+    t.text "counsel"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "meeting_on"], name: "index_meeting_parts_on_user_id_and_meeting_on"
+    t.check_constraint "kind::text = ANY (ARRAY['starting_a_conversation'::character varying, 'following_up'::character varying, 'making_disciples'::character varying, 'explaining_beliefs_demonstration'::character varying, 'explaining_beliefs_talk'::character varying, 'talk'::character varying]::text[])", name: "meeting_parts_kind_check"
+    t.check_constraint "minutes >= 1 AND minutes <= 15", name: "meeting_parts_minutes_check"
+    t.check_constraint "setting::text = ANY (ARRAY['house_to_house'::character varying, 'informal_witnessing'::character varying, 'public_witnessing'::character varying]::text[])", name: "meeting_parts_setting_check"
+  end
+
   create_table "membership_study_ai_grants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "membership_id", null: false
     t.uuid "granted_by_id", null: false
@@ -856,6 +874,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_080000) do
   add_foreign_key "meeting_note_sharings", "households", on_delete: :cascade
   add_foreign_key "meeting_note_sharings", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_notes", "users"
+  add_foreign_key "meeting_parts", "users"
   add_foreign_key "membership_study_ai_grants", "memberships", on_delete: :cascade
   add_foreign_key "membership_study_ai_grants", "users", column: "granted_by_id", on_delete: :cascade
   add_foreign_key "membership_time_sharings", "memberships", on_delete: :cascade

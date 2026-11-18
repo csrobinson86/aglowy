@@ -152,6 +152,9 @@ Rails.application.routes.draw do
       resource :summary, only: :show, module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
+    # The signed-in person's own student parts, found through Current.user; new and edit open in a dialog
+    # (docs/design/meeting-parts.md, Pages and routes).
+    resources :meeting_parts
     # The signed-in person's own goals; each opens at /goals/:id like a family goal (docs/design/goals.md, Pages).
     resources :my_goals, only: %i[ index new create ], controller: "personal_goals"
     resources :goals, only: %i[ index new create show edit update destroy ] do

@@ -1,0 +1,13 @@
+<%# locals: (meeting_part:) -%>
+<%# Add a part, or edit one's details (frame part-new.png). Open as soon as the page's frame loads it; the date's hint
+    shows only while it's the household's next midweek meeting. %>
+<% dialog_id = "meeting-part-dialog" %>
+<%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: meeting_part.new_record? ? "Add a part" : "Edit part", size: :large, open: true)) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= primer_form_with(model: meeting_part, url: meeting_part.new_record? ? household_meeting_parts_path : household_meeting_part_path(id: meeting_part)) do |f| %>
+      <% next_meeting = meeting_part.meeting_on.present? && meeting_part.meeting_on == Current.household.next_midweek_meeting_on %>
+      <%= render MeetingParts::MeetingPartForm.new(f, section: :details, next_meeting:) %>
+      <div class="mt-3"><%= render MeetingParts::MeetingPartForm.new(f, section: :actions, dialog_id:) %></div>
+    <% end %>
+  <% end %>
+<% end %>

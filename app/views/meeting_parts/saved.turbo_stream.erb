@@ -1,0 +1,4 @@
+<%# Empties the frame, which closes the dialog, then refreshes the page, which shows the notice (as calendar/events/saved).
+    Without a request id: with this request's, Turbo would skip the refresh as an echo of its own. %>
+<%= turbo_stream.update "meeting_part_dialog" %>
+<%= turbo_stream.refresh(request_id: nil) %>

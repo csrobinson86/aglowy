@@ -1,0 +1,22 @@
+<% content_for :title, @meeting_part.kind_details.label %>
+<%# Only the preparation and counsel are sent from this page, so a refused save leaves the header and The part as saved. %>
+
+<%= render "meeting_parts/summary", meeting_part: @meeting_part %>
+
+<%# Preparation and counsel, saved together by one Save (docs/design/meeting-parts.md, A part). %>
+<%= primer_form_with(model: @meeting_part, url: household_meeting_part_path(id: @meeting_part)) do |f| %>
+  <% if @meeting_part.errors[:preparation].any? %>
+    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Preparation #{@meeting_part.errors[:preparation].to_sentence}." } %>
+  <% end %>
+  <section aria-labelledby="preparation" class="mb-4">
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "preparation")) { "Preparation" } %>
+    <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true,
+          placeholder: "What you'll say, in your own words. Type a scripture, or use the Scripture button." %>
+  </section>
+  <section aria-labelledby="after-the-meeting">
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "after-the-meeting")) { "After the meeting" } %>
+    <%= render MeetingParts::CounselForm.new(f) %>
+  </section>
+<% end %>
+
+<%= turbo_frame_tag "meeting_part_dialog" %>

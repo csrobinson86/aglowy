@@ -37,6 +37,9 @@
       <% group.with_item(label: "Notes", href: personal_notes_path, selected_by_ids: %i[ personal_notes meeting_notes shared_meeting_notes bookmarks ]) do |item| %>
         <% item.with_leading_visual_icon(icon: :pencil) %>
       <% end %>
+      <% group.with_item(label: "Meeting parts", href: meeting_parts_path, selected_by_ids: :meeting_parts) do |item| %>
+        <% item.with_leading_visual_icon(icon: :"comment-discussion") %>
+      <% end %>
       <% group.with_item(label: "My goals", href: my_goals_path, selected_by_ids: :personal_goals) do |item| %>
         <% item.with_leading_visual_icon(icon: :flag) %>
       <% end %>

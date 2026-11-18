@@ -15,6 +15,9 @@ Rails.application.config.filter_parameters += [
   :endpoint,
   # AI prompts, chat messages and draft outlines (docs/design/ai.md, Traps).
   :prompt, :content, :outline,
+  # A meeting part's preparation. Its other private fields are encrypted attributes, which Rails filters itself; this is
+  # rich text, whose encrypted body is filtered only as encrypted_rich_text.body.
+  :preparation,
   meeting_note_part_key,
   # Rails filters a logged query string's keys before decoding them, so decode each one (%73peaker is speaker,
   # %5B is [) and match it again. CGI.unescape leaves a malformed escape alone; Rack rejects that key anyway.

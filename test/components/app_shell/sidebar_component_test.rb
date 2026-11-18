@@ -16,9 +16,26 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     %i[ head_in_home spouse_in_home child_in_home ].each do |membership|
       render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
 
-      assert_equal [ "Today's meeting", "Personal study", "Notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4), "for #{membership}"
+      assert_equal [ "Today's meeting", "Personal study", "Notes", "Meeting parts", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(5), "for #{membership}"
       assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/todays_meeting'] svg.octicon-sun"
     end
+  end
+
+  test "Meeting parts shows in Mine after Notes, with the comment-discussion icon, for a head, an adult and a child" do
+    %i[ head_in_home spouse_in_home child_in_home eli_in_home ].each do |membership|
+      render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
+
+      assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/meeting_parts'] svg.octicon-comment-discussion", count: 1
+      mine = page.all("nav[aria-label='Main'] a").map { it.text.strip }
+      assert_equal mine.index("Notes") + 1, mine.index("Meeting parts"), "for #{membership}"
+    end
+  end
+
+  test "Meeting parts is selected on its pages" do
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:child_in_home), selected_item: :meeting_parts, label: "Main"))
+
+    assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/meeting_parts']", text: "Meeting parts"
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
   test "there's no Meeting notes item: meeting notes are a tab in Notes" do

@@ -1,0 +1,15 @@
+<%# locals: (part:) -%>
+<%# One row on the list (frame meeting-parts.png): the date, the kind, the topic on one line, then the weekday, minutes,
+    setting, detail and assistant, and Private. %>
+<div class="meeting-part-row__date mr-3">
+  <span class="meeting-part-row__month"><%= part.meeting_on.strftime("%b") %></span>
+  <span class="meeting-part-row__day"><%= part.meeting_on.day %></span>
+</div>
+<div class="flex-auto min-width-0 mr-3">
+  <%= link_to part.kind_details.label, household_meeting_part_path(id: part), class: "d-block Link--primary text-bold" %>
+  <p class="color-fg-muted mb-0 css-truncate css-truncate-overflow"><%= part.topic %></p>
+  <p class="f6 color-fg-muted mb-0">
+    <%= [ part.meeting_on.strftime("%A"), "#{part.minutes} min", part.setting_label, part.kind_details.detail, ("with #{part.assistant}" if part.assistant) ].compact.join(" · ") %>
+  </p>
+</div>
+<%= render(Primer::Beta::Label.new(scheme: :secondary)) { "Private" } %>
