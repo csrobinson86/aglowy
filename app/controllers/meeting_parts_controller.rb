@@ -38,6 +38,7 @@ class MeetingPartsController < ApplicationController
     @meeting_part = Current.user.meeting_parts.with_rich_text_preparation.find_by(id: params[:id]) ||
       MeetingPart.shared_with(Current.household).with_rich_text_preparation.includes(:user).find(params[:id])
     authorize @meeting_part
+    set_draft
   end
 
   def edit
@@ -53,6 +54,7 @@ class MeetingPartsController < ApplicationController
     if @meeting_part.save
       close_dialog "Part saved.", refresh: !details_sent?
     else
+      set_draft unless details_sent?
       render details_sent? ? :edit : :show, status: :unprocessable_content
     end
   end
@@ -66,6 +68,11 @@ class MeetingPartsController < ApplicationController
     def set_meeting_part
       @meeting_part = Current.user.meeting_parts.with_rich_text_preparation.find(params[:id])
       authorize @meeting_part
+    end
+
+    # The AI panel's current draft, so a reload or a refused save still shows the outline or Drafting.
+    def set_draft
+      @draft = @meeting_part.current_draft_for(Current.user) if policy(@meeting_part).draft?
     end
 
     def meeting_part_params

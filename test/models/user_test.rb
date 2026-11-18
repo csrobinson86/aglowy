@@ -511,4 +511,16 @@ class UserTest < ActiveSupport::TestCase
     head.unsubscribe_from_email("summary")
     assert_equal %w[ study_topic_needed ], head.notification_settings.pluck(:kind)
   end
+
+  # Meeting parts with AI (docs/design/meeting-parts.md, Who can do what): parts are personal, so any household counts.
+  test "may_prepare_parts_with_ai? for a head and an adult, not a child, and a child here who is an adult elsewhere" do
+    assert users(:head).may_prepare_parts_with_ai?
+    assert users(:spouse).may_prepare_parts_with_ai?
+    assert_not users(:eli).may_prepare_parts_with_ai?
+    assert_not users(:former).may_prepare_parts_with_ai?, "an adult who left has no active seat"
+
+    Membership.create!(household: households(:parents), user: users(:eli), role: :adult)
+
+    assert users(:eli).may_prepare_parts_with_ai?
+  end
 end

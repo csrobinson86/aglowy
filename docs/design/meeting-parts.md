@@ -118,7 +118,7 @@ One AI request and its checked reply.
 - `belongs_to :chat, dependent: :destroy`, so deleting a part deletes its drafts' chats with them, not at the next purge.
 - `revises` must be a `drafted` draft of the same part: of the same kind for a change, or an outline for sample wording. `part.draft` checks that and copies its `result` into `revised_result` in the same lock.
 - `Ai::Use` gains `meeting_part_draft_id` (FK, nullable, unique, `on_delete: :nullify`), used exactly as `question_id` is for personal study: made with the draft, deleted when the draft ends `failed` or `flagged`, kept when the draft or its part is deleted.
-- `draft.spoken_length` counts the words of the result, plus `READ_SECONDS` for each scripture marked to read.
+- `draft.spoken_length` counts the words of the result, plus `READ_SECONDS` for each scripture marked to read. An outline's aim and study point advice aren't said aloud, so they aren't counted; each point's scripture is read ("Read Psalm 37:10, 11." in its preparation), so it is.
 - `draft.preparation_html` builds notes from our own ERB partial with escaped fields, as `FamilyStudy::Draft#notes_html` does.
 
 ## Pages and routes
@@ -250,7 +250,7 @@ Frames `part-prepare.png`, `part-ai-outline.png` and `part-ai-wording.png`. The 
 
 Then, after the lock block returns, it calls `write_later` on a saved draft, as `FamilyStudy::Draft.start` and `PersonalStudy#ask` do. The job is queued in another database, so queuing it inside the lock could let a worker start before the draft is committed.
 
-`MeetingPart::WriteDraftJob` → `draft.write_now`, the same five steps as `FamilyStudy::Draft#write_now` (`docs/design/family-studies.md`): moderation; `chat.ask_within_purpose` with progress lines only; the checks; the final status with a conditional update that applies only while `drafting`; one broadcast of the result.
+`MeetingPart::WriteDraftJob` → `draft.write_now`, the same five steps as `FamilyStudy::Draft#write_now` (`docs/design/family-studies.md`): moderation; `chat.ask_within_purpose` with progress lines only; the checks; the final status with a conditional update that applies only while `drafting`; one broadcast of the result. A part is personal, so its draft doesn't know which household's page the panel is open in, and the panel's links are under that household. So the broadcast carries no text: it tells the panel the draft is done, and the panel fetches its result from `GET …/drafts/:draft_id` under its own household, the same request it makes when it first listens.
 
 - **A change** is a new draft of the same kind with `revises` set and the change as `request`. It counts as one request.
 - **Write sample wording** is a new `wording` draft that `revises` the outline.

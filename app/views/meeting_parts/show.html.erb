@@ -4,14 +4,21 @@
 <%= render "meeting_parts/summary", meeting_part: @meeting_part %>
 
 <% if policy(@meeting_part).update? %>
+  <% ai = policy(@meeting_part).draft? %>
   <%# Preparation and counsel, saved together by one Save (docs/design/meeting-parts.md, A part). %>
+  <% preparation_form = capture do %>
   <%= primer_form_with(model: @meeting_part, url: household_meeting_part_path(id: @meeting_part)) do |f| %>
     <% if @meeting_part.errors[:preparation].any? %>
       <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Preparation #{@meeting_part.errors[:preparation].to_sentence}." } %>
     <% end %>
     <section aria-labelledby="preparation" class="mb-4">
-      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "preparation")) { "Preparation" } %>
-      <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true,
+      <%# With AI, "Use this outline" puts the outline here, and "From an AI draft" shows until the person edits it; on a
+          phone focus then moves to the heading (docs/design/meeting-parts.md, How a request runs). %>
+      <div class="d-flex flex-wrap flex-items-center mb-2">
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mr: 2, id: "preparation", tabindex: (-1 if ai), data: { ai_draft_target: ("notesHeading" if ai) })) { "Preparation" } %>
+        <% if ai %><%= render(Primer::Beta::Label.new(scheme: :done, hidden: true, data: { ai_draft_target: "label" })) { "From an AI draft" } %><% end %>
+      </div>
+      <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true, ai_draft: ai,
             placeholder: "What you'll say, in your own words. Type a scripture, or use the Scripture button." %>
       <%= render "meeting_parts/spoken_length", meeting_part: @meeting_part %>
     </section>
@@ -19,6 +26,24 @@
       <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "after-the-meeting")) { "After the meeting" } %>
       <%= render MeetingParts::CounselForm.new(f) %>
     </section>
+  <% end %>
+  <% end %>
+
+  <% if ai %>
+    <%# Heads and adults get "Prepare with AI" beside the preparation, stacked under it on narrow screens, and on a phone in a
+        dialog that starts closed (docs/design/meeting-parts.md, A part). Never a child, never a shared part (Trap 1). The
+        ai-draft controller sits around both, as "Use this outline" fills the editor from the panel. %>
+    <%= render(Primer::Alpha::Layout.new(first_in_source: :main, stacking_breakpoint: :lg, classes: "meeting-part-prepare",
+          data: { controller: "ai-draft", action: "lexxy:change->ai-draft#notesEdited" })) do |layout| %>
+      <% layout.with_main { preparation_form } %>
+      <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "meeting-part-prepare__ai") do %>
+        <div data-ai-panel-dismissed>
+          <%= render MeetingParts::AiPanelComponent.new(household: Current.household, meeting_part: @meeting_part, user: Current.user, draft: @draft) %>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <%= preparation_form %>
   <% end %>
 <% else %>
   <%# Shared: the preparation read-only with its time line, and never the counsel (Trap 3; frame part-shared.png). Action

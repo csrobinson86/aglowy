@@ -1,0 +1,22 @@
+<%# locals: (outline:) -%>
+<%# A checked outline in the AI panel (frame part-ai-outline.png). Every field is the AI's text, so it's only ever escaped
+    by ERB (docs/design/ai.md, safety measure 6). A point's scripture is a link; the checks already dropped any that
+    don't parse. %>
+<% section = ->(label, text) { capture do %>
+  <% if text.present? %>
+    <p class="text-small text-bold color-fg-muted mb-1"><%= label %></p>
+    <p class="mb-3 wb-break-word"><%= text %></p>
+  <% end %>
+<% end } %>
+<%= section.("Aim", outline["aim"]) %>
+<%= section.("Opening", outline["opening"]) %>
+<% outline["points"].each.with_index(1) do |point, number| %>
+  <p class="text-small text-bold color-fg-muted mb-1 wb-break-word"><%= ["Point #{number}", point["heading"].presence].compact.join(" · ") %></p>
+  <p class="mb-3 wb-break-word">
+    <%= point["explain"] %>
+    <% if (reference = Bible::Reference.parse(point["scripture"])) %><%= render "bible/references/reference", reference: reference %><% end %>
+  </p>
+<% end %>
+<%= section.("Leave a question", outline["question"]) %>
+<%= section.("Close", outline["close"]) %>
+<%= section.("Your study point", outline["study_point"]) %>

@@ -29,4 +29,20 @@ class Ai::PurgeExpiredChatsJobTest < ActiveJob::TestCase
         end
       end
     end
+
+  test "a 61-day-old meeting part draft goes with its chat and messages; a 59-day-old draft of the same part stays, and so do the part and its preparation" do
+    part = meeting_parts(:head_conversation)
+    part.update!(preparation: "<p>My own words.</p>")
+    old = travel_to(61.days.ago) { meeting_part_draft(part, status: "drafted").tap { it.chat.messages.create!(role: "user", content: "Starting a Conversation") } }
+    recent = travel_to(59.days.ago) { meeting_part_draft(part, status: "drafted") }
+
+    Ai::PurgeExpiredChatsJob.perform_now
+
+    assert_not MeetingPart::Draft.exists?(old.id)
+    assert_not Chat.exists?(old.chat_id)
+    assert_empty Message.where(chat_id: old.chat_id)
+    assert MeetingPart::Draft.exists?(recent.id)
+    assert Chat.exists?(recent.chat_id)
+    assert_equal "My own words.", part.reload.preparation.to_plain_text
+  end
 end

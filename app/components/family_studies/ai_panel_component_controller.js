@@ -10,8 +10,11 @@ const narrow = window.matchMedia("(max-width: 767.98px)")
 // Opens and closes the AI panel, and fills the prompt from a starter idea. Beside the form it opens in place; on a phone
 // its content moves into the dialog, and a draft's actions into the dialog's footer. Accepting the terms and drafting
 // are plain form posts inside the panel's Turbo Frame. While drafting, the panel listens on the draft's stream.
+// With beside (a meeting part's panel, docs/design/meeting-parts.md, The panel) it's always open from md up, and on a
+// phone stays closed until the Start button opens it: the element around it starts out dismissed.
 export default class extends Controller {
-  static targets = [ "start", "opened", "prompt", "stream", "dialog", "dialogBody", "dialogFooter", "footer", "footerHome" ]
+  static targets = [ "start", "opened", "prompt", "stream", "finished", "dialog", "dialogBody", "dialogFooter", "footer", "footerHome" ]
+  static values = { beside: Boolean }
 
   connect() {
     narrow.addEventListener("change", this.place)
@@ -24,7 +27,7 @@ export default class extends Controller {
   // Each answer replaces the panel, already open: on a phone it goes straight into the dialog, unless the person closed
   // the dialog since "Draft with AI". A draft that comes after Escape waits under the Start box, not over the form.
   openedTargetConnected() {
-    if (this.dismissed && !this.openedTarget.hidden) {
+    if (!this.besideValue && this.dismissed && !this.openedTarget.hidden) {
       this.openedTarget.hidden = true
       this.startTarget.classList.remove("d-md-none")
     }
@@ -55,6 +58,11 @@ export default class extends Controller {
     catchUpObservers.delete(stream)
   }
 
+  // A draft whose links depend on the household the page is in broadcasts only that it's done, so ask for the result.
+  finishedTargetConnected() {
+    if (this.hasStreamTarget) this.catchUp(this.streamTarget)
+  }
+
   // An answer that comes once the stream has left the page is out of date: the result came on the stream, and the
   // person may have discarded it or asked again since.
   async catchUp(stream) {
@@ -77,7 +85,7 @@ export default class extends Controller {
   close({ focus = true } = {}) {
     this.dismissed = narrow.matches
     this.openedTarget.hidden = true
-    this.startTarget.classList.remove("d-md-none")
+    if (!this.besideValue) this.startTarget.classList.remove("d-md-none")
     this.place()
     if (focus) this.startTarget.querySelector("button")?.focus()
   }
@@ -96,6 +104,7 @@ export default class extends Controller {
   // Into the dialog while the panel is open below md; otherwise back in place. Each move sets off the target callbacks
   // again, so only what isn't already where it belongs moves.
   place = () => {
+    if (this.besideValue) this.openedTarget.hidden = narrow.matches && this.dismissed
     const inDialog = !this.openedTarget.hidden && narrow.matches
     const panelHome = inDialog ? this.dialogBodyTarget : this.startTarget.parentElement
     if (this.openedTarget.parentElement != panelHome) {

@@ -424,4 +424,60 @@ class MeetingPartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "ul[aria-label='Show'] a[aria-current='true']", text: "Mine"
     assert_select "ul[aria-label='Show'] a[href=?]", household_shared_meeting_parts_path(household_id: @home), text: /Shared in The Head Family\s+1/
   end
+
+  # Prepare with AI (docs/design/meeting-parts.md, A part; Trap 1).
+  test "the AI panel renders on the owner's part for a head and an adult" do
+    { head: @part, spouse: meeting_parts(:spouse_talk) }.each do |identity, part|
+      sign_in identities(identity)
+
+      get household_meeting_part_path(household_id: @home, id: part)
+
+      assert_select "turbo-frame#ai_panel", 1
+      assert_select "[data-controller~=ai-draft] lexxy-editor[data-ai-draft-target=notes]"
+    end
+  end
+
+  test "the AI panel shows the person's latest draft of the part when it's drafting or drafted, else Start" do
+    users(:head).accept_ai_terms(understood: "1")
+    meeting_part_draft(@part, status: "discarded")
+    meeting_part_draft(@part, status: "drafted", result: { "aim" => "Leave the person curious.", "points" => [ { "heading" => "A promise worth hearing" } ] })
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+    assert_select "turbo-frame#ai_panel", text: /Leave the person curious/
+
+    @part.drafts.drafted.sole.update!(status: "discarded")
+    get household_meeting_part_path(household_id: @home, id: @part)
+    assert_select "turbo-frame#ai_panel button", text: "Draft outline"
+  end
+
+  test "a refused preparation save still shows the drafted outline in the AI panel" do
+    meeting_part_draft(@part, status: "drafted", result: { "aim" => "Leave the person curious.", "points" => [ { "heading" => "A promise worth hearing" } ] })
+    sign_in identities(:head)
+
+    patch household_meeting_part_path(household_id: @home, id: @part), params: { meeting_part: { counsel: "a" * 2001 } }
+
+    assert_response :unprocessable_content
+    assert_select "turbo-frame#ai_panel", text: /Leave the person curious/
+  end
+
+  test "no AI panel for a child, on their own part" do
+    sign_in identities(:eli)
+
+    get household_meeting_part_path(household_id: @home, id: meeting_parts(:eli_conversation))
+
+    assert_response :success
+    assert_select "turbo-frame#ai_panel", 0
+    assert_select "main", text: /Prepare with AI/, count: 0
+  end
+
+  test "no AI panel on a shared part, even for a head" do
+    meeting_parts(:spouse_talk).share_with(@home)
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: meeting_parts(:spouse_talk))
+
+    assert_response :success
+    assert_select "turbo-frame#ai_panel", 0
+  end
 end

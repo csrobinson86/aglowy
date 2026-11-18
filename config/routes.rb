@@ -156,6 +156,8 @@ Rails.application.routes.draw do
     # (docs/design/meeting-parts.md, Pages and routes). A part shared into this household is read through show.
     resources :meeting_parts do
       resource :sharing, only: %i[ create destroy ], module: :meeting_parts
+      # Prepare with AI, for heads and adults on their own part (docs/design/meeting-parts.md, Prepare with AI).
+      resources :drafts, only: %i[ create show destroy ], module: :meeting_parts
     end
     resources :shared_meeting_parts, only: :index
     # The signed-in person's own goals; each opens at /goals/:id like a family goal (docs/design/goals.md, Pages).

@@ -114,6 +114,18 @@ class User < ApplicationRecord
     [ PersonalStudy::Question.daily_limit - used, 0 ].max
   end
 
+  # Head or adult in any active household. Meeting parts are the person's, not one household's, and children never get
+  # AI help with them (docs/design/meeting-parts.md, Who can do what).
+  def may_prepare_parts_with_ai?
+    memberships.active.where(role: %w[ head adult ]).exists?
+  end
+
+  # Today's meeting part requests left, counted from their uses, so deleting a draft or a part can't give any back.
+  def part_drafts_left_today
+    used = ai_uses.meeting_part.since(Time.current.in_time_zone(limit_time_zone).beginning_of_day).count
+    [ MeetingPart::Draft.daily_limit - used, 0 ].max
+  end
+
   # The zone their own times are in, and the phone feed: their profile's, else their first active household's by name
   # then id, else UTC (docs/design/calendar.md, The person's own zone).
   def calendar_time_zone

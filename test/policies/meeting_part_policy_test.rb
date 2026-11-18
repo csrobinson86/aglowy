@@ -84,4 +84,16 @@ class MeetingPartPolicyTest < ActiveSupport::TestCase
     assert_not MeetingPartPolicy.new(memberships(:spouse_in_home), part).share?
     assert_not MeetingPartPolicy.new(nil, part).share?
   end
+
+  test "draft? is the owner as a head or an adult, from any household they're in; never a child, nor anyone else" do
+    assert MeetingPartPolicy.new(memberships(:head_in_home), meeting_parts(:head_conversation)).draft?
+    assert MeetingPartPolicy.new(memberships(:head_in_parents), meeting_parts(:head_conversation)).draft?
+    assert MeetingPartPolicy.new(memberships(:spouse_in_home), meeting_parts(:spouse_talk)).draft?
+    assert_not MeetingPartPolicy.new(memberships(:eli_in_home), meeting_parts(:eli_conversation)).draft?
+
+    meeting_parts(:head_conversation).share_with(households(:home))
+    [ memberships(:spouse_in_home), memberships(:child_in_home), memberships(:former_in_home), nil ].each do |membership|
+      assert_not MeetingPartPolicy.new(membership, meeting_parts(:head_conversation)).draft?, "expected #{membership&.user&.name || "nil"} to be refused"
+    end
+  end
 end
