@@ -2,8 +2,9 @@
 # From md up it sits beside the preparation, open; on a phone, "Prepare with AI" opens it in a full-screen dialog. It's
 # First use until the person accepts the AI terms, then Start, or Limit reached once they've made the day's requests. A
 # saved draft shows its own state: Drafting, Outline or Wording with Ask for a change under it, Off topic (also for
-# flagged), or Start with its request kept once it failed, stopped or was discarded. Every state is one Turbo Frame, so
-# each answer replaces only the panel.
+# flagged), or Start with its request kept once it failed, stopped or was discarded. A change or sample wording that
+# failed shows the draft it built on instead, with the change kept, so trying again keeps what it was built on. Every
+# state is one Turbo Frame, so each answer replaces only the panel.
 class MeetingParts::AiPanelComponent < ApplicationComponent
   attr_reader :household, :meeting_part, :user, :draft
 
@@ -14,10 +15,11 @@ class MeetingParts::AiPanelComponent < ApplicationComponent
     @household = household
     @meeting_part = meeting_part
     @user = user
-    @change = draft if draft&.new_record? && draft.revises&.drafted? && draft.errors.attribute_names == [ :request ]
+    @retry = draft if draft&.persisted? && draft.failed? && draft.revises&.drafted?
+    @change = draft if (draft&.new_record? && draft.revises&.drafted? && draft.errors.attribute_names == [ :request ]) || @retry&.change?
     # A change to a draft that's gone shows Start afresh with why, not what was typed for the change.
     @unrevisable = draft&.new_record? && draft.errors[:revises].any?
-    @draft = @change&.revises || (MeetingPart::Draft.new(meeting_part: meeting_part, kind: draft.kind) if @unrevisable) ||
+    @draft = (@change || @retry)&.revises || (MeetingPart::Draft.new(meeting_part: meeting_part, kind: draft.kind) if @unrevisable) ||
       draft || MeetingPart::Draft.new(meeting_part: meeting_part, kind: "outline")
     @open = open
   end
@@ -42,8 +44,9 @@ class MeetingParts::AiPanelComponent < ApplicationComponent
     end
   end
 
-  # The provider failed, the queue refused the job, or the checks left too little.
-  def failed? = draft.persisted? && draft.failed?
+  # The provider failed, the queue refused the job, or the checks left too little: this draft, or a change or sample
+  # wording asked for on it.
+  def failed? = @retry.present? || (draft.persisted? && draft.failed?)
 
   # A change or sample wording asked for on a draft that's since been discarded, or another tab's stale page.
   def unrevisable? = @unrevisable

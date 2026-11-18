@@ -410,6 +410,15 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
     assert_predicate @draft.reload, :drafted?
   end
 
+  test "a demonstration with only one speaker after the checks ends failed and deletes the use" do
+    @draft = meeting_part_draft(@part, kind: "wording")
+    write(saved_reply(file: "meeting_part_wording") { |parsed| parsed["wording"]["lines"].each { it["speaker"] = "you" } })
+
+    assert_predicate @draft.reload, :failed?
+    assert_nil @draft.result
+    assert_not Ai::Use.exists?(meeting_part_draft_id: @draft.id)
+  end
+
   test "a change: a new draft with revises set and its own chat, counted as one use; a blank change is refused" do
     head = accepted_head
     shown = meeting_part_draft(@part, status: "drafted", result: OUTLINE)

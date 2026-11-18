@@ -90,13 +90,22 @@ module MeetingPart::Draft::Writable
       progress :writing
     end
 
-    # Off topic is settled before this. An outline needs its aim and a point after the checks; wording, its lines.
+    # Off topic is settled before this.
     def finish_checked(reply)
       fields = wording? ? checked_wording(reply) : checked_outline(reply)
-      return finish("failed") if wording? ? fields["lines"].size < MIN_LINES[form] : fields["aim"].blank? || fields["points"].none?
+      return finish("failed") if too_thin?(fields)
 
       finish "drafted", result: fields,
         sources: Ai::SourceLink.keep(reply.sources, search_results: reply.search_results, allowed_hosts: purpose.allowed_hosts)
+    end
+
+    # An outline needs its aim and a point after the checks; wording, its lines, and a demonstration both speakers, so
+    # a sample conversation never shows one side of it.
+    def too_thin?(fields)
+      return fields["aim"].blank? || fields["points"].none? unless wording?
+
+      lines = fields["lines"]
+      lines.size < MIN_LINES[form] || (form == :demonstration && lines.pluck("speaker").uniq.size < 2)
     end
 
     # The lines as strings, each 500 characters at most, through the same checks as an outline, then without empty lines.

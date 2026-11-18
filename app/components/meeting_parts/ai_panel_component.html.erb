@@ -34,6 +34,9 @@
             <%= render FamilyStudies::DraftActionForm.new(f, label: "Stop") %>
           <% end %>
         <% when :drafted %>
+          <% if failed? %>
+            <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't make a draft right now. Try again in a moment." } %>
+          <% end %>
           <div class="d-flex flex-wrap flex-items-baseline flex-justify-between mb-2">
             <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mr: 2)) { drafted_heading } %>
             <span class="text-small color-fg-muted"><%= time_line %></span>

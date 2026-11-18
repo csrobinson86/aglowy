@@ -241,6 +241,36 @@ class MeetingParts::AiPanelComponentTest < ViewComponent::TestCase
     assert_text "is too long"
   end
 
+  test "a failed change shows the draft it would change again, with the Banner and the change kept to try again" do
+    @user.accept_ai_terms(understood: "1")
+    shown = meeting_part_draft(@part, status: "drafted", result: RESULT)
+    failed = meeting_part_draft(@part, status: "failed", revises: shown, revised_result: RESULT, request: "Shorter opening")
+
+    render_panel(draft: failed)
+
+    assert_selector ".Banner--error", text: "Couldn't make a draft right now. Try again in a moment."
+    assert_selector "h3", text: "Outline"
+    assert_text "Leave the person curious about what the Bible promises for the earth."
+    assert_field "Your change", with: "Shorter opening"
+    form = "form[action='/#{@household.id}/meeting_parts/#{@part.id}/drafts'][method=post]"
+    assert_selector "#{form} input[name='meeting_part_draft[revises_id]'][value='#{shown.id}']", visible: :all, count: 2
+    assert_no_selector "#{form} input[name=_method]", visible: :all
+    assert_no_button "Draft outline"
+  end
+
+  test "failed sample wording shows its outline again, with the Banner and Write sample wording" do
+    @user.accept_ai_terms(understood: "1")
+    outline = meeting_part_draft(@part, status: "drafted", result: RESULT)
+
+    render_panel(draft: meeting_part_draft(@part, kind: "wording", status: "failed", revises: outline, revised_result: RESULT))
+
+    assert_selector ".Banner--error", text: "Couldn't make a draft right now. Try again in a moment."
+    assert_selector "h3", text: "Outline"
+    assert_button "Write sample wording"
+    assert_selector "input[name='meeting_part_draft[kind]'][value=outline]", visible: :all
+    assert_no_selector "input[name='meeting_part_draft[request]'][value]"
+  end
+
   test "Over the time: a draft more than 15% over says by how much, once" do
     draft = meeting_part_draft(@part, kind: "wording", status: "drafted", result: { "lines" => [ { "speaker" => "you", "text" => "word " * 455 } ] })
 
