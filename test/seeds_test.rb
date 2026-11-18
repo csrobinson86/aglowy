@@ -82,7 +82,7 @@ class SeedsTest < ActiveSupport::TestCase
     assert user("lucia.rivera").memberships.sole.study_ai_grant?
     assert_equal 1, user("lucia.rivera").personal_studies.count
 
-    assert_equal 8, head.personal_notes.count
+    assert_equal 11, head.personal_notes.count
     assert_equal PersonalNote.colors.keys.sort, head.personal_notes.distinct.pluck(:color).sort
     assert_equal 2, head.personal_notes.pinned.count
     assert_equal 2, head.bookmarks.pages.count

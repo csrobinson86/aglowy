@@ -1,7 +1,9 @@
+@use "note_colors" as *;
+
 // The color filter beside Notes' search (PersonalNotes::ColorFilterForm, frame notes.png): a round Primer Button per
 // color, the pressed one ringed. Each names itself to screen readers ("Only yellow notes"), so its label is visually
 // hidden. Chained, to outrank Primer's .Button colors and hover.
-// Closer together on a touch screen, so seven 44px swatches fit a phone's row.
+// Closer together on a touch screen, so the swatches wrap less on a phone's row.
 .note-color-filter {
   flex-wrap: wrap;
   align-items: center;
@@ -46,8 +48,8 @@
   }
 }
 
-@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+@each $color in $note-colors {
   .note-color-filter__button--#{$color} {
-    --note-color-filter-swatch: var(--display-#{$color}-borderColor-emphasis);
+    --note-color-filter-swatch: var(--note-color-#{$color}-strong);
   }
 }

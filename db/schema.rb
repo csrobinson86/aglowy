@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -671,7 +671,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_160000) do
     t.index ["collection_id"], name: "index_personal_notes_on_collection_id"
     t.index ["user_id"], name: "index_personal_notes_on_user_id"
     t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 120", name: "personal_notes_title_length_check"
-    t.check_constraint "color::text = ANY (ARRAY['none'::character varying, 'yellow'::character varying, 'green'::character varying, 'blue'::character varying, 'purple'::character varying, 'pink'::character varying, 'orange'::character varying]::text[])", name: "personal_notes_color_check"
+    t.check_constraint "color::text = ANY (ARRAY['none'::character varying, 'yellow'::character varying, 'orange'::character varying, 'red'::character varying, 'pink'::character varying, 'purple'::character varying, 'blue'::character varying, 'green'::character varying, 'brown'::character varying, 'gray'::character varying]::text[])", name: "personal_notes_color_check"
   end
 
   create_table "personal_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

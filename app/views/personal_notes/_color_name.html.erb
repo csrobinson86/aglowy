@@ -1,5 +1,6 @@
 <%# locals: (personal_note:) %>
-<%# "Yellow note" for screen readers, so color is never the only signal (docs/design/notes.md, Colors). None has none. %>
+<%# "Yellow note" for screen readers, so color is never the only signal (docs/design/notes.md, Colors). None has none.
+    The color picker renames it, or takes it away, as it recolors the card. %>
 <% unless personal_note.drawn_color == "none" %>
-  <span class="sr-only"><%= personal_note.color_name %> note</span>
+  <span class="sr-only" data-note-color-name><%= personal_note.color_name %> note</span>
 <% end %>

@@ -197,6 +197,7 @@ households or roles. The non-negotiables:
 - **Design tokens are Primer primitives** (CSS custom properties like
   `var(--bgColor-default)`, `var(--base-size-16)`, `var(--fgColor-muted)`).
   Never use magic numbers — reference a primitive.
+- **Note colors are the exception:** Casey's exact values, defined once in `components/_note_colors.scss` (decided 17 Nov).
 - Prefer Primer **utility classes** (`d-flex`, `gap-2`, `mb-4`, `color-fg-muted`)
   and component system arguments (`mb: 4`, `color: :muted`) for layout and
   spacing before writing custom Sass.

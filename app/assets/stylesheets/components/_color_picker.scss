@@ -1,3 +1,5 @@
+@use "note_colors" as *;
+
 // The color picker (ColorPickerComponent): the legend, then a round swatch per color, then the chosen color's name.
 // Each swatch is the label of a visually hidden radio, which keeps the keyboard and the focus ring. A note's has
 // "Color" beside its swatches (frame note.png); an avatar's has its legend above, and the person's initial in each
@@ -61,9 +63,11 @@
   --color-picker-swatch: var(--bgColor-default);
 }
 
-@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+// A note's swatches, in the note colors (components/_note_colors.scss). An avatar's are labelled, and the rules
+// below, with two classes, keep Primer's colors on them.
+@each $color in $note-colors {
   .color-picker__swatch--#{$color} {
-    --color-picker-swatch: var(--display-#{$color}-borderColor-emphasis);
+    --color-picker-swatch: var(--note-color-#{$color}-strong);
   }
 }
 

@@ -220,6 +220,22 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[name=color][value=''][aria-pressed=true]", "Any color"
   end
 
+  test "?color=brown lists only brown notes, and the filter offers red, brown and gray" do
+    personal_notes(:head_family_worship).update!(color: "brown")
+    sign_in identities(:head)
+
+    get household_personal_notes_path(household_id: @home, color: "brown")
+
+    assert_select "main .note-card", count: 1
+    assert_select "main .note-card.note-card--brown", text: /Ideas for family worship/ do |card|
+      assert_select card, ".sr-only", "Brown note"
+    end
+    assert_select "button[name=color][value=brown][aria-pressed=true]", "Only brown notes"
+    assert_select "button[name=color][value=red].note-color-filter__button--red", "Only red notes"
+    assert_select "button[name=color][value=gray].note-color-filter__button--gray", "Only gray notes"
+    assert_equal PersonalNote::FILTER_COLORS, css_select("button[name=color]").map { it["value"] }.compact_blank
+  end
+
   test "the color filter keeps the collection, tag and search, and they keep the color" do
     sign_in identities(:head)
 
@@ -245,6 +261,34 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "select[name='personal_note[collection_id]'] option", text: "Preparing a talk", count: 0
     assert_select "lexxy-editor[name='personal_note[body]']"
     assert_select "button[type=submit]", "Save note"
+  end
+
+  test "new draws the form inside a note card with no color" do
+    sign_in identities(:head)
+
+    get new_household_personal_note_path(household_id: @home)
+
+    assert_select "main .note-card.note-card--none form[action=?]", household_personal_notes_path(household_id: @home) do
+      assert_select "input[type=radio][name='personal_note[color]'][value=none][checked]"
+      assert_select "button[type=submit]", "Save note"
+    end
+    assert_select "main .note-card", count: 1
+    assert_select "main .note-card [data-note-color-name]", count: 0
+    assert_select "main .Box", count: 0
+  end
+
+  test "a refused create with Red draws the card red, with Red still chosen" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { PersonalNote.count } do
+      post household_personal_notes_path(household_id: @home), params: { personal_note: { title: " ", color: "red" } }
+    end
+    assert_response :unprocessable_content
+    assert_select "main .note-card.note-card--red" do
+      assert_select "input[type=radio][name='personal_note[color]'][value=red][checked]"
+      assert_select ".color-picker__chosen", "Red"
+      assert_select ".sr-only[data-note-color-name]", "Red note"
+    end
   end
 
   test "new with a title fills the title field, and saves nothing" do

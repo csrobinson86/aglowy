@@ -1,0 +1,26 @@
+// Notes' nine colors, Casey's exact values (docs/design/notes.md, Colors; decided 17 Nov), an exception to Primer
+// primitives only. Nothing else writes them. Each is a 0.3 background over the theme's own, so it's the same in light
+// and dark mode, and a -strong one at alpha 1 for the card's border and left bar, the dots and the swatches.
+// $note-colors is their order, used by every @each that draws them; none keeps Primer's defaults.
+$note-colors: "yellow", "orange", "red", "pink", "purple", "blue", "green", "brown", "gray";
+
+:root {
+  --note-color-yellow: rgba(229, 223, 6, 0.3);
+  --note-color-yellow-strong: rgb(229, 223, 6);
+  --note-color-orange: rgba(255, 185, 87, 0.3);
+  --note-color-orange-strong: rgb(255, 185, 87);
+  --note-color-red: rgba(255, 118, 118, 0.3);
+  --note-color-red-strong: rgb(255, 118, 118);
+  --note-color-pink: rgba(248, 137, 216, 0.3);
+  --note-color-pink-strong: rgb(248, 137, 216);
+  --note-color-purple: rgba(190, 165, 255, 0.3);
+  --note-color-purple-strong: rgb(190, 165, 255);
+  --note-color-blue: rgba(124, 192, 252, 0.3);
+  --note-color-blue-strong: rgb(124, 192, 252);
+  --note-color-green: rgba(140, 255, 129, 0.3);
+  --note-color-green-strong: rgb(140, 255, 129);
+  --note-color-brown: rgba(221, 170, 123, 0.3);
+  --note-color-brown-strong: rgb(221, 170, 123);
+  --note-color-gray: rgba(200, 200, 200, 0.3);
+  --note-color-gray-strong: rgb(200, 200, 200);
+}

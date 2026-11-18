@@ -58,6 +58,25 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     JS
   end
 
+  # The color an element is drawn in, as the browser computed it ("rgba(255, 118, 118, 0.3)").
+  def background_color(selector)
+    find(selector, visible: :all).evaluate_script("getComputedStyle(this).backgroundColor")
+  end
+
+  # What a CSS color value, like a primitive's var(), computes to on this page, to compare with background_color.
+  def computed_color(value)
+    page.evaluate_script(<<~JS, value)
+      (value => {
+        const probe = document.createElement("div")
+        probe.style.backgroundColor = value
+        document.body.append(probe)
+        const color = getComputedStyle(probe).backgroundColor
+        probe.remove()
+        return color
+      })(arguments[0])
+    JS
+  end
+
   # Turbo marks <html aria-busy> until a visit completes and may move focus as
   # it finishes, which closes an open menu. Wait for it before interacting.
   def assert_turbo_idle

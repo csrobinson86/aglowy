@@ -9,7 +9,7 @@ Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on
 ## Decisions (Casey, 16 Nov)
 
 - **A note has a title and a body**, with scripture links in the body (`docs/design/scripture-links.md`), tags (`docs/design/tags.md`) and one collection.
-- **Color coding, like JW Library.** Each note can be no color, yellow, green, blue, purple, pink or orange. Only notes have colors.
+- **Color coding, like JW Library.** Each note can be no color, yellow, orange, red, pink, purple, blue, green, brown or gray (Casey, 17 Nov). Only notes have colors.
 - **Collections:** a base set shared with Personal study, plus collections that belong only to Notes (`Collection` in `docs/design/personal-study.md`).
 - **In the first version:**
   - pin notes so they stay at the top
@@ -63,7 +63,7 @@ Its breadcrumb starts "Notes / Meeting notes", linking to the Notes tab and the 
 | `user_id` | uuid | FK → users, not null | Personal; follows the person |
 | `collection_id` | uuid | FK → collections, nullable, `on_delete: :nullify` | Must be `Collection.for_notes` and owned by the note's `user` (validation). Looked up through `Current.user.collections`, so another person's id is a 404 |
 | `title` | string | not null, 1 to 120 characters | |
-| `color` | string | not null, default `none`, check in (`none`, `yellow`, `green`, `blue`, `purple`, `pink`, `orange`) | |
+| `color` | string | not null, default `none`, check in (`none`, `yellow`, `orange`, `red`, `pink`, `purple`, `blue`, `green`, `brown`, `gray`), the order the picker and the filter show | |
 
 - `has_rich_text :body, encrypted: true`, with `ScriptureLinkable`, so typed references link on save and the Scripture button works in the editor
 - `include Taggable` (`docs/design/tags.md`; NOTES-01 adds `PersonalNote` to the tagging check)
@@ -81,18 +81,28 @@ State as a record: `personal_note_id` (FK, unique, `on_delete: :cascade`) and `c
 
 ## Colors
 
-Colors come from Primer's display color primitives, so they follow light and dark mode. Sass lives in `components/_note_card.scss`, with a modifier per color:
+Casey's nine colors (17 Nov, #313), an exception to Primer primitives only (`CLAUDE.md`, CSS & Design System). In this order, after **None** (no color, the default):
 
-| Color | Card background | Border | Left bar and swatch |
-| --- | --- | --- | --- |
-| none | `--bgColor-default` | `--borderColor-default` | `--borderColor-default` |
-| yellow | `--display-yellow-bgColor-muted` | `--display-yellow-borderColor-muted` | `--display-yellow-borderColor-emphasis` |
-| green, blue, purple, pink, orange | the same three primitives with that color's name | | |
+| Name | Card background |
+| --- | --- |
+| Yellow | `rgba(229, 223, 6, 0.3)` |
+| Orange | `rgba(255, 185, 87, 0.3)` |
+| Red | `rgba(255, 118, 118, 0.3)` |
+| Pink | `rgba(248, 137, 216, 0.3)` |
+| Purple | `rgba(190, 165, 255, 0.3)` |
+| Blue | `rgba(124, 192, 252, 0.3)` |
+| Green | `rgba(140, 255, 129, 0.3)` |
+| Brown | `rgba(221, 170, 123, 0.3)` |
+| Gray | `rgba(200, 200, 200, 0.3)` |
 
-The first story checks each primitive exists in the pinned `@primer/primitives` and records any substitute here. Checked in #208 against `@primer/primitives` 11.10.0: all eighteen exist in light and dark, so there are no substitutes.
+- **One place for the values:** `components/_note_colors.scss` defines `--note-color-<name>` (the background above) and `--note-color-<name>-strong` (the same color at alpha 1) on `:root`, and the `$note-colors` list every `@each` draws from. They're the same in light and dark mode: the 0.3 background sits over the theme's own.
+- **Where they're drawn:** the card (`components/_note_card.scss`: background `--note-color-<name>`, border and left bar `-strong`), Home's dots, the picker's swatches and the filter's buttons (all `-strong`). None keeps `--bgColor-default` and `--borderColor-default`.
+- **Muted text on a colored card** is drawn in `--fgColor-default`: in dark mode the colors are lighter than the theme's background, and Primer's muted text on them falls below 4.5:1.
+- **Avatars keep Primer's colors** (`Avatar::Palette`); their labelled swatches' rules outrank the note swatches'.
 
 - **Color is never the only signal.** Each card has a visually hidden "Yellow note" (or the color's name). Each swatch is a labelled radio ("Yellow"), and the picker shows the chosen color's name beside it.
 - **The color picker** (frame `note.png`) is a radio group drawn as swatches: real `<input type="radio">` elements inside a Primer form, with a `<fieldset>` and the legend "Color". It's the fifth approved forms exception in `CLAUDE.md`.
+- **The note recolors as you choose.** Choosing a swatch on New note or a note's page swaps the card's color modifier at once; nothing is saved until "Save note", and leaving without saving keeps the saved color. New note draws its form in the same note card as a note's page.
 - **The color filter** on the list is a row of toggle buttons with `aria-pressed`, labelled "Any color" and "Only yellow notes", and so on. It sets `?color=`.
 
 ## Pages and routes

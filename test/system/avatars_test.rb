@@ -23,6 +23,21 @@ class AvatarsTest < ApplicationSystemTestCase
     capture_screens("settings-avatar")
   end
 
+  # Notes' nine colors draw a note's swatches; an avatar's keep Primer's colors and recolor no note card
+  # (docs/design/avatars.md, The Avatar box).
+  test "the avatar picker keeps Primer's colors next to the notes' new ones" do
+    sign_in identities(:head)
+    visit household_settings_profile_url(household_id: households(:home))
+
+    Avatar::Palette::COLORS.each do |color|
+      assert_equal computed_color("var(--display-#{color}-bgColor-muted)"), background_color("label[for=avatar_color_#{color}]")
+    end
+    find("label[for=avatar_color_orange]").click
+    within("fieldset", text: "Color for your initial") { assert_selector ".color-picker__chosen", text: "Orange" }
+    assert_no_selector ".note-card"
+    assert_equal computed_color("var(--display-orange-bgColor-muted)"), background_color("label[for=avatar_color_orange]")
+  end
+
   test "a child picks their own color with the keyboard" do
     sign_in identities(:eli)
     visit household_settings_profile_url(household_id: households(:home))

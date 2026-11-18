@@ -15,9 +15,9 @@ class PersonalNote < ApplicationRecord
   has_rich_text :body, encrypted: true
   scripture_linkable :body
 
-  # Like JW Library's (docs/design/notes.md, Colors). Prefixed and without enum scopes: a none scope would clash with
-  # Active Record's.
-  enum :color, %w[ none yellow green blue purple pink orange ].index_with(&:itself), default: "none", prefix: true,
+  # Casey's nine, after none, in the order the picker and the filter show them (docs/design/notes.md, Colors).
+  # Prefixed and without enum scopes: a none scope would clash with Active Record's.
+  enum :color, %w[ none yellow orange red pink purple blue green brown gray ].index_with(&:itself), default: "none", prefix: true,
                 scopes: false, validate: true
 
   # The colors Notes' list can be filtered by: all but none, which is "Any color" (docs/design/notes.md, Colors).
