@@ -46,7 +46,7 @@ class Ai::Purpose::DailyBriefTest < ActiveSupport::TestCase
 
   test "the text sent holds the date, the sections, each focus area and the day's row, as typed" do
     @plan.update!(sections: %w[ daily_text reading children ])
-    @plan.focus_areas.find_by!(name: "As a husband").update!(gives: "Listen to Grace before I answer.")
+    @plan.focus_areas.find { it.name == "As a husband" }.update!(gives: "Listen to Grace before I answer.")
     sent = @purpose.sent_text(DailyBrief.for(@user))
 
     [ "Tuesday, November 17, 2026", "daily_text, reading, children", "As a husband", "Listen to Grace before I answer.",
@@ -66,7 +66,7 @@ class Ai::Purpose::DailyBriefTest < ActiveSupport::TestCase
   end
 
   test "the text sent never holds the person's name, a household's name, a goal's title or a note" do
-    @plan.focus_areas.find_by!(name: "Reaching out").update!(goal: goals(:spouse_bible_reading))
+    @plan.focus_areas.find { it.name == "Reaching out" }.update!(goal: goals(:spouse_bible_reading))
     @user.personal_notes.create!(title: "Thoughts on Hosea", body: "<p>Gomer and mercy.</p>")
     sent = @purpose.sent_text(DailyBrief.for(@user))
 

@@ -196,7 +196,8 @@ class DailyBriefTest < ActiveSupport::TestCase
     @user.accept_ai_terms(understood: "1")
     brief = DailyBrief.for(@user)
 
-    writing = assert_enqueued_jobs(1, only: DailyBrief::WriteJob) { brief.write(by: @user) }
+    writing = nil
+    assert_enqueued_jobs(1, only: DailyBrief::WriteJob) { writing = brief.write(by: @user) }
 
     assert_predicate writing, :persisted?
     assert_predicate writing, :writing?

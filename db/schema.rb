@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -67,11 +67,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
     t.uuid "question_id"
     t.datetime "created_at", null: false
     t.uuid "meeting_part_draft_id"
+    t.uuid "daily_brief_writing_id"
     t.index ["created_at"], name: "index_ai_uses_on_created_at"
+    t.index ["daily_brief_writing_id"], name: "index_ai_uses_on_daily_brief_writing_id", unique: true
     t.index ["meeting_part_draft_id"], name: "index_ai_uses_on_meeting_part_draft_id", unique: true
     t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
     t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying]::text[])", name: "ai_uses_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying]::text[])", name: "ai_uses_purpose_check"
   end
 
   create_table "bookmarks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -121,7 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
     t.index ["household_id"], name: "index_chats_on_household_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying]::text[])", name: "chats_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying]::text[])", name: "chats_purpose_check"
   end
 
   create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -184,6 +186,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
     t.index ["user_id"], name: "index_daily_brief_plans_on_user_id", unique: true
     t.check_constraint "ready_at_minutes >= 240 AND ready_at_minutes <= 480 AND (ready_at_minutes % 30) = 0", name: "daily_brief_plans_ready_at_minutes_check"
     t.check_constraint "sections <@ ARRAY['daily_text'::character varying, 'reading'::character varying, 'faith_example'::character varying, 'children'::character varying, 'evening'::character varying]", name: "daily_brief_plans_sections_check"
+  end
+
+  create_table "daily_brief_writings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "daily_brief_id", null: false
+    t.uuid "chat_id", null: false
+    t.string "status", default: "writing", null: false
+    t.jsonb "result"
+    t.jsonb "sources", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_daily_brief_writings_on_chat_id", unique: true
+    t.index ["daily_brief_id"], name: "index_daily_brief_writings_on_daily_brief_id"
+    t.check_constraint "status::text = ANY (ARRAY['writing'::character varying, 'written'::character varying, 'off_topic'::character varying, 'flagged'::character varying, 'failed'::character varying, 'stopped'::character varying]::text[])", name: "daily_brief_writings_status_check"
   end
 
   create_table "daily_briefs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -918,6 +933,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_acceptances", "users"
+  add_foreign_key "ai_uses", "daily_brief_writings", on_delete: :nullify
   add_foreign_key "ai_uses", "meeting_part_drafts", on_delete: :nullify
   add_foreign_key "ai_uses", "personal_study_questions", column: "question_id", on_delete: :nullify
   add_foreign_key "ai_uses", "users"
@@ -933,6 +949,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
   add_foreign_key "daily_brief_focus_areas", "goals", on_delete: :nullify
   add_foreign_key "daily_brief_pauses", "daily_brief_plans", column: "plan_id", on_delete: :cascade
   add_foreign_key "daily_brief_plans", "users", on_delete: :cascade
+  add_foreign_key "daily_brief_writings", "chats", on_delete: :cascade
+  add_foreign_key "daily_brief_writings", "daily_briefs", on_delete: :cascade
   add_foreign_key "daily_briefs", "users", on_delete: :cascade
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"

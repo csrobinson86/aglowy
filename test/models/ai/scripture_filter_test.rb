@@ -19,4 +19,11 @@ class Ai::ScriptureFilterTest < ActiveSupport::TestCase
 
     assert_equal({ "off_topic" => false, "opening" => { "question" => "What does say? See, or." } }, fields)
   end
+
+  test "a feature's own scripture fields, and list fields that keep each reference that parses" do
+    kept = Ai::ScriptureFilter.new(scripture_fields: %w[ passage ], list_fields: %w[ scriptures none ]).keep({ "passage" => "matthew 16:21-23", "scripture" => "Psalm 37:10", "scriptures" => "Genesis 21:5; Hebrews 99:1; heb 6:15",
+      "none" => "Not one; nor two", "note" => "Psalm 23" })
+
+    assert_equal({ "passage" => "Matthew 16:21-23", "scripture" => "Psalm 37:10", "scriptures" => "Genesis 21:5; Hebrews 6:15", "note" => "Psalm 23" }, kept)
+  end
 end

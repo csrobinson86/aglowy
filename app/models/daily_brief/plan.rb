@@ -55,9 +55,13 @@ class DailyBrief::Plan < ApplicationRecord
 
   # Pauses the plan, or finds the pause it already has, under the person's lock: the one DailyBrief.for and
   # brief.write take, so neither makes a brief or starts a writing once it's paused (docs/design/daily-brief.md,
-  # DailyBrief::Pause). Stopping a writing still in progress joins this when writings arrive.
+  # DailyBrief::Pause). In the same lock it stops any of the person's writings still being written; each keeps its use,
+  # as a Stop does, and a job that hasn't sent its request yet then sends nothing.
   def pause(reason:)
-    user.with_lock { reload_pausing || create_pausing!(reason:) }
+    user.with_lock do
+      DailyBrief::Writing.writing.joins(:daily_brief).where(daily_briefs: { user_id: }).update_all(status: "stopped", updated_at: Time.current)
+      reload_pausing || create_pausing!(reason:)
+    end
   end
 
   def paused?
@@ -80,12 +84,12 @@ class DailyBrief::Plan < ApplicationRecord
   end
 
   # The morning job makes today's brief from 45 minutes before ready-by, in the person's zone, once the plan has run
-  # past the day it was started or started again (Trap 13), while it isn't paused and today has no brief yet.
+  # past the day it was started or started again (Trap 13), while it isn't paused and today's brief isn't prepared.
   def due?(now = Time.current)
     local = now.in_time_zone(user.calendar_time_zone)
 
     !paused? && local.to_date > started_at.in_time_zone(local.time_zone).to_date &&
-      minutes_into(local) >= ready_at_minutes - 45 && !user.daily_briefs.exists?(on: local.to_date)
+      minutes_into(local) >= ready_at_minutes - 45 && !prepared?(local.to_date)
   end
 
   # Ready-by has come today, in the person's zone: the page offers "Prepare today's brief" when there's none yet.
@@ -144,6 +148,13 @@ class DailyBrief::Plan < ApplicationRecord
   end
 
   private
+    # Today's brief is made and, for someone with the AI terms, has a writing of any status, so a run that stopped after
+    # making the brief is finished by the next one, and a brief is never written twice by the job.
+    def prepared?(date)
+      brief = user.daily_briefs.find_by(on: date)
+      brief.present? && (brief.writings.exists? || !user.accepted_ai_terms?)
+    end
+
     # Minutes since midnight on the clock, so ready-by stays 5:00 AM on the day the clocks change.
     def minutes_into(time)
       time.hour * 60 + time.min

@@ -16,6 +16,9 @@ hands it to RubyLLM as the HTTP response would arrive.
 - `meeting_part_wording.json`: sample wording for a conversation (`wording` filled, `outline` empty): 8 lines, one with a
   scripture to read, the same three search results and one citation carrying `cited_text`. Hand-built. The seeds use it
   for the drafted wording.
+- `daily_brief.json`: a daily brief for Tuesday 17 November 2026 with every section filled, three search results (the
+  day's text on wol.jw.org among them) and one citation carrying `cited_text`. Hand-built. The seeds use it too, for the
+  written brief.
 
 ## Recording a reply
 

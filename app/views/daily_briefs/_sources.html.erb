@@ -1,0 +1,24 @@
+<%# locals: (writing:) %>
+<%# Pages it used, the warning and what was sent (docs/design/daily-brief.md, The brief; frame brief-today.png). Only
+    each page's title and link, which passed Ai::SourceLink; never anything else from a search result. %>
+<section class="mt-4" aria-labelledby="daily-brief-sources-heading">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, id: "daily-brief-sources-heading", mb: 2)) { "Pages it used" } %>
+  <% if writing.sources.any? %>
+    <ul class="list-style-none">
+      <% writing.sources.each do |source| %>
+        <li class="mb-1 wb-break-word">
+          <%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener", underline: true)) { source["title"].presence || source_host(source["url"]) } %>
+          <span class="color-fg-muted text-small"><%= source_host(source["url"]) %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="color-fg-muted mb-0">No matching pages found on jw.org or wol.jw.org.</p>
+  <% end %>
+  <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) { "AI can get things wrong. Check each point against its source." } %>
+  <p class="text-small color-fg-muted mb-0">
+    <span class="color-fg-done text-bold">Written by AI</span> at <%= writing.updated_at.in_time_zone(Current.user.calendar_time_zone).strftime("%-l:%M %p") %>
+    from your plan. It was sent your focus areas and today's row of your week, as you typed them. Aglowy adds no names, notes or goals.
+    <%= render(Primer::Beta::Link.new(href: household_daily_brief_plan_path(anchor: "whats-sent"), underline: true)) { "What's sent" } %>
+  </p>
+</section>

@@ -4,6 +4,8 @@ require "test_helper"
 # 17 November 2026, Hannah's brief from the husband-and-father starter. No test calls a provider: the AI and moderation
 # are stubbed, with the saved reply in test/fixtures/files/ai/daily_brief.json.
 class DailyBrief::WritingTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   Message = Data.define(:parsed, :citations, :web_sources)
 
   DAILY_TEXT = "https://wol.jw.org/en/wol/dt/r1/lp-e/2026/11/17".freeze
