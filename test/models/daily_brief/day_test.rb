@@ -56,6 +56,14 @@ class DailyBrief::DayTest < ActiveSupport::TestCase
     assert_equal({ father.id => "Family worship", @husband.id => "Listen first" }, @day.reload.topics)
   end
 
+  test "revise merges the topics sent with string keys too" do
+    father = @plan.focus_areas.find_by!(position: 1)
+    @day.update!(topics: { father.id => "Family worship" })
+
+    assert @day.revise("topics" => { @husband.id => "Listen first" })
+    assert_equal({ father.id => "Family worship", @husband.id => "Listen first" }, @day.reload.topics)
+  end
+
   test "the name of its day, from Sunday" do
     assert_equal "Mon", @day.short_name
     assert_equal "Monday", @day.name

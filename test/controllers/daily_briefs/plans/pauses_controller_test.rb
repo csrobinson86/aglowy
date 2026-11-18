@@ -70,7 +70,9 @@ class DailyBriefs::Plans::PausesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_not @plan.reload.paused?
-    assert_select "turbo-stream[action=replace][target=daily_brief_paused] template .Banner", count: 0
+    assert_select "turbo-stream[action=replace][target=daily_brief_paused] template", count: 1 do
+      assert_select ".Banner", count: 0
+    end
     assert_select "turbo-stream[action=replace][target=daily_brief_pause] template button[type=submit][autofocus]", "Pause the daily brief"
     assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: /Your daily brief is on again\./
   end

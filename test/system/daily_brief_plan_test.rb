@@ -153,7 +153,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       assert_selector "td", text: "The brief chooses", count: 1
     end
     assert_equal "Luke", plan.days.find_by!(wday: 2).reading
-    assert_no_checked_field "For the children"
+    assert_unchecked_field "For the children"
     assert_select "Ready by", selected: "6:00 AM"
   end
 
@@ -181,7 +181,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     assert_no_selector ".Banner", text: "Your daily brief is paused"
     assert_selector "button:focus", text: "Pause the daily brief"
     assert_not plan.reload.paused?
-    assert_no_checked_field "For the children"
+    assert_unchecked_field "For the children"
     assert_select "Ready by", selected: "6:00 AM"
   end
 

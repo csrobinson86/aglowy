@@ -23,7 +23,7 @@ class DailyBrief::Day < ApplicationRecord
   # same time is either refused or taken off.
   def revise(attributes)
     with_lock do
-      attributes = attributes.to_h
+      attributes = attributes.to_h.with_indifferent_access
       attributes[:topics] = topics.merge(attributes[:topics]) if attributes.key?(:topics)
       update(attributes)
     end
