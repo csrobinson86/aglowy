@@ -56,8 +56,12 @@ class DailyBrief::FocusArea < ApplicationRecord
       self.position = (plan.focus_areas.maximum(:position) || -1) + 1
     end
 
-    # Its topics in the week are keyed by its id. Encrypted, so each day is rewritten rather than updated in SQL.
+    # Its topics in the week are keyed by its id. Encrypted, so each day is rewritten rather than updated in SQL: locked
+    # and read again first, in wday order, so a delete of another focus area at the same time can't write back a day
+    # read before this one's key came off.
     def remove_topics
-      plan.days.each { it.update!(topics: it.topics.except(id)) if it.topics.key?(id) }
+      plan.days.each do |day|
+        day.with_lock { day.update!(topics: day.topics.except(id)) if day.topics.key?(id) }
+      end
     end
 end

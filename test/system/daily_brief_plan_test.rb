@@ -46,6 +46,10 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_daily_brief_plan_url(household_id: households(:home))
 
+    # Changed and not yet saved: the focus area dialog's saves must leave them as they are.
+    uncheck "For the children"
+    select "6:00 AM", from: "Ready by"
+
     click_on "In the ministry"
     wait_for_animations
     within "dialog[open]" do
@@ -84,7 +88,12 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       capture_screens("brief-focus-area-delete")
       click_on "Delete focus area"
     end
-    assert_text "Focus area deleted."
+    # The page stays where it was, scrolled down to the settings changed above, which it kept; the notice is first in main.
+    assert_no_selector "dialog[open]"
+    assert_no_checked_field "For the children"
+    assert_select "Ready by", selected: "6:00 AM"
+    scroll_to find("main .flash", visible: :all)
+    assert_selector "main .flash", text: "Focus area deleted."
     within("section[aria-labelledby=focus-areas]") do
       assert_selector "li", count: 5
       assert_no_selector "li h3", text: "In the ministry"
@@ -92,8 +101,7 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       assert_link "In the ministry", href: /from=ministry/
     end
 
-    uncheck "For the children"
-    select "6:00 AM", from: "Ready by"
+    scroll_to find(:button, "Save plan", visible: :all)
     click_on "Save plan"
 
     assert_text "Plan saved. Your next brief follows it."

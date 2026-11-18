@@ -75,7 +75,10 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
 
     assert_response :success
     assert_select "turbo-stream[action=update][target=daily_brief_focus_area_dialog]"
-    assert_select "turbo-stream[action=refresh]"
+    assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template li h3", text: "In the ministry"
+    assert_select "turbo-stream[action=update][target=daily_brief_week] template th", text: "In the ministry"
+    assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: /Focus area added\./
+    assert_select "turbo-stream[action=refresh]", count: 0
     area = @plan.focus_areas.reload.last
     assert_equal [ "In the ministry", "role", 5, "Matthew 28:19, 20" ], [ area.name, area.kind, area.position, area.scriptures ]
   end
@@ -157,7 +160,7 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
           params: { daily_brief_focus_area: { name: "Reaching out today", gives: "One reliable thing.", scriptures: "1 Timothy 3:8", kind: "quality" } }
 
     assert_response :success
-    assert_select "turbo-stream[action=refresh]"
+    assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template h3", text: "Reaching out today"
     area.reload
     assert_equal [ "Reaching out today", "One reliable thing.", "1 Timothy 3:8", "role" ], [ area.name, area.gives, area.scriptures, area.kind ]
   end

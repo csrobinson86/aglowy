@@ -103,6 +103,20 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
     assert_equal "Love my wife as my own body", @plan.days.find_by!(wday: 1).topic_for(husband), "other focus areas keep theirs"
   end
 
+  test "deleting two at once leaves neither's topics, though the second read the week before the first came off" do
+    reaching_out = area_named("Reaching out")
+    husband = DailyBrief::FocusArea.find(area_named("As a husband").id)
+    husband.plan.days.load
+
+    reaching_out.destroy!
+    husband.destroy!
+
+    @plan.days.reload.each do |day|
+      assert_not day.topics.key?(reaching_out.id), "#{day.short_name} has the first one's topic back"
+      assert_not day.topics.key?(husband.id), "#{day.short_name} still has the second one's topic"
+    end
+  end
+
   test "position is the next free one on create" do
     area = @plan.focus_areas.create!(kind: "role", name: "At work", gives: "One honest thing.")
     assert_equal 5, area.position

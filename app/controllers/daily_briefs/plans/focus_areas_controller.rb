@@ -1,6 +1,6 @@
 # Adding, editing and deleting a focus area of the person's plan, in a dialog loaded into Your plan's Turbo Frame
 # (docs/design/daily-brief.md, Your plan). Found through Current.user's own plan, so someone else's is a 404. A refused
-# save shows the dialog again with the reasons; a saved one closes it and refreshes the plan.
+# save shows the dialog again with the reasons; a saved one closes it and redraws the plan's focus areas and week.
 class DailyBriefs::Plans::FocusAreasController < ApplicationController
   include HouseholdScoped
 
@@ -52,12 +52,13 @@ class DailyBriefs::Plans::FocusAreasController < ApplicationController
       @focus_area = @plan.focus_areas.find(params[:id])
     end
 
-    # Empties the dialog's frame, which closes it, then refreshes the plan, which shows the notice. Without Turbo, back
-    # to the plan.
+    # Empties the dialog's frame, which closes it, and redraws the focus areas and the week with the notice, from the plan
+    # as it now is. Without Turbo, back to the plan.
     def close_dialog(notice)
       respond_to do |format|
         format.turbo_stream do
-          flash[:notice] = notice
+          flash.now[:notice] = notice
+          @plan.reload
           render :saved
         end
         format.html { redirect_to household_daily_brief_plan_path, notice:, status: :see_other }

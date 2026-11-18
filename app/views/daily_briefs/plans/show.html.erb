@@ -8,42 +8,7 @@
   <% subhead.with_description { "What your brief is built from each morning. Change it any time, and tomorrow's brief follows it." } %>
 <% end %>
 
-<section aria-labelledby="focus-areas" class="mb-5">
-  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "focus-areas")) { "Focus areas" } %>
-  <p class="color-fg-muted mb-2">Each one gets a short section in every brief, with one thing to do that day.</p>
-  <%= render Primer::Beta::BorderBox.new do |box| %>
-    <% @plan.focus_areas.each do |focus_area| %>
-      <% box.with_row(display: :flex, align_items: :flex_start) do %>
-        <div class="flex-1 min-width-0">
-          <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 5, classes: "wb-break-word")) { focus_area.name } %>
-          <p class="color-fg-muted mb-0 wb-break-word"><%= focus_area.gives %></p>
-          <% if focus_area.scripture_references.any? %>
-            <p class="text-small mb-0 mt-1">
-              <%= safe_join(focus_area.scripture_references.map { render "bible/references/reference", reference: it }, "; ") %>
-            </p>
-          <% end %>
-        </div>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_daily_brief_plan_focus_area_path(id: focus_area), ml: 3, flex_shrink: 0,
-              "aria-label": "Edit #{focus_area.name}", data: { turbo_frame: "daily_brief_focus_area_dialog" })) { "Edit" } %>
-      <% end %>
-    <% end %>
-  <% end %>
-  <% if @plan.full? %>
-    <p class="text-small color-fg-muted mt-2 mb-0">You have six focus areas, the most a plan can have. Delete one to add another.</p>
-  <% else %>
-    <div class="d-flex flex-wrap flex-items-center">
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_daily_brief_plan_focus_area_path, mt: 2, mr: 3,
-            data: { turbo_frame: "daily_brief_focus_area_dialog" })) { "Add a focus area" } %>
-      <% if (offers = @plan.library_offers).any? %>
-        <span class="text-small color-fg-muted mt-2 mr-2">Or start from one of these:</span>
-        <% offers.each do |entry| %>
-          <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_daily_brief_plan_focus_area_path(from: entry.key), size: :small, mt: 2, mr: 2,
-                data: { turbo_frame: "daily_brief_focus_area_dialog" })) { entry.name } %>
-        <% end %>
-      <% end %>
-    </div>
-  <% end %>
-</section>
+<%= render "daily_briefs/plans/focus_areas", plan: @plan %>
 
 <section aria-labelledby="week" class="mb-5">
   <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "week")) { "Your week" } %>
@@ -51,7 +16,9 @@
     What each day draws on. The brief picks one reading, one quality and one example from the day's row, and chooses for
     itself where a box is empty.
   </p>
-  <%= render "daily_briefs/plans/week", plan: @plan, today: Current.user.today %>
+  <div id="daily_brief_week">
+    <%= render "daily_briefs/plans/week", plan: @plan, today: Current.user.today %>
+  </div>
 </section>
 
 <%= primer_form_with(model: @plan, url: household_daily_brief_plan_path) do |f| %>

@@ -1,4 +1,8 @@
-<%# Empties the frame, which closes the dialog, then refreshes Your plan, which shows the notice (as calendar/events/saved).
-    Without a request id: with this request's, Turbo would skip the refresh as an echo of its own. %>
+<%# Empties the frame, which closes the dialog, and redraws the focus areas and the week in place, so the sections and
+    Ready by below keep what's changed and not yet saved (as meeting_parts/details_saved). %>
 <%= turbo_stream.update "daily_brief_focus_area_dialog" %>
-<%= turbo_stream.refresh(request_id: nil) %>
+<%= turbo_stream.replace "daily_brief_focus_areas", partial: "daily_briefs/plans/focus_areas", locals: { plan: @plan } %>
+<%= turbo_stream.update "daily_brief_week", partial: "daily_briefs/plans/week", locals: { plan: @plan, today: Current.user.today } %>
+<%# The notice takes the old one's place, first in the household layout's main, where shared/flash renders it. %>
+<%= turbo_stream.remove_all "main .flash:not(.Banner)" %>
+<%= turbo_stream.prepend_all "main .container-xl", partial: "shared/flash" %>
