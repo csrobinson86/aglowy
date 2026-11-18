@@ -23,7 +23,8 @@ class ListeningGame < ApplicationRecord
         Array(fields[step]).first(ROUNDS[step]).filter_map { ListeningGame::Round.from_reply(it, copy_check:) }
           .each.with_index(1) { |cards, position| game.rounds.build(step:, position:, cards:) }
       end
-      sources.each.with_index(1) { |source, position| game.sources.build(position:, **source.slice(:url, :title)) }
+      # A page whose search result has no title is left out, rather than losing the game to the not-null title.
+      sources.select { it[:title].present? }.each.with_index(1) { |source, position| game.sources.build(position:, **source.slice(:url, :title)) }
     end.then { it if it.rounds.any? }
   end
 end

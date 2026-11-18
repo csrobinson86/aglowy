@@ -131,6 +131,14 @@ class Household::ListeningGamePreparingTest < ActiveSupport::TestCase
     assert_not_includes game.sources.to_json, "Excerpt"
   end
 
+  test "a page whose search result has no title is left out, and the rest are saved" do
+    accept users(:head)
+    body = reply
+    body["content"].find { it["type"] == "web_search_tool_result" }["content"].second.delete("title")
+
+    assert_equal [ SOURCES.first, SOURCES.last ], prepare(body).reload.sources.map { [ it.url, it.title ] }
+  end
+
   test "the question holds the week's dates and the program's URL, and no HTTP request goes to jw.org or wol.jw.org" do
     accept users(:head)
     prepare
