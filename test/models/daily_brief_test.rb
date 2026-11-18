@@ -100,6 +100,7 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_equal "Matthew 1", brief.reading_start.to_s
     assert_equal "Song of Solomon 1", DailyBrief.new(plan: { "day" => { "reading" => "Song of Solomon, Psalms" } }).reading_start.to_s
     assert_equal "Matthew 1", DailyBrief.new(plan: { "day" => { "reading" => "Matthew-John" } }).reading_start.to_s
+    assert_equal "Matthew 1", DailyBrief.new(plan: { "day" => { "reading" => "Matthew To John" } }).reading_start.to_s
     assert_nil DailyBrief.new(plan: { "day" => { "reading" => nil } }).reading_start
     assert_nil DailyBrief.new(plan: { "day" => { "reading" => "The gospels" } }).reading_start
   end
@@ -129,6 +130,18 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_equal first, brief.reload.seen_at
   end
 
+  test "mark_seen keeps the first time when two pages opened it at once" do
+    brief = DailyBrief.for(@user)
+    other_page = DailyBrief.find(brief.id)
+    brief.mark_seen
+    first = brief.reload.seen_at
+
+    travel 1.second
+    other_page.mark_seen
+
+    assert_equal first, brief.reload.seen_at
+  end
+
   test "the copy is encrypted" do
     brief = DailyBrief.for(@user)
     raw = DailyBrief.connection.select_value(DailyBrief.where(id: brief.id).select(:plan).to_sql)
@@ -136,6 +149,33 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_not_includes raw, "As a husband"
     assert_not_includes raw, "Matthew"
     assert_equal "Matthew – John", brief.reload.day.reading
+  end
+
+  test "the database refuses a brief for a person who doesn't exist" do
+    assert_raises(ActiveRecord::InvalidForeignKey) do
+      DailyBrief.insert!({ user_id: SecureRandom.uuid_v7, on: Date.new(2026, 11, 17), plan: {} })
+    end
+  end
+
+  test "the database refuses a brief with no person" do
+    assert_raises(ActiveRecord::NotNullViolation) { DailyBrief.insert!({ user_id: nil, on: Date.new(2026, 11, 17), plan: {} }) }
+  end
+
+  test "the database refuses a brief with no date" do
+    assert_raises(ActiveRecord::NotNullViolation) { DailyBrief.insert!({ user_id: @user.id, on: nil, plan: {} }) }
+  end
+
+  test "the database refuses a brief with no copy" do
+    assert_raises(ActiveRecord::NotNullViolation) { DailyBrief.insert!({ user_id: @user.id, on: Date.new(2026, 11, 17), plan: nil }) }
+  end
+
+  test "the database deletes the briefs with the person" do
+    user = User.create!(name: "Ann")
+    DailyBrief.insert!({ user_id: user.id, on: Date.new(2026, 11, 17), plan: {} })
+
+    User.where(id: user.id).delete_all
+
+    assert_not DailyBrief.exists?(user_id: user.id)
   end
 
   test "briefs go with the person" do

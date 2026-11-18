@@ -1,4 +1,7 @@
 <% content_for :title, "Daily brief" %>
+<%# It's personal: Turbo's in-memory snapshot ignores Cache-Control, so without this Back after a sign-out and another
+    person's sign-in would show this brief again until the fresh page arrived. %>
+<% turbo_exempts_page_from_cache %>
 
 <%# The brief (docs/design/daily-brief.md, The brief, its states; frames brief-base.png and phone-brief.png): the newest
     one on or before today, from its own copy of the plan, beside Today in Aglowy. Before the first, Prepare today's
@@ -27,7 +30,7 @@
     <% end %>
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
-            manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2) %>
+            manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
     <% end %>
   <% end %>
 <% else %>

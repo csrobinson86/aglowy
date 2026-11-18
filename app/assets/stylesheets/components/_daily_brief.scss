@@ -40,8 +40,8 @@
   min-height: var(--control-minTarget-auto);
 }
 
-// The brief (docs/design/daily-brief.md, The brief; frames brief-base.png and phone-brief.png): bordered sections, each
-// a small kicker over an h2, with rows of a label beside its text that wrap under it in a narrow section or on a phone.
+// The brief (docs/design/daily-brief.md, The brief; frames brief-base.png and phone-brief.png): its sections in a column
+// (components/_daily_brief_section.scss).
 .daily-brief {
   display: flex;
   flex-direction: column;
@@ -53,43 +53,4 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(calc(var(--base-size-128) * 2), 1fr));
   gap: var(--base-size-16);
-}
-
-.daily-brief-section {
-  padding: var(--base-size-16);
-  border: var(--borderWidth-thin) solid var(--borderColor-default);
-  border-radius: var(--borderRadius-medium);
-}
-
-.daily-brief-section__kicker {
-  margin-bottom: var(--base-size-4);
-  font-size: var(--text-body-size-small);
-  font-weight: var(--base-text-weight-medium);
-  color: var(--fgColor-muted);
-}
-
-.daily-brief-section__rows {
-  margin: var(--base-size-12) 0 0;
-}
-
-.daily-brief-section__row {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--base-size-16);
-
-  & + & {
-    margin-top: var(--base-size-8);
-  }
-}
-
-.daily-brief-section__label {
-  flex: 0 0 calc(var(--base-size-80) * 2.5);
-  font-weight: var(--base-text-weight-semibold);
-}
-
-.daily-brief-section__text {
-  flex: 1 1 calc(var(--base-size-128) * 2);
-  min-width: 0;
-  margin: 0;
-  overflow-wrap: anywhere;
 }

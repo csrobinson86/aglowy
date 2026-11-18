@@ -3,7 +3,10 @@ require "application_system_test_case"
 # Today's brief, from the plan alone (docs/design/daily-brief.md, The brief; frames brief-base.png without its Banner, and
 # phone-brief.png). Nothing here calls an AI provider: the brief has no writing yet.
 class DailyBriefSystemTest < ApplicationSystemTestCase
+  # Tuesday 17 November 2026, 9:00 AM in Hannah's zone, so midnight can't fall between making the brief and opening it,
+  # and the screenshots show the same weekday's plan every run.
   setup do
+    travel_to Time.utc(2026, 11, 17, 15)
     users(:head).update!(time_zone: "Central Time (US & Canada)")
     travel_to(2.days.ago) { DailyBrief::Plan.start(users(:head), starter: "husband_and_father") }
     @brief = DailyBrief.for(users(:head))
@@ -19,11 +22,12 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_selector "aside nav [aria-current=page]", text: "Daily brief"
     today = users(:head).today
     assert_text "#{today.strftime("%A, %B %-d")} · Only you see this."
-    assert_link "Open today's text on wol.jw.org", href: "https://wol.jw.org/en/wol/dt/r1/lp-e/#{today.year}/#{today.month}/#{today.day}"
+    assert_link "Open the Daily text on wol.jw.org", href: "https://wol.jw.org/en/wol/dt/r1/lp-e/#{today.year}/#{today.month}/#{today.day}"
     assert_selector "h2", text: "From your plan"
     assert_link "1 Timothy 3:8-13"
     assert_selector "h2", text: "Today in Aglowy"
     assert @brief.reload.seen_at
+    assert_turbo_idle
     assert_accessible
     capture_screens("brief-today")
     capture_screens("brief-today-focus", scroll_to: "#daily-brief-focus")
@@ -40,7 +44,7 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
 
     click_on "Prepare today's brief"
 
-    assert_link "Open today's text on wol.jw.org"
+    assert_link "Open the Daily text on wol.jw.org"
   end
 
   test "paused, the page says why and Start it again goes back to the plan" do

@@ -87,7 +87,7 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1 .Label", "Private"
     assert_select "main", text: /Tuesday, November 17 · Only you see this./
     assert_select "a[href=?]", household_daily_brief_plan_path(household_id: @home), "Your plan"
-    assert_select "a[href=?]", brief.daily_text_url, "Open today's text on wol.jw.org"
+    assert_select "a[href=?]", brief.daily_text_url, "Open the Daily text on wol.jw.org"
     assert_select "h2", "Matthew – John"
     assert_select "h2", "Patience, Mildness"
     assert_select "h2", "Abraham, Moses"
@@ -97,13 +97,38 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", text: "Prepare today's brief", count: 0
   end
 
+  test "Today in Aglowy is the person's day when the household's zone is already on the next" do
+    start_plan
+    DailyBrief.for(@user, on: Date.new(2026, 11, 17))
+    @home.events.destroy_all
+    { 17 => "Field service", 18 => "Circuit overseer's visit" }.each do |day, title|
+      @home.events.create!(kind: "other", title:, starts_on: Date.new(2026, 11, day), time_of_day: "09:30", duration_minutes: 60, created_by: users(:spouse))
+    end
+    travel_to central(21)
+
+    get household_daily_brief_path(household_id: @home)
+
+    assert_select ".today .Box-header", text: /Tuesday, November 17/
+    assert_select ".today__item", text: /Field service/
+    assert_select ".today__item", text: /Circuit overseer/, count: 0
+  end
+
+  test "the page is kept out of Turbo's snapshot cache, so Back can't show it to the next person to sign in" do
+    start_plan
+    DailyBrief.for(@user)
+
+    get household_daily_brief_path(household_id: @home)
+
+    assert_select "meta[name=turbo-cache-control][content=no-cache]"
+  end
+
   test "show leaves out the sections the plan turned off" do
     start_plan.update!(sections: %w[ reading ])
     DailyBrief.for(@user)
 
     get household_daily_brief_path(household_id: @home)
 
-    assert_select "a", text: "Open today's text on wol.jw.org", count: 0
+    assert_select "a", text: "Open the Daily text on wol.jw.org", count: 0
     assert_select "h2", text: "Abraham, Moses", count: 0
     assert_select "h2", "Matthew – John"
   end

@@ -8,10 +8,10 @@ class TodayComponent < ApplicationComponent
 
   # meeting_helper: today's meeting opens Today's meeting (a child with the helper on). manage_events: a household
   # event opens its edit dialog (heads and adults). title and heading_tag: "Today in Aglowy", an h2 beside the daily
-  # brief's sections.
-  def initialize(household:, viewer:, meeting_helper:, manage_events:, title: "Today", heading_tag: :h3)
+  # brief's sections. today: the household's, except on the brief, which is the person's own day (the story, #303).
+  def initialize(household:, viewer:, meeting_helper:, manage_events:, title: "Today", heading_tag: :h3, today: household.today)
     @household = household
-    @today = household.today
+    @today = today
     @calendar = Household::Calendar.new(household, viewer:, range: today..today, hide: %w[ shared_times ])
     @meeting_helper = meeting_helper
     @manage_events = manage_events

@@ -7,7 +7,7 @@
 <div class="daily-brief">
   <% if brief.section?(:daily_text) %>
     <%= render section.new(kicker: "Daily text", title: brief.on.strftime("%A, %B %-d"),
-          link: section::Link.new(text: "Open today's text on wol.jw.org", href: brief.daily_text_url, note: "the text and its comment are read there")) %>
+          link: section::Link.new(text: "Open the Daily text on wol.jw.org", href: brief.daily_text_url, note: "the text and its comment are read there")) %>
   <% end %>
 
   <% if brief.section?(:reading) %>

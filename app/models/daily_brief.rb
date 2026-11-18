@@ -65,7 +65,7 @@ class DailyBrief < ApplicationRecord
   # The first chapter of the day's books, "Matthew 1" for "Matthew – John", or nil when the box is empty or doesn't
   # start with a book.
   def reading_start
-    Bible::Reference.parse("#{day.reading.to_s.split(/[–—,-]| to /).first} 1")
+    Bible::Reference.parse("#{day.reading.to_s.split(/[–—,-]| to /i).first} 1")
   end
 
   # The day's text on wol.jw.org, in English. Aglowy links to it and never fetches it.
@@ -73,9 +73,12 @@ class DailyBrief < ApplicationRecord
     "https://wol.jw.org/en/wol/dt/r1/lp-e/#{on.year}/#{on.month}/#{on.day}"
   end
 
-  # The first time the person saw it, on its page: the one fact the pause rule reads (Trap 5). Set once.
+  # The first time the person saw it, on its page: the one fact the pause rule reads (Trap 5). Set once, under the brief's
+  # lock, so two pages opened at once keep the first time.
   def mark_seen
-    update!(seen_at: Time.current) unless seen_at
+    return if seen_at
+
+    with_lock { update!(seen_at: Time.current) unless seen_at }
   end
 
   private

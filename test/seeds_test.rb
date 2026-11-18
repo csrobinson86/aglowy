@@ -15,6 +15,8 @@ class SeedsTest < ActiveSupport::TestCase
   end
 
   test "one run seeds every feature" do
+    # One clock for the seeds and the dates checked below, so midnight can't fall between them.
+    freeze_time
     seed
 
     assert_equal [ "The Demo Family", "The Rivera Family" ], Household.order(:name).pluck(:name)

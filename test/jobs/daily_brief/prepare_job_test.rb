@@ -20,6 +20,15 @@ class DailyBrief::PrepareJobTest < ActiveJob::TestCase
     assert_empty users(:spouse).daily_briefs
   end
 
+  test "someone no longer a head or adult in any household gets none, and keeps their plan" do
+    @user.memberships.update_all(active: false)
+
+    travel_to(central(5)) do
+      assert_no_difference(-> { DailyBrief.count }) { DailyBrief::PrepareJob.perform_now }
+    end
+    assert_not @plan.reload.paused?
+  end
+
   test "running twice makes one" do
     travel_to(central(5)) do
       assert_difference(-> { DailyBrief.count }, 1) { 2.times { DailyBrief::PrepareJob.perform_now } }
