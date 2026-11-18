@@ -1,0 +1,23 @@
+<%# locals: (writing:, earlier: false) %>
+<%# A writing in progress, as the family study helper shows one (frame family-studies/ai-searching.png): the progress
+    lines on the writing's own stream and Stop, never the reply's text (Trap 9). Once it has ended the stream refreshes
+    the page. Its Turbo Frame sends Stop to the whole page. earlier: another angle, under the brief already written. %>
+<%= turbo_frame_tag writing, target: "_top" do %>
+  <%= turbo_stream_from writing, data: { controller: "brief-writing", brief_writing_url_value: household_daily_brief_writing_path(writing) } %>
+  <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+    <% box.with_header do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, display: :flex, align_items: :center)) do %>
+        <%= render(Primer::Beta::Octicon.new(:"sparkle-fill", color: :done, mr: 2)) %>Writing with AI
+      <% end %>
+    <% end %>
+    <% box.with_body do %>
+      <%= tag.ul id: dom_id(writing, :progress), class: "list-style-none mb-3", aria: { live: "polite" } do %>
+        <%= render "family_studies/drafts/progress", step: :searching, thing: "brief" %>
+      <% end %>
+      <p class="text-small color-fg-muted">Your brief appears here once its scriptures, links and wording have been checked. Until then, <%= earlier ? "here's the brief you have" : "here are the parts from your plan" %>.</p>
+      <%= primer_form_with(url: household_daily_brief_writing_path(writing), method: :delete) do |f| %>
+        <%= render DailyBriefs::WritingForm.new(f, label: "Stop") %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

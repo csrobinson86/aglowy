@@ -1,0 +1,40 @@
+<%# locals: (brief:, latest:, write_now: false) %>
+<%# Under today's brief (docs/design/daily-brief.md, The brief, its states; frame brief-today.png): "Another angle" with
+    how many are left today, "Write it with AI" for a brief with no writing yet, and "No more today" in their place at
+    the limit. Try again is in the Banner. Without the AI terms, "Turn on AI drafts" opens the same notice as elsewhere;
+    accepting comes back here with write_now, and today's writing starts. Nothing while one is being written. %>
+<% left = brief.writings_left %>
+<div class="d-flex flex-wrap flex-items-center gap-2 mt-3">
+  <% if !Current.user.accepted_ai_terms? %>
+    <%= render(Primer::Alpha::Dialog.new(id: "daily-brief-ai-terms", title: "Before you use AI", position_narrow: :fullscreen)) do |dialog| %>
+      <% dialog.with_show_button do |button| %>
+        <% button.with_leading_visual_icon(icon: :"sparkle-fill", color: :done) %>
+        Turn on AI drafts
+      <% end %>
+      <% dialog.with_body do %>
+        <p>Here's how AI drafts work in Aglowy. You only see this once.</p>
+        <ul class="ml-3 mb-3">
+          <li class="mb-2"><strong>What's sent:</strong> the date, the sections you chose, your focus areas and today's row of your week, as you typed them. Never your name, your family, your notes or your goals.</li>
+          <li class="mb-2"><strong>Where it looks:</strong> the AI searches only jw.org and wol.jw.org. It links each page it used and never copies their text into Aglowy.</li>
+          <li class="mb-2"><strong>What it does:</strong> it only writes your daily brief from your plan.</li>
+          <li class="mb-2"><strong>Check its work:</strong> a brief can be wrong. Read each point against its scripture or page.</li>
+          <li><strong>Daily limit:</strong> <%= DailyBrief::Writing.daily_limit %> writings a day, the morning's and two more.</li>
+        </ul>
+        <%= render "ai_acceptances/form", acceptance: Ai::Acceptance.new, return_to: household_daily_brief_path(write: "first"), not_now: false %>
+      <% end %>
+    <% end %>
+  <% elsif latest&.writing? %>
+    <%# Its Stop is above the brief. %>
+  <% elsif left.zero? %>
+    <span class="color-fg-muted">No more today</span>
+  <% elsif latest.nil? %>
+    <%= primer_form_with(url: household_daily_brief_writings_path, data: ({ controller: "auto-submit", auto_submit_now_value: true } if write_now)) do |f| %>
+      <%= render DailyBriefs::WritingForm.new(f, label: "Write it with AI", first: true, scheme: :primary) %>
+    <% end %>
+  <% elsif brief.writing %>
+    <%= primer_form_with(url: household_daily_brief_writings_path) do |f| %>
+      <%= render DailyBriefs::WritingForm.new(f, label: "Another angle") %>
+    <% end %>
+    <span class="text-small color-fg-muted"><%= left %> left today</span>
+  <% end %>
+</div>

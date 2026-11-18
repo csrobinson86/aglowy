@@ -12,6 +12,9 @@ class DailyBrief < ApplicationRecord
   # The sections, the focus areas and that weekday's row, as they were when the brief was made.
   encrypts :plan
 
+  # Kept as long as their writings' chats, only so the next briefs can avoid repeating them (The purpose).
+  scope :expired, -> { where(on: ...Ai::Purpose.find(Writing::PURPOSE).keep_for.ago.to_date) }
+
   # Today's brief (or the day's), found or made under the person's lock: the one Plan#pause takes, so none is made once
   # the plan is paused, though one already made is still found. With pause_if_unseen (the morning job only), a day with
   # no brief after seven unseen in a row pauses the plan instead, in the same lock, so a brief already made today is
@@ -52,6 +55,12 @@ class DailyBrief < ApplicationRecord
   # The newest written writing: what the page shows. "Another angle" adds one, and the earlier stays until the purge.
   def writing
     writings.reverse.find(&:written?)
+  end
+
+  # How many more writings it can have today: the person's left of their 3, or the brief's left of its 6, whichever is
+  # fewer. Zero is "No more today".
+  def writings_left
+    [ user.daily_brief_writings_left_today, MAX_WRITINGS - writings.count ].min.clamp(0..)
   end
 
   # The person's plan is paused, read afresh: brief.write and the writing's job ask under the person's lock.
@@ -124,7 +133,7 @@ class DailyBrief < ApplicationRecord
         [ :written, "This brief has been written already" ]
       elsif writings.writing.exists?
         [ :busy, "This brief is being written" ]
-      elsif by.daily_brief_writings_left_today.zero? || writings.count >= MAX_WRITINGS
+      elsif writings_left.zero?
         [ :limit, "No more today" ]
       end
     end

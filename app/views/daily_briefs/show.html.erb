@@ -6,8 +6,9 @@
 <%# The brief (docs/design/daily-brief.md, The brief, its states; frames brief-today.png, brief-base.png and
     phone-brief.png): the newest one on or before today, beside Today in Aglowy. Written by AI, its thread, its sections
     and the pages it used; otherwise the parts from its own copy of the plan, with a Banner when the AI part failed, was
-    refused or stopped. Before the first, Prepare today's brief; with only an earlier one, it's shown with its date and
-    when today's is ready. Nothing is shown of a writing while it's being written (Trap 9). %>
+    refused or stopped, and Try again. Being written, the progress and Stop above it; under today's, Another angle or
+    Write it with AI (How a writing runs). Before the first, Prepare today's brief; with only an earlier one, it's shown
+    with its date and when today's is ready. Nothing is shown of a writing while it's being written (Trap 9). %>
 <%= render "daily_briefs/header", brief: @brief %>
 
 <% if @brief %>
@@ -26,16 +27,31 @@
     <% end %>
   <% end %>
 
-  <% writing = @brief.writing %>
+  <% writing, latest, today = @brief.writing, @brief.writings.last, @brief.on == @today %>
+  <% if latest&.writing? %>
+    <%= render "daily_briefs/writings/progress", writing: latest, earlier: writing.present? %>
+  <% end %>
   <% if writing %>
     <%= render "daily_briefs/thread", brief: @brief, writing: %>
-  <% elsif (unwritten = @brief.writings.last)&.status.in?(DailyBrief::Writing::UNWRITTEN_STATUSES) %>
-    <%= render(Primer::Alpha::Banner.new(scheme: unwritten.stopped? ? :default : :warning, icon: :info, mb: 4)) { unwritten_message(unwritten) } %>
+  <% elsif latest&.status.in?(DailyBrief::Writing::UNWRITTEN_STATUSES) %>
+    <%= render(Primer::Alpha::Banner.new(scheme: latest.stopped? ? :default : :warning, icon: :info, mb: 4)) do |banner| %>
+      <% if today && @brief.writings_left.positive? %>
+        <% banner.with_action_content do %>
+          <%= primer_form_with(url: household_daily_brief_writings_path) do |f| %>
+            <%= render DailyBriefs::WritingForm.new(f, label: "Try again") %>
+          <% end %>
+        <% end %>
+      <% end %>
+      <%= unwritten_message(latest) %>
+    <% end %>
   <% end %>
 
   <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg)) do |layout| %>
     <% layout.with_main do %>
       <%= render "daily_briefs/brief", brief: @brief, writing: %>
+      <% if today %>
+        <%= render "daily_briefs/writings/actions", brief: @brief, latest:, write_now: params[:write] == "first" %>
+      <% end %>
     <% end %>
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,

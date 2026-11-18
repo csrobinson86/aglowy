@@ -2,6 +2,8 @@
 # five steps: moderation, then the AI under its purpose, then the checks in The reply before anyone sees a word of it,
 # then the final status, written only while writing. Before each request it sends, a short read under the person's lock
 # makes sure the plan isn't paused and the writing hasn't been stopped (Trap 12); the lock is never held across a request.
+# Only progress lines stream while it runs, never the reply's text, and a written ending refreshes the brief's page
+# (Trap 9).
 module DailyBrief::Writing::Writable
   extend ActiveSupport::Concern
 
@@ -46,7 +48,10 @@ module DailyBrief::Writing::Writable
     return finish("flagged") if Ai::Moderation.flagged?(purpose.typed_text(daily_brief))
     return unless may_send?
 
-    reply = chat.ask_within_purpose(purpose.sent_text(daily_brief))
+    reply = catch(:stopped) { chat.ask_within_purpose(purpose.sent_text(daily_brief), stream: ->(chunk) { streamed(chunk) }) }
+    return unless reply
+
+    progress :checking, pages: reply.search_results.size
     reply.off_topic? ? finish("off_topic") : finish_checked(reply)
   rescue *Ai::PROVIDER_ERRORS
     finish "failed"
@@ -65,6 +70,15 @@ module DailyBrief::Writing::Writable
     def may_send?
       sendable = user.with_lock { self.class.writing.exists?(id) && !daily_brief.paused? }
       sendable || stop.then { false }
+    end
+
+    # Never the chunk's text, which is unchecked. A Stop, or a pause, which stops the writing, ends the request here.
+    def streamed(chunk)
+      throw :stopped unless self.class.writing.exists?(id)
+      return if @streaming || chunk.content.blank?
+
+      @streaming = true
+      progress :writing
     end
 
     # Off topic is settled before this. Then the checks in order (docs/design/daily-brief.md, The reply): copies and
@@ -130,12 +144,20 @@ module DailyBrief::Writing::Writable
     end
 
     # Applies only while the writing is still writing, so a Stop or a pause holds, and a failed or flagged one gives back
-    # its use in the same transaction, so whichever ending comes first stands and the use follows it.
+    # its use in the same transaction, so whichever ending comes first stands and the use follows it. Only an ending
+    # this wrote refreshes the page, which then shows the brief as it is: a Stop already redrew it.
     def finish(status, result: nil, sources: [])
-      transaction do
+      written = transaction do
         (self.class.writing.where(id: id).update_all(status: status, result: result, sources: sources, updated_at: Time.current) == 1).tap do
           use&.delete if it && status.in?(self.class::UNCOUNTED_STATUSES)
         end
       end
+
+      broadcast_refresh_to self if written
+    end
+
+    # The progress lines, at +step+, to the writing's own stream (turbo_stream_from the writing), never a household's.
+    def progress(step, pages: nil)
+      broadcast_update_to self, target: [ self, :progress ], html: ApplicationController.render(partial: "family_studies/drafts/progress", locals: { step:, pages:, thing: "brief" })
     end
 end
