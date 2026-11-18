@@ -210,8 +210,99 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::CheckViolation) { DailyBrief::Pause.insert!({ plan_id: plan.id, reason: "bored" }) }
   end
 
+  test "due? from 45 minutes before ready-by, in the person's own zone" do
+    plan = started_plan
+
+    assert_not plan.due?(central(4, 14)), "46 minutes before"
+    assert plan.due?(central(4, 16)), "44 minutes before"
+    assert plan.due?(central(9, 0)), "after it"
+  end
+
+  test "due? after ready-by only while there's no brief for today" do
+    plan = started_plan
+    travel_to(central(5, 0)) { DailyBrief.for(users(:head)) }
+
+    assert_not plan.due?(central(9, 0))
+    assert plan.due?(central(9, 0) + 1.day)
+  end
+
+  test "due? is false while paused" do
+    plan = started_plan
+    plan.pause(reason: "chosen")
+
+    assert_not plan.due?(central(9, 0))
+  end
+
+  test "due? for a person in another time zone reads their own clock" do
+    users(:head).update!(time_zone: "Tokyo")
+    plan = started_plan
+
+    # 4:30 AM on 18 November in Tokyo is 7:30 PM on 17 November in UTC.
+    assert plan.due?(Time.utc(2026, 11, 17, 19, 30))
+    assert_not plan.due?(Time.utc(2026, 11, 17, 19, 0))
+  end
+
+  test "a plan started today isn't due even after ready-by, and is the next morning" do
+    users(:head).update!(time_zone: "Central Time (US & Canada)")
+    plan = travel_to(central(3, 0)) { DailyBrief::Plan.start(users(:head), starter: "basics") }
+
+    assert_not plan.due?(central(9, 0))
+    assert plan.due?(central(5, 0) + 1.day)
+  end
+
+  test "gone_unseen? with seven unseen before today" do
+    plan = started_plan
+    briefs_before_today(7)
+
+    travel_to(central(5, 0)) { assert plan.gone_unseen? }
+  end
+
+  test "gone_unseen? is false with six unseen before today and today's unseen" do
+    plan = started_plan
+    briefs_before_today(6)
+    travel_to(central(5, 0)) do
+      DailyBrief.for(users(:head))
+
+      assert_not plan.gone_unseen?
+    end
+  end
+
+  test "gone_unseen? is false when one of the seven was seen" do
+    plan = started_plan
+    briefs_before_today(7)[3].mark_seen
+
+    travel_to(central(5, 0)) { assert_not plan.gone_unseen? }
+  end
+
+  test "gone_unseen? is false when the seven unseen were made before started_at" do
+    plan = started_plan
+    briefs_before_today(7)
+    travel_to(central(4, 0)) do
+      plan.pause(reason: "unseen")
+      plan.resume
+    end
+
+    travel_to(central(5, 0)) { assert_not plan.gone_unseen? }
+  end
+
   private
     def insert_plan(**attributes)
       DailyBrief::Plan.insert!({ user_id: users(:head).id, started_at: Time.current, **attributes })
+    end
+
+    # Tuesday 17 November 2026 in Hannah's zone, Central Time unless the test changes it.
+    def central(hour, minute = 0)
+      ActiveSupport::TimeZone["Central Time (US & Canada)"].local(2026, 11, 17, hour, minute)
+    end
+
+    # Started on the 1st, ready by 5:00 AM.
+    def started_plan
+      users(:head).update!(time_zone: "Central Time (US & Canada)") unless users(:head).time_zone
+      travel_to(central(9) - 16.days) { DailyBrief::Plan.start(users(:head), starter: "basics") }
+    end
+
+    # One brief a day for the days before the 17th, each made on its own morning, none seen.
+    def briefs_before_today(count)
+      (1..count).map { |ago| travel_to(central(5) - ago.days) { DailyBrief.for(users(:head)) } }
     end
 end

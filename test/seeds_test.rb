@@ -143,6 +143,7 @@ class SeedsTest < ActiveSupport::TestCase
     plan = user("spouse@example.com").daily_brief_plan
     assert_equal [ "As a husband", "As a father", "Reaching out", "Qualities to focus on", "Growing appreciation for Jehovah" ], plan.focus_areas.map(&:name)
     assert_equal 7, plan.days.count
+    assert_equal [ user("spouse@example.com").today ], user("spouse@example.com").daily_briefs.pluck(:on)
 
     assert_equal 0, Ai::Use.count
   end

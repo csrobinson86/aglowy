@@ -79,6 +79,36 @@ class DailyBrief::Plan < ApplicationRecord
     end
   end
 
+  # The morning job makes today's brief from 45 minutes before ready-by, in the person's zone, once the plan has run
+  # past the day it was started or started again (Trap 13), while it isn't paused and today has no brief yet.
+  def due?(now = Time.current)
+    local = now.in_time_zone(user.calendar_time_zone)
+
+    !paused? && local.to_date > started_at.in_time_zone(local.time_zone).to_date &&
+      minutes_into(local) >= ready_at_minutes - 45 && !user.daily_briefs.exists?(on: local.to_date)
+  end
+
+  # Ready-by has come today, in the person's zone: the page offers "Prepare today's brief" when there's none yet.
+  def ready?(now = Time.current)
+    minutes_into(now.in_time_zone(user.calendar_time_zone)) >= ready_at_minutes
+  end
+
+  # Seven briefs in a row the person never saw: the newest seven made since started_at and dated before today, all with
+  # no seen_at. Today's own brief never counts, so one already made today is never a reason to pause.
+  def gone_unseen?(today = user.today)
+    newest = user.daily_briefs.where(created_at: started_at.., on: ...today).order(on: :desc).limit(7).pluck(:seen_at)
+    newest.size == 7 && newest.none?
+  end
+
+  # What a brief on that date is built from, copied so editing the plan never changes it (Trap 7): the sections, the
+  # focus areas in order, and that weekday's row with its topics keyed by focus area.
+  def copy_for(date)
+    day = days.find_by!(wday: date.wday)
+
+    { "sections" => sections, "focus_areas" => focus_areas.map { it.slice(:id, :kind, :name, :gives, :scriptures) },
+      "day" => day.slice(:wday, :reading, :examples, :topics) }.as_json
+  end
+
   def full?
     focus_areas.size >= DailyBrief::FocusArea::MAX
   end
@@ -114,6 +144,11 @@ class DailyBrief::Plan < ApplicationRecord
   end
 
   private
+    # Minutes since midnight on the clock, so ready-by stays 5:00 AM on the day the clocks change.
+    def minutes_into(time)
+      time.hour * 60 + time.min
+    end
+
     def sections_offered
       errors.add(:sections, "can only be #{SECTIONS.to_sentence(last_word_connector: " and ")}") unless (sections - SECTIONS).empty?
     end
