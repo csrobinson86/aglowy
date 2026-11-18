@@ -20,7 +20,7 @@ This builds on these docs:
   | `bible_reading` | Bible Reading | 1, or 2 when the reading names a person |
   | `congregation_bible_study` | Congregation Bible Study (30 minutes) | 6 |
 
-- **The cards come from a weekly AI research job.** It asks the AI what that week's parts cover. The AI provider's own search looks at jw.org and wol.jw.org, as it does for family study drafts. Aglowy never opens a jw.org page, and keeps nothing from the search but the program's title and link (`docs/design/ai.md`).
+- **The cards come from a weekly AI research job.** It asks the AI what that week's parts cover. The AI provider's own search looks at jw.org and wol.jw.org, as it does for family study drafts. Aglowy never opens a jw.org page, and keeps nothing from the search but the title and link of each page the AI used (`docs/design/ai.md`; `ListeningGame::Source`).
 - **A card can be anything a child can picture:** a Bible person, a place, a Bible book, a thing, a feeling, or something to do ("Praying to Jehovah"). The right card is always something the part names or shows. The wrong cards are well-known Bible things that the part doesn't mention at all.
 - **Child words, written by the AI in its own words.** "Repentance" becomes "Saying sorry to Jehovah". An idea a child can't spot, like "self-blame", is left out.
 - **A score for that meeting only.** The end screen says "You found 12 things today!" and the shared note says the same. Nothing carries over between weeks: no running total, no streaks, no comparing children. This replaces "no points" in the helper's 15 Nov decisions. The rest of that decision stands: no sounds, no animation, nothing that nags.
