@@ -10,8 +10,9 @@
         <% @day.errors.messages_for(:topics).each do |message| %>
           <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) { "Topics #{message}" } %>
         <% end %>
-        <%= primer_form_with(model: @day, url: household_daily_brief_plan_day_path(wday: @day.wday)) do |f| %>
-          <%= render DailyBriefs::Plans::DayForm.new(f, dialog_id:, focus_areas: @plan.topic_areas) %>
+        <%# Opened on its own, in a new tab, there's no week to redraw, so it saves without Turbo and goes back to the plan. %>
+        <%= primer_form_with(model: @day, url: household_daily_brief_plan_day_path(wday: @day.wday), data: { turbo: turbo_frame_request? }) do |f| %>
+          <%= render DailyBriefs::Plans::DayForm.new(f, dialog_id:, focus_areas: @plan.day_areas) %>
         <% end %>
       <% end %>
     <% end %>

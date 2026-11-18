@@ -11,7 +11,7 @@ class DailyBriefs::Plans::DaysControllerTest < ActionDispatch::IntegrationTest
     sign_in identities(:head)
   end
 
-  test "edit is the day's dialog: Reading, a box per focus area that takes a topic, and Faith examples, each filled in" do
+  test "edit is the day's dialog: Reading, a box per focus area, and Faith examples, each filled in" do
     get edit_household_daily_brief_plan_day_path(household_id: @home, wday: 2)
 
     assert_response :success
@@ -22,10 +22,11 @@ class DailyBriefs::Plans::DaysControllerTest < ActionDispatch::IntegrationTest
         assert_select "input[name='daily_brief_day[topics][#{@areas["Qualities to focus on"].id}]'][value=?]", "Patience, Mildness"
         assert_select "input[name='daily_brief_day[topics][#{@areas["As a father"].id}]'][value=?]", "Patient teaching of my children"
         assert_select "input[name='daily_brief_day[topics][#{@areas["As a husband"].id}]']:not([value])"
-        assert_select "input[name='daily_brief_day[topics][#{@areas["Growing appreciation for Jehovah"].id}]']", count: 0
+        assert_select "input[name='daily_brief_day[topics][#{@areas["Growing appreciation for Jehovah"].id}]']"
         assert_select "input[name='daily_brief_day[examples]'][value=?]", "Abraham, Moses"
         assert_select "label", text: "Qualities"
         assert_select "label", text: "Reaching out"
+        assert_select "label", text: "Growing appreciation for Jehovah"
         assert_select "button[type=submit]", "Save Tuesday"
       end
     end
@@ -35,7 +36,7 @@ class DailyBriefs::Plans::DaysControllerTest < ActionDispatch::IntegrationTest
     get edit_household_daily_brief_plan_day_path(household_id: @home, wday: 2)
 
     boxes = css_select("dialog input[type=text]")
-    assert_equal 6, boxes.size
+    assert_equal 7, boxes.size
     boxes.each do |box|
       caption_id = box["aria-describedby"].split.find { it.start_with?("caption-") }
       assert_select "##{caption_id}", text: CAPTION
@@ -56,7 +57,15 @@ class DailyBriefs::Plans::DaysControllerTest < ActionDispatch::IntegrationTest
     end
     assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: /Tuesday saved\./
     @tuesday.reload
-    assert_equal [ "Luke", "Mary", { @areas["As a husband"].id => "Listen first" } ], [ @tuesday.reading, @tuesday.examples, @tuesday.topics ]
+    assert_equal [ "Luke", "Mary", "Listen first" ], [ @tuesday.reading, @tuesday.examples, @tuesday.topic_for(@areas["As a husband"]) ]
+  end
+
+  test "in the week's frame the dialog saves with Turbo; opened on its own, in a new tab, it saves without" do
+    get edit_household_daily_brief_plan_day_path(household_id: @home, wday: 2), headers: { "Turbo-Frame" => "daily_brief_day_dialog" }
+    assert_select "dialog form[data-turbo=true]"
+
+    get edit_household_daily_brief_plan_day_path(household_id: @home, wday: 2)
+    assert_select "dialog form[data-turbo=false]"
   end
 
   test "update without Turbo goes back to the plan" do
@@ -76,7 +85,18 @@ class DailyBriefs::Plans::DaysControllerTest < ActionDispatch::IntegrationTest
     assert_nil @tuesday.reading
     assert_nil @tuesday.examples
     assert_nil @tuesday.topic_for(@areas["As a father"])
-    assert_equal({ @areas["Qualities to focus on"].id => "Patience" }, @tuesday.topics)
+    assert_equal({ @areas["Qualities to focus on"].id => "Patience", @areas["Reaching out"].id => "Serious (v. 8)" },
+                 @tuesday.topics)
+  end
+
+  test "a topic for a focus area the dialog didn't show is kept" do
+    patch household_daily_brief_plan_day_path(household_id: @home, wday: 2),
+          params: { daily_brief_day: { reading: "Luke", topics: { @areas["As a husband"].id => "Listen first" } } }
+
+    @tuesday.reload
+    assert_equal "Listen first", @tuesday.topic_for(@areas["As a husband"])
+    assert_equal "Patience, Mildness", @tuesday.topic_for(@areas["Qualities to focus on"])
+    assert_equal "Patient teaching of my children", @tuesday.topic_for(@areas["As a father"])
   end
 
   test "a refused update re-renders the dialog with :unprocessable_content" do
@@ -98,13 +118,20 @@ class DailyBriefs::Plans::DaysControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Patience, Mildness", @tuesday.reload.topic_for(@areas["Qualities to focus on"])
   end
 
-  test "a wday of 7 is a 404" do
-    get edit_household_daily_brief_plan_day_path(household_id: @home, wday: 7)
-    assert_response :not_found
+  test "a wday of 7, or one that only starts with a day, is a 404" do
+    # Built by hand, as the route helpers refuse a wday outside 0 to 6.
+    [ "7", "2-not-a-day" ].each do |wday|
+      path = household_daily_brief_plan_day_path(household_id: @home, wday: 2).sub(%r{/2\z}, "/#{wday}")
 
-    sign_in identities(:head)
-    patch household_daily_brief_plan_day_path(household_id: @home, wday: 7), params: { daily_brief_day: { reading: "Luke" } }
-    assert_response :not_found
+      get "#{path}/edit"
+      assert_response :not_found
+
+      sign_in identities(:head)
+      patch path, params: { daily_brief_day: { reading: "Luke" } }
+      assert_response :not_found
+      sign_in identities(:head)
+    end
+    assert_equal "Matthew – John", @tuesday.reload.reading
   end
 
   test "someone with no plan gets a 404" do

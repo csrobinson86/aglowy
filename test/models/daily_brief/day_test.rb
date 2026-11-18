@@ -38,11 +38,22 @@ class DailyBrief::DayTest < ActiveSupport::TestCase
 
     assert @day.revise(reading: "Exodus", examples: "Moses", topics: { @husband.id => "", father.id => "Family worship" })
     @day.reload
-    assert_equal [ "Exodus", "Moses", { father.id => "Family worship" } ], [ @day.reading, @day.examples, @day.topics ]
+    assert_equal [ "Exodus", "Moses", nil, "Family worship" ], [ @day.reading, @day.examples, @day.topic_for(@husband), @day.topic_for(father) ]
 
     assert_not @day.revise(reading: "a" * 121)
     assert_equal [ "is too long (maximum is 120 characters)" ], @day.errors[:reading]
     assert_equal "Exodus", @day.reload.reading
+  end
+
+  test "revise changes only the topics sent, so one the dialog didn't show is kept" do
+    father = @plan.focus_areas.find_by!(position: 1)
+    @day.update!(topics: { father.id => "Family worship" })
+
+    assert @day.revise(topics: { @husband.id => "Listen first" })
+    assert_equal({ father.id => "Family worship", @husband.id => "Listen first" }, @day.reload.topics)
+
+    assert @day.revise(reading: "Exodus")
+    assert_equal({ father.id => "Family worship", @husband.id => "Listen first" }, @day.reload.topics)
   end
 
   test "the name of its day, from Sunday" do

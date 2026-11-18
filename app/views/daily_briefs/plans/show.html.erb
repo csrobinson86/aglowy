@@ -8,19 +8,7 @@
   <% subhead.with_description { "What your brief is built from each morning. Change it any time, and tomorrow's brief follows it." } %>
 <% end %>
 
-<%# Paused: nothing is written or sent until Start it again (docs/design/daily-brief.md, DailyBrief::Pause). %>
-<% if @plan.paused? %>
-  <%= render(Primer::Alpha::Banner.new(icon: :pause, mb: 4)) do |banner| %>
-    <% banner.with_action_content do %>
-      <%= primer_form_with(url: household_daily_brief_plan_pause_path, method: :delete) do |f| %>
-        <%= render DailyBriefs::Plans::PauseForm.new(f, label: "Start it again") %>
-      <% end %>
-    <% end %>
-    <strong>Your daily brief is paused.</strong>
-    <%= @plan.pausing.chosen? ? "You paused it." : "You hadn't looked at seven briefs in a row." %>
-    Nothing is written or sent until you start it again.
-  <% end %>
-<% end %>
+<%= render "daily_briefs/plans/paused", plan: @plan %>
 
 <%= render "daily_briefs/plans/focus_areas", plan: @plan %>
 
@@ -65,14 +53,6 @@
     <%= render DailyBriefs::PlanForm.new(f, section: :submit) %>
   </div>
 <% end %>
-<%# Its own form, so it sits under Save plan rather than beside it. %>
-<% unless @plan.paused? %>
-  <div class="d-flex flex-wrap flex-items-center mt-3">
-    <%= primer_form_with(url: household_daily_brief_plan_pause_path, class: "mr-3") do |f| %>
-      <%= render DailyBriefs::Plans::PauseForm.new(f, label: "Pause the daily brief") %>
-    <% end %>
-    <span class="text-small color-fg-muted">Paused, nothing is written or sent until you start it again.</span>
-  </div>
-<% end %>
+<%= render "daily_briefs/plans/pause", plan: @plan %>
 <%= turbo_frame_tag "daily_brief_focus_area_dialog" %>
 <%= turbo_frame_tag "daily_brief_day_dialog" %>

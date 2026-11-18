@@ -1,5 +1,5 @@
-# A day's dialog on Your plan (docs/design/daily-brief.md, Your plan): Reading, a box for each focus area that takes a
-# topic (Qualities first, as in Your week), Faith examples, then Cancel and Save. Each is optional, as an empty box
+# A day's dialog on Your plan (docs/design/daily-brief.md, Your plan): Reading, a box for each focus area (Qualities
+# first, as in Your week, and appreciation last), Faith examples, then Cancel and Save. Each is optional, as an empty box
 # means the brief chooses, and each is sent to the AI as typed, so each says so and asks for no names (Trap 2).
 class DailyBriefs::Plans::DayForm < ApplicationForm
   SENT_TO_AI = DailyBriefs::Plans::FocusAreaForm::SENT_TO_AI

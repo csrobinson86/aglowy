@@ -134,18 +134,27 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     plan = travel_to(3.days.ago) { DailyBrief::Plan.start(users(:head), starter: "basics") }
     started_at = plan.started_at
     assert_no_changes -> { plan.reload.started_at } do
-      plan.resume
+      assert_equal false, plan.resume
     end
     assert_equal started_at, plan.started_at
 
     plan.pause(reason: "chosen")
     freeze_time
-    plan.resume
+    assert plan.resume
 
     assert_not plan.paused?
     assert_not DailyBrief::Pause.exists?(plan:)
     assert_equal Time.current, plan.reload.started_at
     assert_not plan.paused?
+  end
+
+  test "a day's dialog has a box for every focus area: Your week's columns, Qualities first, then appreciation" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+
+    assert_equal plan.focus_areas.size, plan.day_areas.size
+    assert_equal plan.topic_areas, plan.day_areas.first(plan.topic_areas.size)
+    assert plan.day_areas.first.quality?
+    assert plan.day_areas.last.appreciation?
   end
 
   test "unpaused is every plan without a pause" do

@@ -65,13 +65,16 @@ class DailyBrief::Plan < ApplicationRecord
   end
 
   # Starts a paused plan again from now, so the briefs that went unseen before the pause can't pause it again, and the
-  # job's next brief is tomorrow morning's (Trap 13). A plan that isn't paused keeps its started_at.
+  # job's next brief is tomorrow morning's (Trap 13). A plan that isn't paused keeps its started_at. True when it started
+  # it again.
   def resume
     user.with_lock do
       if reload_pausing
         pausing.destroy!
         reset_pausing
         update!(started_at: Time.current)
+      else
+        false
       end
     end
   end
@@ -91,6 +94,11 @@ class DailyBrief::Plan < ApplicationRecord
   # reading (frame brief-plan.png).
   def topic_areas
     focus_areas.reject(&:appreciation?).partition(&:quality?).flatten
+  end
+
+  # A day's dialog has a box for every focus area (the story, #302): Your week's columns, then appreciation.
+  def day_areas
+    topic_areas + focus_areas.select(&:appreciation?)
   end
 
   # The starter's focus areas in order, then a row per weekday, each topic keyed by the id of the focus area it's for.

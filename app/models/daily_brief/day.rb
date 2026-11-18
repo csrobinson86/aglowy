@@ -17,10 +17,16 @@ class DailyBrief::Day < ApplicationRecord
   validate :topics_short
   validate :topics_for_own_focus_areas
 
-  # Saves what the day's dialog sent, or keeps it unsaved with the reasons. Under the day's lock, the one a focus area
-  # takes to take its topics off, so a topic for a focus area deleted at the same time is either refused or taken off.
+  # Saves what the day's dialog sent, or keeps it unsaved with the reasons. The topics sent change only their own focus
+  # areas, a blank one taking its topic off, so a dialog opened before a focus area was added keeps that area's topic.
+  # Under the day's lock, the one a focus area takes to take its topics off, so a topic for a focus area deleted at the
+  # same time is either refused or taken off.
   def revise(attributes)
-    with_lock { update(attributes) }
+    with_lock do
+      attributes = attributes.to_h
+      attributes[:topics] = topics.merge(attributes[:topics]) if attributes.key?(:topics)
+      update(attributes)
+    end
   end
 
   def topic_for(focus_area)

@@ -1,0 +1,7 @@
+<%# Redraws the Banner and the Pause button in place, with focus on whichever is now there, so the sections and Ready by
+    keep what's changed and not yet saved (as days/saved). %>
+<%= turbo_stream.replace "daily_brief_paused", partial: "daily_briefs/plans/paused", locals: { plan: @plan, focus: @plan.paused? } %>
+<%= turbo_stream.replace "daily_brief_pause", partial: "daily_briefs/plans/pause", locals: { plan: @plan, focus: !@plan.paused? } %>
+<%# The notice takes the old one's place, first in the household layout's main, where shared/flash renders it. %>
+<%= turbo_stream.remove_all "main .flash:not(.Banner)" %>
+<%= turbo_stream.prepend_all "main .container-xl", partial: "shared/flash" %>

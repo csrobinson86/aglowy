@@ -35,6 +35,7 @@ class DailyBriefs::Plans::PausesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "destroy starts it again from now, and the plan offers Pause the daily brief" do
+    @plan.update!(started_at: 5.days.ago)
     @plan.pause(reason: "unseen")
     freeze_time
 
@@ -50,6 +51,39 @@ class DailyBriefs::Plans::PausesControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action=?]:not(:has(input[name=_method]))", household_daily_brief_plan_pause_path(household_id: @home) do
       assert_select "button[type=submit]", "Pause the daily brief"
     end
+  end
+
+  test "with Turbo, pausing and starting again redraw the Banner and the Pause button in place, with focus on the one now there" do
+    post household_daily_brief_plan_pause_path(household_id: @home), as: :turbo_stream
+
+    assert_response :success
+    assert @plan.reload.paused?
+    assert_select "turbo-stream[action=replace][target=daily_brief_paused] template .Banner", text: /Your daily brief is paused/ do
+      assert_select "button[type=submit][autofocus]", "Start it again"
+    end
+    assert_select "turbo-stream[action=replace][target=daily_brief_pause] template" do
+      assert_select "button", count: 0
+    end
+    assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: ""
+
+    delete household_daily_brief_plan_pause_path(household_id: @home), as: :turbo_stream
+
+    assert_response :success
+    assert_not @plan.reload.paused?
+    assert_select "turbo-stream[action=replace][target=daily_brief_paused] template .Banner", count: 0
+    assert_select "turbo-stream[action=replace][target=daily_brief_pause] template button[type=submit][autofocus]", "Pause the daily brief"
+    assert_select "turbo-stream[action=prepend][targets='main .container-xl'] template", text: /Your daily brief is on again\./
+  end
+
+  test "Start it again from an older tab, on a plan already running, keeps its start and says nothing about the next brief" do
+    started_at = 2.days.ago.round
+
+    @plan.update!(started_at:)
+    delete household_daily_brief_plan_pause_path(household_id: @home)
+
+    assert_redirected_to household_daily_brief_plan_path(household_id: @home)
+    assert_nil flash[:notice]
+    assert_equal started_at, @plan.reload.started_at
   end
 
   test "a plan paused after seven unseen says why" do
