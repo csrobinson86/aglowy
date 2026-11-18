@@ -523,4 +523,15 @@ class UserTest < ActiveSupport::TestCase
 
     assert users(:eli).may_prepare_parts_with_ai?
   end
+
+  test "may_have_daily_brief? for a head and an adult, not a child, and a child here who is an adult elsewhere" do
+    assert users(:head).may_have_daily_brief?
+    assert users(:spouse).may_have_daily_brief?
+    assert_not users(:eli).may_have_daily_brief?
+    assert_not users(:former).may_have_daily_brief?, "an adult who left has no active seat"
+
+    Membership.create!(household: households(:parents), user: users(:eli), role: :adult)
+
+    assert users(:eli).may_have_daily_brief?
+  end
 end
