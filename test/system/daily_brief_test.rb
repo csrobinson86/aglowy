@@ -219,6 +219,29 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_predicate @brief.writings.sole, :writing?
   end
 
+  test "from Home, Open today's brief lands on the brief" do
+    written_writing
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+
+    within(".daily-brief-home-card") do
+      assert_selector "h2", text: "Your daily brief"
+      assert_text "Only you see this"
+      assert_text THREAD
+      assert_text "Matthew 16:21-23"
+      assert_text "Abraham and Moses"
+    end
+    assert @brief.reload.seen_at
+    assert_turbo_idle
+    assert_accessible
+    capture_screens("brief-home")
+
+    click_on "Open today's brief"
+
+    assert_selector "h1", text: "Daily brief"
+    assert_text "Today's thread"
+  end
+
   private
     # Runs the queued writing's job with moderation stubbed and the saved reply (test/fixtures/files/ai/daily_brief.json)
     # given +thread+, through the real Chat#ask_within_purpose with the provider's connection stubbed.

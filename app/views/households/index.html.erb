@@ -5,7 +5,8 @@
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
   <% @households.each do |household| %>
     <% box.with_row do %>
-      <%= render(Primer::Beta::Link.new(href: household_root_path(household_id: household))) { household.name } %>
+      <%# Not prefetched on hover: Home marks the daily brief seen (docs/design/daily-brief.md, Trap 5). %>
+      <%= render(Primer::Beta::Link.new(href: household_root_path(household_id: household), data: { turbo_prefetch: false })) { household.name } %>
     <% end %>
   <% end %>
 <% end %>

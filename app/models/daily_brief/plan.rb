@@ -97,6 +97,12 @@ class DailyBrief::Plan < ApplicationRecord
     minutes_into(now.in_time_zone(user.calendar_time_zone)) >= ready_at_minutes
   end
 
+  # Today's brief in the person's zone, for their card on Home; none while the plan is paused (docs/design/daily-brief.md,
+  # On Home).
+  def todays_brief
+    user.daily_briefs.find_by(on: user.today) unless paused?
+  end
+
   # Seven briefs in a row the person never saw: the newest seven made since started_at and dated before today, all with
   # no seen_at. Today's own brief never counts, so one already made today is never a reason to pause.
   def gone_unseen?(today = user.today)

@@ -9,7 +9,8 @@
   <%= render(Primer::Beta::NavList.new(aria: { label: }, selected_item_id: selected_item)) do |list| %>
     <% list.with_group do |group| %>
       <% group.with_heading(title: "Household", heading_level: 2) %>
-      <% group.with_item(label: "Home", href: home_path, selected_by_ids: :dashboards) do |item| %>
+      <%# Not prefetched on hover: Home marks the daily brief seen (docs/design/daily-brief.md, Trap 5). %>
+      <% group.with_item(label: "Home", href: home_path, selected_by_ids: :dashboards, content_arguments: { data: { turbo_prefetch: false } }) do |item| %>
         <% item.with_leading_visual_icon(icon: :home) %>
       <% end %>
       <% group.with_item(label: "Calendar", href: calendar_path, selected_by_ids: :calendars) do |item| %>

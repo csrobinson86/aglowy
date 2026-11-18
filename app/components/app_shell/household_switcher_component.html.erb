@@ -9,8 +9,10 @@
     </span>
   <% end %>
 
+  <%# Not prefetched on hover: each opens that household's Home, which marks the daily brief seen (docs/design/daily-brief.md, Trap 5). %>
   <% memberships.each do |other| %>
-    <% menu.with_item(label: other.household.name, href: household_root_path(household_id: other.household_id), active: current?(other), description_scheme: :inline) do |item| %>
+    <% menu.with_item(label: other.household.name, href: household_root_path(household_id: other.household_id), active: current?(other), description_scheme: :inline,
+          content_arguments: { data: { turbo_prefetch: false } }) do |item| %>
       <% item.with_description { other.role.humanize } %>
     <% end %>
   <% end %>

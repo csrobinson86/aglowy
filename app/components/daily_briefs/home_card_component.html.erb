@@ -1,0 +1,27 @@
+<%= render(Primer::Beta::BorderBox.new(mb: 4, classes: "daily-brief-home-card")) do |box| %>
+  <% box.with_header(display: :flex, align_items: :center) do |header| %>
+    <% header.with_title(tag: :h2, flex: 1) { "Your daily brief" } %>
+    <span class="f6 color-fg-muted ml-2">Only you see this</span>
+  <% end %>
+  <% box.with_body do %>
+    <% if thread.present? %>
+      <p class="daily-brief-home-card__thread f3 text-semibold"><%= thread %></p>
+    <% end %>
+    <% if facts.any? %>
+      <dl class="daily-brief-home-card__facts">
+        <% facts.each do |fact| %>
+          <div class="daily-brief-home-card__fact">
+            <dt class="daily-brief-home-card__label"><%= fact.label %></dt>
+            <dd class="daily-brief-home-card__value"><%= fact.value %></dd>
+          </div>
+        <% end %>
+      </dl>
+    <% end %>
+    <div class="d-flex flex-column flex-md-row flex-md-items-center">
+      <%= render(Primer::Beta::Button.new(tag: :a, href:, block: true, classes: "width-md-auto flex-shrink-0")) { "Open today's brief" } %>
+      <% if note %>
+        <p class="f6 color-fg-muted mt-2 mt-md-0 ml-md-3 mb-0"><%= note %></p>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

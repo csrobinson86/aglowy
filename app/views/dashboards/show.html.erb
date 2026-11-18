@@ -16,6 +16,13 @@
   <% end %>
 <% end %>
 
+<%# The person's own daily brief, first (docs/design/daily-brief.md, On Home). Kept out of Turbo's snapshot cache, as
+    the brief's page is, so Back after a sign-out and another person's sign-in can't show it. %>
+<% if @daily_brief %>
+  <% turbo_exempts_page_from_cache %>
+  <%= render DailyBriefs::HomeCardComponent.new(brief: @daily_brief, href: household_daily_brief_path) %>
+<% end %>
+
 <% if @todays_meeting %>
   <%= render "dashboards/todays_meeting", meeting: @todays_meeting, meeting_helper: meeting_helper? %>
 <% end %>

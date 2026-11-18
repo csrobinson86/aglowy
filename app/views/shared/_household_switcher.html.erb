@@ -4,7 +4,8 @@
   <% dropdown.with_button(size: :small, aria_label_closed: "Switch household", aria_label_open: "Close household menu") { "Switch household" } %>
   <% dropdown.with_menu(direction:) do |menu| %>
     <% user.active_households.order(:name).each do |household| %>
-      <% menu.with_item(tag: :a, href: household_root_path(household_id: household)) { household.name } %>
+      <%# Not prefetched on hover: Home marks the daily brief seen (docs/design/daily-brief.md, Trap 5). %>
+      <% menu.with_item(tag: :a, href: household_root_path(household_id: household), data: { turbo_prefetch: false }) { household.name } %>
     <% end %>
     <% menu.with_item(divider: true) %>
     <% menu.with_item(tag: :a, href: new_household_path(household_id: nil)) { "Create a household" } %>
