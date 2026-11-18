@@ -1,8 +1,13 @@
 require "application_system_test_case"
 
-# Today's brief, from the plan alone (docs/design/daily-brief.md, The brief; frames brief-base.png without its Banner, and
-# phone-brief.png). Nothing here calls an AI provider: the brief has no writing yet.
+# Today's brief, from the plan alone or written by AI (docs/design/daily-brief.md, The brief; frames brief-today.png,
+# brief-base.png and phone-brief.png), with Another angle, Write it with AI, Turn on AI drafts and Stop. The test queue
+# adapter only enqueues a writing's job; write_brief runs it here with the AI stubbed, so nothing calls an AI provider.
 class DailyBriefSystemTest < ApplicationSystemTestCase
+  include ActiveJob::TestHelper
+
+  THREAD = "Patience is letting Jehovah's timing be Jehovah's timing, instead of pushing for a faster, easier one of my own.".freeze
+
   # Tuesday 17 November 2026, 9:00 AM in Hannah's zone, so midnight can't fall between making the brief and opening it,
   # and the screenshots show the same weekday's plan every run.
   setup do
@@ -91,7 +96,8 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
       assert_text "Written by AI"
       assert_link "What's sent"
     end
-    assert_no_button "Another angle"
+    assert_button "Another angle"
+    assert_text "2 left today"
     assert_turbo_idle
     assert_accessible
     capture_screens("brief-written")
@@ -136,7 +142,99 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_no_selector ".Banner"
   end
 
+  test "ask for another angle, watch it being written, and see the new one" do
+    written_writing
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+
+    click_on "Another angle"
+
+    assert_selector "h2", text: "Writing with AI"
+    assert_selector "li", text: "Searching jw.org and wol.jw.org"
+    assert_button "Stop"
+    assert_selector "turbo-cable-stream-source[connected]", visible: :all
+    assert_accessible
+    capture_screens("brief-writing")
+
+    write_brief(thread: "Waiting on Jehovah is trusting that his timing is kinder than mine.")
+
+    assert_text "Waiting on Jehovah is trusting that his timing is kinder than mine."
+    assert_no_text THREAD
+    assert_no_selector "h2", text: "Writing with AI"
+    assert_text "1 left today"
+    assert_accessible
+  end
+
+  test "at 3 used today the button is gone, and the page says No more today" do
+    written_writing
+    2.times { Ai::Use.create!(user: users(:head), purpose: "daily_brief") }
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+
+    assert_text THREAD
+    assert_no_button "Another angle"
+    assert_text "No more today"
+    assert_accessible
+    capture_screens("brief-limit", scroll_to: "#daily-brief-faith")
+  end
+
+  test "a brief with no writing has Write it with AI, and Stop ends it with the parts from the plan" do
+    users(:head).accept_ai_terms(understood: "1")
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+
+    click_on "Write it with AI"
+
+    assert_selector "h2", text: "Writing with AI"
+    assert_predicate @brief.writings.sole, :writing?
+
+    click_on "Stop"
+
+    assert_selector ".Banner", text: "Writing today's brief was stopped."
+    assert_button "Try again"
+    assert_predicate @brief.writings.sole, :stopped?
+    assert_accessible
+  end
+
+  test "accept the AI terms from the brief, and today's writing starts" do
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+    assert_no_button "Write it with AI"
+
+    click_on "Turn on AI drafts"
+    within("dialog") do
+      assert_text "What's sent"
+      check "I understand how AI drafts work"
+      assert_accessible
+      capture_screens("brief-ai-terms")
+      click_on "Turn on AI drafts"
+    end
+
+    assert_selector "h2", text: "Writing with AI"
+    assert users(:head).accepted_ai_terms?
+    assert_predicate @brief.writings.sole, :writing?
+  end
+
   private
+    # Runs the queued writing's job with moderation stubbed and the saved reply (test/fixtures/files/ai/daily_brief.json)
+    # given +thread+, through the real Chat#ask_within_purpose with the provider's connection stubbed.
+    def write_brief(thread:)
+      writing = DailyBrief::Writing.writing.sole
+      ask_for_real = writing.chat.method(:ask_within_purpose)
+      body = JSON.parse(file_fixture("ai/daily_brief.json").read.sub(THREAD, thread))
+      ask = lambda do |text, stream:|
+        stream.call(RubyLLM::Chunk.new(role: :assistant, content: "{"))
+        response = Faraday::Response.new(Faraday::Env.from(status: 200, body: body))
+        writing.chat.to_llm.provider.connection.stub(:post, ->(*, **) { response }) { ask_for_real.call(text) }
+      end
+
+      Ai::Moderation.stub(:flagged?, false) do
+        writing.chat.stub(:ask_within_purpose, ask) do
+          DailyBrief::Writing.stub(:find_by, writing) { perform_enqueued_jobs }
+        end
+      end
+    end
+
     # The saved reply's fields and pages (test/fixtures/files/ai/daily_brief.json), as the checks keep them.
     def written_writing
       users(:head).accept_ai_terms(understood: "1")

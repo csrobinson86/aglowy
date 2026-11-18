@@ -21,6 +21,21 @@ class Ai::PurgeExpiredChatsJobTest < ActiveJob::TestCase
     assert_not FamilyStudy::Draft.exists?(draft.id)
   end
 
+  test "a daily_brief chat 61 days old goes and takes its writing; one 59 days old stays" do
+    users(:head).update!(time_zone: "Central Time (US & Canada)")
+    travel_to(70.days.ago) { DailyBrief::Plan.start(users(:head), starter: "basics") }
+    old, recent = [ 61, 59 ].map do |days|
+      travel_to(days.days.ago) { daily_brief_writing(DailyBrief.for(users(:head)), status: "written", result: { "thread" => "Kept a while." }) }
+    end
+
+    Ai::PurgeExpiredChatsJob.perform_now
+
+    assert_not Chat.exists?(old.chat_id)
+    assert_not DailyBrief::Writing.exists?(old.id)
+    assert Chat.exists?(recent.chat_id)
+    assert DailyBrief::Writing.exists?(recent.id)
+  end
+
   private
     def chat_created(at)
       travel_to(at) do

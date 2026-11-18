@@ -211,6 +211,69 @@ class DailyBrief::WritingTest < ActiveSupport::TestCase
     assert_nil @writing.result
   end
 
+  test "a stopped writing keeps its use and counts" do
+    assert @writing.stop
+
+    assert_predicate @writing, :stopped?
+    assert Ai::Use.exists?(daily_brief_writing_id: @writing.id)
+    assert_equal 2, @user.daily_brief_writings_left_today
+  end
+
+  test "Stop on one already failed changes nothing" do
+    @writing.update!(status: "failed")
+    @writing.use.destroy!
+
+    assert_not @writing.stop
+
+    assert_predicate @writing.reload, :failed?
+    assert_equal 3, @user.daily_brief_writings_left_today
+  end
+
+  test "the brief's writing is the newest written one" do
+    @writing.update!(status: "written", result: { "thread" => "First." })
+    newer = travel(1.minute) { daily_brief_writing(@brief, status: "written", result: { "thread" => "Another angle." }) }
+    travel(2.minutes) { daily_brief_writing(@brief, status: "failed") }
+
+    assert_equal newer, @brief.reload.writing
+  end
+
+  test "progress lines go to the writing's own stream, never its text: writing at the first chunk, checking once the reply is in, then a refresh" do
+    ask = lambda do |*, stream:, **|
+      stream.call(RubyLLM::Chunk.new(role: :assistant, content: "{\"thread\": \"Patience"))
+      stream.call(RubyLLM::Chunk.new(role: :assistant, content: " is..."))
+      saved_reply
+    end
+
+    broadcasts = capture_turbo_stream_broadcasts(@writing) { write(ask) }
+
+    assert_equal %w[ update update refresh ], broadcasts.map { it["action"] }
+    assert_match "Writing the brief", broadcasts.first.text
+    assert_match "Checking scriptures, links and wording", broadcasts.second.text
+    assert_no_match "Patience", broadcasts.map(&:to_html).join
+  end
+
+  test "a finished job after Stop broadcasts no refresh" do
+    broadcasts = capture_turbo_stream_broadcasts(@writing) do
+      write(->(*, **) { @writing.stop
+                        saved_reply })
+    end
+
+    assert_not_includes broadcasts.map { it["action"] }, "refresh"
+  end
+
+  test "Stop while the reply streams ends the request there, and nothing is broadcast but the progress" do
+    ask = lambda do |*, stream:, **|
+      @writing.stop
+      stream.call(RubyLLM::Chunk.new(role: :assistant, content: "{\"thread\""))
+      flunk "the request went on after Stop"
+    end
+
+    write(ask)
+
+    assert_predicate @writing.reload, :stopped?
+    assert Ai::Use.exists?(daily_brief_writing_id: @writing.id)
+  end
+
   test "a writing already finished isn't written again" do
     @writing.update!(status: "written", result: { "thread" => "Kept." })
 
