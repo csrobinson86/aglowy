@@ -80,6 +80,29 @@ class MeetingPartsTest < ApplicationSystemTestCase
     assert_no_text "Why we use God's name"
   end
 
+  test "saving the details keeps preparation and counsel typed but not yet saved" do
+    visit household_meeting_part_url(household_id: households(:home), id: meeting_parts(:head_conversation))
+
+    editable = find("#{EDITOR} [contenteditable='true']")
+    editable.click
+    editable.send_keys(END_OF_TEXT, " Not saved yet.")
+    fill_in "Counsel, and what to work on next", with: "Typed, not saved."
+
+    click_on "Edit"
+    wait_for_dialog
+    within("dialog[open]") do
+      fill_in "Assistant (optional)", with: "Ana Ortiz"
+      click_on "Save part"
+    end
+
+    assert_text "Part saved."
+    assert_no_selector "dialog[open]"
+    assert_text "Ana Ortiz"
+    assert_selector EDITOR, text: "Not saved yet."
+    assert_field "Counsel, and what to work on next", with: "Typed, not saved."
+    assert_accessible
+  end
+
   test "a child opens their own part to prepare it" do
     sign_in identities(:eli)
     visit household_meeting_part_url(household_id: households(:home), id: meeting_parts(:eli_conversation))

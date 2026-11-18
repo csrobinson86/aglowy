@@ -25,7 +25,7 @@ class MeetingPartsController < ApplicationController
     authorize @meeting_part
 
     if @meeting_part.save
-      close_dialog_and_refresh "Part added."
+      close_dialog "Part added.", refresh: true
     else
       render :new, status: :unprocessable_content
     end
@@ -38,13 +38,14 @@ class MeetingPartsController < ApplicationController
   end
 
   # References typed in the preparation are linked, as on every save. A refused save shows again what sent it: the
-  # dialog, or the part's page.
+  # dialog, or the part's page. Saved details redraw only the part, so the preparation and counsel on the page behind the
+  # dialog keep what's typed and not yet saved.
   def update
     @meeting_part.assign_attributes(meeting_part_params)
     @meeting_part.link_scriptures
 
     if @meeting_part.save
-      close_dialog_and_refresh "Part saved."
+      close_dialog "Part saved.", refresh: !details_sent?
     else
       render details_sent? ? :edit : :show, status: :unprocessable_content
     end
@@ -70,13 +71,20 @@ class MeetingPartsController < ApplicationController
       params[:meeting_part].key?(:kind)
     end
 
-    # Empties the dialog's frame, which closes it, then refreshes the page behind it, which shows the notice. Without
-    # Turbo, it goes to the part.
-    def close_dialog_and_refresh(notice)
-      flash[:notice] = notice
+    # Empties the dialog's frame, which closes it, then refreshes the page behind it, which shows the notice, or redraws
+    # the part and shows the notice in place. Without Turbo, it goes to the part.
+    def close_dialog(notice, refresh:)
       respond_to do |format|
-        format.turbo_stream { render :saved }
-        format.html { redirect_to household_meeting_part_path(id: @meeting_part), status: :see_other }
+        format.turbo_stream do
+          if refresh
+            flash[:notice] = notice
+            render :saved
+          else
+            flash.now[:notice] = notice
+            render :details_saved
+          end
+        end
+        format.html { redirect_to household_meeting_part_path(id: @meeting_part), notice:, status: :see_other }
       end
     end
 end

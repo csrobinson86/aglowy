@@ -175,14 +175,40 @@ class MeetingPartsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "update saves the details from the dialog" do
+  test "update saves the details from the dialog and redraws only the part, keeping the page's unsaved preparation" do
     sign_in identities(:head)
 
     patch household_meeting_part_path(household_id: @home, id: @part), params: { meeting_part: part_params(setting: "") }, as: :turbo_stream
 
-    assert_turbo_stream action: :refresh
+    assert_turbo_stream action: :update, target: "meeting_part_dialog"
+    assert_turbo_stream action: :replace, target: "meeting-part-summary" do
+      assert_select "h1", text: /Following Up/
+    end
+    assert_turbo_stream action: :update, targets: "head > title" do
+      assert_select "template", text: "Following Up · #{@home.name} · Aglowy"
+    end
+    assert_turbo_stream action: :prepend, targets: "main .container-xl" do
+      assert_select ".flash", text: /Part saved\./
+    end
+    assert_no_match "turbo-stream action=\"refresh\"", response.body
     assert_equal [ "following_up", 4, nil ], @part.reload.then { [ it.kind, it.minutes, it.setting ] }
+  end
+
+  test "update saves the preparation and counsel from the page and refreshes it" do
+    sign_in identities(:head)
+
+    patch household_meeting_part_path(household_id: @home, id: @part), params: { meeting_part: { counsel: "Warmer close next time." } }, as: :turbo_stream
+
+    assert_turbo_stream action: :refresh
     assert_equal "Part saved.", flash[:notice]
+  end
+
+  test "the preparation is filtered from the logs" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter("meeting_part" => { "preparation" => "<p>What I'll say</p>", "kind" => "talk" })
+
+    assert_equal({ "preparation" => "[FILTERED]", "kind" => "talk" }, filtered["meeting_part"])
   end
 
   test "update saves the preparation, with its references linked, and the counsel together" do
