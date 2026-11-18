@@ -624,7 +624,90 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_equal first, brief.reload.seen_at
   end
 
+  # Today's thought, a brief shared with the household, on the other members' Home on its day only
+  # (docs/design/daily-brief.md, For the children, and sharing; Traps 5 and 8). Tuesday 17 November 2026.
+  test "another member and a child see a shared brief's card today, and seeing it leaves seen_at nil" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    brief = share_written_brief(users(:head), households(:home))
+
+    [ identities(:spouse), identities(:eli) ].each do |identity|
+      sign_in identity
+      get household_root_path(household_id: households(:home))
+
+      assert_select ".shared-thought", count: 1 do
+        assert_select "h2", "Today's thought"
+        assert_select ".Label", "Shared by Hannah Head"
+        assert_select ".shared-thought__thread", "A thread for the family."
+      end
+    end
+    assert_nil brief.reload.seen_at
+  end
+
+  test "no shared card the day after" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    share_written_brief(users(:head), households(:home))
+    travel 1.day
+    sign_in identities(:spouse)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select ".shared-thought", count: 0
+  end
+
+  test "no shared card in another household" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    share_written_brief(users(:head), households(:home))
+    sign_in identities(:grandparent)
+
+    get household_root_path(household_id: households(:parents))
+
+    assert_response :success
+    assert_select ".shared-thought", count: 0
+  end
+
+  test "no shared card after sharing stops" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    brief = share_written_brief(users(:head), households(:home))
+    brief.stop_sharing_with(households(:home))
+    sign_in identities(:spouse)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".shared-thought", count: 0
+  end
+
+  test "no shared card for a brief with no written writing" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    brief = share_written_brief(users(:head), households(:home))
+    brief.writings.update_all(status: "failed")
+    sign_in identities(:spouse)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".shared-thought", count: 0
+  end
+
+  test "the owner doesn't get a second card for their own shared brief" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    share_written_brief(users(:head), households(:home))
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".daily-brief-home-card", count: 1
+    assert_select ".shared-thought", count: 0
+  end
+
   private
+    # Today's brief for +user+, written, and shared with +household+.
+    def share_written_brief(user, household)
+      start_daily_brief(user).tap do |brief|
+        daily_brief_writing(brief, status: "written", result: { "thread" => "A thread for the family." })
+        brief.share_with(household)
+      end
+    end
+
     # Midweek on Thursday at 7:00 PM, weekend on Sunday at 10:00 AM.
     def set_meeting_times
       households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
