@@ -1,8 +1,8 @@
 <%# locals: (brief:, writing:) -%>
 <%# A brief as Keep in Notes keeps it (DailyBrief#keep_as_note; docs/design/daily-brief.md, Keep in Notes, and print):
-    the thread, the sections the page shows (brief_sections), for the children, the evening questions and the pages it
-    used. Every field is escaped here, never the AI's own HTML (Trap 11), and each section's references are scripture
-    links; keep_as_note links any others in the text. %>
+    the thread, the sections the page shows (brief_sections) with a linked goal's line as it stands when kept, for the
+    children, the evening questions and the pages it used. Every field is escaped here, never the AI's own HTML
+    (Trap 11), and each section's references are scripture links; keep_as_note links any others in the text. %>
 <% if (thread = writing&.section(:thread)).present? %>
   <h2>Today's thread</h2>
   <p><%= thread %></p>
@@ -13,6 +13,7 @@
   <% if section.link %><p><%= link_to section.link.text, section.link.href %></p><% end %>
   <% section.rows.each do |row| %>
     <p><strong><%= row.label %>:</strong> <%= row.text %> <%= safe_join(row.references.map { scripture_attachment(it) }, "; ") %></p>
+    <% if row.note %><p><em><%= row.note %></em></p><% end %>
   <% end %>
 <% end %>
 <% if brief.section?(:children) && (children = writing&.section(:children)&.compact_blank.presence) %>

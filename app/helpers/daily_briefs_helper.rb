@@ -105,25 +105,28 @@ module DailyBriefsHelper
     end
   end
 
+  # A linked goal goes under the section's last row, its thing to do today.
   def quality_section(brief, area, quality)
+    note = linked_goal_note(brief, area)
     if quality
       DailyBriefs::SectionComponent.new(kicker: area.name, title: quality["name"] || area.name, id: "daily-brief-quality", rows: [
         brief_row("What it is", quality["what"], brief_references(quality["what_scripture"])),
-        brief_row("How Jesus showed it", quality["jesus"], brief_references(quality["jesus_scripture"])), brief_row("One way today", quality["today"]) ])
+        brief_row("How Jesus showed it", quality["jesus"], brief_references(quality["jesus_scripture"])), brief_row("One way today", quality["today"], note:) ])
     else
       topic = brief.topic_for(area)
       DailyBriefs::SectionComponent.new(kicker: area.name, title: topic || area.name, id: "daily-brief-quality",
-        rows: [ brief_row("From your week", topic ? "#{brief.day.name}'s qualities." : area.gives, area.scripture_references) ])
+        rows: [ brief_row("From your week", topic ? "#{brief.day.name}'s qualities." : area.gives, area.scripture_references, note:) ])
     end
   end
 
   def appreciation_section(brief, area, appreciation)
+    note = linked_goal_note(brief, area)
     if appreciation
       DailyBriefs::SectionComponent.new(kicker: area.name, title: appreciation["title"] || area.name, id: "daily-brief-appreciation", rows: [
-        brief_row("Seen today", appreciation["seen"], brief_references(appreciation["scripture"])), brief_row("Think about", appreciation["think"]) ])
+        brief_row("Seen today", appreciation["seen"], brief_references(appreciation["scripture"])), brief_row("Think about", appreciation["think"], note:) ])
     else
       DailyBriefs::SectionComponent.new(kicker: area.name, title: brief.topic_for(area) || "One thing to thank him for", id: "daily-brief-appreciation",
-        rows: [ brief_row("Think about", "What did I see of him in my reading today?", area.scripture_references) ])
+        rows: [ brief_row("Think about", "What did I see of him in my reading today?", area.scripture_references, note:) ])
     end
   end
 
@@ -132,12 +135,16 @@ module DailyBriefsHelper
   def focus_section(brief, focus)
     DailyBriefs::SectionComponent.new(kicker: "Your focus today", title: focus ? "One thing in each role" : "From your plan", id: "daily-brief-focus",
       rows: brief.role_areas.each_with_index.map { |area, index|
-        note = brief.linked_goals[area.id]&.then { goal_note(it) }
+        note = linked_goal_note(brief, area)
         if (written = focus&.dig(index)&.presence)
           brief_row(area.name, written["action"], brief_references(written["scripture"]), note:)
         else
           brief_row(area.name, (topic = brief.topic_for(area)) ? "#{topic}." : area.gives, area.scripture_references, note:)
         end })
+  end
+
+  def linked_goal_note(brief, area)
+    brief.linked_goals[area.id]&.then { goal_note(it) }
   end
 
   # "Your goal: Qualify as a ministerial servant · next step: Ask an elder where I can help", or the goal alone when every
