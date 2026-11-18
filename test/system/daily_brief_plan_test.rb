@@ -34,11 +34,88 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
       assert_selector "tbody th", text: "Today", count: 1
       assert_text "The brief chooses"
     end
-    assert_text "Ready by 5:00 AM"
+    assert_select "Ready by", selected: "5:00 AM"
     assert_text "What's sent to the AI"
     assert_accessible
     capture_screens("brief-plan")
     capture_screens("brief-plan-sections", scroll_to: "#whats-sent")
+  end
+
+  test "add In the ministry from its chip, edit its scriptures and delete it; then turn off For the children and set 6:00 AM" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+    sign_in identities(:head)
+    visit household_daily_brief_plan_url(household_id: households(:home))
+
+    # Changed and not yet saved: the focus area dialog's saves must leave them as they are.
+    uncheck "For the children"
+    select "6:00 AM", from: "Ready by"
+
+    click_on "In the ministry"
+    wait_for_animations
+    within "dialog[open]" do
+      assert_selector "h1", text: "Add a focus area"
+      assert_field "Name", with: "In the ministry"
+      assert_field "What it gives", with: "One way to prepare for, or share in, the ministry today."
+      assert_field "Scriptures (optional)", with: "Matthew 28:19, 20; 2 Timothy 4:5"
+      assert_text "Sent to the AI as you type it. Leave out names.", count: 2
+      assert_accessible
+      capture_screens("brief-focus-area-new")
+      click_on "Add focus area"
+    end
+
+    # The dialog's gone and the page scrolls again; focus is on the new one's Edit, as the Add chip went with the dialog.
+    assert_no_selector "dialog[open]"
+    assert_no_selector "body.has-modal-disable-scroll"
+    assert_selector "a[aria-label='Edit In the ministry']:focus"
+    within("section[aria-labelledby=focus-areas]") do
+      assert_selector "li", count: 6
+      assert_selector "li:last-child h3", text: "In the ministry"
+      assert_no_link "Add a focus area"
+      assert_text "six focus areas, the most a plan can have"
+    end
+
+    find("a[aria-label='Edit In the ministry']").click
+    within "dialog[open]" do
+      assert_selector "h1", text: "Edit focus area"
+      fill_in "Scriptures (optional)", with: "Matthew 24:14"
+      click_on "Save focus area"
+    end
+    assert_no_selector "dialog[open]"
+    assert_selector "a[aria-label='Edit In the ministry']:focus"
+    within("section[aria-labelledby=focus-areas] li:last-child") { assert_link "Matthew 24:14" }
+
+    find("a[aria-label='Edit In the ministry']").click
+    within("dialog[open]") { click_on "Delete" }
+    wait_for_animations
+    within "dialog[open]", text: "Delete “In the ministry”?" do
+      assert_accessible
+      capture_screens("brief-focus-area-delete")
+      click_on "Delete focus area"
+    end
+    # The page stays where it was, scrolled down to the settings changed above, which it kept; the notice is first in main.
+    assert_no_selector "dialog[open]"
+    assert_no_selector "body.has-modal-disable-scroll"
+    assert_selector "a:focus", text: "Add a focus area"
+    assert_no_checked_field "For the children"
+    assert_select "Ready by", selected: "6:00 AM"
+    scroll_to find("main .flash", visible: :all)
+    assert_selector "main .flash", text: "Focus area deleted."
+    within("section[aria-labelledby=focus-areas]") do
+      assert_selector "li", count: 5
+      assert_no_selector "li h3", text: "In the ministry"
+      assert_link "Add a focus area"
+      assert_link "In the ministry", href: /from=ministry/
+    end
+
+    scroll_to find(:button, "Save plan", visible: :all)
+    click_on "Save plan"
+
+    assert_text "Plan saved. Your next brief follows it."
+    assert_no_checked_field "For the children"
+    assert_checked_field "Evening questions"
+    assert_select "Ready by", selected: "6:00 AM"
+    assert_equal [ %w[ daily_text reading faith_example evening ], 360 ], [ plan.reload.sections, plan.ready_at_minutes ]
+    capture_screens("brief-plan-saved", scroll_to: "#whats-sent")
   end
 
   # Today's row and "The brief chooses" are custom colours, and the week scrolls in its own box on a phone.
@@ -66,4 +143,15 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
   ensure
     page.driver.browser.manage.window.resize_to(1400, 1400)
   end
+
+  private
+    # A Primer Dialog scales up as it opens, and axe reads its colours mid-fade; the delete Dialog opens over the edit
+    # one, so wait for every animation on the page, not only the first Dialog's.
+    def wait_for_animations
+      assert_selector "dialog[open]"
+      page.evaluate_async_script(<<~JS)
+        const done = arguments[arguments.length - 1]
+        Promise.allSettled(document.getAnimations().map(animation => animation.finished)).then(() => done())
+      JS
+    end
 end

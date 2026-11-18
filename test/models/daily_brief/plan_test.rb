@@ -69,7 +69,7 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     plan = DailyBrief::Plan.new(user: users(:head), started_at: Time.current, ready_at_minutes: 315, sections: %w[ reading prayer ])
 
     assert_not plan.valid?
-    assert_equal [ "is not included in the list" ], plan.errors[:ready_at_minutes]
+    assert_equal [ "Choose a time from 4:00 to 8:00 AM, on the half hour" ], plan.errors[:ready_at_minutes]
     assert_equal [ "can only be daily_text, reading, faith_example, children and evening" ], plan.errors[:sections]
   end
 
@@ -103,6 +103,18 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     assert_not DailyBrief::Plan.exists?(plan.id)
     assert_not DailyBrief::FocusArea.exists?(plan_id: plan.id)
     assert_not DailyBrief::Day.exists?(plan_id: plan.id)
+  end
+
+  test "add_focus_area adds one at the end, or returns it unsaved with the reasons" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+
+    area = plan.add_focus_area(kind: "role", name: "At work", gives: "One honest thing.")
+    assert area.persisted?
+    assert_equal 5, area.position
+
+    seventh = plan.add_focus_area(kind: "role", name: "In the ministry", gives: "One way.")
+    assert_not seventh.persisted?
+    assert_equal [ "You can have six focus areas at most" ], seventh.errors[:base]
   end
 
   private

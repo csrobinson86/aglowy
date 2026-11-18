@@ -102,7 +102,7 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
     assert_equal plan, users(:head).reload.daily_brief_plan
   end
 
-  test "show is the plan, read-only: focus areas, the week with today marked, the sections, ready-by in the person's zone and what's sent" do
+  test "show is the plan: focus areas, the week with today marked, the sections, ready-by in the person's zone and what's sent" do
     DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
     sign_in identities(:head)
 
@@ -133,13 +133,92 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
       end
       assert_select "tbody", text: /Today/, count: 1
     end
-    assert_select "section[aria-labelledby=sections] li", count: 5
-    assert_select "section[aria-labelledby=sections]", text: /Evening questions/
-    assert_select "main", text: /Ready by 5:00 AM/
+    assert_select "section[aria-labelledby=focus-areas]" do
+      assert_select "a[href=?][data-turbo-frame=daily_brief_focus_area_dialog]", new_household_daily_brief_plan_focus_area_path(household_id: @home),
+                    text: "Add a focus area"
+      assert_select "a[aria-label='Edit As a husband'][data-turbo-frame=daily_brief_focus_area_dialog]", text: "Edit"
+      assert_select "a[aria-label^='Edit ']", count: 5
+      assert_equal [ "As a wife", "As a mother", "In the ministry", "In the congregation", "At work", "Guard your heart" ],
+                   css_select("a[href*='from=']").map { it.text.strip }
+    end
+    assert_select "turbo-frame#daily_brief_focus_area_dialog"
+    assert_select "form[action=?]", household_daily_brief_plan_path(household_id: @home) do
+      assert_select "input[name=_method][value=patch]"
+      assert_select "section[aria-labelledby=sections] input[type=checkbox][name='daily_brief_plan[sections][]'][checked]", count: 5
+      assert_select "section[aria-labelledby=sections] label", text: "Evening questions"
+      assert_select "select[name='daily_brief_plan[ready_at_minutes]']" do
+        assert_equal [ "4:00 AM", "4:30 AM", "5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM" ],
+                     css_select("option").map(&:text)
+        assert_select "option[selected][value='300']", "5:00 AM"
+      end
+      assert_select "button[type=submit]", "Save plan"
+    end
+    assert_select "label", "Ready by"
     assert_select "main", text: /Central Time \(US & Canada\)/
     assert_select "section[aria-labelledby=whats-sent]", text: /Aglowy adds nothing else/
-    assert_select "main button, main input[type=submit]", count: 0
-    assert_select "main a", text: /\AEdit\z/, count: 0
+  end
+
+  test "update saves the sections and ready-by, and goes back to the plan" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+    sign_in identities(:head)
+
+    patch household_daily_brief_plan_path(household_id: @home),
+          params: { daily_brief_plan: { sections: [ "", "daily_text", "reading", "faith_example", "evening" ], ready_at_minutes: "360" } }
+
+    assert_redirected_to household_daily_brief_plan_path(household_id: @home)
+    assert_equal "Plan saved. Your next brief follows it.", flash[:notice]
+    plan.reload
+    assert_equal %w[ daily_text reading faith_example evening ], plan.sections
+    assert_equal 360, plan.ready_at_minutes
+
+    follow_redirect!
+    assert_select "input[type=checkbox][value=children]:not([checked])"
+    assert_select "option[selected]", "6:00 AM"
+  end
+
+  test "update with every section unticked leaves none" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    sign_in identities(:head)
+
+    patch household_daily_brief_plan_path(household_id: @home), params: { daily_brief_plan: { sections: [ "" ], ready_at_minutes: "300" } }
+
+    assert_redirected_to household_daily_brief_plan_path(household_id: @home)
+    assert_empty plan.reload.sections
+  end
+
+  test "an unknown section is refused with :unprocessable_content" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    sign_in identities(:head)
+
+    patch household_daily_brief_plan_path(household_id: @home),
+          params: { daily_brief_plan: { sections: [ "", "daily_text", "prayer" ], ready_at_minutes: "300" } }
+
+    assert_response :unprocessable_content
+    assert_select "h1", "Your plan"
+    assert_select "main", text: /can only be daily_text, reading, faith_example, children and evening/
+    assert_equal DailyBrief::Plan::SECTIONS, plan.reload.sections
+  end
+
+  test "a time off the half hour is refused with :unprocessable_content" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "basics")
+    sign_in identities(:head)
+
+    [ "315", "510" ].each do |minutes|
+      patch household_daily_brief_plan_path(household_id: @home), params: { daily_brief_plan: { sections: [ "" ], ready_at_minutes: minutes } }
+
+      assert_response :unprocessable_content
+      assert_select "main", text: /Choose a time from 4:00 to 8:00 AM/
+    end
+    assert_equal 300, plan.reload.ready_at_minutes
+    assert_equal DailyBrief::Plan::SECTIONS, plan.sections
+  end
+
+  test "update with no plan is a 404" do
+    sign_in identities(:head)
+
+    patch household_daily_brief_plan_path(household_id: @home), params: { daily_brief_plan: { sections: [ "" ], ready_at_minutes: "300" } }
+
+    assert_response :not_found
   end
 
   test "a child is refused" do
@@ -155,6 +234,9 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to household_root_path(household_id: @home)
 
     get household_daily_brief_plan_path(household_id: @home)
+    assert_redirected_to household_root_path(household_id: @home)
+
+    patch household_daily_brief_plan_path(household_id: @home), params: { daily_brief_plan: { sections: [ "" ], ready_at_minutes: "300" } }
     assert_redirected_to household_root_path(household_id: @home)
   end
 

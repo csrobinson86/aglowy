@@ -1,0 +1,37 @@
+<%# locals: (focus_area:) -%>
+<%# Add a focus area, or edit one with Delete on the left of the footer (docs/design/daily-brief.md, Your plan). Open as
+    soon as Your plan's frame loads it. Delete opens a second Dialog to confirm; deleting takes its topics off the week.
+    Saving empties the frame with both still open, so dialog-removal lets the page scroll again. %>
+<div data-controller="dialog-removal">
+<% dialog_id = "daily-brief-focus-area-dialog" %>
+<% delete_dialog_id = "daily-brief-focus-area-delete-dialog" %>
+<%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: focus_area.new_record? ? "Add a focus area" : "Edit focus area", size: :large, open: true)) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <% focus_area.errors.messages_for(:base).including(focus_area.errors.messages_for(:kind)).each do |message| %>
+      <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) { message } %>
+    <% end %>
+    <%= primer_form_with(model: focus_area,
+          url: focus_area.new_record? ? household_daily_brief_plan_focus_areas_path : household_daily_brief_plan_focus_area_path(id: focus_area)) do |f| %>
+      <%= render DailyBriefs::Plans::FocusAreaForm.new(f, dialog_id:) %>
+    <% end %>
+  <% end %>
+  <% if focus_area.persisted? %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(scheme: :danger, mr: :auto, data: { show_dialog_id: delete_dialog_id })) { "Delete" } %>
+    <% end %>
+  <% end %>
+<% end %>
+<% if focus_area.persisted? %>
+  <%= render(Primer::Alpha::Dialog.new(id: delete_dialog_id, title: "Delete “#{focus_area.name_was}”?")) do |dialog| %>
+    <% dialog.with_body do %>
+      It comes off your plan, and its topics come off your week. Briefs already made keep it.
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: delete_dialog_id })) { "Cancel" } %>
+      <%= primer_form_with(url: household_daily_brief_plan_focus_area_path(id: focus_area), method: :delete) do |f| %>
+        <%= render DailyBriefs::Plans::FocusAreaDeleteForm.new(f) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+</div>

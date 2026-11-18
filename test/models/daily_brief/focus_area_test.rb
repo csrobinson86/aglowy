@@ -80,6 +80,7 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
 
   test "the library holds the eleven ready-made focus areas, each of whose scriptures parse" do
     library = DailyBrief::FocusArea::Library.all
+    @plan.focus_areas.where.not(kind: "role").delete_all # so its quality and appreciation have room
 
     assert_equal [ "As a husband", "As a father", "As a wife", "As a mother", "Reaching out", "In the ministry", "In the congregation",
                    "At work", "Guard your heart", "Qualities to focus on", "Growing appreciation for Jehovah" ], library.map(&:name)
@@ -89,7 +90,59 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
     assert_equal "quality", DailyBrief::FocusArea::Library.find("qualities").kind
   end
 
+  test "destroying one removes its key from every day's topics" do
+    reaching_out = area_named("Reaching out")
+    husband = area_named("As a husband")
+    assert_equal 7, @plan.days.count { it.topics.key?(reaching_out.id) }
+
+    reaching_out.destroy!
+
+    @plan.days.reload.each do |day|
+      assert_not day.topics.key?(reaching_out.id), "#{day.short_name} still has its topic"
+    end
+    assert_equal "Love my wife as my own body", @plan.days.find_by!(wday: 1).topic_for(husband), "other focus areas keep theirs"
+  end
+
+  test "deleting two at once leaves neither's topics, though the second read the week before the first came off" do
+    reaching_out = area_named("Reaching out")
+    husband = DailyBrief::FocusArea.find(area_named("As a husband").id)
+    husband.plan.days.load
+
+    reaching_out.destroy!
+    husband.destroy!
+
+    @plan.days.reload.each do |day|
+      assert_not day.topics.key?(reaching_out.id), "#{day.short_name} has the first one's topic back"
+      assert_not day.topics.key?(husband.id), "#{day.short_name} still has the second one's topic"
+    end
+  end
+
+  test "position is the next free one on create" do
+    area = @plan.focus_areas.create!(kind: "role", name: "At work", gives: "One honest thing.")
+    assert_equal 5, area.position
+
+    @plan.focus_areas.find_by!(position: 2).destroy!
+    assert_equal 6, @plan.focus_areas.create!(kind: "role", name: "In the ministry", gives: "One way.").position
+
+    basics = DailyBrief::Plan.start(users(:spouse), starter: "basics")
+    basics.focus_areas.delete_all
+    assert_equal 0, basics.focus_areas.create!(kind: "role", name: "At work", gives: "One honest thing.").position
+  end
+
+  test "a second quality or appreciation is refused with a reason" do
+    quality = new_area(kind: "quality", name: "Qualities")
+
+    assert_not quality.valid?
+    assert_equal [ "You already have a quality focus area" ], quality.errors[:kind]
+    assert_not new_area(kind: "appreciation").valid?
+    assert @plan.focus_areas.quality.sole.valid?, "the one it has is still valid"
+  end
+
   private
+    def area_named(name)
+      @plan.focus_areas.find { it.name == name }
+    end
+
     def new_area(**attributes)
       @plan.focus_areas.new(position: 6, kind: "role", name: "At work", gives: "One way to show honesty at work today.", **attributes)
     end

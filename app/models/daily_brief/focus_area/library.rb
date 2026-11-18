@@ -34,4 +34,9 @@ class DailyBrief::FocusArea::Library
 
   def self.all = ALL
   def self.find(key) = ALL.find { it.key == key }
+
+  # What a focus area made from it starts with.
+  def attributes
+    { kind:, name:, gives:, scriptures: }
+  end
 end
