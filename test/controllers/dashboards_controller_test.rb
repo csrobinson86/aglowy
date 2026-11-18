@@ -512,6 +512,91 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # The person's own daily brief, first on Home (docs/design/daily-brief.md, On Home; Trap 5). Tuesday 17 November 2026.
+  test "the card shows first, above Today's meeting, for the owner with today's brief" do
+    set_meeting_times
+    travel_to Time.utc(2026, 11, 19, 15)
+    start_daily_brief(users(:head))
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".Subhead + .daily-brief-home-card + .todays-meeting-card"
+    assert_select ".daily-brief-home-card" do
+      assert_select "h2", "Your daily brief"
+      assert_select "a[href=?]", household_daily_brief_path(household_id: households(:home)), "Open today's brief"
+    end
+  end
+
+  test "no card with only yesterday's brief" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    travel_to(1.day.ago) { start_daily_brief(users(:head)) }
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select ".daily-brief-home-card", count: 0
+  end
+
+  test "no card with a paused plan" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    start_daily_brief(users(:head))
+    users(:head).daily_brief_plan.pause(reason: "chosen")
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".daily-brief-home-card", count: 0
+  end
+
+  test "no card with no plan" do
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select ".daily-brief-home-card", count: 0
+  end
+
+  test "no card for a child, even one with a brief" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    brief = start_daily_brief(users(:child))
+    sign_in child_identity
+
+    get household_root_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select ".daily-brief-home-card", count: 0
+    assert_nil brief.reload.seen_at
+  end
+
+  test "another member's Home doesn't have it and never sets seen_at" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    brief = start_daily_brief(users(:head))
+    sign_in identities(:spouse)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_response :success
+    assert_select ".daily-brief-home-card", count: 0
+    assert_nil brief.reload.seen_at
+  end
+
+  test "the owner's Home sets seen_at once" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    brief = start_daily_brief(users(:head))
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+    first = brief.reload.seen_at
+    assert_equal Time.current, first
+
+    travel 1.hour
+    get household_root_path(household_id: households(:home))
+    assert_equal first, brief.reload.seen_at
+  end
+
   private
     # Midweek on Thursday at 7:00 PM, weekend on Sunday at 10:00 AM.
     def set_meeting_times
@@ -575,6 +660,12 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
       counter = ->(*, payload) { count += 1 unless payload[:name].in?(%w[ SCHEMA TRANSACTION ]) }
       ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { get household_root_path(household_id: households(:home)) }
       count
+    end
+
+    # A plan from the husband-and-father starter, started two days ago, and today's brief from it.
+    def start_daily_brief(user)
+      travel_to(2.days.ago) { DailyBrief::Plan.start(user, starter: "husband_and_father") }
+      DailyBrief.for(user)
     end
 
     def child_identity
