@@ -5,9 +5,10 @@ module DailyBriefsHelper
     text.to_s.split(";").filter_map { Bible::Reference.parse(it) }
   end
 
-  # "Verse 21" or "Verses 21-23", for a look-for in the day's reading.
+  # "Verse 21" or "Verses 21-23", for a look-for in the day's reading; "Look for" when it names no verse, as a whole
+  # chapter doesn't.
   def verses_label(text)
-    verses = Bible::Reference.parse(text)&.then { it.to_s.split(":").last } or return "Look for"
+    verses = Bible::Reference.parse(text)&.then { it.to_s.split(":").last if it.first_verse } or return "Look for"
     verses.match?(/\D/) ? "Verses #{verses}" : "Verse #{verses}"
   end
 

@@ -29,12 +29,16 @@ module DailyBrief::Writing::Writable
   BRIEF_SECTIONS = %w[ daily_text reading quality appreciation focus faith ].freeze
 
   # A job the queue refused would leave the writing writing with nothing to write it, using one of the day's requests.
-  # Active Job returns false for its own EnqueueError; Solid Queue raises its own, which it doesn't rescue.
+  # Active Job returns false for its own EnqueueError; Solid Queue raises its own, which it doesn't rescue. Anything
+  # else ends it failed too, and is raised, as in write_now.
   def write_later
     finish "failed" unless DailyBrief::WriteJob.perform_later(id)
   rescue SolidQueue::Job::EnqueueError => error
     Rails.error.report(error)
     finish "failed"
+  rescue
+    finish "failed"
+    raise
   end
 
   def write_now

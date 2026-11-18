@@ -238,6 +238,15 @@ class DailyBrief::WritingTest < ActiveSupport::TestCase
     assert_predicate @writing.reload, :failed?
   end
 
+  test "any other error queueing the job ends the writing failed, gives its use back and is raised" do
+    DailyBrief::WriteJob.stub(:perform_later, ->(*) { raise ArgumentError, "unexpected" }) do
+      assert_raises(ArgumentError) { @writing.write_later }
+    end
+
+    assert_predicate @writing.reload, :failed?
+    assert_not Ai::Use.exists?(daily_brief_writing_id: @writing.id)
+  end
+
   test "the writing and its chat go with the brief, and its use stays" do
     use = @writing.use
 
