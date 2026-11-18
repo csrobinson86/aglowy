@@ -21,6 +21,26 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     end
   end
 
+  test "Daily brief shows first in the Mine group, with the north-star icon, for a head and an adult, not for a child" do
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))
+
+      assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/daily_brief/plan'] svg.octicon-north-star", count: 1
+      mine = page.all("nav[aria-label='Main'] a").map { it.text.strip }
+      assert_equal mine.index("Family goals") + 1, mine.index("Daily brief"), "first in Mine for #{membership}"
+    end
+
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:eli_in_home), selected_item: :dashboards, label: "Main"))
+    assert_no_text "Daily brief"
+    assert_no_selector "svg.octicon-north-star"
+  end
+
+  test "Daily brief is selected on its pages" do
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item: :daily_briefs, label: "Main"))
+
+    assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Daily brief"
+  end
+
   test "Meeting parts shows in Mine after Notes, with the comment-discussion icon, for a head, an adult and a child" do
     %i[ head_in_home spouse_in_home child_in_home eli_in_home ].each do |membership|
       render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))

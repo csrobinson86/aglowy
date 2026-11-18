@@ -139,6 +139,11 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ "wording", "drafted", outline, outline.result ], [ wording.kind, wording.status, wording.revises, wording.revised_result ]
     assert_equal [ "Psalm 37:10, 11" ], wording.result["lines"].pluck("read").compact_blank
 
+    # Sam's daily brief plan, from the husband-and-father starter (11_daily_briefs.rb).
+    plan = user("spouse@example.com").daily_brief_plan
+    assert_equal [ "As a husband", "As a father", "Reaching out", "Qualities to focus on", "Growing appreciation for Jehovah" ], plan.focus_areas.map(&:name)
+    assert_equal 7, plan.days.count
+
     assert_equal 0, Ai::Use.count
   end
 

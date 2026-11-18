@@ -27,6 +27,11 @@
     <% end %>
     <% list.with_group do |group| %>
       <% group.with_heading(title: "Mine", heading_level: 2) %>
+      <% if daily_brief? %>
+        <% group.with_item(label: "Daily brief", href: daily_brief_path, selected_by_ids: :daily_briefs) do |item| %>
+          <% item.with_leading_visual_icon(icon: :"north-star") %>
+        <% end %>
+      <% end %>
       <% group.with_item(label: "Today's meeting", href: todays_meeting_path, selected_by_ids: :todays_meetings) do |item| %>
         <% item.with_leading_visual_icon(icon: :sun) %>
       <% end %>

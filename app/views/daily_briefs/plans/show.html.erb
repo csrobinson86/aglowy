@@ -1,0 +1,64 @@
+<% content_for :title, "Your plan" %>
+
+<%# Your plan (docs/design/daily-brief.md, Your plan; frame brief-plan.png), read-only for now: editing comes in later
+    stories. Today is the person's own, in their zone. %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Your plan" } %>
+  <% subhead.with_description { "What your brief is built from each morning." } %>
+<% end %>
+
+<section aria-labelledby="focus-areas" class="mb-5">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "focus-areas")) { "Focus areas" } %>
+  <p class="color-fg-muted mb-2">Each one gets a short section in every brief, with one thing to do that day.</p>
+  <%= render Primer::Beta::BorderBox.new do |box| %>
+    <% @plan.focus_areas.each do |focus_area| %>
+      <% box.with_row do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 5)) { focus_area.name } %>
+        <p class="color-fg-muted mb-0 wb-break-word"><%= focus_area.gives %></p>
+        <% if focus_area.scripture_references.any? %>
+          <p class="text-small mb-0 mt-1">
+            <%= safe_join(focus_area.scripture_references.map { render "bible/references/reference", reference: it }, "; ") %>
+          </p>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+</section>
+
+<section aria-labelledby="week" class="mb-5">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "week")) { "Your week" } %>
+  <p class="color-fg-muted mb-2">
+    What each day draws on. The brief picks one reading, one quality and one example from the day's row, and chooses for
+    itself where a box is empty.
+  </p>
+  <%= render "daily_briefs/plans/week", plan: @plan, today: Current.user.today %>
+</section>
+
+<div class="d-flex flex-column flex-md-row">
+  <section aria-labelledby="sections" class="flex-1">
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "sections", mb: 2)) { "In every brief" } %>
+    <%= render "daily_briefs/plans/sections", plan: @plan %>
+  </section>
+
+  <div class="flex-1 mt-4 mt-md-0 ml-md-5">
+    <section aria-labelledby="when" class="mb-4">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "when", mb: 2)) { "When" } %>
+      <p class="mb-1">Ready by <strong><%= @plan.ready_by %></strong></p>
+      <p class="text-small color-fg-muted mb-0">
+        In your time zone, <%= Current.user.calendar_time_zone %>.
+        <%= render(Primer::Beta::Link.new(href: household_settings_profile_path, underline: true)) { "Change the zone in Settings" } %>.
+      </p>
+    </section>
+
+    <section aria-labelledby="whats-sent" class="border color-border-done-emphasis rounded-2 p-3">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, color: :done, id: "whats-sent", mb: 1)) { "What's sent to the AI" } %>
+      <p class="mb-2">
+        Your focus areas (the name, what it gives and its scriptures) and today's row of your week, as you typed them. Leave out names.
+      </p>
+      <p class="color-fg-muted mb-0">
+        Aglowy adds nothing else: not your name, your family's names, your notes or the wording of your goals. The AI searches
+        only jw.org and wol.jw.org, and the brief links to what it used.
+      </p>
+    </section>
+  </div>
+</div>
