@@ -103,6 +103,8 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_equal "Matthew 1", DailyBrief.new(plan: { "day" => { "reading" => "Matthew To John" } }).reading_start.to_s
     assert_equal "Matthew 5", DailyBrief.new(plan: { "day" => { "reading" => "Matthew 5 to John" } }).reading_start.to_s
     assert_equal "Psalm 1", DailyBrief.new(plan: { "day" => { "reading" => "Psalms 1-41" } }).reading_start.to_s
+    assert_equal "Matthew 5", DailyBrief.new(plan: { "day" => { "reading" => "Matthew 5:3–12" } }).reading_start.to_s
+    assert_equal "Psalm 23", DailyBrief.new(plan: { "day" => { "reading" => "Psalm 23:1" } }).reading_start.to_s
     assert_nil DailyBrief.new(plan: { "day" => { "reading" => nil } }).reading_start
     assert_nil DailyBrief.new(plan: { "day" => { "reading" => "The gospels" } }).reading_start
   end

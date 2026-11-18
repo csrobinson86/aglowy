@@ -62,10 +62,10 @@ class DailyBrief < ApplicationRecord
     focus_areas.select(&:role?)
   end
 
-  # Where the day's reading starts: the chapter it names, "Matthew 5" for "Matthew 5 to John", or the first chapter of
-  # its first book, "Matthew 1" for "Matthew – John". Nil when the box is empty or doesn't start with a book.
+  # Where the day's reading starts: the chapter it names, "Matthew 5" for "Matthew 5 to John" or "Matthew 5:3–12", or the
+  # first chapter of its first book, "Matthew 1" for "Matthew – John". Nil when the box is empty or doesn't start with a book.
   def reading_start
-    first = day.reading.to_s.split(/[–—,-]| to /i).first
+    first = day.reading.to_s.split(/[–—,-]| to /i).first.to_s.sub(/:.*\z/, "")
     Bible::Reference.parse(first) || Bible::Reference.parse("#{first} 1")
   end
 
