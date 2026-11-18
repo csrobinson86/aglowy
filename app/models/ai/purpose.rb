@@ -34,6 +34,9 @@ class Ai::Purpose
   # The most earlier questions and replies sent with a new one, or nil for the whole chat.
   def context_exchanges = nil
 
+  # How long one request may wait for the provider, tried once, or nil for RubyLLM's settings and its retries.
+  def request_timeout = nil
+
   # The copy check's policy values (safety measure 5), Casey's to tune: as many words in a row shared with a source
   # as make a sentence a copy, and the most words a quotation may hold.
   def copy_overlap_words = 8

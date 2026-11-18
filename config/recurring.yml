@@ -40,6 +40,12 @@ production:
   purge_old_notifications:
     class: Notification::PurgeJob
     schedule: every day at 4:45am
+  prepare_listening_games:
+    class: ListeningGame::PrepareJob
+    schedule: every day at 2am
+  purge_old_listening_games:
+    class: ListeningGame::PurgeJob
+    schedule: every day at 4:45am
   prepare_daily_briefs:
     class: DailyBrief::PrepareJob
     schedule: every 15 minutes

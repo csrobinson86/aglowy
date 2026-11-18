@@ -18,6 +18,12 @@ class Ai::Purpose::ListeningGameTest < ActiveSupport::TestCase
     assert_predicate @purpose.max_output_tokens, :positive?
   end
 
+  test "a request waits at most 5 minutes, well under its claim's 15, where other purposes keep RubyLLM's settings" do
+    assert_equal 5.minutes, @purpose.request_timeout
+    assert ListeningGame::Preparation::HELD_FOR > @purpose.request_timeout * 2
+    assert_nil Ai::Purpose.find("family_study_draft").request_timeout
+  end
+
   test "it searches only the three hosts" do
     assert_equal %w[ www.jw.org jw.org wol.jw.org ], @purpose.allowed_hosts
     assert_equal({ allowed_domains: %w[ www.jw.org jw.org wol.jw.org ], max_uses: 6 }, @purpose.web_search)

@@ -33,9 +33,10 @@ end
 
 # Sharing and user.notify make notifications, and each enqueues its delivery. Seeding sends nothing, so while the seeds
 # run those enqueues are dropped: the notifications still show in the inbox (docs/design/notifications.md, Elsewhere).
+# Turning the helper on asks the AI for this week's listening game; the seeds make that game themselves, and ask nothing.
 unless defined?(SEEDS_DROP_DELIVERIES)
   SEEDS_DROP_DELIVERIES = true
-  Notification::DeliveryJob.before_enqueue { throw :abort if Thread.current[:seeding] }
+  [ Notification::DeliveryJob, ListeningGame::PrepareJob ].each { it.before_enqueue { throw :abort if Thread.current[:seeding] } }
 end
 
 begin
