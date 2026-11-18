@@ -89,6 +89,40 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
     assert_equal "quality", DailyBrief::FocusArea::Library.find("qualities").kind
   end
 
+  test "destroying one removes its key from every day's topics" do
+    reaching_out = @plan.focus_areas.find_by!(name: "Reaching out")
+    husband = @plan.focus_areas.find_by!(name: "As a husband")
+    assert_equal 7, @plan.days.count { it.topics.key?(reaching_out.id) }
+
+    reaching_out.destroy!
+
+    @plan.days.reload.each do |day|
+      assert_not day.topics.key?(reaching_out.id), "#{day.short_name} still has its topic"
+    end
+    assert_equal "Love my wife as my own body", @plan.days.find_by!(wday: 1).topic_for(husband), "other focus areas keep theirs"
+  end
+
+  test "position is the next free one on create" do
+    area = @plan.focus_areas.create!(kind: "role", name: "At work", gives: "One honest thing.")
+    assert_equal 5, area.position
+
+    @plan.focus_areas.find_by!(position: 2).destroy!
+    assert_equal 6, @plan.focus_areas.create!(kind: "role", name: "In the ministry", gives: "One way.").position
+
+    basics = DailyBrief::Plan.start(users(:spouse), starter: "basics")
+    basics.focus_areas.delete_all
+    assert_equal 0, basics.focus_areas.create!(kind: "role", name: "At work", gives: "One honest thing.").position
+  end
+
+  test "a second quality or appreciation is refused with a reason" do
+    quality = new_area(kind: "quality", name: "Qualities")
+
+    assert_not quality.valid?
+    assert_equal [ "You already have a quality focus area" ], quality.errors[:kind]
+    assert_not new_area(kind: "appreciation").valid?
+    assert @plan.focus_areas.find_by!(kind: "quality").valid?, "the one it has is still valid"
+  end
+
   private
     def new_area(**attributes)
       @plan.focus_areas.new(position: 6, kind: "role", name: "At work", gives: "One way to show honesty at work today.", **attributes)

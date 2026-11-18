@@ -41,6 +41,66 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     capture_screens("brief-plan-sections", scroll_to: "#whats-sent")
   end
 
+  test "add In the ministry from its chip, edit its scriptures and delete it; then turn off For the children and set 6:00 AM" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+    sign_in identities(:head)
+    visit household_daily_brief_plan_url(household_id: households(:home))
+
+    click_on "In the ministry"
+    within "dialog[open]" do
+      assert_selector "h1", text: "Add a focus area"
+      assert_field "Name", with: "In the ministry"
+      assert_field "What it gives", with: "One way to prepare for, or share in, the ministry today."
+      assert_field "Scriptures (optional)", with: "Matthew 28:19, 20; 2 Timothy 4:5"
+      assert_text "Sent to the AI as you type it. Leave out names.", count: 2
+      assert_accessible
+      capture_screens("brief-focus-area-new")
+      click_on "Add focus area"
+    end
+
+    assert_no_selector "dialog[open]"
+    within("section[aria-labelledby=focus-areas]") do
+      assert_selector "li", count: 6
+      assert_selector "li:last-child h3", text: "In the ministry"
+      assert_no_link "Add a focus area"
+      assert_text "six focus areas, the most a plan can have"
+    end
+
+    click_on "Edit In the ministry"
+    within "dialog[open]" do
+      assert_selector "h1", text: "Edit focus area"
+      fill_in "Scriptures (optional)", with: "Matthew 24:14"
+      click_on "Save focus area"
+    end
+    assert_no_selector "dialog[open]"
+    within("section[aria-labelledby=focus-areas] li:last-child") { assert_link "Matthew 24:14" }
+
+    click_on "Edit In the ministry"
+    within("dialog[open]") { click_on "Delete" }
+    within "dialog[open]", text: "Delete “In the ministry”?" do
+      assert_accessible
+      capture_screens("brief-focus-area-delete")
+      click_on "Delete focus area"
+    end
+    assert_text "Focus area deleted."
+    within("section[aria-labelledby=focus-areas]") do
+      assert_selector "li", count: 5
+      assert_no_text "In the ministry"
+      assert_link "Add a focus area"
+    end
+
+    uncheck "For the children"
+    select "6:00 AM", from: "Ready by"
+    click_on "Save plan"
+
+    assert_text "Plan saved. Your next brief follows it."
+    assert_no_checked_field "For the children"
+    assert_checked_field "Evening questions"
+    assert_select "Ready by", selected: "6:00 AM"
+    assert_equal [ %w[ daily_text reading faith_example evening ], 360 ], [ plan.reload.sections, plan.ready_at_minutes ]
+    capture_screens("brief-plan-saved", scroll_to: "#whats-sent")
+  end
+
   # Today's row and "The brief chooses" are custom colours, and the week scrolls in its own box on a phone.
   test "both pages pass assert_accessible in light and dark, at desktop and phone width" do
     sign_in identities(:head)
