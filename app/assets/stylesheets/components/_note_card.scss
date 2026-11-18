@@ -1,4 +1,5 @@
 @use "sass:map";
+@use "note_colors" as *;
 @use "@primer/css/support/variables/layout" as primer;
 
 // One note on Notes' list (frame notes.png): the title, three lines of the body (one below md, frame
@@ -20,13 +21,15 @@
   border-radius: var(--borderRadius-medium);
 }
 
-// A modifier per color, from Primer's display color primitives, so they follow light and dark mode
-// (docs/design/notes.md, Colors). none keeps the defaults above.
-@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+// A modifier per note color (components/_note_colors.scss; docs/design/notes.md, Colors). none keeps the defaults
+// above. Over a color, muted text is drawn in the default text color: in dark mode the color is lighter than the
+// theme's background, and muted text on it falls below 4.5:1.
+@each $color in $note-colors {
   .note-card--#{$color} {
-    --note-card-bgColor: var(--display-#{$color}-bgColor-muted);
-    --note-card-borderColor: var(--display-#{$color}-borderColor-muted);
-    --note-card-barColor: var(--display-#{$color}-borderColor-emphasis);
+    --fgColor-muted: var(--fgColor-default);
+    --note-card-bgColor: var(--note-color-#{$color});
+    --note-card-borderColor: var(--note-color-#{$color}-strong);
+    --note-card-barColor: var(--note-color-#{$color}-strong);
   }
 }
 

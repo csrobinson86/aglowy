@@ -137,7 +137,30 @@ class PersonalNoteTest < ActiveSupport::TestCase
     end
   end
 
-  test "color is none by default, and one of the seven" do
+  test "the ten colors, in order: none, then Casey's nine; the filter has all but none" do
+    assert_equal %w[ none yellow orange red pink purple blue green brown gray ], PersonalNote.colors.keys
+    assert_equal %w[ yellow orange red pink purple blue green brown gray ], PersonalNote::FILTER_COLORS
+  end
+
+  test "red, brown and gray save" do
+    note = personal_notes(:head_family_worship)
+
+    %w[ red brown gray ].each do |color|
+      note.update!(color:)
+      assert_equal color, note.reload.color
+      assert_equal color.humanize, note.color_name
+    end
+  end
+
+  test "database: red, brown and gray are in the color check" do
+    %w[ red brown gray ].each do |color|
+      PersonalNote.insert!({ user_id: users(:head).id, title: color.humanize, color: })
+    end
+
+    assert_equal %w[ brown gray red ], users(:head).personal_notes.where(title: %w[ Red Brown Gray ]).pluck(:color).sort
+  end
+
+  test "color is none by default, and one of the ten" do
     note = users(:head).personal_notes.new(title: "Untitled")
     assert note.color_none?
 

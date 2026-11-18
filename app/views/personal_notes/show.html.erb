@@ -1,4 +1,7 @@
 <% content_for :title, @personal_note.title_in_database %>
+<%# A color chosen but not saved recolors the card; Turbo's cache would bring it back on Back as if saved, so the page is
+    never cached (docs/design/notes.md, Colors). %>
+<% turbo_exempts_page_from_cache %>
 <% collection = Current.user.collections.find_by(id: @personal_note.collection_id_in_database) %>
 
 <%# The breadcrumb and the Pinned toggle, then the note open for editing, with its scriptures and details beside it (frame note.png), or

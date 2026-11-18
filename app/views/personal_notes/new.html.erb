@@ -1,4 +1,7 @@
 <% content_for :title, "New note" %>
+<%# A color chosen but not saved recolors the card; Turbo's cache would bring it back on Back as if saved, so the page is
+    never cached (docs/design/notes.md, Colors). %>
+<% turbo_exempts_page_from_cache %>
 
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
   <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
@@ -8,11 +11,10 @@
   <% subhead.with_heading(tag: :h1) { "New note" } %>
 <% end %>
 
-<%# Tags come once it's saved, on the note's page: the tag editor adds them to a saved note. %>
+<%# The note card a note's page draws, in the chosen color, so a new note shows its color while it's written and after a
+    refused save. Tags come once it's saved, on the note's page: the tag editor adds them to a saved note. %>
 <div class="container-md ml-0">
-  <%= render(Primer::Beta::BorderBox.new) do |box| %>
-    <% box.with_body do %>
-      <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_notes_path %>
-    <% end %>
-  <% end %>
+  <div class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4">
+    <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_notes_path %>
+  </div>
 </div>

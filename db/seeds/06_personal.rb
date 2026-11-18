@@ -61,7 +61,7 @@ daniel.sources.each { seeded!(head.bookmark(url: it["url"], source: daniel)) }
 
 seed_personal_study(lucia, title: "Brave like Daniel", notes: "<p>Dan 6:22: the angel shut the lions' mouths!</p>")
 
-# Every color at least once, two pinned, references in the bodies. The eighth is a seeded answer saved as a note.
+# Every color at least once, two pinned, references in the bodies. The eleventh is a seeded answer saved as a note.
 [
   { title: "Thoughts on Romans 12", color: "yellow", pin: true, collection: "Bible characters", tags: %w[ faith ],
     body: "<p>Rom 12:11: aglow with the spirit. Keep the routine going even on tired days.</p>" },
@@ -71,7 +71,11 @@ seed_personal_study(lucia, title: "Brave like Daniel", notes: "<p>Dan 6:22: the 
   { title: "Family worship ideas", color: "purple", tags: %w[ family ], body: "<p>Act out 1 Sam 17 with the children.</p>" },
   { title: "Questions to ask at the meeting", color: "pink", body: "<p>What does Matt 5:3 mean by conscious of spiritual need?</p>" },
   { title: "Convention reminders", color: "orange", collection: "Convention 2026", body: "<p>Pack the badge cards. Read Ps 122:1 the night before.</p>" },
-  { title: "Hope in hard times", color: "yellow", tags: %w[ hope courage ], body: "<p>Isa 41:10 again. And Josh 1:9.</p>" }
+  { title: "Hope in hard times", color: "yellow", tags: %w[ hope courage ], body: "<p>Isa 41:10 again. And Josh 1:9.</p>" },
+  { title: "Love in action", color: "red", tags: %w[ family ], body: "<p>1 Cor 13:4-7. Patient first, then kind.</p>" },
+  { title: "Bible characters to read about", color: "brown", collection: "Bible characters",
+    body: "<p>Ruth 1:16, then Esther 4:14.</p>" },
+  { title: "Things to look up later", color: "gray", collection: "Quick thoughts", body: "<p>Who wrote Ps 90? See Ps 90:1.</p>" }
 ].each do |attributes|
   next if head.personal_notes.exists?(title: attributes[:title])
 

@@ -1,5 +1,7 @@
-// A note's color as a dot beside its title, in Home's Pinned notes (frame home-pinned-notes.png). The same primitive
-// as the note card's left bar (docs/design/notes.md, Colors); none is a plain border-colored dot.
+@use "note_colors" as *;
+
+// A note's color as a dot beside its title, in Home's Pinned notes (frame home-pinned-notes.png). The same color as
+// the note card's left bar (components/_note_colors.scss); none is a plain border-colored dot.
 .note-dot {
   display: inline-block;
   width: var(--base-size-12);
@@ -8,8 +10,8 @@
   border-radius: var(--borderRadius-full);
 }
 
-@each $color in "yellow", "green", "blue", "purple", "pink", "orange" {
+@each $color in $note-colors {
   .note-dot--#{$color} {
-    background-color: var(--display-#{$color}-borderColor-emphasis);
+    background-color: var(--note-color-#{$color}-strong);
   }
 }

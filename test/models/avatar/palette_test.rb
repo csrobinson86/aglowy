@@ -3,9 +3,10 @@ require "test_helper"
 # Avatar::Palette (docs/design/avatars.md): the six colors, each drawn from Primer display primitives that exist in the
 # pinned @primer/primitives, in light and in dark.
 class Avatar::PaletteTest < ActiveSupport::TestCase
-  test "the six colors of notes, without none" do
+  # Notes have nine since #313; avatars keep their six, all of them note colors too.
+  test "six colors, each one of notes' too" do
     assert_equal %w[ blue green purple pink orange yellow ], Avatar::Palette::COLORS
-    assert_equal PersonalNote.colors.keys - %w[ none ], Avatar::Palette::COLORS.sort_by { PersonalNote.colors.keys.index(it) }
+    assert_empty Avatar::Palette::COLORS - PersonalNote::FILTER_COLORS
   end
 
   test "each color's circle and letter are Primer primitives, in light and dark" do

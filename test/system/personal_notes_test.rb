@@ -81,7 +81,6 @@ class PersonalNotesTest < ApplicationSystemTestCase
     assert_selector "main .note-card.note-card--yellow", text: "Yellow note"
     assert find_field("Yellow", visible: :all).checked?
     assert_accessible
-    capture_screens("note-colors")
 
     visit household_personal_notes_url(household_id: households(:home))
     assert_selector "main .note-card.note-card--yellow", text: "Ideas for family worship"
@@ -95,7 +94,6 @@ class PersonalNotesTest < ApplicationSystemTestCase
     assert_selector "main .note-card", count: 3
     assert_selector "main .note-card.note-card--green", text: "Questions for my return visit"
     assert_selector "main .note-card.note-card--orange", text: "Daniel 2 image: quick reference"
-    capture_screens("notes-colors")
 
     users(:head).update!(appearance: "dark")
     visit household_personal_notes_url(household_id: households(:home))
@@ -104,6 +102,97 @@ class PersonalNotesTest < ApplicationSystemTestCase
     visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
     assert_selector "main .note-card.note-card--yellow"
     assert_accessible
+  end
+
+  test "on New note, choosing Red recolors the card before any save, and Save note saves it red" do
+    visit new_household_personal_note_url(household_id: households(:home))
+    assert_selector "main .note-card.note-card--none"
+    fill_in "Title", with: "Patience"
+
+    within("fieldset", text: "Color") do
+      assert_selector ".color-picker__chosen", text: "None"
+      find("label[for=personal_note_color_red]").click
+      assert_selector ".color-picker__chosen", text: "Red"
+    end
+    assert_selector "main .note-card.note-card--red"
+    assert_no_selector "main .note-card.note-card--none"
+    assert_equal "rgba(255, 118, 118, 0.3)", background_color("main .note-card")
+    assert_equal "rgb(255, 118, 118)", background_color("label[for=personal_note_color_red]")
+    assert_not users(:head).personal_notes.exists?(title: "Patience")
+    assert_accessible
+    capture_screens("note-new")
+
+    click_on "Save note"
+    assert_text "Note saved."
+    assert_selector "main .note-card.note-card--red", text: "Red note"
+    assert users(:head).personal_notes.find_by!(title: "Patience").color_red?
+  end
+
+  test "on a saved yellow note, choosing Blue recolors the card at once; leaving without saving keeps it yellow" do
+    note = personal_notes(:head_family_worship)
+    note.update!(color: "yellow")
+    visit household_personal_note_url(household_id: households(:home), id: note)
+    assert_selector "main .note-card.note-card--yellow"
+
+    find("label[for=personal_note_color_blue]").click
+    assert_selector "main .note-card.note-card--blue"
+    assert_no_selector "main .note-card.note-card--yellow"
+    within("fieldset", text: "Color") { assert_selector ".color-picker__chosen", text: "Blue" }
+
+    within("nav[aria-label=Breadcrumb]") { click_on "Notes" }
+    assert_selector "h1", text: "Notes"
+    assert note.reload.color_yellow?
+    go_back
+    within("fieldset", text: "Color") { assert_selector ".color-picker__chosen", text: "Yellow" }
+    assert_selector "main .note-card.note-card--yellow"
+
+    visit household_personal_notes_url(household_id: households(:home))
+    click_on "Ideas for family worship"
+    within("fieldset", text: "Color") { assert_selector ".color-picker__chosen", text: "Yellow" }
+    assert_selector "main .note-card.note-card--yellow"
+    assert_no_selector "main .note-card.note-card--blue"
+    assert find_field("Yellow", visible: :all).checked?
+  end
+
+  test "the new colors on the list, the filter, a note's page and Home, light and dark" do
+    personal_notes(:head_return_visit).update!(color: "red")
+    personal_notes(:head_daniel).update!(color: "brown")
+    personal_notes(:head_family_worship).update!(color: "gray")
+    personal_notes(:head_family_worship).pin_to_top
+
+    visit household_personal_notes_url(household_id: households(:home))
+    assert_selector "main .note-card.note-card--gray", text: "Ideas for family worship"
+    assert_equal "rgba(200, 200, 200, 0.3)", background_color("main .note-card--gray")
+    assert_button "Only red notes"
+    assert_button "Only brown notes"
+    assert_button "Only gray notes"
+    assert_equal "rgb(221, 170, 123)", background_color("button[value=brown]")
+    assert_accessible
+    capture_screens("notes-colors")
+
+    click_on "Only gray notes"
+    assert_selector "button[aria-pressed=true]", text: "Only gray notes"
+    assert_selector "main .note-card", count: 1
+    assert_selector "main .note-card", text: "Ideas for family worship"
+
+    visit household_root_url(household_id: households(:home))
+    assert_equal "rgb(200, 200, 200)", background_color(".note-dot--gray")
+
+    %w[ light dark ].each do |appearance|
+      users(:head).update!(appearance:)
+      visit household_personal_notes_url(household_id: households(:home))
+      assert_selector "body[data-color-mode=#{appearance}]"
+      assert_accessible
+      %i[ head_return_visit head_daniel head_family_worship ].each do |name|
+        visit household_personal_note_url(household_id: households(:home), id: personal_notes(name))
+        assert_selector "main .note-card.note-card--#{personal_notes(name).color}"
+        assert_accessible
+      end
+    end
+
+    users(:head).update!(appearance: "auto")
+    visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_return_visit))
+    capture_screens("note-colors")
   end
 
   test "pin a note from its page, see it under Pinned and on Home, and unpin it from its card" do

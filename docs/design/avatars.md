@@ -40,7 +40,7 @@ Everyone who shares an active household with a person sees their avatar. It's th
 
 | Column or attachment | Type | Constraint | Why |
 | --- | --- | --- | --- |
-| `avatar_color` | string | not null, default `blue`; check in (`blue`, `green`, `purple`, `pink`, `orange`, `yellow`) | The initial's color: the same six hues as notes, minus "none" |
+| `avatar_color` | string | not null, default `blue`; check in (`blue`, `green`, `purple`, `pink`, `orange`, `yellow`) | The initial's color: six of the notes' hues (notes also have red, brown and gray, #313) |
 | `avatar` | `has_one_attached` | WebP only, at most 100 KB (validation) | Only ever the image Aglowy made, never the upload |
 
 - **`user.change_avatar(file)`** takes the uploaded file (an `ActionDispatch::Http::UploadedFile`), checks it and builds the avatar before anything is stored:
