@@ -74,7 +74,7 @@ households or roles. The non-negotiables:
 - Primer ViewComponents (`primer_view_components`) as the design system
 - esbuild for JavaScript bundling (Yarn for package management)
 - RubyLLM for AI (OpenAI + Anthropic, streaming)
-- `web-push` and Rails' PWA service worker for phone and browser notifications (`docs/design/notifications.md`)
+- `web-push` and Rails' PWA service worker for phone and browser notifications (`docs/design/notifications.md`), and for offline mode, turned on per device (`docs/design/offline.md`)
 - Solid Queue / Cache / Cable for background jobs, caching, Action Cable (DB-backed, no Redis)
 - Madmin for admin (locked to staff identities)
 - Minitest + Fixtures for testing
