@@ -95,6 +95,7 @@ A person can leave every household they're in (`docs/design/invitations.md`). Th
 | Tags and collections | Rename or delete your tags and collections. Only you see them. |
 | Calendar | Who sees your times, and your phone calendar link. |
 | Notifications | What reaches you, and where. Follows you to every household. |
+| Offline | Only this phone or computer. Turn it on separately on each one. |
 | Household | Rivera household · heads can change this. |
 | Meetings | Rivera household · heads and adults can change this. |
 | Children | Rivera household · heads and adults; AI for a child is heads only. |
@@ -105,7 +106,7 @@ The section boxes are today's boxes, moved as they are: the same Primer `BorderB
 ### The section nav
 
 `Settings::NavComponent`, a Primer `NavList` labelled "Settings" (`aria: { label: "Settings" }`), with two groups:
-- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`)
+- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`), then Offline once OFFLINE-01 adds it (`docs/design/offline.md`). On a phone the same list is the menu above the section
 - the household's name: the sections the person's role allows, in the table's order. No group at all for a child.
 
 The current section is selected (`aria-current="page"`, from Primer). Each section's controller passes its id (`:profile`, `:meetings`, …).

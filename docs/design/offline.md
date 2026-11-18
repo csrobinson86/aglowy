@@ -84,7 +84,7 @@ While Aglowy is open, online and turned on, the `offline` controller asks the se
 
 `app/views/pwa/service-worker.js` gains a `fetch` handler. It does nothing unless `settings.enabled` is true and `settings.identity` is set.
 
-- **Assets** (`/assets/*`, fingerprinted): cache first, in `aglowy-assets`. Kept until a newer file replaces it; the old ones are deleted on update.
+- **Assets** (`/assets/*`, fingerprinted): cache first, in `aglowy-assets`. A page opened online stores its assets as the browser asks for them. A kit page that was never opened has its HTML fetched by an update but not its assets, so **an update also stores every `/assets/` URL named in each page it keeps** (the `href` and `src` values starting `/assets/`, matched in the HTML text) that isn't stored yet. After a deploy, refreshed pages name the new fingerprints and the same update stores them. At the end of an update, assets no kept page names any more are deleted.
 - **Pages** (same-origin GET navigations and Turbo visits that accept `text/html`, no `Turbo-Frame` header): network first, with a 4 second wait before falling back to the kept copy. A response marked `Aglowy-Offline: keep` is stored in `aglowy-pages-<identity>`, with the time it was stored.
 - **A redirect is kept as a redirect.** `todays_meetings#show` redirects to the note when there is one. The worker stores a `Response.redirect` to the final URL under the first URL, and the final page under its own, because a navigation can't be answered with a followed redirect.
 - **Not kept and offline:** a navigation inside `/:household_id/` gets that household's kept `/:household_id/offline` page; any other gets a plain built-in page.
@@ -94,7 +94,7 @@ The worker serves only from the cache of the identity it was last told. The layo
 
 ### The banner
 
-The household and focused layouts put `<meta name="aglowy-rendered-at" content="<ISO time>">` in the head. The `offline` controller shows a Primer `Banner` (`scheme: :warning`) at the top of the page while `navigator.onLine` is false: "You're offline. Showing what this phone saved at 7:02 AM.", with the rendered-at time in the person's own time zone (frame `phone-offline-meeting.png`). It goes away on the `online` event. The header shows an "Offline" Label while it's showing.
+The household and focused layouts put `<meta name="aglowy-rendered-at" content="<ISO time>">` and `<meta name="aglowy-from-kept-copy" content="no">` in the head. When the worker answers a page from the kept copy, it changes that meta's `content` to `yes` in the HTML it serves (one text replacement), so the page knows, even when the phone thinks it's online and the server was simply slow to answer. The `offline` controller shows a Primer `Banner` (`scheme: :warning`) at the top of the page while `navigator.onLine` is false or the page came from the kept copy: "You're offline. Showing what this phone saved at 7:02 AM.", with the rendered-at time in the person's own time zone (frame `phone-offline-meeting.png`). It goes away on the `online` event when the page is fresh, and on the next page that comes from the network, whose meta says `no`. The header shows an "Offline" Label while it's showing.
 
 A link to something that needs the network (jw.org, wol.jw.org) stays a link; it simply fails, as it would anywhere.
 
@@ -107,21 +107,23 @@ A link to something that needs the network (jw.org, wol.jw.org) stays a link; it
 Three forms: a meeting note's edit (`meeting_notes#update`), a note's page (`personal_notes#update`) and New note (`personal_notes#create`). Each gets the `offline-form` Stimulus controller.
 
 - **Offline, the button reads "Save on this phone".** On submit while `navigator.onLine` is false, or when Turbo's request fails for want of a network (`turbo:fetch-request-error`), the controller stops the submit and stores the form's fields in IndexedDB (store `waiting`): `{ id, identity, url, method, fields, title, base, written_at, state: "waiting" }`. Lexxy keeps the body in its hidden input, so `FormData` holds it. "Saved on this phone at 10:41 AM" shows beside the button (frame `phone-offline-note.png`).
-- **One waiting save per form.** Saving the same note again offline replaces its waiting save, keeping the first `base`.
+- **One waiting save per form, each save its own revision.** Each save on the phone gets a new `revision` (a UUID made on the device). Saving the same note again replaces the waiting save's fields and `revision`, keeping its first `base`.
+- **While a save is being sent** its state is `sending`, with the `revision` that was sent. Saving again on the phone meanwhile stores the new fields with a new `revision` and `state: "waiting"`.
 - **The scripture picker needs a connection.** Offline, its button is disabled with "The picker needs a connection. Typed references like Ps. 46:1 still link when the note saves." References typed by hand link on save, as today.
-- **Back online, it saves by itself.** On every page load while online, and on the `online` event, the `offline` controller sends each waiting save, oldest first, with `fetch`: the stored fields, the page's current CSRF token (`X-CSRF-Token`), `Accept: text/html` and the header `Aglowy-Offline-Replay: <id>`.
-  - a redirect or 2xx: the save is deleted, and the page shows "Back online. 2 notes you wrote offline are saved." (frame `phone-offline-back.png`)
+- **Back online, it saves by itself.** On every page load while online, and on the `online` event, the `offline` controller sends each waiting save, oldest first, with `fetch`: the stored fields, the page's current CSRF token (`X-CSRF-Token`), `Accept: text/html` and the header `Aglowy-Offline-Replay: <revision>`.
+- **Saved means the server says so.** A replay that saves answers `200` (not a redirect) with the header `Aglowy-Offline-Saved: <the record's new updated_at>`, and for a new Note, `Location: <its URL>`. `OfflineReplayable` does this for any request with `Aglowy-Offline-Replay`. Anything without that header is not a save, whatever its status: a signed-out replay is redirected to sign in like any other request, `fetch` follows it to the sign-in page, and the save stays `waiting` for when that person signs in again.
+  - `Aglowy-Offline-Saved`: in one IndexedDB transaction, the save is deleted only if it still holds the `revision` that was sent. If it holds a newer one, it stays `waiting` and its `base` becomes the `Aglowy-Offline-Saved` time, because it was written on top of the words just saved. The page shows "Back online. 2 notes you wrote offline are saved." (frame `phone-offline-back.png`)
   - 409: a conflict (below); the save stays, `state: "conflict"`
   - 422: refused, as an online save would be (a blank title); the save stays, `state: "refused"`, and Settings → Offline shows it with "Open", which opens the form with what was written
   - 403 or 404 (the note was deleted, or the person left the household): the save stays, `state: "failed"`, with "Discard" in Settings → Offline
-  - a network error: it stays waiting for the next try
+  - no `Aglowy-Offline-Saved` header (the sign-in page, say), or a network error: it goes back to `waiting` for the next try
 - **A new Note offline** carries a `personal_note[offline_token]`, a UUID made on the device. `personal_notes.offline_token` (uuid, nullable, unique with `user_id`) means a save sent twice, because the first answer was lost, finds the first note instead of making a second. A create with a token that already exists redirects to that note.
 
 ### Changed on another device
 
 Each of the three forms carries `offline_base`, a hidden field holding the record's `updated_at` (microseconds, ISO 8601) when the page was rendered. A new Note's is blank.
 
-When a request has `Aglowy-Offline-Replay` and `offline_base` doesn't match the record's `updated_at`, the controller saves nothing and answers 409. The concern `OfflineReplayable` does this as a `before_action` on `update` in both controllers. Online saves, with no replay header, are unchanged.
+When a request has `Aglowy-Offline-Replay` and `offline_base` doesn't match the record's `updated_at`, the controller saves nothing and answers 409. `OfflineReplayable` does this in `update` in both controllers, under a row lock: `record.with_lock` is taken before `offline_base` is compared and held through the write, so a save from another device can't land between the check and the replay. Online saves, with no replay header, are unchanged.
 
 Opening that note again, the `offline-form` controller finds the conflict for its URL and shows, under the form, "What you wrote offline · 10:41 AM" with the fields as text (escaped; rich text shown as plain paragraphs), "Copy" and "Discard what I wrote offline" (frame `phone-offline-conflict.png`). The page's banner says "This note changed on another device. It was saved there while you were offline, so what you wrote here wasn't saved over it. It's kept below." The server never sees the offline words unless the person pastes them in and saves.
 
@@ -131,6 +133,8 @@ The `offline` controller watches the sign-out forms (sidebar and header, `destro
 
 - **Notes waiting:** online, it sends them first. Any still waiting (offline, refused, a conflict) are named in a Primer `Dialog`: "2 notes haven't saved yet. You wrote them offline, and they're only on this phone. Signing out removes them and everything else Aglowy kept here.", with "Stay signed in" and "Sign out and remove them" (frame `phone-offline-signout.png`).
 - **Then it removes everything** (the `aglowy-pages-*` caches and the `aglowy-offline` database; assets can stay) and submits.
+- **Signing out offline** can't reach the server, so it happens in two halves. The device half happens at once: everything is removed and the page shows "You're signed out on this phone. Aglowy finishes signing you out when you're back online." The server half waits: the controller keeps one record in a fresh `aglowy-offline` database, `{ pending_sign_out: <identity id> }`. The next page that loads online for that identity submits the sign-out straight away, before anything else, and shows the sign-in page. The worker serves nothing for that identity meanwhile. If the browser's storage is cleared, or the phone never comes back online, the session stays signed in on the server until it expires; nothing personal is left on the device either way.
+- **A refresh that's still running** stops writing. Each removal increases a `generation` number stored with the settings. Before every cache write, the worker checks that the identity and `generation` are still the ones the update started with; if either changed, it stops the update and writes nothing more, so it can't recreate a removed cache.
 - **A safety net:** on any page with no `aglowy-identity` meta (signed out) or a different identity, the controller removes the kept pages straight away. Waiting saves from a session that simply expired are kept for 14 days and sent only when the same identity signs in again. Another identity signing in removes them.
 
 ## Elsewhere
@@ -149,8 +153,10 @@ The `offline` controller watches the sign-out forms (sidebar and header, `destro
 6. **The words stay on the device until they save.** No offline text goes to the server except as the normal form submission it would have been. The conflict panel is built on the device from IndexedDB.
 7. **A save sent twice.** A new Note's `offline_token` stops a duplicate. An edit sent twice after a lost answer comes back 409 the second time, and shows a conflict whose offline words are already in the note: harmless, and the person discards it.
 8. **Escape everything shown from IndexedDB.** The conflict panel and Settings' list use `textContent`, never `innerHTML`.
-9. **Turn off means gone.** "Turn off and remove" and sign out delete the caches and the database, and the worker stops answering `fetch` the moment `enabled` is false.
-10. **Testing offline.** Chrome under Selenium can go offline with `page.driver.browser.network_conditions = { offline: true, latency: 0, throughput: 0 }`. Check in the first story that the service worker's own fetches are offline too, and say in its PR what was found.
+9. **Saved means `Aglowy-Offline-Saved`.** Never treat a 2xx or a followed redirect as a save. Delete a waiting save only when it still holds the revision that was sent.
+10. **Lock, then compare.** The `offline_base` check and the replay's write happen inside one `with_lock`.
+11. **Turn off means gone.** "Turn off and remove" and sign out delete the caches and the database, and the worker stops answering `fetch` the moment `enabled` is false.
+12. **Testing offline.** Chrome under Selenium can go offline with `page.driver.browser.network_conditions = { offline: true, latency: 0, throughput: 0 }`. Check in the first story that the service worker's own fetches are offline too, and say in its PR what was found.
 
 ## States each story checks
 
@@ -159,6 +165,8 @@ The `offline` controller watches the sign-out forms (sidebar and header, `destro
 - A kept page, a page not kept, a kept page more than 14 days old, a redirect
 - A note written offline: waiting, saved on return, refused, conflict, deleted meanwhile, sent twice
 - A new Note offline, saved once
-- Sign out with nothing waiting, with notes waiting online, and offline; a session that expired; another person signing in
+- Sign out with nothing waiting, with notes waiting online, and offline (the server half finished on return); a session that expired; another person signing in; a refresh running when the identity changes
+- A save replayed while a newer one is written on the phone; a replay answered with the sign-in page
+- A kit page never opened, then used offline with its assets; the same after a deploy
 - A child turning it on for their own device
 - A refresh of the daily brief page and Home, which records no visit
