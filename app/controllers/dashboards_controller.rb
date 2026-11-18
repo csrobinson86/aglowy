@@ -13,7 +13,8 @@ class DashboardsController < ApplicationController
     @todays_meeting = Current.household.current_or_next_meeting if Current.household.meeting_day?
     @daily_brief = todays_daily_brief
     @shared_thoughts = shared_thoughts
-    no_store if @daily_brief # As on the brief's page: Back can't show it to the next person to sign in.
+    @personal = @daily_brief || @shared_thoughts.any?
+    no_store if @personal # As on the brief's page: Back can't show a brief to the next person to sign in.
   end
 
   private

@@ -688,6 +688,19 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".shared-thought", count: 0
   end
 
+  test "with only another member's shared card, Home is kept out of Turbo's snapshot cache and the browser's" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    share_written_brief(users(:head), households(:home))
+    sign_in identities(:spouse)
+
+    get household_root_path(household_id: households(:home))
+
+    assert_select ".daily-brief-home-card", count: 0
+    assert_select ".shared-thought", count: 1
+    assert_select "meta[name=turbo-cache-control][content=no-cache]"
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
   test "the owner doesn't get a second card for their own shared brief" do
     travel_to Time.utc(2026, 11, 17, 15)
     share_written_brief(users(:head), households(:home))

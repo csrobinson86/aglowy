@@ -16,10 +16,12 @@
   <% end %>
 <% end %>
 
-<%# The person's own daily brief, first (docs/design/daily-brief.md, On Home). Kept out of Turbo's snapshot cache, as
-    the brief's page is, so Back after a sign-out and another person's sign-in can't show it. %>
+<%# Showing the person's own daily brief or another member's shared thought, Home is kept out of Turbo's snapshot
+    cache, as the brief's page is, so Back after a sign-out and another person's sign-in can't show it. %>
+<% turbo_exempts_page_from_cache if @personal %>
+
+<%# The person's own daily brief, first (docs/design/daily-brief.md, On Home). %>
 <% if @daily_brief %>
-  <% turbo_exempts_page_from_cache %>
   <%= render DailyBriefs::HomeCardComponent.new(brief: @daily_brief, href: household_daily_brief_path) %>
 <% end %>
 
