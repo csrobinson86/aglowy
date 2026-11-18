@@ -80,6 +80,16 @@ class DailyBriefs::PlansControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Choose a plan to start from/
   end
 
+  test "a starter sent outside daily_brief_plan[] is a 400 and makes no plan" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { DailyBrief::Plan.count } do
+      post household_daily_brief_plan_path(household_id: @home), params: { daily_brief_plan: "basics" }
+    end
+
+    assert_response :bad_request
+  end
+
   test "create with a plan already started keeps it and opens it" do
     plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
     sign_in identities(:head)

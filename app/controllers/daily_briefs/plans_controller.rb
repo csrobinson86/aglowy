@@ -24,7 +24,7 @@ class DailyBriefs::PlansController < ApplicationController
   def create
     return redirect_to household_daily_brief_plan_path if @plan
 
-    @plan = DailyBrief::Plan.start(Current.user, starter: params.dig(:daily_brief_plan, :starter))
+    @plan = DailyBrief::Plan.start(Current.user, starter: params.expect(daily_brief_plan: [ :starter ])[:starter])
 
     if @plan.persisted?
       redirect_to household_daily_brief_plan_path
