@@ -141,7 +141,7 @@ One AI request and its checked reply, with a chat of its own, as a meeting part 
 
 `DailyBrief::PrepareJob` runs every 15 minutes (`config/recurring.yml`). For each plan that is `due?`:
 
-1. If the person has at least 7 briefs made since `started_at`, and the newest 7 all have no `seen_at`, it makes a `Pause` with `reason: unseen` and stops there. Someone who reads the card on Home each day and never opens the page isn't paused.
+1. If `plan.gone_unseen?`, it makes a `Pause` with `reason: unseen` and stops there. That's true when the person has at least 7 briefs made since `started_at` and dated before today, and the newest 7 of those all have no `seen_at`. Today's own brief never counts, so a run that picks up a brief the last run made can't pause on it. Someone who reads the card on Home each day and never opens the page isn't paused.
 2. `DailyBrief.for(user)` finds or makes the day's brief.
 3. If the person has accepted the AI terms and the brief has no writing, `brief.write(by: user)` starts the AI part (How a writing runs).
 
@@ -328,14 +328,14 @@ So the 3 a day are the requests that didn't end in a failure. Because a failed o
 9. **Don't show a writing's text while it's being written,** and don't let a finished job override Stop (`docs/design/ai.md`, Traps).
 10. **Children have no daily brief.** No sidebar item, and the policy refuses every action. Don't add a grant or a setting.
 11. **AI output is untrusted text.** Escape every field. The note body is built by our partial, never from AI HTML.
-12. **`started_at` is where the job and the pause rule begin.** The job's first brief is the morning after it, and only briefs made since it count toward seven unseen. Set it on start and on every resume, or a plan started again after seven unseen pauses itself the next morning.
+12. **`started_at` is where the job and the pause rule begin.** The job's first brief is the morning after it, and only briefs made since it, and dated before today, count toward seven unseen. Set it on start and on every resume, or a plan started again after seven unseen pauses itself the next morning.
 13. **Failures are free to the person, not to us.** A failed or flagged writing gives its use back, so the 6 per brief is the only thing between a plan that keeps failing and endless paid requests. Count every writing for it.
 
 ## States each story checks
 
 - Person: head, adult, child (no brief), a member seeing a shared thought, a non-member (404), not yet accepted the AI terms
 - Plan: none, each starter, six focus areas, a focus area with and without scriptures and a goal, a day with every box empty, each section off, paused by choice, paused after seven unseen, started again (not paused again the next morning), started today (no brief from the job until tomorrow)
-- Brief: none yet, yesterday's before ready-by, made by the job, made from the page, made by the job with no writing (the next run starts one), built from an edited plan (unchanged)
+- Brief: none yet, yesterday's before ready-by, made by the job, made from the page, made by the job with no writing (the next run starts one, even when it's the seventh unseen), built from an edited plan (unchanged)
 - AI: written, a section off, off topic, flagged, provider error, the daily text's page missing from the sources (link only), a reference that doesn't parse (dropped), a quotation of more than 5 words (removed), too thin, stopped, 2 used and 3 used, 6 writings of one brief, a new day in the person's time zone
 - Evening: before and after 6:00 PM in the person's zone
 - Sharing: shared, stopped, the day after, another household
