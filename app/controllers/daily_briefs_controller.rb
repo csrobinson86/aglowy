@@ -9,12 +9,14 @@ class DailyBriefsController < ApplicationController
   before_action :set_plan
 
   # Opening it counts as seeing it, the one fact the pause rule reads (Trap 5). Paused, the page says why instead.
+  # ?part=evening is This evening, for a brief whose writing has evening questions; otherwise it's the morning.
   def show
     return render :paused if @plan.paused?
 
     @today = Current.user.today
     @brief = Current.user.daily_briefs.where(on: ..@today).order(on: :desc).first
     @brief&.mark_seen
+    @evening = params[:part] == "evening" && @brief&.evening_questions.present?
   end
 
   # Today's, whatever due? says. DailyBrief.for makes none for a paused plan, and show then says it's paused.

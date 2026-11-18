@@ -24,8 +24,10 @@ class PersonalNotesController < ApplicationController
     @total_count = Current.user.personal_notes.count
   end
 
+  # ?title= fills the title, as the daily brief's "Write a note about today" does with the date. Nothing is saved until
+  # the person saves the note.
   def new
-    @personal_note = Current.user.personal_notes.new(collection: Current.user.collections.for_notes.find_by(id: params[:collection]))
+    @personal_note = Current.user.personal_notes.new(title: params[:title], collection: Current.user.collections.for_notes.find_by(id: params[:collection]))
     authorize @personal_note
   end
 

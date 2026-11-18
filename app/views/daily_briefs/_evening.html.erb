@@ -1,0 +1,35 @@
+<%# locals: (brief:, writing:, open:) %>
+<%# This evening (docs/design/daily-brief.md, This evening; frame brief-evening.png): the questions to end the day from
+    the newest written writing, each with the section it looks back on, once they're open at 6:00 PM, and above that only
+    when they open. They're for thinking over: no inputs, and nothing is saved (Trap 4). Write a note about today opens a
+    new note titled with the date, saved only if the person saves it. Then From this morning, a short list of what the
+    morning held. Every AI field is escaped. %>
+<% questions = brief.evening_questions %>
+<div class="daily-brief">
+  <section id="daily-brief-evening" class="daily-brief-section" aria-labelledby="daily-brief-evening-heading">
+    <p class="daily-brief-section__kicker">This evening</p>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, id: "daily-brief-evening-heading")) { evening_title(questions.size) } %>
+    <% if open %>
+      <ol class="daily-brief-evening__questions">
+        <% questions.each do |question| %>
+          <li class="daily-brief-evening__question">
+            <%= question["text"] %>
+            <% if (from = evening_from(brief, writing, question["from"])) %>
+              <span class="d-block text-small color-fg-muted"><%= from %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+      <p class="color-fg-muted">
+        Think them over, or take them to Jehovah in prayer. Aglowy doesn't ask for your answers and saves nothing here.
+      </p>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_note_path(title: brief.on.strftime("%A, %B %-d")))) { "Write a note about today" } %>
+    <% else %>
+      <p class="mt-2 mb-0 color-fg-muted">They open here at <%= evening_opens_at %>.</p>
+    <% end %>
+  </section>
+
+  <%= render DailyBriefs::SectionComponent.new(kicker: "From this morning", title: "Today's brief", id: "daily-brief-morning",
+        link: DailyBriefs::SectionComponent::Link.new(text: "Show the whole brief", href: household_daily_brief_path, external: false),
+        rows: morning_rows(brief, writing)) %>
+</div>

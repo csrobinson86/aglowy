@@ -4,6 +4,8 @@
 class DailyBrief < ApplicationRecord
   # A brief takes six requests at most, whatever their endings, as a failed one gives its use back (Trap 14).
   MAX_WRITINGS = 6
+  # The evening questions open at 6:00 PM in the person's zone (This evening).
+  EVENING_OPENS_AT = 18
 
   belongs_to :user
   # Oldest first. Deleting a brief deletes its writings' chats, and the database the writings with them.
@@ -108,6 +110,17 @@ class DailyBrief < ApplicationRecord
   def reading_start
     first = day.reading.to_s.split(/[–—,-]| to /i).first.to_s.sub(/:.*\z/, "")
     Bible::Reference.parse(first) || Bible::Reference.parse("#{first} 1")
+  end
+
+  # The newest written writing's questions to end the day, when evening is on in the brief's copy of the plan: 3 or 4
+  # (The reply), each with its text and the section it looks back on. None without a written writing.
+  def evening_questions
+    section?(:evening) ? Array(writing&.section(:evening)) : []
+  end
+
+  # From 6:00 PM on the brief's own day, in the person's zone; an earlier day's evening has opened already.
+  def evening_open?(now)
+    now >= on.in_time_zone(user.calendar_time_zone).change(hour: EVENING_OPENS_AT)
   end
 
   # The day's text on wol.jw.org, in English. Aglowy links to it and never fetches it.

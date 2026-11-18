@@ -195,9 +195,9 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
       assert_select "a[href=?][aria-current=true]", household_daily_brief_path(household_id: @home, part: "evening"), "Evening"
     end
     assert_select "h2", "Four questions to end the day"
-    assert_select "ol li", 4
-    assert_select "ol li", text: /Where did I push for my own timing today\?\s*Patience/
-    assert_select "ol li", text: /What did I notice about Peter in my reading\?\s*Bible reading/
+    assert_select "#daily-brief-evening ol li", 4
+    assert_select "#daily-brief-evening ol li", text: /Where did I push for my own timing today\?\s*Patience/
+    assert_select "#daily-brief-evening ol li", text: /What did I notice about Peter in my reading\?\s*Bible reading/
     assert_select "main", text: /Aglowy doesn't ask for your answers and saves nothing here\./
     assert_select "a[href=?]", new_household_personal_note_path(household_id: @home, title: "Tuesday, November 17"), "Write a note about today"
     assert_select "h2", "Today's brief"
@@ -268,7 +268,7 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     get household_daily_brief_path(household_id: @home, part: "evening")
 
     assert_select "h2", "Three questions to end the day"
-    assert_select "ol li", 3
+    assert_select "#daily-brief-evening ol li", 3
     assert_select "main input:not([type=hidden]), main textarea, main select, main [contenteditable]", count: 0
   end
 
@@ -300,8 +300,9 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     end
 
     # Today's brief written from the saved reply (test/fixtures/files/ai/daily_brief.json), its fields as the checks keep
-    # them, after the block has changed them.
+    # them, after the block has changed them. Written by AI, so the person has accepted the AI terms.
     def written_brief
+      @user.accept_ai_terms(understood: "1")
       brief = DailyBrief.for(@user)
       body = JSON.parse(file_fixture("ai/daily_brief.json").read)
       result = JSON.parse(body["content"].filter_map { it["text"] }.join).except("off_topic")

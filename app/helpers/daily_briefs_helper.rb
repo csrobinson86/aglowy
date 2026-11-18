@@ -34,6 +34,42 @@ module DailyBriefsHelper
     "#{reason} Here are the parts from your plan."
   end
 
+  # "Four questions to end the day": the count follows the writing (This evening).
+  def evening_title(count)
+    "#{DailyBriefs::HomeCardComponent::NUMBER_WORDS.fetch(count, count.to_s).capitalize} #{"question".pluralize(count)} to end the day"
+  end
+
+  # "6:00 PM", when the evening questions open in the person's zone.
+  def evening_opens_at
+    Time.current.change(hour: DailyBrief::EVENING_OPENS_AT).strftime("%-l:%M %p")
+  end
+
+  # The section an evening question looks back on, by its name in the brief: the quality's own name, the appreciation
+  # focus area's. The AI's own word, escaped, for one it named differently; nothing for none.
+  def evening_from(brief, writing, from)
+    case from
+    when "daily_text" then "Daily text"
+    when "reading" then "Bible reading"
+    when "quality" then writing.section(:quality)&.dig("name") || brief.quality_area&.name
+    when "appreciation" then brief.appreciation_area&.name
+    when "focus" then "Your focus"
+    when "faith" then "Imitate their faith"
+    else from.presence
+    end
+  end
+
+  # "From this morning": a row for each section the writing wrote, its label beside a few words of what it held.
+  def morning_rows(brief, writing)
+    row = DailyBriefs::SectionComponent::Row
+    [ (row.new(label: "Daily text", text: writing.section(:daily_text)&.dig("reference")) if brief.section?(:daily_text)),
+      (row.new(label: "Bible reading", text: writing.section(:reading)&.values_at("passage", "title")&.compact_blank&.join(" · ")) if brief.section?(:reading)),
+      (row.new(label: "Quality", text: writing.section(:quality)&.dig("name")) if brief.quality_area),
+      (row.new(label: brief.appreciation_area.name, text: writing.section(:appreciation)&.dig("title")) if brief.appreciation_area),
+      (row.new(label: "Your focus", text: brief.role_areas.map(&:name).join(", ")) if writing.section(:focus) && brief.role_areas.any?),
+      (row.new(label: "Imitate their faith", text: Array(writing.section(:faith)&.dig("examples")).pluck("name")
+         .to_sentence(two_words_connector: " and ", last_word_connector: " and ")) if brief.section?(:faith_example)) ].compact
+  end
+
   # The chapter a passage is in, as a reference to link: "Matthew 16" for "Matthew 16:21-23".
   def passage_chapter(text)
     Bible::Reference.parse(text)&.then { Bible::Reference.new(book: it.book, chapter: it.chapter) }

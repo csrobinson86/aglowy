@@ -54,3 +54,40 @@
   grid-template-columns: repeat(auto-fit, minmax(calc(var(--base-size-128) * 2), 1fr));
   gap: var(--base-size-16);
 }
+
+// Morning / Evening on a phone (frame phone-brief.png): at the end of the brief, held at the bottom of the screen while
+// the brief scrolls above it. Above md it's in the header instead.
+.daily-brief-switch {
+  position: sticky;
+  bottom: 0;
+  margin: var(--base-size-16) calc(var(--base-size-16) * -1) 0;
+  padding: var(--base-size-12) var(--base-size-16);
+  background-color: var(--bgColor-default);
+  border-top: var(--borderWidth-thin) solid var(--borderColor-default);
+}
+
+// Each half is a 44px target on a touch screen; with a mouse --control-minTarget-auto is smaller than Primer's own height.
+.daily-brief-switch .SegmentedControl-item {
+  height: max(var(--control-medium-size), var(--control-minTarget-auto));
+}
+
+// The evening questions (frame brief-evening.png): numbered, each with the section it looks back on under it.
+.daily-brief-evening__questions {
+  margin: var(--base-size-12) 0 var(--base-size-16);
+  padding-left: var(--base-size-24);
+}
+
+.daily-brief-evening__question {
+  overflow-wrap: anywhere;
+
+  & + & {
+    margin-top: var(--base-size-12);
+  }
+}
+
+// This evening beside the morning's brief: a dashed box, as it's a note of what's to come (frame brief-today.png).
+.daily-brief-evening-note {
+  padding: var(--base-size-16);
+  border: var(--borderWidth-thin) dashed var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}
