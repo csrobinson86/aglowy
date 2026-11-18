@@ -15,6 +15,7 @@
           <dd class="daily-brief-section__text">
             <%= row.text %>
             <%= safe_join(row.references.map { render "bible/references/reference", reference: it }, "; ") %>
+            <% if row.note %><span class="d-block text-small color-fg-muted mt-1"><%= row.note %></span><% end %>
           </dd>
         </div>
       <% end %>

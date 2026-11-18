@@ -138,7 +138,50 @@ class DailyBrief::FocusAreaTest < ActiveSupport::TestCase
     assert @plan.focus_areas.quality.sole.valid?, "the one it has is still valid"
   end
 
+  test "links to one of the person's own active goals" do
+    goal = personal_goal
+    area = area_named("Reaching out")
+
+    assert area.update(goal:)
+    assert_equal goal, area.reload.linked_goal
+  end
+
+  test "another person's goal, a family goal and a finished one are refused" do
+    area = area_named("Reaching out")
+    finished = personal_goal.tap { it.complete(by: users(:head)) }
+
+    [ goals(:spouse_bible_reading), goals(:gospels), finished ].each do |goal|
+      assert_not area.update(goal:), "#{goal.title} is refused"
+      assert_equal [ "Choose one of your own goals that's still active" ], area.errors[:goal_id]
+    end
+  end
+
+  test "a goal finished since it was linked isn't shown, and the focus area can still be edited" do
+    goal = personal_goal
+    area = area_named("Reaching out")
+    area.update!(goal:)
+
+    goal.archive(by: users(:head))
+
+    assert_nil area.reload.linked_goal
+    assert area.update(gives: "One reliable thing today."), "editing another field keeps the link"
+  end
+
+  test "the database clears the link when the goal is deleted" do
+    goal = personal_goal
+    area = area_named("Reaching out")
+    area.update_column(:goal_id, goal.id)
+
+    Goal.where(id: goal.id).delete_all
+
+    assert_nil area.reload.goal_id
+  end
+
   private
+    def personal_goal(title: "Qualify as a ministerial servant")
+      users(:head).goals.create!(set_by: users(:head), title:, target_on: Date.new(2027, 6, 30))
+    end
+
     def area_named(name)
       @plan.focus_areas.find { it.name == name }
     end

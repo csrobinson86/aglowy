@@ -12,9 +12,14 @@
         <div class="flex-1 min-width-0">
           <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 5, classes: "wb-break-word")) { focus_area.name } %>
           <p class="color-fg-muted mb-0 wb-break-word"><%= focus_area.gives %></p>
-          <% if focus_area.scripture_references.any? %>
-            <p class="text-small mb-0 mt-1">
+          <% goal = focus_area.linked_goal %>
+          <% if focus_area.scripture_references.any? || goal %>
+            <p class="text-small mb-0 mt-1 wb-break-word">
               <%= safe_join(focus_area.scripture_references.map { render "bible/references/reference", reference: it }, "; ") %>
+              <% if goal %>
+                <span class="color-fg-muted"><%= " · " if focus_area.scripture_references.any? %>Linked to your goal</span>
+                <%= render(Primer::Beta::Link.new(href: household_goal_path(id: goal), underline: true)) { goal.title } %>
+              <% end %>
             </p>
           <% end %>
         </div>

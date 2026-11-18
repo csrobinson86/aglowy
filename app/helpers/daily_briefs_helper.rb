@@ -127,15 +127,23 @@ module DailyBriefsHelper
     end
   end
 
-  # "Your focus today": one row per role focus area, in the plan's order, the AI's where it wrote one.
+  # "Your focus today": one row per role focus area, in the plan's order, the AI's where it wrote one, each with its linked
+  # goal under it, from Aglowy's own data.
   def focus_section(brief, focus)
     DailyBriefs::SectionComponent.new(kicker: "Your focus today", title: focus ? "One thing in each role" : "From your plan", id: "daily-brief-focus",
       rows: brief.role_areas.each_with_index.map { |area, index|
+        note = brief.linked_goals[area.id]&.then { goal_note(it) }
         if (written = focus&.dig(index)&.presence)
-          brief_row(area.name, written["action"], brief_references(written["scripture"]))
+          brief_row(area.name, written["action"], brief_references(written["scripture"]), note:)
         else
-          brief_row(area.name, (topic = brief.topic_for(area)) ? "#{topic}." : area.gives, area.scripture_references)
+          brief_row(area.name, (topic = brief.topic_for(area)) ? "#{topic}." : area.gives, area.scripture_references, note:)
         end })
+  end
+
+  # "Your goal: Qualify as a ministerial servant · next step: Ask an elder where I can help", or the goal alone when every
+  # step is done.
+  def goal_note(goal)
+    [ "Your goal: #{goal.title}", goal.progress.next_step&.then { "next step: #{it.title}" } ].compact.join(" · ")
   end
 
   def faith_section(brief, faith)
@@ -150,8 +158,8 @@ module DailyBriefsHelper
     end
   end
 
-  def brief_row(label, text, references = [])
-    DailyBriefs::SectionComponent::Row.new(label:, text:, references:)
+  def brief_row(label, text, references = [], note: nil)
+    DailyBriefs::SectionComponent::Row.new(label:, text:, references:, note:)
   end
 
   def brief_link(text, href, note)

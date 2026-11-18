@@ -183,6 +183,58 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
     assert_equal "Reaching out", area.reload.name
   end
 
+  test "the Linked goal select lists only the person's own active goals, with None" do
+    serving = personal_goal("Qualify as a ministerial servant")
+    personal_goal("Read Acts").complete(by: users(:head))
+    personal_goal("Learn Psalm 23").archive(by: users(:head))
+
+    get edit_household_daily_brief_plan_focus_area_path(household_id: @home, id: area_named("Reaching out"))
+
+    assert_select "select[name='daily_brief_focus_area[goal_id]']" do
+      assert_select "option", count: 2
+      assert_select "option[value='']", "None"
+      assert_select "option[value=?]", serving.id, "Qualify as a ministerial servant"
+    end
+    assert_select "label", "Linked goal"
+  end
+
+  test "saving one of their own goals links it, the plan row shows it, and editing again keeps it chosen" do
+    goal = personal_goal("Qualify as a ministerial servant")
+    area = area_named("Reaching out")
+
+    patch household_daily_brief_plan_focus_area_path(household_id: @home, id: area), as: :turbo_stream,
+          params: { daily_brief_focus_area: { name: "Reaching out", gives: area.gives, goal_id: goal.id } }
+
+    assert_response :success
+    assert_equal goal, area.reload.goal
+    assert_select "turbo-stream[action=replace][target=daily_brief_focus_areas] template" do
+      assert_select "li", text: /Linked to your goal/, count: 1
+      assert_select "a[href=?]", household_goal_path(household_id: @home, id: goal), text: "Qualify as a ministerial servant"
+    end
+
+    get edit_household_daily_brief_plan_focus_area_path(household_id: @home, id: area)
+    assert_select "select[name='daily_brief_focus_area[goal_id]'] option[selected][value=?]", goal.id
+  end
+
+  test "saving a goal id that isn't theirs is refused, on edit and on add" do
+    area = area_named("Reaching out")
+
+    [ goals(:spouse_bible_reading), goals(:gospels) ].each do |goal|
+      patch household_daily_brief_plan_focus_area_path(household_id: @home, id: area),
+            params: { daily_brief_focus_area: { name: "Reaching out", gives: area.gives, goal_id: goal.id } }
+
+      assert_response :unprocessable_content
+      assert_select "dialog[open]", text: /Choose one of your own goals that's still active/
+      assert_nil area.reload.goal_id
+    end
+
+    assert_no_difference -> { DailyBrief::FocusArea.count } do
+      post household_daily_brief_plan_focus_areas_path(household_id: @home),
+           params: { daily_brief_focus_area: { kind: "role", name: "At work", gives: "One way.", goal_id: goals(:spouse_bible_reading).id } }
+    end
+    assert_response :unprocessable_content
+  end
+
   test "destroy removes it and its topics from the week" do
     area = area_named("Reaching out")
 
@@ -253,6 +305,10 @@ class DailyBriefs::Plans::FocusAreasControllerTest < ActionDispatch::Integration
   end
 
   private
+    def personal_goal(title)
+      users(:head).goals.create!(set_by: users(:head), title:, target_on: Date.new(2027, 6, 30))
+    end
+
     def area_named(name)
       @plan.focus_areas.find { it.name == name }
     end

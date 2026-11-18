@@ -4,7 +4,15 @@
 # brief-today.png). Plan.start keeps a plan he already has, and DailyBrief.for finds today's brief if it's made, or
 # makes none if he's paused his plan.
 sam = seeded_person("spouse@example.com")
-seeded!(DailyBrief::Plan.start(sam, starter: "husband_and_father"))
+plan = seeded!(DailyBrief::Plan.start(sam, starter: "husband_and_father"))
+
+# His own goal, linked to Reaching out, so the plan shows "Linked to your goal" and the brief its next step (the story,
+# #310; frames brief-plan.png and brief-today.png). A goal he already has keeps its steps, and a link he changed to another goal stays.
+serving = seed_goal(sam.goals, title: "Qualify as a ministerial servant", set_by: sam, target_on: sam.today + 1.year) do |goal|
+  goal.add_step(title: "Read 1 Timothy 3 and Titus 1").tick(for: nil, by: sam)
+  goal.add_step(title: "Ask an elder where I can help")
+end
+plan.focus_areas.find { it.name == "Reaching out" && it.goal_id.nil? }&.update!(goal: serving) if serving.open?
 brief = DailyBrief.for(sam)
 
 # Today's brief written by AI, from the saved reply in test/fixtures/files/ai/ rather than a provider call. It has no

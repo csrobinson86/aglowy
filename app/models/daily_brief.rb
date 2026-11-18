@@ -1,6 +1,7 @@
 # One day's brief for a person, made from a copy of their plan (docs/design/daily-brief.md, DailyBrief). It reads its
-# own copy, never the live plan, so editing the plan can't change or break a brief already made (Trap 7). One a day per
-# person, by a unique index.
+# own copy, never the live plan, so editing the plan can't change or break a brief already made (Trap 7). The one
+# exception is a focus area's linked goal, which Aglowy shows from the live plan and isn't in the copy (linked_goals).
+# One a day per person, by a unique index.
 class DailyBrief < ApplicationRecord
   # Today's thought, shared with a household with no notification: it declares none (For the children, and sharing).
   include Shareable
@@ -106,6 +107,15 @@ class DailyBrief < ApplicationRecord
   # "Your focus today": one row each, in the plan's order.
   def role_areas
     focus_areas.select(&:role?)
+  end
+
+  # The goals linked to its focus areas, by focus area id, read from the live plan when the page renders rather than
+  # from the copy (the story, #310): a goal's next step changes through the day, and one completed, archived or deleted
+  # since isn't shown. Nothing about a goal is in the copy, so none of it is ever sent to the AI (Trap 2).
+  def linked_goals
+    @linked_goals ||= DailyBrief::FocusArea.joins(:plan).where(id: focus_areas.map(&:id), daily_brief_plans: { user_id: })
+      .includes(goal: [ :completion, :archival, { steps: %i[ assignments completions ] } ])
+      .filter_map { |area| [ area.id, area.linked_goal ] if area.linked_goal }.to_h
   end
 
   # Where the day's reading starts: the chapter it names, "Matthew 5" for "Matthew 5 to John" or "Matthew 5:3–12", or the

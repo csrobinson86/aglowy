@@ -15,6 +15,25 @@ class DailyBriefsHelperTest < ActionView::TestCase
     assert_equal "One question to end the day", evening_title(1)
   end
 
+  test "the focus section adds a linked goal's next step beside its focus area, read from the goal, or the goal alone" do
+    users(:head).update!(time_zone: "Central Time (US & Canada)")
+    travel_to(Time.utc(2026, 11, 14, 12)) { DailyBrief::Plan.start(users(:head), starter: "husband_and_father") }
+    brief = DailyBrief.for(users(:head), on: Date.new(2026, 11, 17))
+    goal = users(:head).goals.create!(set_by: users(:head), title: "Qualify as a ministerial servant", target_on: Date.new(2027, 6, 30))
+    users(:head).daily_brief_plan.focus_areas.find_by!(position: 2).update!(goal:)
+    step = goal.add_step(title: "Ask an elder where I can help")
+
+    rows = ->(written = nil) { focus_section(DailyBrief.find(brief.id), written).rows.to_h { [ it.label, it.note ] } }
+
+    assert_equal({ "As a husband" => nil, "As a father" => nil,
+                   "Reaching out" => "Your goal: Qualify as a ministerial servant · next step: Ask an elder where I can help" }, rows.call)
+    assert_equal "Your goal: Qualify as a ministerial servant · next step: Ask an elder where I can help",
+                 rows.call([ {}, {}, { "action" => "Finish one thing I said I would do." } ])["Reaching out"], "beside the AI's action too"
+
+    step.tick(for: nil, by: users(:head))
+    assert_equal "Your goal: Qualify as a ministerial servant", rows.call["Reaching out"], "every step done"
+  end
+
   test "evening_from names the section by its name in the brief, or keeps the AI's own word" do
     users(:head).update!(time_zone: "Central Time (US & Canada)")
     travel_to(Time.utc(2026, 11, 14, 12)) { DailyBrief::Plan.start(users(:head), starter: "husband_and_father") }

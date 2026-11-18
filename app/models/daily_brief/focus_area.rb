@@ -4,6 +4,8 @@ class DailyBrief::FocusArea < ApplicationRecord
   MAX = 6
 
   belongs_to :plan
+  # One of the person's own personal goals, shown beside its section in the brief (the story, #310). Deleting the goal
+  # clears it (on_delete: :nullify).
   belongs_to :goal, optional: true
 
   # Keep in step with daily_brief_focus_areas_kind_check. One quality and one appreciation per plan, by partial
@@ -22,6 +24,7 @@ class DailyBrief::FocusArea < ApplicationRecord
   validate :scriptures_parse
   validate :room_on_the_plan, on: :create
   validate :one_of_its_kind, unless: :role?
+  validate :goal_the_persons_own, if: -> { goal_id_changed? && goal_id }
 
   before_create :take_next_position, unless: :position
   after_destroy :remove_topics
@@ -29,6 +32,12 @@ class DailyBrief::FocusArea < ApplicationRecord
   # "Ephesians 5:25; Proverbs 5:18", each shown as a link.
   def scripture_references
     scripture_texts.filter_map { Bible::Reference.parse(it) }
+  end
+
+  # Its goal while the person is still working on it: one completed or archived since it was linked isn't shown, on the
+  # plan or the brief.
+  def linked_goal
+    goal if goal&.open?
   end
 
   private
@@ -49,6 +58,12 @@ class DailyBrief::FocusArea < ApplicationRecord
     def one_of_its_kind
       errors.add(:kind, "You already have #{kind == "quality" ? "a quality" : "an appreciation"} focus area") if
         plan && plan.focus_areas.where(kind:).where.not(id:).exists?
+    end
+
+    # Only when it's chosen, so a goal finished since doesn't stop the rest of the focus area being edited.
+    def goal_the_persons_own
+      errors.add(:goal_id, "Choose one of your own goals that's still active") unless
+        goal && plan && goal.user_id == plan.user_id && goal.open?
     end
 
     # After the last, so a new one goes at the end of the list and the brief.

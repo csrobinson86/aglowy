@@ -104,6 +104,45 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     capture_screens("brief-written-focus", scroll_to: "#daily-brief-focus")
   end
 
+  test "link Reaching out to a goal, see it on the plan and on the brief with its next step, and complete it" do
+    goal = users(:head).goals.create!(set_by: users(:head), title: "Qualify as a ministerial servant", target_on: Date.new(2027, 6, 30))
+    goal.add_step(title: "Read 1 Timothy 3").tick(for: nil, by: users(:head))
+    goal.add_step(title: "Ask an elder where I can help")
+    goal.add_step(title: "Offer to help with the literature")
+    sign_in identities(:head)
+    visit household_daily_brief_plan_url(household_id: households(:home))
+
+    find("a[aria-label='Edit Reaching out']").click
+    within "dialog[open]" do
+      select "Qualify as a ministerial servant", from: "Linked goal"
+      click_on "Save focus area"
+    end
+
+    assert_no_selector "dialog[open]"
+    within("section[aria-labelledby=focus-areas] li", text: "Reaching out") do
+      assert_text "Linked to your goal"
+      assert_link "Qualify as a ministerial servant", href: household_goal_path(household_id: households(:home), id: goal)
+    end
+    assert_accessible
+    capture_screens("brief-plan-goal", scroll_to: "section[aria-labelledby=focus-areas]")
+
+    within("aside") { click_on "Daily brief" }
+
+    within("#daily-brief-focus") do
+      assert_text "Your goal: Qualify as a ministerial servant · next step: Ask an elder where I can help"
+    end
+    assert_accessible
+    capture_screens("brief-goal", scroll_to: "#daily-brief-focus")
+
+    goal.complete(by: users(:head))
+    visit household_daily_brief_url(household_id: households(:home))
+
+    within("#daily-brief-focus") do
+      assert_text "Reaching out"
+      assert_no_text "Your goal"
+    end
+  end
+
   test "a failed one shows the Banner and the parts from the plan" do
     users(:head).accept_ai_terms(understood: "1")
     daily_brief_writing(@brief, status: "failed")
