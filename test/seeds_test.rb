@@ -151,6 +151,7 @@ class SeedsTest < ActiveSupport::TestCase
   end
 
   test "a second run adds nothing" do
+    freeze_time
     seed
     counts = record_counts
 

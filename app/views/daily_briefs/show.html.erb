@@ -1,6 +1,6 @@
 <% content_for :title, "Daily brief" %>
-<%# It's personal: Turbo's in-memory snapshot ignores Cache-Control, so without this Back after a sign-out and another
-    person's sign-in would show this brief again until the fresh page arrived. %>
+<%# It's personal: Turbo's in-memory snapshot ignores the controller's no-store, so without this Back after a sign-out
+    and another person's sign-in would show this brief again until the fresh page arrived. %>
 <% turbo_exempts_page_from_cache %>
 
 <%# The brief (docs/design/daily-brief.md, The brief, its states; frames brief-base.png and phone-brief.png): the newest

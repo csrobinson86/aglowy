@@ -5,6 +5,7 @@ class DailyBriefsController < ApplicationController
   include HouseholdScoped
 
   before_action { authorize :daily_brief }
+  before_action :no_store # It's personal: Back, which skips revalidating, can't show it to the next person to sign in.
   before_action :set_plan
 
   # Opening it counts as seeing it, the one fact the pause rule reads (Trap 5). Paused, the page says why instead.

@@ -62,10 +62,11 @@ class DailyBrief < ApplicationRecord
     focus_areas.select(&:role?)
   end
 
-  # The first chapter of the day's books, "Matthew 1" for "Matthew – John", or nil when the box is empty or doesn't
-  # start with a book.
+  # Where the day's reading starts: the chapter it names, "Matthew 5" for "Matthew 5 to John", or the first chapter of
+  # its first book, "Matthew 1" for "Matthew – John". Nil when the box is empty or doesn't start with a book.
   def reading_start
-    Bible::Reference.parse("#{day.reading.to_s.split(/[–—,-]| to /i).first} 1")
+    first = day.reading.to_s.split(/[–—,-]| to /i).first
+    Bible::Reference.parse(first) || Bible::Reference.parse("#{first} 1")
   end
 
   # The day's text on wol.jw.org, in English. Aglowy links to it and never fetches it.

@@ -113,13 +113,14 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".today__item", text: /Circuit overseer/, count: 0
   end
 
-  test "the page is kept out of Turbo's snapshot cache, so Back can't show it to the next person to sign in" do
+  test "the page is kept out of Turbo's snapshot cache and the browser's, so Back can't show it to the next person to sign in" do
     start_plan
     DailyBrief.for(@user)
 
     get household_daily_brief_path(household_id: @home)
 
     assert_select "meta[name=turbo-cache-control][content=no-cache]"
+    assert_equal "no-store", response.headers["Cache-Control"]
   end
 
   test "show leaves out the sections the plan turned off" do
