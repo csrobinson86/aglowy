@@ -51,6 +51,15 @@ class MeetingPartPolicyTest < ActiveSupport::TestCase
     end
   end
 
+  test "a head can show someone else's part shared with the household, and nothing else" do
+    part = meeting_parts(:spouse_talk)
+    part.share_with(households(:home))
+    policy = MeetingPartPolicy.new(memberships(:head_in_home), part)
+
+    assert policy.show?
+    assert_not policy.update? || policy.destroy? || policy.share?
+  end
+
   test "a member of another household can't show a part shared elsewhere" do
     meeting_parts(:head_conversation).share_with(households(:home))
 
