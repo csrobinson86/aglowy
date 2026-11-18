@@ -15,6 +15,19 @@ class DailyBrief::Day < ApplicationRecord
   validates :reading, length: { maximum: 120 }
   validates :examples, length: { maximum: 200 }
   validate :topics_short
+  validate :topics_for_own_focus_areas
+
+  # Saves what the day's dialog sent, or keeps it unsaved with the reasons. The topics sent change only their own focus
+  # areas, a blank one taking its topic off, so a dialog opened before a focus area was added keeps that area's topic.
+  # Under the day's lock, the one a focus area takes to take its topics off, so a topic for a focus area deleted at the
+  # same time is either refused or taken off.
+  def revise(attributes)
+    with_lock do
+      attributes = attributes.to_h.with_indifferent_access
+      attributes[:topics] = topics.merge(attributes[:topics]) if attributes.key?(:topics)
+      update(attributes)
+    end
+  end
 
   def topic_for(focus_area)
     topics[focus_area.id]
@@ -25,8 +38,19 @@ class DailyBrief::Day < ApplicationRecord
     Date::ABBR_DAYNAMES[wday]
   end
 
+  # "Monday".
+  def name
+    Date::DAYNAMES[wday]
+  end
+
   private
     def topics_short
       errors.add(:topics, "are #{TOPIC_MAX} characters at most each") if topics.values.any? { it.length > TOPIC_MAX }
+    end
+
+    # Read from the database, not the plan's loaded focus areas, so one deleted since can't keep a topic.
+    def topics_for_own_focus_areas
+      errors.add(:topics, "can only be for your own focus areas") if
+        topics.any? && (topics.keys - DailyBrief::FocusArea.where(plan_id:).pluck(:id)).any?
     end
 end

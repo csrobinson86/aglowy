@@ -1,0 +1,13 @@
+<%# locals: (plan:, focus: false) %>
+<%# "Pause the daily brief", under Save plan: its own form, so it sits under Save plan rather than beside it. Redrawn in
+    place with _paused; focus puts focus on it. %>
+<div id="daily_brief_pause">
+  <% unless plan.paused? %>
+    <div class="d-flex flex-wrap flex-items-center mt-3">
+      <%= primer_form_with(url: household_daily_brief_plan_pause_path, class: "mr-3") do |f| %>
+        <%= render DailyBriefs::Plans::PauseForm.new(f, label: "Pause the daily brief", autofocus: focus) %>
+      <% end %>
+      <span class="text-small color-fg-muted">Paused, nothing is written or sent until you start it again.</span>
+    </div>
+  <% end %>
+</div>

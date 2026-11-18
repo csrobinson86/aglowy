@@ -118,6 +118,73 @@ class DailyBriefPlanTest < ApplicationSystemTestCase
     capture_screens("brief-plan-saved", scroll_to: "#whats-sent")
   end
 
+  test "edit Tuesday's row and see it in the week" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+    sign_in identities(:head)
+    visit household_daily_brief_plan_url(household_id: households(:home))
+    # Changed and not yet saved, which saving the day keeps.
+    uncheck "For the children"
+    select "6:00 AM", from: "Ready by"
+
+    find("section[aria-labelledby=week] a[aria-label='Edit Tuesday']").click
+    wait_for_animations
+    within "dialog[open]" do
+      assert_selector "h1", text: "Edit Tuesday"
+      assert_field "Reading", with: "Matthew – John"
+      assert_field "Qualities", with: "Patience, Mildness"
+      assert_field "As a husband", with: ""
+      assert_field "Growing appreciation for Jehovah", with: ""
+      assert_text "Sent to the AI as you type it. Leave out names.", count: 7
+      assert_accessible
+      capture_screens("brief-day-edit")
+      fill_in "Reading", with: "Luke"
+      fill_in "As a husband", with: "Listen first"
+      fill_in "As a father", with: ""
+      click_on "Save Tuesday"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_no_selector "body.has-modal-disable-scroll"
+    assert_selector "a[aria-label='Edit Tuesday']:focus"
+    within("section[aria-labelledby=week] tbody tr:nth-child(2)") do
+      assert_selector "th", text: "Tue"
+      assert_selector "td", text: "Luke"
+      assert_selector "td", text: "Listen first"
+      assert_selector "td", text: "The brief chooses", count: 1
+    end
+    assert_equal "Luke", plan.days.find_by!(wday: 2).reading
+    assert_unchecked_field "For the children"
+    assert_select "Ready by", selected: "6:00 AM"
+  end
+
+  test "pause the daily brief and start it again" do
+    plan = DailyBrief::Plan.start(users(:head), starter: "husband_and_father")
+    sign_in identities(:head)
+    visit household_daily_brief_plan_url(household_id: households(:home))
+
+    assert_text "Paused, nothing is written or sent until you start it again."
+    # Changed and not yet saved, which pausing and starting again keep.
+    uncheck "For the children"
+    select "6:00 AM", from: "Ready by"
+    click_on "Pause the daily brief"
+
+    assert_selector ".Banner", text: "Your daily brief is paused"
+    assert_selector ".Banner button:focus", text: "Start it again"
+    assert_no_button "Pause the daily brief"
+    assert plan.reload.paused?
+    assert_accessible
+    capture_screens("brief-plan-paused")
+
+    within(".Banner") { click_on "Start it again" }
+
+    assert_text "Your daily brief is on again."
+    assert_no_selector ".Banner", text: "Your daily brief is paused"
+    assert_selector "button:focus", text: "Pause the daily brief"
+    assert_not plan.reload.paused?
+    assert_unchecked_field "For the children"
+    assert_select "Ready by", selected: "6:00 AM"
+  end
+
   # Today's row and "The brief chooses" are custom colours, and the week scrolls in its own box on a phone.
   test "both pages pass assert_accessible in light and dark, at desktop and phone width" do
     sign_in identities(:head)

@@ -1,0 +1,7 @@
+<%# Empties the frame, which closes the dialog, and redraws the week in place with focus on the day's Edit, so the
+    sections and Ready by below keep what's changed and not yet saved (as focus_areas/saved). %>
+<%= turbo_stream.update "daily_brief_day_dialog" %>
+<%= turbo_stream.update "daily_brief_week", partial: "daily_briefs/plans/week", locals: { plan: @plan, today: Current.user.today, focus: @day } %>
+<%# The notice takes the old one's place, first in the household layout's main, where shared/flash renders it. %>
+<%= turbo_stream.remove_all "main .flash:not(.Banner)" %>
+<%= turbo_stream.prepend_all "main .container-xl", partial: "shared/flash" %>

@@ -1,0 +1,18 @@
+<%# locals: (plan:, focus: false) %>
+<%# Paused: nothing is written or sent until Start it again (docs/design/daily-brief.md, DailyBrief::Pause). Redrawn in
+    place, with _pause, when the plan is paused or started again, so the settings form keeps what's changed and not yet
+    saved. focus puts focus on Start it again; Turbo focuses the one with autofocus. %>
+<div id="daily_brief_paused">
+  <% if plan.paused? %>
+    <%= render(Primer::Alpha::Banner.new(icon: :pause, mb: 4)) do |banner| %>
+      <% banner.with_action_content do %>
+        <%= primer_form_with(url: household_daily_brief_plan_pause_path, method: :delete) do |f| %>
+          <%= render DailyBriefs::Plans::PauseForm.new(f, label: "Start it again", autofocus: focus) %>
+        <% end %>
+      <% end %>
+      <strong>Your daily brief is paused.</strong>
+      <%= plan.pausing.chosen? ? "You paused it." : "You hadn't looked at seven briefs in a row." %>
+      Nothing is written or sent until you start it again.
+    <% end %>
+  <% end %>
+</div>

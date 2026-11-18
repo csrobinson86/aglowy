@@ -1,0 +1,20 @@
+<% content_for :title, "Edit #{@day.name}" %>
+<%# A day's dialog (docs/design/daily-brief.md, Your plan), open as soon as Your week's frame loads it. Saving empties the
+    frame with it still open, so dialog-removal lets the page scroll again. %>
+<%= turbo_frame_tag "daily_brief_day_dialog" do %>
+  <div data-controller="dialog-removal">
+    <% dialog_id = "daily-brief-day-dialog" %>
+    <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: "Edit #{@day.name}", size: :large, open: true)) do |dialog| %>
+      <% dialog.with_body(pb: 3) do %>
+        <p class="color-fg-muted mt-0">What this day's brief draws on. Leave a box empty and the brief chooses.</p>
+        <% @day.errors.messages_for(:topics).each do |message| %>
+          <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) { "Topics #{message}" } %>
+        <% end %>
+        <%# Opened on its own, in a new tab, there's no week to redraw, so it saves without Turbo and goes back to the plan. %>
+        <%= primer_form_with(model: @day, url: household_daily_brief_plan_day_path(wday: @day.wday), data: { turbo: turbo_frame_request? }) do |f| %>
+          <%= render DailyBriefs::Plans::DayForm.new(f, dialog_id:, focus_areas: @plan.day_areas) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
