@@ -3,6 +3,8 @@ require "test_helper"
 # One day's brief, made from a copy of the person's plan (docs/design/daily-brief.md, DailyBrief; Traps 6 and 7).
 # Tuesday 17 November 2026, 6:00 AM in Hannah's zone.
 class DailyBriefTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @user = users(:head)
     @user.update!(time_zone: "Central Time (US & Canada)")
@@ -190,7 +192,139 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_not DailyBrief.exists?(user_id: @user.id)
   end
 
+  test "write makes a writing with its own chat and use, and queues the job once" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+
+    writing = nil
+    assert_enqueued_jobs(1, only: DailyBrief::WriteJob) { writing = brief.write(by: @user) }
+
+    assert_predicate writing, :persisted?
+    assert_predicate writing, :writing?
+    assert_equal [ "daily_brief", @user, nil ], [ writing.chat.purpose, writing.chat.user, writing.chat.household ]
+    assert_equal [ "daily_brief", @user ], [ writing.use.purpose, writing.use.user ]
+    assert_equal [ writing.id ], enqueued_jobs.last["arguments"]
+  end
+
+  test "write refuses at 3 today in the person's time zone and allows again on a new day" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+    zone = ActiveSupport::TimeZone["Central Time (US & Canada)"]
+    travel_to zone.local(2026, 11, 17, 23, 0)
+    3.times { Ai::Use.create!(user: @user, purpose: "daily_brief") }
+
+    assert_refused(:limit) { brief.write(by: @user) }
+
+    travel_to zone.local(2026, 11, 18, 0, 1)
+    assert_predicate brief.write(by: @user), :persisted?
+  end
+
+  test "write doesn't count other purposes' uses" do
+    @user.accept_ai_terms(understood: "1")
+    3.times { Ai::Use.create!(user: @user, purpose: "meeting_part") }
+
+    assert_predicate DailyBrief.for(@user).write(by: @user), :persisted?
+  end
+
+  test "write refuses without the AI terms, for a child, and for someone else's brief" do
+    brief = DailyBrief.for(@user)
+    assert_refused(:not_allowed) { brief.write(by: @user) }
+
+    users(:spouse).accept_ai_terms(understood: "1")
+    assert_refused(:not_allowed) { brief.write(by: users(:spouse)) }
+
+    child = users(:child)
+    child.accept_ai_terms(understood: "1")
+    DailyBrief::Plan.start(child, starter: "basics").update!(started_at: 3.days.ago)
+    assert_refused(:not_allowed) { DailyBrief.for(child).write(by: child) }
+
+    @user.accept_ai_terms(understood: "1")
+    @user.memberships.update_all(active: false)
+    assert_refused(:not_allowed) { brief.write(by: @user.reload) }
+  end
+
+  test "write refuses while one is writing" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+    daily_brief_writing(brief)
+
+    assert_refused(:busy) { brief.write(by: @user) }
+  end
+
+  test "write refuses at 6 writings of the brief even when failed ones gave their uses back" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+    6.times { daily_brief_writing(brief, status: "failed").use.destroy! }
+    assert_equal 3, @user.daily_brief_writings_left_today
+
+    assert_refused(:limit) { brief.write(by: @user) }
+  end
+
+  test "write refuses :paused for a paused plan" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+    @plan.pause(reason: "chosen")
+
+    assert_refused(:paused) { brief.write(by: @user) }
+  end
+
+  test "with first: true, write refuses :written once the brief has a writing of any status" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+    writing = daily_brief_writing(brief, status: "failed")
+
+    %w[ failed stopped off_topic written writing ].each do |status|
+      writing.update!(status:)
+      assert_refused(:written) { brief.write(by: @user, first: true) }
+    end
+  end
+
+  # The checks run after the person's row is locked, in the same transaction as the insert, so a second request waits for
+  # the first to commit and then sees its writing and its use.
+  test "two at once make one, and can't both take the last one: the checks and the insert run under the person's lock" do
+    @user.accept_ai_terms(understood: "1")
+    brief = DailyBrief.for(@user)
+    2.times { Ai::Use.create!(user: @user, purpose: "daily_brief") }
+    queries = []
+    subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") { |*, payload| queries << payload[:sql] }
+
+    brief.write(by: @user, first: true)
+    ActiveSupport::Notifications.unsubscribe(subscriber)
+
+    lock = queries.index { it.match?(/FROM "users" .* FOR UPDATE/) }
+    checks = queries.index { it.match?(/FROM "daily_brief_writings"/) }
+    count = queries.index { it.match?(/SELECT COUNT\(\*\) FROM "ai_uses"/) }
+    insert = queries.index { it.start_with?('INSERT INTO "daily_brief_writings"') }
+    release = queries.index { it.match?(/RELEASE SAVEPOINT/) }
+    assert_operator lock, :<, checks
+    assert_operator lock, :<, count
+    assert_operator [ checks, count ].max, :<, insert
+    assert_operator insert, :<, release
+    assert_refused(:written) { brief.write(by: @user, first: true) }
+    brief.writings.update_all(status: "written")
+    assert_refused(:limit) { brief.write(by: @user) }
+  end
+
+  test "writing is the newest written one" do
+    brief = DailyBrief.for(@user)
+    daily_brief_writing(brief, status: "written", result: { "thread" => "First." })
+    newest = travel(1.minute) { daily_brief_writing(brief, status: "written", result: { "thread" => "Second." }) }
+    travel(2.minutes) { daily_brief_writing(brief, status: "failed") }
+
+    assert_equal newest, brief.writing
+    assert_predicate brief.writings.last, :failed?
+  end
+
   private
+    # Refused with +reason+: nothing made and no job queued.
+    def assert_refused(reason)
+      refused = nil
+      assert_no_difference [ -> { DailyBrief::Writing.count }, -> { Chat.count }, -> { Ai::Use.count } ] do
+        assert_no_enqueued_jobs { refused = yield }
+      end
+      assert refused.errors.added?(:base, reason), "expected #{reason}, got #{refused.errors.details}"
+    end
+
     def unseen_days(count)
       count.times { |ago| DailyBrief.for(@user, on: Date.new(2026, 11, 16) - ago) }
     end

@@ -92,6 +92,57 @@ class DailyBrief::PrepareJobTest < ActiveJob::TestCase
     assert_not @plan.reload.paused?
   end
 
+  test "starts a writing for someone with the AI terms, and none without" do
+    users(:spouse).update!(time_zone: "Central Time (US & Canada)")
+    travel_to(central(9) - 16.days) { DailyBrief::Plan.start(users(:spouse), starter: "basics") }
+    @user.accept_ai_terms(understood: "1")
+
+    travel_to(central(5)) do
+      assert_enqueued_jobs(1, only: DailyBrief::WriteJob) { DailyBrief::PrepareJob.perform_now }
+    end
+
+    assert_equal 1, @user.daily_briefs.sole.writings.count
+    assert_empty users(:spouse).daily_briefs.sole.writings
+  end
+
+  test "running twice starts one writing" do
+    @user.accept_ai_terms(understood: "1")
+
+    travel_to(central(5)) do
+      assert_difference(-> { DailyBrief::Writing.count }, 1) { 2.times { DailyBrief::PrepareJob.perform_now } }
+    end
+  end
+
+  test "a brief made earlier with no writing gets one on the next run" do
+    travel_to(central(5)) { DailyBrief::PrepareJob.perform_now }
+    @user.accept_ai_terms(understood: "1")
+
+    travel_to(central(5, 15)) do
+      assert_difference(-> { DailyBrief::Writing.count }, 1) { DailyBrief::PrepareJob.perform_now }
+    end
+  end
+
+  test "with six earlier unseen briefs and today's, the seventh, made with no writing, the next run starts the writing and doesn't pause" do
+    unseen_mornings(6)
+    travel_to(central(5)) { DailyBrief::PrepareJob.perform_now }
+    @user.accept_ai_terms(understood: "1")
+
+    travel_to(central(5, 15) + 1.minute) do
+      assert_difference(-> { DailyBrief::Writing.count }, 1) { DailyBrief::PrepareJob.perform_now }
+    end
+    assert_not @plan.reload.paused?
+  end
+
+  test "a brief whose writing failed isn't written again by the job" do
+    @user.accept_ai_terms(understood: "1")
+    travel_to(central(5)) { DailyBrief::PrepareJob.perform_now }
+    @user.daily_briefs.sole.writings.sole.update!(status: "failed")
+
+    travel_to(central(5, 15)) do
+      assert_no_difference(-> { DailyBrief::Writing.count }) { DailyBrief::PrepareJob.perform_now }
+    end
+  end
+
   test "runs every 15 minutes" do
     task = YAML.load_file(Rails.root.join("config/recurring.yml"), aliases: true).dig("production", "prepare_daily_briefs")
 

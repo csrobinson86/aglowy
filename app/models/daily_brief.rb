@@ -2,7 +2,12 @@
 # own copy, never the live plan, so editing the plan can't change or break a brief already made (Trap 7). One a day per
 # person, by a unique index.
 class DailyBrief < ApplicationRecord
+  # A brief takes six requests at most, whatever their endings, as a failed one gives its use back (Trap 14).
+  MAX_WRITINGS = 6
+
   belongs_to :user
+  # Oldest first. Deleting a brief deletes its writings' chats, and the database the writings with them.
+  has_many :writings, -> { order(:created_at, :id) }, class_name: "DailyBrief::Writing", inverse_of: :daily_brief, dependent: :destroy
 
   # The sections, the focus areas and that weekday's row, as they were when the brief was made.
   encrypts :plan
@@ -25,6 +30,33 @@ class DailyBrief < ApplicationRecord
         user.daily_briefs.create!(on:, plan: plan.copy_for(on))
       end
     end
+  end
+
+  # The AI part, written, with its own chat and its use, then written in the background; or an unsaved writing with an
+  # error saying why not: :not_allowed unless it's the person's own brief and they may have AI drafts, :paused while
+  # their plan is paused, :written with first: true once the brief has a writing of any status, :busy while one is being
+  # written, and :limit at the day's 3 or the brief's 6. Every check runs under the person's lock, the one Plan#pause
+  # takes, so two at once make one and can't both take the last one. The job is queued once the lock is let go: it's in
+  # another database, and a worker could otherwise start before the writing is committed (How a writing runs).
+  def write(by:, first: false)
+    writing = by.with_lock do
+      reason, message = write_refusal(by, first:)
+      next Writing.new(daily_brief: self).tap { it.errors.add(:base, reason, message:) } if reason
+
+      writings.create!(chat: Chat.new(user: by, purpose: Writing::PURPOSE), use: Ai::Use.new(user: by, purpose: Writing::PURPOSE))
+    end
+
+    writing.tap { it.write_later if it.persisted? }
+  end
+
+  # The newest written writing: what the page shows. "Another angle" adds one, and the earlier stays until the purge.
+  def writing
+    writings.reverse.find(&:written?)
+  end
+
+  # The person's plan is paused, read afresh: brief.write and the writing's job ask under the person's lock.
+  def paused?
+    DailyBrief::Pause.joins(:plan).exists?(daily_brief_plans: { user_id: })
   end
 
   def sections
@@ -83,6 +115,20 @@ class DailyBrief < ApplicationRecord
   end
 
   private
+    def write_refusal(by, first:)
+      if by != user || !(by.may_have_daily_brief? && by.accepted_ai_terms?)
+        [ :not_allowed, "Only you, as a head or adult with AI drafts turned on, can have your brief written" ]
+      elsif paused?
+        [ :paused, "Your daily brief is paused" ]
+      elsif first && writings.exists?
+        [ :written, "This brief has been written already" ]
+      elsif writings.writing.exists?
+        [ :busy, "This brief is being written" ]
+      elsif by.daily_brief_writings_left_today.zero? || writings.count >= MAX_WRITINGS
+        [ :limit, "No more today" ]
+      end
+    end
+
     # Only the columns the record still has, so a brief kept from before a column changed still reads.
     def copied(model, attributes)
       model.new(attributes.slice(*model.attribute_names)).tap(&:readonly!)

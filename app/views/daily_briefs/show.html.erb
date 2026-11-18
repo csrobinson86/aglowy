@@ -3,9 +3,11 @@
     and another person's sign-in would show this brief again until the fresh page arrived. %>
 <% turbo_exempts_page_from_cache %>
 
-<%# The brief (docs/design/daily-brief.md, The brief, its states; frames brief-base.png and phone-brief.png): the newest
-    one on or before today, from its own copy of the plan, beside Today in Aglowy. Before the first, Prepare today's
-    brief; with only an earlier one, it's shown with its date and when today's is ready. No AI yet. %>
+<%# The brief (docs/design/daily-brief.md, The brief, its states; frames brief-today.png, brief-base.png and
+    phone-brief.png): the newest one on or before today, beside Today in Aglowy. Written by AI, its thread, its sections
+    and the pages it used; otherwise the parts from its own copy of the plan, with a Banner when the AI part failed, was
+    refused or stopped. Before the first, Prepare today's brief; with only an earlier one, it's shown with its date and
+    when today's is ready. Nothing is shown of a writing while it's being written (Trap 9). %>
 <%= render "daily_briefs/header", brief: @brief %>
 
 <% if @brief %>
@@ -24,13 +26,23 @@
     <% end %>
   <% end %>
 
+  <% writing = @brief.writing %>
+  <% if writing %>
+    <%= render "daily_briefs/thread", brief: @brief, writing: %>
+  <% elsif (unwritten = @brief.writings.last)&.status.in?(DailyBrief::Writing::UNWRITTEN_STATUSES) %>
+    <%= render(Primer::Alpha::Banner.new(scheme: unwritten.stopped? ? :default : :warning, icon: :info, mb: 4)) { unwritten_message(unwritten) } %>
+  <% end %>
+
   <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg)) do |layout| %>
     <% layout.with_main do %>
-      <%= render "daily_briefs/brief", brief: @brief %>
+      <%= render "daily_briefs/brief", brief: @brief, writing: %>
     <% end %>
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
             manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
+      <% if writing %>
+        <%= render "daily_briefs/sources", writing: %>
+      <% end %>
     <% end %>
   <% end %>
 <% else %>

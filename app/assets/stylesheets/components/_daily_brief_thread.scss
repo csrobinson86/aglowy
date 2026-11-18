@@ -1,0 +1,40 @@
+// Today's thread at the top of a written brief (docs/design/daily-brief.md, The brief; frame brief-today.png): a muted
+// box with an accent edge, the thread in large type, and the day's flow under it, each step after an arrow.
+.daily-brief-thread {
+  padding: var(--base-size-16) var(--base-size-24);
+  background-color: var(--bgColor-muted);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-left: var(--borderWidth-thicker) solid var(--borderColor-accent-emphasis);
+  border-radius: var(--borderRadius-medium);
+}
+
+.daily-brief-thread__kicker {
+  margin-bottom: var(--base-size-4);
+  font-size: var(--text-body-size-small);
+  font-weight: var(--base-text-weight-medium);
+  color: var(--fgColor-muted);
+}
+
+.daily-brief-thread__text {
+  margin-bottom: var(--base-size-8);
+  font-size: var(--text-title-size-medium);
+  font-weight: var(--base-text-weight-semibold);
+  line-height: var(--text-title-lineHeight-medium);
+  overflow-wrap: anywhere;
+}
+
+.daily-brief-thread__flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-4) var(--base-size-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-body-size-small);
+}
+
+.daily-brief-thread__step + .daily-brief-thread__step::before {
+  margin-right: var(--base-size-8);
+  color: var(--fgColor-muted);
+  content: "→";
+}

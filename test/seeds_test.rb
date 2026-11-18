@@ -146,6 +146,10 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ "As a husband", "As a father", "Reaching out", "Qualities to focus on", "Growing appreciation for Jehovah" ], plan.focus_areas.map(&:name)
     assert_equal 7, plan.days.count
     assert_equal [ user("spouse@example.com").today ], user("spouse@example.com").daily_briefs.pluck(:on)
+    # Today's brief written by AI from the saved reply, with the pages it used.
+    writing = user("spouse@example.com").daily_briefs.sole.writing
+    assert_equal [ "written", 3 ], [ writing.status, writing.sources.size ]
+    assert_equal "Patience", writing.section(:quality)["name"]
 
     assert_equal 0, Ai::Use.count
   end

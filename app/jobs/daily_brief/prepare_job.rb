@@ -1,11 +1,18 @@
-# Every 15 minutes: today's brief for each unpaused plan that's due (docs/design/daily-brief.md, The morning job). A plan
-# whose seven briefs before today went unseen is paused instead, and nil means go on to the next plan. Safe to run
-# twice: the brief is one a day, found or made under the person's lock. Someone who is no longer a head or adult anywhere
-# can't open a brief, so none is made for them; their plan and briefs are kept for when they're back.
+# Every 15 minutes: today's brief for each unpaused plan that's due (docs/design/daily-brief.md, The morning job), and its
+# AI part for someone with the AI terms. A plan whose seven briefs before today went unseen is paused instead, and nil
+# means go on to the next plan. Safe to run twice: the brief is one a day, found or made under the person's lock, and
+# brief.write with first: true starts a writing only for a brief that has none, checked in the same lock. A write it
+# refuses (the day's 3 used already, say) makes no writing, so the plan stays due and the next run asks again; nothing is
+# sent until one is allowed, so that costs a lock and a few reads, not a request. Someone who is
+# no longer a head or adult anywhere can't open a brief, so none is made for them; their plan and briefs are kept for
+# when they're back.
 class DailyBrief::PrepareJob < ApplicationJob
   def perform
     DailyBrief::Plan.unpaused.includes(:user, :pausing).find_each do |plan|
-      DailyBrief.for(plan.user, pause_if_unseen: true) if plan.due? && plan.user.may_have_daily_brief?
+      next unless plan.due? && plan.user.may_have_daily_brief?
+
+      brief = DailyBrief.for(plan.user, pause_if_unseen: true)
+      brief.write(by: plan.user, first: true) if brief && plan.user.accepted_ai_terms? && brief.writings.none?
     end
   end
 end

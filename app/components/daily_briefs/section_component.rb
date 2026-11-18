@@ -10,12 +10,15 @@ class DailyBriefs::SectionComponent < ApplicationComponent
 
   Row = Data.define(:label, :text, :references) do
     def initialize(label:, text:, references: []) = super
+
+    # Nothing to show: an AI field the checks left empty, with no scripture.
+    def blank? = text.blank? && references.empty?
   end
 
   attr_reader :id, :kicker, :title, :link, :rows
 
   def initialize(kicker:, title:, id: "daily-brief-#{kicker.parameterize}", link: nil, rows: [])
-    @id, @kicker, @title, @link, @rows = id, kicker, title, link, rows
+    @id, @kicker, @title, @link, @rows = id, kicker, title, link, rows.reject(&:blank?)
   end
 
   def render?

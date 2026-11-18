@@ -128,6 +128,12 @@ class User < ApplicationRecord
     head_or_adult_somewhere?
   end
 
+  # Daily brief writings left today, counted like personal study's questions (docs/design/daily-brief.md, The purpose).
+  def daily_brief_writings_left_today
+    used = ai_uses.daily_brief.since(Time.current.in_time_zone(limit_time_zone).beginning_of_day).count
+    [ DailyBrief::Writing.daily_limit - used, 0 ].max
+  end
+
   # Today's meeting part requests left, counted from their uses, so deleting a draft or a part can't give any back.
   def part_drafts_left_today
     used = ai_uses.meeting_part.since(Time.current.in_time_zone(limit_time_zone).beginning_of_day).count

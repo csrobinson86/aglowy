@@ -7,7 +7,7 @@ class Ai::Purpose
   # Each purpose's name, as chats and ai_uses store it, and its class.
   # Keep in step with the chats_purpose_check and ai_uses_purpose_check constraints.
   CLASSES = { "family_study_draft" => "Ai::Purpose::FamilyStudyDraft", "personal_study" => "Ai::Purpose::PersonalStudyAnswer",
-              "meeting_part" => "Ai::Purpose::MeetingPart" }.freeze
+              "meeting_part" => "Ai::Purpose::MeetingPart", "daily_brief" => "Ai::Purpose::DailyBrief" }.freeze
 
   def self.names = CLASSES.keys
 

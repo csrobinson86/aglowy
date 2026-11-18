@@ -13,6 +13,12 @@ class Ai::ScriptureFilter
     new.keep(fields)
   end
 
+  # A feature with other names for its scripture fields gives them; list_fields hold several references, separated by
+  # semicolons, and keep the ones that parse.
+  def initialize(scripture_fields: SCRIPTURE_FIELDS, list_fields: [])
+    @scripture_fields, @list_fields = scripture_fields, list_fields
+  end
+
   def keep(value)
     case value
     when Hash then value.each_with_object({}) { |(key, field), kept| keep_field(kept, key, field) }
@@ -24,7 +30,10 @@ class Ai::ScriptureFilter
 
   private
     def keep_field(kept, key, value)
-      if !key.to_s.in?(SCRIPTURE_FIELDS)
+      if key.to_s.in?(@list_fields)
+        references = value.to_s.split(";").filter_map { Bible::Reference.parse(it) }
+        kept[key] = references.join("; ") if references.any?
+      elsif !key.to_s.in?(@scripture_fields)
         kept[key] = keep(value)
       elsif (reference = Bible::Reference.parse(value))
         kept[key] = reference.to_s

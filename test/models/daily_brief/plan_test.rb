@@ -285,6 +285,52 @@ class DailyBrief::PlanTest < ActiveSupport::TestCase
     travel_to(central(5, 0)) { assert_not plan.gone_unseen? }
   end
 
+  test "pause ends a writing writing stopped with its use kept, and leaves finished ones alone" do
+    plan = started_plan
+    brief = travel_to(central(9, 0)) { DailyBrief.for(users(:head)) }
+    yesterday = travel_to(central(9, 0) - 1.day) { DailyBrief.for(users(:head)) }
+    running = daily_brief_writing(brief)
+    written = daily_brief_writing(yesterday, status: "written", result: { "thread" => "Kept." })
+    failed = daily_brief_writing(yesterday, status: "failed")
+
+    plan.pause(reason: "chosen")
+
+    assert_predicate running.reload, :stopped?
+    assert Ai::Use.exists?(daily_brief_writing_id: running.id)
+    assert_predicate written.reload, :written?
+    assert_predicate failed.reload, :failed?
+  end
+
+  test "pause leaves someone else's writing alone" do
+    plan = started_plan
+    users(:spouse).accept_ai_terms(understood: "1")
+    other = daily_brief_writing(travel_to(central(9, 0) - 3.days) { DailyBrief::Plan.start(users(:spouse), starter: "basics") }.then { DailyBrief.for(users(:spouse)) })
+
+    plan.pause(reason: "chosen")
+
+    assert_predicate other.reload, :writing?
+  end
+
+  test "due? with today's brief and no writing is true with the AI terms and false without" do
+    plan = started_plan
+    travel_to(central(5, 0)) { DailyBrief.for(users(:head)) }
+
+    assert_not plan.due?(central(9, 0)), "without the AI terms"
+    users(:head).accept_ai_terms(understood: "1")
+    assert plan.reload.due?(central(9, 0)), "with the AI terms"
+  end
+
+  test "due? with today's brief and a writing of any status is false" do
+    users(:head).accept_ai_terms(understood: "1")
+    plan = started_plan
+    writing = daily_brief_writing(travel_to(central(5, 0)) { DailyBrief.for(users(:head)) })
+
+    %w[ writing written off_topic flagged failed stopped ].each do |status|
+      writing.update!(status:)
+      assert_not plan.due?(central(9, 0)), "with a #{status} writing"
+    end
+  end
+
   private
     def insert_plan(**attributes)
       DailyBrief::Plan.insert!({ user_id: users(:head).id, started_at: Time.current, **attributes })
