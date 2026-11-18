@@ -22,7 +22,7 @@ RubyLLM's Rails models, as `CLAUDE.md` asks (`acts_as_chat`, `acts_as_message`).
 | --- | --- | --- |
 | `chats` | `user_id` (FK → users, not null) | Whose request it was. AI content is personal until the person uses it |
 | `chats` | `household_id` (FK → households, nullable) | Set when the feature is inside a household |
-| `chats` | `purpose` (string, not null, check in the known purposes) | Which `Ai::Purpose` it ran under: `family_study_draft`, `personal_study` (`docs/design/personal-study.md`), `meeting_part` (`docs/design/meeting-parts.md`) and `daily_brief` (`docs/design/daily-brief.md`) |
+| `chats` | `purpose` (string, not null, check in the known purposes) | Which `Ai::Purpose` it ran under: `family_study_draft`, `personal_study` (`docs/design/personal-study.md`), `meeting_part` (`docs/design/meeting-parts.md`), `daily_brief` (`docs/design/daily-brief.md`) and `listening_game` (`docs/design/listening-game.md`; its chat belongs to the person who turned the meeting helper on) |
 | `messages` | `content` encrypted (`encrypts :content`) | Prompts and replies are private family text, like notes |
 
 A feature's own record points at its chat (`FamilyStudy::Draft belongs_to :chat`) and keeps the feature's data. The chat keeps only the conversation. A draft has a chat of its own, one request and one reply (family study drafts, meeting part drafts), so the purge can delete it without touching another draft. Only a personal study keeps one chat for many questions.
