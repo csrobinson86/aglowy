@@ -4,5 +4,5 @@
   <% blankslate.with_visual_icon(icon: :"bell-slash") %>
   <% blankslate.with_heading(tag: :h1) { "#{email_name.upcase_first} #{params[:scope] == "summary" ? "is" : "are"} off" } %>
   <% blankslate.with_description { "You'll still see these notifications in Aglowy. You can turn the email back on in Settings → Notifications." } %>
-  <% blankslate.with_secondary_action(href: root_path) { "Open Aglowy" } %>
+  <% blankslate.with_secondary_action(href: root_path, data: { turbo_prefetch: false }) { "Open Aglowy" } %>
 <% end %>

@@ -528,6 +528,32 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "with the card, Home is kept out of Turbo's snapshot cache and the browser's; without it, it isn't" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    start_daily_brief(users(:head))
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+    assert_select "meta[name=turbo-cache-control][content=no-cache]"
+    assert_equal "no-store", response.headers["Cache-Control"]
+
+    sign_in identities(:spouse)
+    get household_root_path(household_id: households(:home))
+    assert_select "meta[name=turbo-cache-control]", count: 0
+    assert_not_equal "no-store", response.headers["Cache-Control"]
+  end
+
+  test "links to Home aren't prefetched on hover, as Home marks the brief seen" do
+    sign_in identities(:head)
+
+    get household_root_path(household_id: households(:home))
+
+    home = household_root_path(household_id: households(:home))
+    assert_select "nav a[href=?][data-turbo-prefetch=false]", home, text: "Home"
+    assert_select "a[href=?][data-turbo-prefetch=false]", home, text: "Aglowy"
+    assert_select "a[href=?]:not([data-turbo-prefetch=false])", home, count: 0
+  end
+
   test "no card with only yesterday's brief" do
     travel_to Time.utc(2026, 11, 17, 15)
     travel_to(3.days.ago) { DailyBrief::Plan.start(users(:head), starter: "husband_and_father") }

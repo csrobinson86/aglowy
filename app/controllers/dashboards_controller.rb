@@ -12,6 +12,7 @@ class DashboardsController < ApplicationController
     @welcome = [ @next_session, @family_goals, @my_goals, @meeting_notes, @pinned_notes ].all?(&:blank?)
     @todays_meeting = Current.household.current_or_next_meeting if Current.household.meeting_day?
     @daily_brief = todays_daily_brief
+    no_store if @daily_brief # As on the brief's page: Back can't show it to the next person to sign in.
   end
 
   private
