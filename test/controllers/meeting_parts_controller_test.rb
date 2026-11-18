@@ -163,6 +163,46 @@ class MeetingPartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "dialog#delete-meeting-part form[action=?]", household_meeting_part_path(household_id: @home, id: @part)
   end
 
+  test "the part page shows how long the preparation takes to say, beside the part's time" do
+    @part.update!(preparation: "<p>#{([ "word" ] * 108).join(" ")}</p>")
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+
+    # The hidden alert icon's SVG holds a little whitespace before the full stop. The system test reads the line as shown.
+    assert_select "#spoken-length", text: /\A\s*About 50 s to say · your part is 3 min\s*\. It counts the words above; scriptures you read aloud add to it\.\s*\z/
+    assert_select "section[aria-labelledby=preparation] #spoken-length[data-controller=spoken-length]:not([hidden])" \
+                  "[data-spoken-length-minutes-value='3'][data-spoken-length-words-per-minute-value='130']" do
+      assert_select "strong", "About 50 s to say"
+      assert_select "[data-spoken-length-target=within]:not([hidden])", "your part is 3 min"
+      assert_select "[data-spoken-length-target=over][hidden]"
+    end
+  end
+
+  test "the part page hides the time line when the preparation has no words" do
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+
+    assert_select "#spoken-length[hidden][data-controller=spoken-length]"
+  end
+
+  test "over the part's time, the time line says by how much, with an alert icon" do
+    @part.update!(preparation: "<p>#{([ "word" ] * 477).join(" ")}</p>")
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+
+    assert_select "#spoken-length:not([hidden])" do
+      assert_select "strong", "About 3 min 40 s to say"
+      assert_select "[data-spoken-length-target=within][hidden]"
+      assert_select "[data-spoken-length-target=over]:not([hidden])" do
+        assert_select "svg.octicon-alert"
+        assert_select "[data-spoken-length-target=overBy]", "40 s over your 3 min"
+      end
+    end
+  end
+
   test "edit is the dialog with the part's details" do
     sign_in identities(:head)
 
@@ -183,6 +223,9 @@ class MeetingPartsControllerTest < ActionDispatch::IntegrationTest
     assert_turbo_stream action: :update, target: "meeting_part_dialog"
     assert_turbo_stream action: :replace, target: "meeting-part-summary" do
       assert_select "h1", text: /Following Up/
+    end
+    assert_turbo_stream action: :replace, target: "spoken-length" do
+      assert_select "[data-spoken-length-minutes-value='4']"
     end
     assert_turbo_stream action: :update, targets: "head > title" do
       assert_select "template", text: "Following Up · #{@home.name} · Aglowy"

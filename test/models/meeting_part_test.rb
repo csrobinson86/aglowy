@@ -77,6 +77,31 @@ class MeetingPartTest < ActiveSupport::TestCase
     assert_equal [ Bible::Reference.find("19:37:10-11") ], part.reload.preparation.body.attachables
   end
 
+  test "spoken_length is the preparation's plain text, with nothing when there's no preparation" do
+    part = meeting_parts(:head_conversation)
+    assert_nil part.spoken_length.seconds
+
+    part.update!(preparation: "<ul><li>#{([ "word" ] * 54).join(" ")}</li><li>#{([ "word" ] * 54).join(" ")}</li></ul>")
+
+    assert_equal 50, part.reload.spoken_length.seconds
+  end
+
+  test "spoken_length counts the words as the editor has them: no list numbers, and headings and table cells apart" do
+    part = meeting_parts(:head_conversation)
+
+    # 100 words; ActionText's plain text adds "1." to "20." for 120, which is 60 s.
+    part.update!(preparation: "<ol>#{"<li>word word word word word</li>" * 20}</ol>")
+    assert_equal 50, part.reload.spoken_length.seconds
+
+    # 60 words; ActionText's plain text runs each heading into its paragraph, "PointWord", for 30, which is 10 s.
+    part.update!(preparation: "<h3>Point</h3><p>Word</p>" * 30)
+    assert_equal 30, part.reload.spoken_length.seconds
+
+    # 60 words; ActionText's plain text runs the cells together into one.
+    part.update!(preparation: "<table><tr>#{"<td>cell cell</td>" * 30}</tr></table>")
+    assert_equal 30, part.reload.spoken_length.seconds
+  end
+
   test "the preparation can only hold scripture links" do
     part = meeting_parts(:head_conversation)
     part.preparation = "<p>A cat</p>#{remote_image_attachment}"

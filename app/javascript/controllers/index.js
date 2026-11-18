@@ -52,6 +52,9 @@ application.register("push-subscription", PushSubscriptionController)
 import ResourceLinksController from "./resource_links_controller"
 application.register("resource-links", ResourceLinksController)
 
+import SpokenLengthController from "./spoken_length_controller"
+application.register("spoken-length", SpokenLengthController)
+
 import StudyAskController from "./study_ask_controller"
 application.register("study-ask", StudyAskController)
 

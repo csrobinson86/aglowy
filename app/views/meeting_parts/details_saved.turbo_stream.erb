@@ -1,7 +1,9 @@
 <%# Saved details from the part's page: empties the frame, which closes the dialog, and redraws the part above the
-    preparation and counsel, which keep what's typed and not yet saved. The title as the household layout writes it. %>
+    preparation and counsel, which keep what's typed and not yet saved, and the time line with the new minutes (its
+    controller counts the typed words again). The title as the household layout writes it. %>
 <%= turbo_stream.update "meeting_part_dialog" %>
 <%= turbo_stream.replace "meeting-part-summary", partial: "meeting_parts/summary", locals: { meeting_part: @meeting_part } %>
+<%= turbo_stream.replace "spoken-length", partial: "meeting_parts/spoken_length", locals: { meeting_part: @meeting_part } %>
 <%= turbo_stream.update_all "head > title", safe_join([ @meeting_part.kind_details.label, Current.household.name, "Aglowy" ], " · ") %>
 <%# The notice takes the old one's place, first in the household layout's main, where shared/flash renders it. %>
 <%= turbo_stream.remove_all "main .flash:not(.Banner)" %>

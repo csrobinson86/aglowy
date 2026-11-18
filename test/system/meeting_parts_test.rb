@@ -92,6 +92,7 @@ class MeetingPartsTest < ApplicationSystemTestCase
     wait_for_dialog
     within("dialog[open]") do
       fill_in "Assistant (optional)", with: "Ana Ortiz"
+      fill_in "Minutes", with: "4"
       click_on "Save part"
     end
 
@@ -99,8 +100,71 @@ class MeetingPartsTest < ApplicationSystemTestCase
     assert_no_selector "dialog[open]"
     assert_text "Ana Ortiz"
     assert_selector EDITOR, text: "Not saved yet."
+    assert_selector "#spoken-length", text: "About 10 s to say · your part is 4 min."
     assert_field "Counsel, and what to work on next", with: "Typed, not saved."
     assert_accessible
+  end
+
+  test "typing in the preparation changes the time line without saving; it matches the server's line after saving" do
+    part = meeting_parts(:head_conversation)
+    preparation = "Good morning. I'm Maria, from a few streets over. I saw the food drive sign, and it's good to see neighbours " \
+                  "looking out for each other. It's been a hard year for many families. Do you think problems like these will ever " \
+                  "be solved for good? I find one promise comforting. Read Psalm 37:10, 11. It speaks of peace here on the earth, " \
+                  "which I look forward to. How God will bring that about is worth a look. Could I come back on Saturday morning and show you?"
+    visit household_meeting_part_url(household_id: households(:home), id: part)
+    assert_selector "#spoken-length", visible: :hidden
+
+    editable = find("#{EDITOR} [contenteditable='true']")
+    editable.click
+    editable.send_keys(preparation)
+
+    assert_selector "#spoken-length", text: "About 40 s to say · your part is 3 min. It counts the words above; scriptures you read aloud add to it."
+    assert_no_selector "#spoken-length .octicon-alert"
+    assert_predicate part.reload.preparation.to_plain_text, :blank?
+    find("h1").hover
+    assert_accessible
+    capture_screens("part-time-under", scroll_to: "#spoken-length")
+
+    click_on "Save"
+
+    assert_text "Part saved."
+    assert_selector "#{EDITOR} .scripture-link", text: "Psalm 37:10, 11"
+    assert_equal "About 40 s to say", part.reload.spoken_length.to_s
+    assert_selector "#spoken-length strong", text: "About 40 s to say"
+  end
+
+  test "typing past the part's time says by how much, with an alert icon, and matches the server's line after saving" do
+    part = meeting_parts(:head_conversation)
+    # 390 words in a numbered list: 3 min, in the browser and on the server, which leaves out the list's numbers.
+    part.update!(preparation: "<ol>#{"<li>#{([ "word" ] * 30).join(" ")}</li>" * 13}</ol>")
+    assert_equal "About 3 min to say", part.spoken_length.to_s
+    visit household_meeting_part_url(household_id: households(:home), id: part)
+    assert_selector "#spoken-length", text: "About 3 min to say · your part is 3 min."
+
+    last_item = find("#{EDITOR} [contenteditable='true'] li:last-child")
+    last_item.click
+    # The caret to the end of the last item, wherever the click put it.
+    page.execute_script(<<~JS, last_item)
+      const range = document.createRange()
+      range.selectNodeContents(arguments[0])
+      range.collapse(false)
+      getSelection().removeAllRanges()
+      getSelection().addRange(range)
+    JS
+    find("#{EDITOR} [contenteditable='true']").send_keys(" And could I come back on Saturday to show you more?")
+
+    assert_selector "#spoken-length", text: "About 3 min 10 s to say · 10 s over your 3 min. It counts the words above"
+    assert_selector "#spoken-length .octicon-alert"
+    assert_no_text "your part is 3 min"
+    find("h1").hover
+    assert_accessible
+    capture_screens("part-time-over", scroll_to: "#spoken-length")
+
+    click_on "Save"
+
+    assert_text "Part saved."
+    assert_equal [ "About 3 min 10 s to say", 10 ], part.reload.spoken_length.then { [ it.to_s, it.over(3) ] }
+    assert_selector "#spoken-length", text: "About 3 min 10 s to say · 10 s over your 3 min."
   end
 
   test "a child opens their own part to prepare it" do
