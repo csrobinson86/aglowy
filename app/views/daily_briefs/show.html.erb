@@ -10,7 +10,8 @@
     Write it with AI (How a writing runs). Before the first, Prepare today's brief; with only an earlier one, it's shown
     with its date and when today's is ready. Nothing is shown of a writing while it's being written (Trap 9). With
     evening questions, the morning has This evening beside it, and ?part=evening shows them in place of the sections
-    (This evening; frame brief-evening.png). %>
+    (This evening; frame brief-evening.png). Written, For the children is beside it, with Share with the family on
+    today's (For the children, and sharing). %>
 <%= render "daily_briefs/header", brief: @brief, evening: @evening %>
 
 <% if @brief %>
@@ -62,6 +63,9 @@
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
             manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
+      <% if writing && @brief.section?(:children) && (children = writing.section(:children)&.compact_blank.presence) %>
+        <%= render "daily_briefs/children", brief: @brief, children:, today:, evening: @evening %>
+      <% end %>
       <% if !@evening && @brief.evening_questions.any? %>
         <%= render "daily_briefs/evening_note", brief: @brief, open: @brief.evening_open?(Time.current) %>
       <% end %>

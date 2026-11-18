@@ -22,6 +22,7 @@ module Shareable
   # RecordNotFound, a 404. The lock also serializes two shares at once, so sharing twice leaves one record.
   # Then, outside the lock, every other active member hears about it, once per sharing: sharing again finds the
   # same sharing, so its dedupe key makes no second notification (docs/design/notifications.md, shared_with_you).
+  # A record that stays quiet when shared (notifies_when_shared?) tells nobody.
   def share_with(household)
     sharing = transaction do
       household.lock!
@@ -29,14 +30,15 @@ module Shareable
       sharings.find_or_create_by!(household: household)
     end
     shared_households.reset
-    notify_household_of(household, sharing)
+    notify_household_of(household, sharing) if notifies_when_shared?
   end
 
   # The filtered delete_all leaves loaded sharings alone, so they're reset for the page that answers from this record.
-  # Its "shared with you" notifications there go too, so nobody's inbox shows what's private again.
+  # Its "shared with you" notifications there go too, so nobody's inbox shows what's private again. A record that stays
+  # quiet when shared has none, nor a notifications association to read them from.
   def stop_sharing_with(household)
     sharings.where(household: household).delete_all
-    notifications.where(household: household).withdraw
+    notifications.where(household: household).withdraw if notifies_when_shared?
     sharings.reset
     shared_households.reset
   end
@@ -54,6 +56,10 @@ module Shareable
   end
 
   private
+    # True unless the record says otherwise: a daily brief is shared every morning, and a notification each time would
+    # nag (docs/design/daily-brief.md, For the children, and sharing).
+    def notifies_when_shared? = true
+
     def notify_household_of(household, sharing)
       household.memberships.active.where.not(user_id: user_id).includes(:user).each do |membership|
         membership.user.notify(kind: "shared_with_you", household:, subject: self, actor: user, dedupe_key: "shared_with_you:#{sharing.id}")

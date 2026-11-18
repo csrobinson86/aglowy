@@ -336,6 +336,51 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_predicate brief.writings.last, :failed?
   end
 
+  # Sharing today's thought with the household (docs/design/daily-brief.md, For the children, and sharing; Trap 8).
+  test "share_with shares into a household the owner is active in, once, and stop_sharing_with ends it there only" do
+    brief = DailyBrief.for(@user)
+
+    2.times { brief.share_with(households(:home)) }
+    brief.share_with(households(:parents))
+
+    assert_equal households(:parents, :home).sort_by(&:name), brief.shared_households
+    assert brief.shared_with?(households(:home))
+    assert_raises(ActiveRecord::RecordNotFound) { brief.share_with(households(:other)) }
+
+    brief.stop_sharing_with(households(:home))
+
+    assert_not brief.shared_with?(households(:home))
+    assert_equal [ households(:parents) ], brief.reload.shared_households
+  end
+
+  test "shared_with finds a brief only while its owner is active in that household" do
+    brief = DailyBrief.for(@user)
+    brief.share_with(households(:home))
+    assert_equal [ brief ], DailyBrief.shared_with(households(:home)).to_a
+    assert_empty DailyBrief.shared_with(households(:parents))
+
+    memberships(:head_in_home).update_column(:active, false)
+
+    assert_empty DailyBrief.shared_with(households(:home))
+  end
+
+  test "sharing makes no notification, and stopping a share succeeds with no notifications to withdraw" do
+    brief = DailyBrief.for(@user)
+
+    assert_no_difference(-> { Notification.count }) { brief.share_with(households(:home)) }
+    assert_difference(-> { DailyBrief::Sharing.count }, -1) { brief.stop_sharing_with(households(:home)) }
+    assert_not brief.shared_with?(households(:home))
+  end
+
+  test "the database refuses a second sharing of one brief with one household" do
+    brief = DailyBrief.for(@user)
+    brief.share_with(households(:home))
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      DailyBrief::Sharing.insert!({ daily_brief_id: brief.id, household_id: households(:home).id })
+    end
+  end
+
   private
     # Refused with +reason+: nothing made and no job queued.
     def assert_refused(reason)

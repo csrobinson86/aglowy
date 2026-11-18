@@ -2,6 +2,9 @@
 # own copy, never the live plan, so editing the plan can't change or break a brief already made (Trap 7). One a day per
 # person, by a unique index.
 class DailyBrief < ApplicationRecord
+  # Today's thought, shared with a household with no notification: it declares none (For the children, and sharing).
+  include Shareable
+
   # A brief takes six requests at most, whatever their endings, as a failed one gives its use back (Trap 14).
   MAX_WRITINGS = 6
   # The evening questions open at 6:00 PM in the person's zone (This evening).
@@ -137,6 +140,8 @@ class DailyBrief < ApplicationRecord
   end
 
   private
+    def notifies_when_shared? = false
+
     def write_refusal(by, first:)
       if by != user || !(by.may_have_daily_brief? && by.accepted_ai_terms?)
         [ :not_allowed, "Only you, as a head or adult with AI drafts turned on, can have your brief written" ]

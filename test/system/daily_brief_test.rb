@@ -287,6 +287,57 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_text "Today's thread"
   end
 
+  # For the children, and sharing (docs/design/daily-brief.md; frames brief-today.png, brief-evening.png and
+  # brief-family.png).
+  test "share today's thought, see it on another member's Home, and stop sharing" do
+    written_writing
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+
+    within("section[aria-labelledby=daily-brief-children-heading]") do
+      assert_text "Have you ever really wanted something right now, and had to wait?"
+      assert_text "Shares today's thread, the reading and this box with The Head Family for today. Nothing else."
+      click_on "Share with the family"
+    end
+
+    assert_text "Shared with The Head Family."
+    within("section[aria-labelledby=daily-brief-children-heading]") do
+      assert_selector ".Label", text: "Shared with The Head Family"
+      assert_button "Stop sharing"
+      assert_text "They see today's thread, the reading and this box until tomorrow."
+    end
+    assert_accessible
+    capture_screens("brief-shared", scroll_to: "section[aria-labelledby=daily-brief-children-heading]")
+
+    sign_in identities(:spouse)
+    visit household_root_url(household_id: households(:home))
+
+    within(".shared-thought") do
+      assert_selector "h2", text: "Today's thought"
+      assert_text "Shared by Hannah Head"
+      assert_text THREAD
+      assert_link "Matthew 16:21-23"
+      assert_text "Let them practise waiting a turn, for a game or a snack, without asking to go first."
+      assert_no_text "Peter wants a faster, kinder ending"
+    end
+    assert_turbo_idle
+    assert_accessible
+    capture_screens("brief-family")
+
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+    within("section[aria-labelledby=daily-brief-children-heading]") { click_on "Stop sharing" }
+
+    assert_text "Stopped sharing with The Head Family."
+    within("section[aria-labelledby=daily-brief-children-heading]") { assert_button "Share with the family" }
+
+    sign_in identities(:spouse)
+    visit household_root_url(household_id: households(:home))
+
+    assert_selector "h1", text: "Home"
+    assert_no_selector ".shared-thought"
+  end
+
   private
     # Runs the queued writing's job with moderation stubbed and the saved reply (test/fixtures/files/ai/daily_brief.json)
     # given +thread+, through the real Chat#ask_within_purpose with the provider's connection stubbed.

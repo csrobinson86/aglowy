@@ -94,6 +94,20 @@ class MembershipTest < ActiveSupport::TestCase
     assert_equal [ households(:parents) ], goal.reload.shared_households
   end
 
+  test "deactivate ends the person's daily brief shares in that household and leaves those in another" do
+    travel_to Time.utc(2026, 11, 17, 15)
+    travel_to(2.days.ago) { DailyBrief::Plan.start(users(:head), starter: "husband_and_father") }
+    brief = DailyBrief.for(users(:head))
+    brief.share_with(households(:home))
+    brief.share_with(households(:parents))
+    memberships(:spouse_in_home).update!(role: :head)
+
+    assert_difference -> { DailyBrief::Sharing.count }, -1 do
+      assert memberships(:head_in_home).deactivate
+    end
+    assert_equal [ households(:parents) ], brief.reload.shared_households
+  end
+
   test "deactivate deletes the person's meeting-part sharings there and withdraws their notifications; rejoining doesn't bring them back" do
     part = meeting_parts(:head_conversation)
     part.share_with(households(:home))

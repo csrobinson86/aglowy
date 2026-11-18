@@ -275,6 +275,49 @@ class DailyBriefsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main input:not([type=hidden]), main textarea, main select, main [contenteditable]", count: 0
   end
 
+  # For the children, and sharing: the box from the written writing when children is on, with Share with the family on
+  # today's brief only.
+  test "today's written brief has For the children with Share with the family, which the evening sends back to the evening" do
+    start_plan
+    written_brief
+    travel_to central(19)
+
+    get household_daily_brief_path(household_id: @home, part: "evening")
+
+    assert_select "section[aria-labelledby=daily-brief-children-heading]" do
+      assert_select "h2", "For the children"
+      assert_select "dd", "Have you ever really wanted something right now, and had to wait?"
+      assert_select "form[action=?]", household_daily_brief_sharing_path(household_id: @home) do
+        assert_select "input[type=hidden][name=part][value=evening]"
+        assert_select "button", "Share with the family"
+      end
+    end
+  end
+
+  test "with children off, or a children's box the checks left empty, there's no For the children" do
+    start_plan.update!(sections: DailyBrief::Plan::SECTIONS - [ "children" ])
+    written_brief
+    get household_daily_brief_path(household_id: @home)
+    assert_select "#daily-brief-children-heading", count: 0
+
+    @user.daily_briefs.destroy_all
+    @user.daily_brief_plan.update!(sections: DailyBrief::Plan::SECTIONS)
+    written_brief { |result| result["children"] = { "ask" => "", "today" => "" } }
+    get household_daily_brief_path(household_id: @home)
+    assert_select "#daily-brief-children-heading", count: 0
+  end
+
+  test "an earlier day's brief has For the children and nothing to share" do
+    start_plan
+    written_brief
+    travel 1.day
+
+    get household_daily_brief_path(household_id: @home)
+
+    assert_select "section[aria-labelledby=daily-brief-children-heading] dd", "Have you ever really wanted something right now, and had to wait?"
+    assert_select "form[action=?]", household_daily_brief_sharing_path(household_id: @home), count: 0
+  end
+
   test "a child is refused" do
     sign_in identities(:eli)
 

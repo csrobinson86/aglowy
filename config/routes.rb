@@ -147,6 +147,8 @@ Rails.application.routes.draw do
       end
       # Another angle, Try again and Write it with AI for today's brief; show is the progress, destroy is Stop.
       resources :writings, only: %i[ create show destroy ], module: :daily_briefs
+      # Share with the family and Stop sharing, for today's brief and the household in the URL.
+      resource :sharing, only: %i[ create destroy ], module: :daily_briefs
     end
     # Each person's own note for the current or next meeting; show never creates anything (docs/design/meeting-helper.md).
     resource :todays_meeting, only: %i[ show create ]
