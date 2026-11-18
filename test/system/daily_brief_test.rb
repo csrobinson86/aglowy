@@ -372,13 +372,35 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_no_button "Print"
     assert_no_button "Another angle"
     assert_no_link "Your plan"
+    assert_no_selector ".Subhead-actions"
     assert_selector "h1", text: "Daily brief"
     assert_text written.result["thread"]
     assert_selector "h2", text: "One thing in each role"
+
+    # Paper is narrower than md, where the phone's top bar would otherwise show.
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 740, height: 1000, deviceScaleFactor: 1, mobile: false)
+    assert_no_selector ".app-shell__top-bar"
+    assert_no_button "Open menu"
+    assert_selector "h2", text: "One thing in each role"
     # capture_screens sets the colour scheme, which clears print, so this one is saved as it is.
-    page.save_screenshot(Rails.root.join("tmp/screenshots/ui/brief-print-desktop-light.png")) if ENV["SCREENSHOTS"]
+    page.save_screenshot(Rails.root.join("tmp/screenshots/ui/brief-print-paper-light.png")) if ENV["SCREENSHOTS"]
   ensure
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
     page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "")
+  end
+
+  test "with a dark appearance the brief prints in light colours, and goes back to dark afterwards" do
+    users(:head).update!(appearance: "dark")
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+    assert_selector "body[data-color-mode=dark]"
+    assert_button "Print"
+
+    execute_script("window.dispatchEvent(new Event('beforeprint'))")
+    assert_selector "body[data-color-mode=light]"
+
+    execute_script("window.dispatchEvent(new Event('afterprint'))")
+    assert_selector "body[data-color-mode=dark]"
   end
 
   private

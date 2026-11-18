@@ -14,7 +14,7 @@ class DailyBriefsController < ApplicationController
     return render :paused if @plan.paused?
 
     @today = Current.user.today
-    @brief = Current.user.daily_briefs.shown_on(@today)
+    @brief = Current.user.daily_briefs.where(on: ..@today).order(on: :desc).first
     @brief&.mark_seen
     @evening = params[:part] == "evening" && @brief&.evening_questions.present?
   end

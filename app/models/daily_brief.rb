@@ -40,11 +40,6 @@ class DailyBrief < ApplicationRecord
     end
   end
 
-  # The brief the page shows on +day+: that day's, or the newest before it while that day's isn't made.
-  def self.shown_on(day)
-    where(on: ..day).order(on: :desc).first
-  end
-
   # The AI part, written, with its own chat and its use, then written in the background; or an unsaved writing with an
   # error saying why not: :not_allowed unless it's the person's own brief and they may have AI drafts, :paused while
   # their plan is paused, :written with first: true once the brief has a writing of any status, :busy while one is being

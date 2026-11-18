@@ -100,12 +100,16 @@
 
 // Printed (docs/design/daily-brief.md, Keep in Notes, and print): the brief alone, across the page. The app shell's
 // sidebar and top bar, the side column, the Morning / Evening switch and every button are left out, and the
-// columns they leave become one.
+// columns they leave become one. The print controller prints in light colours, whatever the person's appearance.
 @media print {
   body:has(.daily-brief-page) {
+    // The top bar and the header's actions carry Primer's display utilities (d-flex), which are !important.
     .app-shell__top-bar,
+    main .Subhead-actions {
+      display: none !important;
+    }
+
     .app-shell > .Layout-sidebar,
-    main .Subhead-actions,
     main :is(button, .Button, .btn) {
       display: none;
     }

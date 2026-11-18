@@ -7,9 +7,9 @@
 <% left = brief.writings_left %>
 <div class="daily-brief-page__actions d-flex flex-wrap flex-items-center mt-3">
   <%= primer_form_with(url: household_daily_brief_note_path) do |f| %>
-    <%= render DailyBriefs::NoteForm.new(f) %>
+    <%= render DailyBriefs::NoteForm.new(f, on: brief.on) %>
   <% end %>
-  <%= render(Primer::Beta::Button.new(data: { controller: "print", action: "print#print" })) { "Print" } %>
+  <%= render(Primer::Beta::Button.new(data: { controller: "print", action: "print#print beforeprint@window->print#lighten afterprint@window->print#restore" })) { "Print" } %>
   <% if !today %>
     <%# Another angle and the rest are for today's brief only. %>
   <% elsif !Current.user.accepted_ai_terms? %>
