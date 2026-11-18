@@ -1,17 +1,19 @@
-<%# locals: (meeting_part:) -%>
+<%# locals: (meeting_part:, editable: true) -%>
 <%# The time line under the preparation (docs/design/meeting-parts.md, A part; frame part-prepare.png): about how long
     its words take to say, beside the part's time, or by how much it runs over with an alert icon, so it isn't colour
     alone. Hidden without words. spoken_length_controller.js rewrites it as the person types; saving the details from the
     dialog redraws it with the new minutes, and the controller counts the editor's words again. The spans sit on one
-    line, as spaces between them would show. %>
+    line, as spaces between them would show. On a part shared with them, a member reads it as "the part", without the
+    controller, since nothing there is typed. %>
 <% spoken_length = meeting_part.spoken_length %>
 <% over = spoken_length.over(meeting_part.minutes) %>
-<% over_by = "#{MeetingPart::SpokenLength.duration(over)} over your #{meeting_part.minutes} min" if over %>
-<%= tag.div id: "spoken-length", class: "mt-2 color-fg-muted", hidden: spoken_length.seconds.nil?,
-      data: { controller: "spoken-length", action: "lexxy:change@document->spoken-length#count",
-              spoken_length_minutes_value: meeting_part.minutes, spoken_length_words_per_minute_value: MeetingPart::SpokenLength::WORDS_PER_MINUTE } do %>
+<% whose = editable ? "your" : "the" %>
+<% over_by = "#{MeetingPart::SpokenLength.duration(over)} over #{whose} #{meeting_part.minutes} min" if over %>
+<% data = { controller: "spoken-length", action: "lexxy:change@document->spoken-length#count",
+            spoken_length_minutes_value: meeting_part.minutes, spoken_length_words_per_minute_value: MeetingPart::SpokenLength::WORDS_PER_MINUTE } if editable %>
+<%= tag.div id: "spoken-length", class: "mt-2 color-fg-muted", hidden: spoken_length.seconds.nil?, data: do %>
   <p class="d-flex mb-0">
     <%= render(Primer::Beta::Octicon.new(icon: :stopwatch, mr: 2, mt: 1, flex_shrink: 0)) %>
-    <span><%= tag.strong spoken_length.to_s, class: "color-fg-default", data: { spoken_length_target: "length" } %> · <%= tag.span "your part is #{meeting_part.minutes} min", hidden: over.present?, data: { spoken_length_target: "within" } %><%= tag.span class: "color-fg-attention", hidden: over.nil?, data: { spoken_length_target: "over" } do %><%= render(Primer::Beta::Octicon.new(icon: :alert, mr: 1)) %><%= tag.span over_by, data: { spoken_length_target: "overBy" } %><% end %>. It counts the words above; scriptures you read aloud add to it.</span>
+    <span><%= tag.strong spoken_length.to_s, class: "color-fg-default", data: { spoken_length_target: "length" } %> · <%= tag.span "#{whose} part is #{meeting_part.minutes} min", hidden: over.present?, data: { spoken_length_target: "within" } %><%= tag.span class: "color-fg-attention", hidden: over.nil?, data: { spoken_length_target: "over" } do %><%= render(Primer::Beta::Octicon.new(icon: :alert, mr: 1)) %><%= tag.span over_by, data: { spoken_length_target: "overBy" } %><% end %>. It counts the words above; scriptures you read aloud add to it.</span>
   </p>
 <% end %>

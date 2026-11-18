@@ -49,6 +49,7 @@ class Membership < ApplicationRecord
         if deactivated
           user.stop_sharing_meeting_notes_with(household)
           user.stop_sharing_goals_with(household)
+          user.stop_sharing_meeting_parts_with(household)
           user.leave_open_goal_steps_in(household)
           revoke_study_ai
         end

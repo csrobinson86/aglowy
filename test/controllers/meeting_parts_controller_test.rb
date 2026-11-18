@@ -337,4 +337,91 @@ class MeetingPartsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Nice smile", part.reload.counsel
     assert_equal [ Bible::Reference.find("20:17:17") ], part.preparation.body.attachables
   end
+
+  # Sharing (docs/design/meeting-parts.md, A part: "A shared part"; Trap 3).
+  test "a part shared with the household renders read-only for another member, with who shared it, and without the counsel" do
+    @part.update!(preparation: "<p>Open with a question about hope.</p>", counsel: "Slow down at the start.")
+    @part.share_with(@home)
+    sign_in identities(:spouse)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+
+    assert_response :success
+    assert_select "h1", /Starting a Conversation/
+    assert_select "h1 .Label", "Shared with The Head Family"
+    assert_select "main", text: /#{@part.meeting_on.strftime("%A, %B %-d")} · Midweek meeting · shared by Hannah Head/
+    assert_select "section[aria-labelledby=the-part]", text: /hope for the future/
+    assert_select "section[aria-labelledby=preparation]", text: /Open with a question about hope./ do
+      assert_select "*", text: /About \d+ s to say · the part is 3 min/
+    end
+    assert_select "main", text: /Slow down at the start/, count: 0
+    assert_select "main", text: /After the meeting/, count: 0
+    assert_select "lexxy-editor, textarea[name='meeting_part[counsel]']", count: 0
+    assert_select "form[action=?]", household_meeting_part_path(household_id: @home, id: @part), count: 0
+    assert_select "a[href=?]", edit_household_meeting_part_path(household_id: @home, id: @part), count: 0
+    assert_select "#meeting-part-sharing, dialog#delete-meeting-part", count: 0
+    assert_select "main button", text: /Share|Delete|Save|Edit/, count: 0
+  end
+
+  test "a shared part stays the owner's: another member can't edit, update or delete it" do
+    @part.share_with(@home)
+
+    [
+      -> { get edit_household_meeting_part_path(household_id: @home, id: @part) },
+      -> { patch household_meeting_part_path(household_id: @home, id: @part), params: { meeting_part: { counsel: "Mine now" } } },
+      -> { delete household_meeting_part_path(household_id: @home, id: @part) }
+    ].each do |request|
+      sign_in identities(:spouse)
+      request.call
+      assert_response :not_found
+    end
+
+    assert_nil @part.reload.counsel
+  end
+
+  test "an unshared part, or one shared with another household, is a 404 for a household member" do
+    @part.share_with(households(:parents))
+    sign_in identities(:spouse)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+
+    assert_response :not_found
+  end
+
+  test "the owner's own part and list show it Shared" do
+    @part.share_with(@home)
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+    assert_select "h1 .Label", "Shared with The Head Family"
+    assert_select "#meeting-part-sharing button", "Stop sharing"
+    assert_select "textarea[name='meeting_part[counsel]']"
+
+    get household_meeting_parts_path(household_id: @home)
+    assert_select "section[aria-labelledby=coming-up] li .Label", "Shared"
+    assert_select "section[aria-labelledby=earlier] li .Label", "Private"
+  end
+
+  test "the owner's part offers the share dialog, saying the counsel isn't shared and which households won't see it" do
+    sign_in identities(:head)
+
+    get household_meeting_part_path(household_id: @home, id: @part)
+
+    assert_select "#meeting-part-sharing dialog#share-meeting-part" do
+      assert_select "h1", "Share with The Head Family?"
+      assert_select "*", text: /Everyone in The Head Family will be able to read the part and your preparation, not your counsel./
+      assert_select "*", text: /The Grandparent Family won't see it./
+      assert_select "form[action=?] button", household_meeting_part_sharing_path(household_id: @home, meeting_part_id: @part), text: "Share part"
+    end
+  end
+
+  test "the list switches between Mine and Shared in the household" do
+    meeting_parts(:spouse_talk).share_with(@home)
+    sign_in identities(:head)
+
+    get household_meeting_parts_path(household_id: @home)
+
+    assert_select "ul[aria-label='Show'] a[aria-current='true']", text: "Mine"
+    assert_select "ul[aria-label='Show'] a[href=?]", household_shared_meeting_parts_path(household_id: @home), text: /Shared in The Head Family\s+1/
+  end
 end

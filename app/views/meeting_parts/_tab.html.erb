@@ -1,0 +1,22 @@
+<%# locals: (shared:, shared_count:) %>
+<%# The Meeting parts page around my own list or the shared one, which the page yields, with the Mine / "Shared in
+    <household>" switch, as on the Meeting notes tab (docs/design/meeting-parts.md, The list; frame meeting-parts.png). %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Meeting parts" } %>
+  <% subhead.with_description { "Your student parts in Apply Yourself to the Field Ministry. Private unless you share them." } %>
+  <% subhead.with_actions do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_meeting_part_path, scheme: :primary, data: { turbo_frame: "meeting_part_dialog" })) { "Add a part" } %>
+  <% end %>
+<% end %>
+
+<%# Mine and Shared are two pages, so the switch's segments are links. %>
+<%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Show", mb: 3, classes: "meeting-parts__show")) do |control| %>
+  <% control.with_item(tag: :a, href: household_meeting_parts_path, label: "Mine", selected: !shared) %>
+  <% control.with_item(tag: :a, href: household_shared_meeting_parts_path, label: "Shared in #{Current.household.name}", selected: shared) do |item| %>
+    <% item.with_trailing_visual_label { shared_count.to_s } %>
+  <% end %>
+<% end %>
+
+<%= yield %>
+
+<%= turbo_frame_tag "meeting_part_dialog" %>

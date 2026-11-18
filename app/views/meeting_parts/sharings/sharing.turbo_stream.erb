@@ -1,0 +1,5 @@
+<%= turbo_stream.replace "meeting-part-sharing-label", partial: "meeting_parts/sharing_label", locals: { meeting_part: @meeting_part } %>
+<%= turbo_stream.update "meeting-part-sharing", partial: "meeting_parts/sharing", locals: { meeting_part: @meeting_part, household: Current.household } %>
+<%# The notice takes the old one's place, first in the household layout's main, where shared/flash renders it. %>
+<%= turbo_stream.remove_all "main .flash:not(.Banner)" %>
+<%= turbo_stream.prepend_all "main .container-xl", partial: "shared/flash" %>

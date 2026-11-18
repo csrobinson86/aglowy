@@ -221,6 +221,12 @@ class User < ApplicationRecord
     Notification.where(household: household, subject_type: "Goal", subject_id: goals.select(:id)).withdraw
   end
 
+  # And meeting parts, so a part is private again after leaving, even on rejoining.
+  def stop_sharing_meeting_parts_with(household)
+    MeetingPart::Sharing.where(household: household, meeting_part: meeting_parts).delete_all
+    Notification.where(household: household, subject_type: "MeetingPart", subject_id: meeting_parts.select(:id)).withdraw
+  end
+
   # Membership#deactivate calls this under the household's lock, so a step naming only someone who left can
   # still be finished. Done steps keep their assignments and ticks as history (docs/design/goals.md,
   # "Leaving a household"). A person's tick on a named step always has an assignment beside it.

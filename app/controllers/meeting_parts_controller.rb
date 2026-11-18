@@ -1,17 +1,19 @@
 # A person's own student parts. They're the same in every household the person belongs to, so they're reached through
 # Current.user, never Current.household or an id alone: someone else's part is a 404 (docs/design/meeting-parts.md,
-# Pages and routes). Adding and editing the details happen in a dialog loaded into the page's Turbo Frame; a part's page
+# Pages and routes). The one exception is reading: a part shared into this household is also found through
+# MeetingPart.shared_with(Current.household), read-only and without its counsel. Adding and editing the details happen in a dialog loaded into the page's Turbo Frame; a part's page
 # saves its preparation and counsel with the same update.
 class MeetingPartsController < ApplicationController
   include HouseholdScoped
 
-  before_action :set_meeting_part, only: %i[ show edit update destroy ]
+  before_action :set_meeting_part, only: %i[ edit update destroy ]
 
   def index
     authorize MeetingPart
     today = Current.user.today
-    @coming_up = Current.user.meeting_parts.coming_up(today).load
-    @earlier = Current.user.meeting_parts.earlier(today).load
+    @coming_up = Current.user.meeting_parts.includes(:sharings).coming_up(today).load
+    @earlier = Current.user.meeting_parts.includes(:sharings).earlier(today).load
+    @shared_count = MeetingPart.shared_with(Current.household).count
   end
 
   # The date starts at this household's next midweek meeting, blank before its meeting times are set.
@@ -31,7 +33,11 @@ class MeetingPartsController < ApplicationController
     end
   end
 
+  # My own part first, else one shared into this household, else 404.
   def show
+    @meeting_part = Current.user.meeting_parts.with_rich_text_preparation.find_by(id: params[:id]) ||
+      MeetingPart.shared_with(Current.household).with_rich_text_preparation.includes(:user).find(params[:id])
+    authorize @meeting_part
   end
 
   def edit

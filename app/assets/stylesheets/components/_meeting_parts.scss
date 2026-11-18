@@ -36,3 +36,17 @@
 .meeting-part-details__topic {
   white-space: pre-line;
 }
+
+// The Mine / "Shared in <household>" switch, as on the Meeting notes tab: a long household name truncates its segment,
+// so the switch never scrolls a phone sideways, and Mine keeps its full width.
+.meeting-parts__show {
+  max-width: 100%;
+}
+
+.meeting-parts__show .SegmentedControl-item {
+  min-width: 0;
+}
+
+.meeting-parts__show .SegmentedControl-item:first-child {
+  flex-shrink: 0;
+}

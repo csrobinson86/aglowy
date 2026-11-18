@@ -1,0 +1,13 @@
+<%# locals: (coming_up:, earlier:, shared: false) %>
+<%# Coming up, soonest first, then Earlier, newest first (docs/design/meeting-parts.md, The list). %>
+<% { "coming-up" => [ "Coming up", coming_up ], "earlier" => [ "Earlier", earlier ] }.each do |id, (title, parts)| %>
+  <% next if parts.none? %>
+  <section aria-labelledby="<%= id %>" class="mb-4">
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, color: :muted, mb: 2, id:)) { title } %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% parts.each do |part| %>
+        <% box.with_row(display: :flex, align_items: :center) { render "meeting_parts/part", part:, shared: } %>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
