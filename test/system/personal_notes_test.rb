@@ -107,6 +107,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
   test "on New note, choosing Red recolors the card before any save, and Save note saves it red" do
     visit new_household_personal_note_url(household_id: households(:home))
     assert_selector "main .note-card.note-card--none"
+    assert_no_selector "main .note-card [data-note-color-name]", visible: :all
     fill_in "Title", with: "Patience"
 
     within("fieldset", text: "Color") do
@@ -114,7 +115,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
       find("label[for=personal_note_color_red]").click
       assert_selector ".color-picker__chosen", text: "Red"
     end
-    assert_selector "main .note-card.note-card--red"
+    assert_selector "main .note-card.note-card--red", text: "Red note"
     assert_no_selector "main .note-card.note-card--none"
     assert_equal "rgba(255, 118, 118, 0.3)", background_color("main .note-card")
     assert_equal "rgb(255, 118, 118)", background_color("label[for=personal_note_color_red]")
@@ -132,19 +133,26 @@ class PersonalNotesTest < ApplicationSystemTestCase
     note = personal_notes(:head_family_worship)
     note.update!(color: "yellow")
     visit household_personal_note_url(household_id: households(:home), id: note)
-    assert_selector "main .note-card.note-card--yellow"
+    assert_selector "main .note-card.note-card--yellow", text: "Yellow note"
 
     find("label[for=personal_note_color_blue]").click
-    assert_selector "main .note-card.note-card--blue"
+    assert_selector "main .note-card.note-card--blue", text: "Blue note"
     assert_no_selector "main .note-card.note-card--yellow"
+    assert_no_text "Yellow note"
     within("fieldset", text: "Color") { assert_selector ".color-picker__chosen", text: "Blue" }
+
+    find("label[for=personal_note_color_none]").click
+    assert_selector "main .note-card.note-card--none"
+    assert_no_selector "main .note-card [data-note-color-name]", visible: :all
+    find("label[for=personal_note_color_blue]").click
+    assert_selector "main .note-card.note-card--blue [data-note-color-name]", text: "Blue note", count: 1
 
     within("nav[aria-label=Breadcrumb]") { click_on "Notes" }
     assert_selector "h1", text: "Notes"
     assert note.reload.color_yellow?
     go_back
     within("fieldset", text: "Color") { assert_selector ".color-picker__chosen", text: "Yellow" }
-    assert_selector "main .note-card.note-card--yellow"
+    assert_selector "main .note-card.note-card--yellow", text: "Yellow note"
 
     visit household_personal_notes_url(household_id: households(:home))
     click_on "Ideas for family worship"

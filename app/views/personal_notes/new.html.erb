@@ -15,6 +15,7 @@
     refused save. Tags come once it's saved, on the note's page: the tag editor adds them to a saved note. %>
 <div class="container-md ml-0">
   <div class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4">
+    <%= render "personal_notes/color_name", personal_note: @personal_note %>
     <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_notes_path %>
   </div>
 </div>

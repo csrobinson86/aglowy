@@ -273,6 +273,7 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
       assert_select "button[type=submit]", "Save note"
     end
     assert_select "main .note-card", count: 1
+    assert_select "main .note-card [data-note-color-name]", count: 0
     assert_select "main .Box", count: 0
   end
 
@@ -286,6 +287,7 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .note-card.note-card--red" do
       assert_select "input[type=radio][name='personal_note[color]'][value=red][checked]"
       assert_select ".color-picker__chosen", "Red"
+      assert_select ".sr-only[data-note-color-name]", "Red note"
     end
   end
 
