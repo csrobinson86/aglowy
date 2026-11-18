@@ -410,6 +410,16 @@ class DailyBriefTest < ActiveSupport::TestCase
       .each { assert_includes references, it }
   end
 
+  test "keep_as_note makes a whole chapter in a section's title a scripture link" do
+    brief = DailyBrief.for(@user)
+    daily_brief_writing(brief, status: "written", result: { "reading" => { "passage" => "Matthew 16", "title" => "<b>Ahead</b>" } })
+
+    note = brief.keep_as_note.reload
+
+    assert_includes note.scripture_references.map(&:to_s), "Matthew 16"
+    assert_includes note.body.to_plain_text, "<b>Ahead</b>"
+  end
+
   test "keep_as_note escapes AI text holding HTML, so the reply's markup is only ever text" do
     brief = DailyBrief.for(@user)
     daily_brief_writing(brief, status: "written", sources: [ { "url" => "https://www.jw.org/en/x", "title" => "<b>Page</b>" } ],

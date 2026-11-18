@@ -163,6 +163,12 @@ module DailyBriefsHelper
     content_tag(ActionText::Attachment.tag_name, nil, sgid: reference.attachable_sgid, "content-type": reference.attachable_content_type)
   end
 
+  # A section's title for Keep in Notes' body, each part that's a whole reference, "Matthew 16" in "Matthew 16 · Title",
+  # a scripture link: Bible::Linker links a chapter and verse only, so a whole chapter would stay text.
+  def note_title(title)
+    safe_join(title.to_s.split(" · ").map { |part| Bible::Reference.parse(part)&.then { scripture_attachment(it) } || part }, " · ")
+  end
+
   # The chapter a passage is in, as a reference to link: "Matthew 16" for "Matthew 16:21-23".
   def passage_chapter(text)
     Bible::Reference.parse(text)&.then { Bible::Reference.new(book: it.book, chapter: it.chapter) }

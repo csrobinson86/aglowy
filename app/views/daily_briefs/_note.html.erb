@@ -9,7 +9,7 @@
 <% end %>
 <% brief_sections(brief, writing).values.compact.select(&:render?).each do |section| %>
   <h2><%= section.kicker %></h2>
-  <% if section.title != section.kicker %><p><strong><%= section.title %></strong></p><% end %>
+  <% if section.title != section.kicker %><p><strong><%= note_title(section.title) %></strong></p><% end %>
   <% if section.link %><p><%= link_to section.link.text, section.link.href %></p><% end %>
   <% section.rows.each do |row| %>
     <p><strong><%= row.label %>:</strong> <%= row.text %> <%= safe_join(row.references.map { scripture_attachment(it) }, "; ") %></p>
