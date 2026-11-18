@@ -8,6 +8,13 @@
   border-radius: var(--borderRadius-medium);
 }
 
+.daily-brief-thread__kicker {
+  margin-bottom: var(--base-size-4);
+  font-size: var(--text-body-size-small);
+  font-weight: var(--base-text-weight-medium);
+  color: var(--fgColor-muted);
+}
+
 .daily-brief-thread__text {
   margin-bottom: var(--base-size-8);
   font-size: var(--text-title-size-medium);

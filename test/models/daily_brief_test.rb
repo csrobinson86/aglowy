@@ -233,6 +233,11 @@ class DailyBriefTest < ActiveSupport::TestCase
     users(:spouse).accept_ai_terms(understood: "1")
     assert_refused(:not_allowed) { brief.write(by: users(:spouse)) }
 
+    child = users(:child)
+    child.accept_ai_terms(understood: "1")
+    DailyBrief::Plan.start(child, starter: "basics").update!(started_at: 3.days.ago)
+    assert_refused(:not_allowed) { DailyBrief.for(child).write(by: child) }
+
     @user.accept_ai_terms(understood: "1")
     @user.memberships.update_all(active: false)
     assert_refused(:not_allowed) { brief.write(by: @user.reload) }

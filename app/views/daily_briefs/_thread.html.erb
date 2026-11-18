@@ -2,7 +2,7 @@
 <%# Today's thread: the AI's one sentence that ties the day together, and the day's flow under it as links to the
     sections (docs/design/daily-brief.md, The brief; frame brief-today.png). Escaped, like every AI field. %>
 <section class="daily-brief-thread mb-4" aria-labelledby="daily-brief-thread-heading">
-  <p class="daily-brief-section__kicker" id="daily-brief-thread-heading">Today's thread</p>
+  <p class="daily-brief-thread__kicker" id="daily-brief-thread-heading">Today's thread</p>
   <p class="daily-brief-thread__text"><%= writing.section(:thread) %></p>
   <% if (flow = brief_flow(brief, writing)).any? %>
     <nav aria-label="Today's flow">

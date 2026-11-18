@@ -165,6 +165,15 @@ class DailyBrief::WritingTest < ActiveSupport::TestCase
     assert_equal "Patience", quality["name"]
   end
 
+  test "a thread over 200 characters is dropped, so the writing fails; 200 is fine" do
+    write(saved_reply { it["thread"] = "a" * 201 })
+    assert_predicate @writing.reload, :failed?
+
+    @writing = daily_brief_writing(@brief)
+    write(saved_reply { it["thread"] = "a" * 200 })
+    assert_equal "a" * 200, @writing.reload.result["thread"]
+  end
+
   test "less than the thread and two sections ends failed and deletes the use" do
     write(saved_reply { |parsed| %w[ daily_text reading quality appreciation focus ].each { parsed.delete(it) } })
 

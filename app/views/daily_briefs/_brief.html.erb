@@ -18,7 +18,7 @@
     <% if (reading = writing&.section(:reading)) %>
       <% chapter = passage_chapter(reading["passage"]) %>
       <%= render section.new(kicker: [ "Bible reading", ("from #{day.reading}" if day.reading.present?) ].compact.join(" · "), id: "daily-brief-reading",
-            title: [ reading["passage"], reading["title"] ].compact.join(" · "),
+            title: [ reading["passage"], reading["title"] ].compact.join(" · ").presence || day.reading.presence || "Today's reading",
             link: (link.new(text: "Read #{chapter} on jw.org", href: chapter.jw_url, note: "what to look for as you read:") if chapter),
             rows: Array(reading["look_for"]).map { row.new(label: verses_label(it["verses"]), text: it["text"]) }) %>
     <% else %>
@@ -69,7 +69,7 @@
   <% if brief.section?(:faith_example) %>
     <% if (faith = writing&.section(:faith)) %>
       <% examples = Array(faith["examples"]) %>
-      <%= render section.new(kicker: "Imitate their faith", title: examples.pluck("name").to_sentence(two_words_connector: " and ", last_word_connector: " and ").presence || day.examples,
+      <%= render section.new(kicker: "Imitate their faith", title: examples.pluck("name").to_sentence(two_words_connector: " and ", last_word_connector: " and ").presence || day.examples.presence || "For me",
             id: "daily-brief-faith", rows: examples.map { row.new(label: it["name"], text: it["lesson"], references: brief_references(it["scriptures"])) } +
                                            [ row.new(label: "For me", text: faith["for_me"]) ]) %>
     <% else %>

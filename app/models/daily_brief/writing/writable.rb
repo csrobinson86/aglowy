@@ -7,6 +7,7 @@ module DailyBrief::Writing::Writable
 
   # Every string in the reply (docs/design/daily-brief.md, The reply). The schema only describes it.
   TEXT_MAX = 300
+  THREAD_MAX = 200
   DAILY_TEXT = %w[ reference happening teaches apply apply_scripture ].freeze
   READING = %w[ passage title ].freeze
   LOOK_FOR = %w[ verses text ].freeze
@@ -80,7 +81,7 @@ module DailyBrief::Writing::Writable
     def fields_from(parsed)
       reading, faith = fields_in(parsed["reading"]), fields_in(parsed["faith"])
 
-      { "thread" => string(parsed["thread"]),
+      { "thread" => string(parsed["thread"], THREAD_MAX),
         "daily_text" => strings(parsed["daily_text"], DAILY_TEXT),
         "reading" => strings(reading, READING).merge("look_for" => items(reading["look_for"], LOOK_FOR, 3)),
         "quality" => strings(parsed["quality"], QUALITY),
@@ -103,8 +104,9 @@ module DailyBrief::Writing::Writable
 
     def fields_in(value) = value.is_a?(Hash) ? value : {}
 
-    # A field that isn't a string, or is longer than TEXT_MAX, is dropped, and the fields beside it stay.
-    def string(value) = value.is_a?(String) && value.length <= TEXT_MAX ? value : ""
+    # A field that isn't a string, or is longer than its most (TEXT_MAX, or THREAD_MAX for the thread), is dropped, and
+    # the fields beside it stay.
+    def string(value, most = TEXT_MAX) = value.is_a?(String) && value.length <= most ? value : ""
 
     def strings(value, keys)
       fields_in(value).then { |fields| keys.index_with { string(fields[it]) } }
