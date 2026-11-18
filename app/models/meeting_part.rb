@@ -44,4 +44,20 @@ class MeetingPart < ApplicationRecord
   def program_url
     MeetingNote.program_url(week_of)
   end
+
+  # About how long the preparation takes to say, for the time line under its editor.
+  def spoken_length
+    SpokenLength.new(preparation_text)
+  end
+
+  private
+    # The words as the editor's own text has them, so spoken_length_controller.js counts the same: a break after each
+    # block and no list numbers. ActionText's to_plain_text numbers lists and runs headings and table cells together.
+    def preparation_text
+      return "" unless preparation.body
+
+      html = preparation.body.render_attachments(with_full_attributes: false, &:to_plain_text).fragment.source
+      html.css("h1, h2, h3, h4, h5, h6, p, div, li, td, th, blockquote, pre, br").each { it.add_next_sibling(" ") }
+      html.text
+    end
 end

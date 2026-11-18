@@ -12,6 +12,7 @@
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "preparation")) { "Preparation" } %>
     <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true,
           placeholder: "What you'll say, in your own words. Type a scripture, or use the Scripture button." %>
+    <%= render "meeting_parts/spoken_length", meeting_part: @meeting_part %>
   </section>
   <section aria-labelledby="after-the-meeting">
     <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "after-the-meeting")) { "After the meeting" } %>
