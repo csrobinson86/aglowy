@@ -38,11 +38,11 @@ class DailyBrief < ApplicationRecord
   # The copy's focus areas and day, as unsaved records, so they read as the plan's do: a topic by its focus area, its
   # scriptures as references.
   def focus_areas
-    @focus_areas ||= plan.fetch("focus_areas").map { DailyBrief::FocusArea.new(it).tap(&:readonly!) }
+    @focus_areas ||= plan.fetch("focus_areas").map { copied(DailyBrief::FocusArea, it) }
   end
 
   def day
-    @day ||= DailyBrief::Day.new(plan.fetch("day")).tap(&:readonly!)
+    @day ||= copied(DailyBrief::Day, plan.fetch("day"))
   end
 
   def topic_for(focus_area)
@@ -65,7 +65,7 @@ class DailyBrief < ApplicationRecord
   # The first chapter of the day's books, "Matthew 1" for "Matthew – John", or nil when the box is empty or doesn't
   # start with a book.
   def reading_start
-    Bible::Reference.parse("#{day.reading.to_s.split(/[–,]/).first} 1")
+    Bible::Reference.parse("#{day.reading.to_s.split(/[–—,-]| to /).first} 1")
   end
 
   # The day's text on wol.jw.org, in English. Aglowy links to it and never fetches it.
@@ -77,4 +77,10 @@ class DailyBrief < ApplicationRecord
   def mark_seen
     update!(seen_at: Time.current) unless seen_at
   end
+
+  private
+    # Only the columns the record still has, so a brief kept from before a column changed still reads.
+    def copied(model, attributes)
+      model.new(attributes.slice(*model.attribute_names)).tap(&:readonly!)
+    end
 end

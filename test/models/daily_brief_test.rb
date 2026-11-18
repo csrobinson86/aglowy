@@ -99,8 +99,17 @@ class DailyBriefTest < ActiveSupport::TestCase
     brief = DailyBrief.new(plan: { "day" => { "wday" => 2, "reading" => "Matthew – John" } })
     assert_equal "Matthew 1", brief.reading_start.to_s
     assert_equal "Song of Solomon 1", DailyBrief.new(plan: { "day" => { "reading" => "Song of Solomon, Psalms" } }).reading_start.to_s
+    assert_equal "Matthew 1", DailyBrief.new(plan: { "day" => { "reading" => "Matthew-John" } }).reading_start.to_s
     assert_nil DailyBrief.new(plan: { "day" => { "reading" => nil } }).reading_start
     assert_nil DailyBrief.new(plan: { "day" => { "reading" => "The gospels" } }).reading_start
+  end
+
+  test "a copy keeps reading when it has a key its records no longer have" do
+    brief = DailyBrief.new(plan: { "focus_areas" => [ { "name" => "As a husband", "kind" => "role", "retired" => "x" } ],
+                                   "day" => { "wday" => 2, "reading" => "Acts", "retired" => "x" } })
+
+    assert_equal [ "As a husband" ], brief.focus_areas.map(&:name)
+    assert_equal "Acts", brief.day.reading
   end
 
   test "daily_text_url is the day's text on wol.jw.org" do
