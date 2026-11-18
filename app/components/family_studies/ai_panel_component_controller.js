@@ -13,7 +13,7 @@ const narrow = window.matchMedia("(max-width: 767.98px)")
 // With beside (a meeting part's panel, docs/design/meeting-parts.md, The panel) it's always open from md up, and on a
 // phone stays closed until the Start button opens it: the element around it starts out dismissed.
 export default class extends Controller {
-  static targets = [ "start", "opened", "prompt", "stream", "finished", "dialog", "dialogBody", "dialogFooter", "footer", "footerHome" ]
+  static targets = [ "start", "opened", "prompt", "submit", "stream", "finished", "dialog", "dialogBody", "dialogFooter", "footer", "footerHome" ]
   static values = { beside: Boolean }
 
   connect() {
@@ -119,6 +119,11 @@ export default class extends Controller {
 
     if (inDialog && !this.dialogTarget.open) this.dialogTarget.showModal()
     if (!inDialog && this.dialogTarget.open) this.dialogTarget.close()
+  }
+
+  // A meeting part's "What would help?" names the button: Draft outline or Draft wording.
+  kindChosen({ params: { label } }) {
+    this.submitTarget.querySelector(".Button-label").textContent = label
   }
 
   // The input event lets Primer's character counter catch up.

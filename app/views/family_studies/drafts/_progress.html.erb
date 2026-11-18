@@ -1,9 +1,9 @@
-<%# locals: (step:, pages: nil) -%>
+<%# locals: (step:, pages: nil, thing: "outline") -%>
 <%# The progress lines while a draft is written (frame ai-searching.png): those done, the one running, and those to come.
     Never reply text (docs/design/ai.md, Traps). Each line says what it will do, then what it did. pages: how many the
-    search found, known once the reply is in. %>
+    search found, known once the reply is in. thing: what's being written, "sample wording" for a meeting part's. %>
 <% lines = { searching: [ "Searching jw.org and wol.jw.org", "Searched jw.org and wol.jw.org" ],
-             writing: [ "Writing the outline", "Wrote the outline" ],
+             writing: [ "Writing the #{thing}", "Wrote the #{thing}" ],
              checking: [ "Checking scriptures, links and wording", "Checked scriptures, links and wording" ] } %>
 <% running = lines.keys.index(step) %>
 <% lines.values.each_with_index do |(doing, done), index| %>

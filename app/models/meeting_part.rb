@@ -54,11 +54,14 @@ class MeetingPart < ApplicationRecord
   # errors: :not_allowed for anyone but the owner as a head or adult with the AI terms, :limit once they've made the
   # day's requests. Counted under the person's lock, as they can ask from more than one household at once
   # (docs/design/meeting-parts.md, How a request runs). The job is queued once the lock is let go: it's in another
-  # database, and a worker could otherwise start before the draft is committed.
-  def draft(kind:, request:, by:)
+  # database, and a worker could otherwise start before the draft is committed. revises: the draft a change, or sample
+  # wording, builds on. Its result is copied under the same lock, read afresh, so the job sends what the person saw even
+  # if the purge takes that draft first; the draft refuses one that isn't drafted, of this part and of a kind it can revise.
+  def draft(kind:, request:, by:, revises: nil)
     draft = by.with_lock do
-      Draft.new(meeting_part: self, user: by, kind: kind, request: request, chat: Chat.new(user: by, purpose: Draft::PURPOSE),
-                use: Ai::Use.new(user: by, purpose: Draft::PURPOSE)).tap do |draft|
+      revises&.reload
+      Draft.new(meeting_part: self, user: by, kind: kind, request: request, revises: revises, revised_result: revises&.result,
+                chat: Chat.new(user: by, purpose: Draft::PURPOSE), use: Ai::Use.new(user: by, purpose: Draft::PURPOSE)).tap do |draft|
         if by != user || !(by.may_prepare_parts_with_ai? && by.accepted_ai_terms?)
           draft.errors.add(:base, :not_allowed, message: "Only the part's owner, as a head or adult with AI drafts turned on, can ask")
         elsif by.part_drafts_left_today.zero?

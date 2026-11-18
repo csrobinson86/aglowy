@@ -1,0 +1,8 @@
+<%# locals: (lines:, other_speaker:) -%>
+<%# Sample wording as preparation, for "Use this wording" to put in the editor: a paragraph a line, with the speaker in
+    bold for a demonstration (other_speaker nil for a talk). Every field is the AI's text, so it's only ever escaped by
+    ERB, then Action Text sanitizes it like any preparation. A scripture to read stays plain text, and becomes a scripture
+    link when the part is saved. %>
+<% lines.each do |line| %>
+  <p><% if other_speaker %><strong><%= line["speaker"] == "other" ? other_speaker : "You" %>:</strong> <% end %><%= line["text"] %><% if line["read"].present? %> (Read <%= line["read"] %>)<% end %></p>
+<% end %>
