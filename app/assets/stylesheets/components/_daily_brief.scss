@@ -39,3 +39,18 @@
   min-width: var(--control-minTarget-auto);
   min-height: var(--control-minTarget-auto);
 }
+
+// The brief (docs/design/daily-brief.md, The brief; frames brief-base.png and phone-brief.png): its sections in a column
+// (components/_daily_brief_section.scss).
+.daily-brief {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-16);
+}
+
+// The quality and appreciation side by side when there's room.
+.daily-brief__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--base-size-128) * 2), 1fr));
+  gap: var(--base-size-16);
+}

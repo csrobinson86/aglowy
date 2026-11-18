@@ -37,3 +37,6 @@ production:
   purge_old_notifications:
     class: Notification::PurgeJob
     schedule: every day at 4:45am
+  prepare_daily_briefs:
+    class: DailyBrief::PrepareJob
+    schedule: every 15 minutes

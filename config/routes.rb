@@ -139,7 +139,7 @@ Rails.application.routes.draw do
     # The signed-in person's daily brief and its plan, for heads and adults (docs/design/daily-brief.md, Pages and routes).
     # Focus areas are added and edited in a dialog on Your plan, and found through the person's own plan. A day's wday is
     # one digit, 0 to 6: the column is an integer, so "2-x" would otherwise be cast to 2.
-    resource :daily_brief, only: [] do
+    resource :daily_brief, only: %i[ show create ] do
       resource :plan, only: %i[ new create show update ], module: :daily_briefs do
         resource :pause, only: %i[ create destroy ], module: :plans
         resources :focus_areas, only: %i[ new create edit update destroy ], module: :plans

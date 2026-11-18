@@ -1,0 +1,14 @@
+<%# locals: (brief: nil) %>
+<%# "Daily brief", Private, the brief's date and Your plan (docs/design/daily-brief.md, The brief). The Morning / Evening
+    switch comes with the evening questions. %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) do %>
+    Daily brief <%= render(Primer::Beta::Label.new(ml: 1, vertical_align: :middle)) { "Private" } %>
+  <% end %>
+  <% subhead.with_actions do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: household_daily_brief_plan_path)) { "Your plan" } %>
+  <% end %>
+  <% if brief %>
+    <% subhead.with_description { "#{brief.on.strftime("%A, %B %-d")} · Only you see this." } %>
+  <% end %>
+<% end %>

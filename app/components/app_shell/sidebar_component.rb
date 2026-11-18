@@ -53,7 +53,7 @@ class AppShell::SidebarComponent < ApplicationComponent
   end
 
   def daily_brief_path
-    household_daily_brief_plan_path(household_id: household.id)
+    household_daily_brief_path(household_id: household.id)
   end
 
   def personal_studies_path

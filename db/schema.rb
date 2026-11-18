@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -184,6 +184,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_130000) do
     t.index ["user_id"], name: "index_daily_brief_plans_on_user_id", unique: true
     t.check_constraint "ready_at_minutes >= 240 AND ready_at_minutes <= 480 AND (ready_at_minutes % 30) = 0", name: "daily_brief_plans_ready_at_minutes_check"
     t.check_constraint "sections <@ ARRAY['daily_text'::character varying, 'reading'::character varying, 'faith_example'::character varying, 'children'::character varying, 'evening'::character varying]", name: "daily_brief_plans_sections_check"
+  end
+
+  create_table "daily_briefs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.date "on", null: false
+    t.jsonb "plan", null: false
+    t.datetime "seen_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "on"], name: "index_daily_briefs_on_user_id_and_on", unique: true
   end
 
   create_table "family_studies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -923,6 +933,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_130000) do
   add_foreign_key "daily_brief_focus_areas", "goals", on_delete: :nullify
   add_foreign_key "daily_brief_pauses", "daily_brief_plans", column: "plan_id", on_delete: :cascade
   add_foreign_key "daily_brief_plans", "users", on_delete: :cascade
+  add_foreign_key "daily_briefs", "users", on_delete: :cascade
   add_foreign_key "family_studies", "households"
   add_foreign_key "family_studies", "users", column: "default_conductor_id"
   add_foreign_key "family_study_drafts", "chats", on_delete: :cascade

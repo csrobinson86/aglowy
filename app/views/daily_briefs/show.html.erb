@@ -1,0 +1,49 @@
+<% content_for :title, "Daily brief" %>
+<%# It's personal: Turbo's in-memory snapshot ignores the controller's no-store, so without this Back after a sign-out
+    and another person's sign-in would show this brief again until the fresh page arrived. %>
+<% turbo_exempts_page_from_cache %>
+
+<%# The brief (docs/design/daily-brief.md, The brief, its states; frames brief-base.png and phone-brief.png): the newest
+    one on or before today, from its own copy of the plan, beside Today in Aglowy. Before the first, Prepare today's
+    brief; with only an earlier one, it's shown with its date and when today's is ready. No AI yet. %>
+<%= render "daily_briefs/header", brief: @brief %>
+
+<% if @brief %>
+  <% if @brief.on < @today %>
+    <%= render(Primer::Alpha::Banner.new(icon: :clock, mb: 4)) do |banner| %>
+      <% if @plan.ready? %>
+        <% banner.with_action_content do %>
+          <%= primer_form_with(url: household_daily_brief_path) do |f| %>
+            <%= render DailyBriefs::PrepareForm.new(f) %>
+          <% end %>
+        <% end %>
+        This is your brief from <%= @brief.on.strftime("%A") %>. Today's hasn't been made yet.
+      <% else %>
+        This is your brief from <%= @brief.on.strftime("%A") %>. Today's brief is ready by <%= @plan.ready_by %>.
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg)) do |layout| %>
+    <% layout.with_main do %>
+      <%= render "daily_briefs/brief", brief: @brief %>
+    <% end %>
+    <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
+      <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
+            manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
+    <% end %>
+  <% end %>
+<% else %>
+  <%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :"north-star") %>
+    <% blankslate.with_heading(tag: :h2) { "Your first brief is ready tomorrow morning" } %>
+    <% blankslate.with_description do %>
+      It's made from your plan by <%= @plan.ready_by %> each day. If you'd like one now, it can be made for today.
+    <% end %>
+  <% end %>
+  <div class="d-flex flex-justify-center">
+    <%= primer_form_with(url: household_daily_brief_path) do |f| %>
+      <%= render DailyBriefs::PrepareForm.new(f, scheme: :primary) %>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,19 @@
+<% content_for :title, "Daily brief" %>
+
+<%# Paused: nothing is made or sent until Start it again (docs/design/daily-brief.md, The brief, its states). Start it
+    again redraws Your plan in place there, so from here it's a whole visit to the plan, with its notice. %>
+<%= render "daily_briefs/header" %>
+
+<%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+  <% blankslate.with_visual_icon(icon: :pause) %>
+  <% blankslate.with_heading(tag: :h2) { "Your daily brief is paused" } %>
+  <% blankslate.with_description do %>
+    <%= @plan.pausing.chosen? ? "You paused it." : "You hadn't looked at seven briefs in a row." %>
+    Nothing is made or sent until you start it again.
+  <% end %>
+<% end %>
+<div class="d-flex flex-justify-center">
+  <%= primer_form_with(url: household_daily_brief_plan_pause_path, method: :delete, data: { turbo: false }) do |f| %>
+    <%= render DailyBriefs::Plans::PauseForm.new(f, label: "Start it again") %>
+  <% end %>
+</div>

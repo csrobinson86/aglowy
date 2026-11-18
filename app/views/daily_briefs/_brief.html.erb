@@ -1,0 +1,41 @@
+<%# locals: (brief:) %>
+<%# The parts from the plan, from the brief's own copy (docs/design/daily-brief.md, The brief; frame brief-base.png): the
+    Daily text link, the day's reading, the quality and appreciation focus areas side by side, a row for each role focus
+    area, and the day's faith examples. A section with nothing from the plan isn't drawn. Every scripture is a link made
+    by Bible::Reference. %>
+<% day, section, row = brief.day, DailyBriefs::SectionComponent, DailyBriefs::SectionComponent::Row %>
+<div class="daily-brief">
+  <% if brief.section?(:daily_text) %>
+    <%= render section.new(kicker: "Daily text", title: brief.on.strftime("%A, %B %-d"),
+          link: section::Link.new(text: "Open the Daily text on wol.jw.org", href: brief.daily_text_url, note: "the text and its comment are read there")) %>
+  <% end %>
+
+  <% if brief.section?(:reading) %>
+    <%= render section.new(kicker: "Bible reading", title: day.reading, rows: [
+          row.new(label: "From your week", text: brief.reading_start ? "Pick up where you left off, or start at" : "Pick up where you left off, or choose a chapter.",
+                  references: [ brief.reading_start ].compact) ]) %>
+  <% end %>
+
+  <% if brief.quality_area || brief.appreciation_area %>
+    <div class="daily-brief__pair">
+      <% if (area = brief.quality_area) %>
+        <% topic = brief.topic_for(area) %>
+        <%= render section.new(kicker: area.name, title: topic || area.name, id: "daily-brief-quality", rows: [
+              row.new(label: "From your week", text: topic ? "#{day.name}'s qualities." : area.gives, references: area.scripture_references) ]) %>
+      <% end %>
+      <% if (area = brief.appreciation_area) %>
+        <%= render section.new(kicker: area.name, title: brief.topic_for(area) || "One thing to thank him for", id: "daily-brief-appreciation", rows: [
+              row.new(label: "Think about", text: "What did I see of him in my reading today?", references: area.scripture_references) ]) %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if brief.role_areas.any? %>
+    <%= render section.new(kicker: "Your focus today", title: "From your plan", id: "daily-brief-focus", rows: brief.role_areas.map { |area|
+          row.new(label: area.name, text: (topic = brief.topic_for(area)) ? "#{topic}." : area.gives, references: area.scripture_references) }) %>
+  <% end %>
+
+  <% if brief.section?(:faith_example) %>
+    <%= render section.new(kicker: "Imitate their faith", title: day.examples, rows: [ row.new(label: "From your week", text: "#{day.name}'s examples.") ]) %>
+  <% end %>
+</div>
