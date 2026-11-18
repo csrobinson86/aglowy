@@ -334,7 +334,229 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordNotUnique) { Ai::Use.insert!({ user_id: users(:head).id, purpose: "meeting_part", meeting_part_draft_id: @draft.id }) }
   end
 
+  # Sample wording and changes (story #292).
+  OUTLINE = { "aim" => "Leave the person curious about the earth's future.", "opening" => "Mention the food drive sign.",
+              "points" => [ { "heading" => "A promise worth hearing", "scripture" => "Psalm 37:10, 11", "explain" => "It speaks of peace on the earth." } ],
+              "question" => "How will God bring that about?", "close" => "Agree on a day to come back.", "study_point" => "" }.freeze
+
+  test "wording for a demonstration: lines with both speakers, a read reference, and spoken_length including the scripture" do
+    @draft = meeting_part_draft(@part, kind: "wording")
+
+    write(saved_reply(file: "meeting_part_wording"))
+
+    lines = @draft.reload.result["lines"]
+    assert_predicate @draft, :drafted?
+    assert_equal %w[ you other you other you you other you ], lines.pluck("speaker")
+    assert_equal "Psalm 37:10, 11", lines[4]["read"]
+    assert_equal [ nil ], lines.values_at(0, 1, 2, 3, 5, 6, 7).pluck("read").uniq
+    assert_equal SOURCES, @draft.sources
+    spoken = MeetingPart::SpokenLength.new(lines.pluck("text").join(" ")).seconds
+    assert_equal spoken + MeetingPart::SpokenLength::READ_SECONDS, @draft.spoken_length.seconds
+    assert_equal 1, @draft.spoken_length.scriptures
+  end
+
+  test "wording for a talk: every line you" do
+    part = meeting_parts(:spouse_talk)
+    @draft = meeting_part_draft(part, kind: "wording")
+
+    write(saved_reply(file: "meeting_part_wording"))
+
+    assert_predicate @draft.reload, :drafted?
+    assert_equal [ "you" ] * 8, @draft.result["lines"].pluck("speaker")
+  end
+
+  test "the text sent for wording asks for sample wording" do
+    sent = nil
+    @draft = meeting_part_draft(@part, kind: "wording")
+
+    write(->(text, **) { sent = text
+                         saved_reply(file: "meeting_part_wording") })
+
+    assert_includes sent, "Write: sample wording."
+    assert_not_includes sent, "an outline"
+  end
+
+  test "a line quoting more than 5 words is removed; a read that isn't a reference (verse text) is dropped and the line stays" do
+    @draft = meeting_part_draft(@part, kind: "wording")
+
+    write(saved_reply(file: "meeting_part_wording") do |parsed|
+      parsed["wording"]["lines"][1]["text"] = "My grandmother said “the meek will possess the earth forever.”"
+      parsed["wording"]["lines"][4]["read"] = "The wicked will be no more; the meek will possess the earth"
+    end)
+
+    lines = @draft.reload.result["lines"]
+    assert_equal 7, lines.size
+    assert_not_includes lines.pluck("text").join, "grandmother"
+    assert_equal "Many feel that way. May I show you a promise I find comforting?", lines[3]["text"]
+    assert_nil lines[3]["read"]
+  end
+
+  test "too few lines ends failed and deletes the use" do
+    @draft = meeting_part_draft(@part, kind: "wording")
+    write(saved_reply(file: "meeting_part_wording") { it["wording"]["lines"] = it["wording"]["lines"].first(3) })
+
+    assert_predicate @draft.reload, :failed?
+    assert_nil @draft.result
+    assert_not Ai::Use.exists?(meeting_part_draft_id: @draft.id)
+
+    # A talk needs 2 lines.
+    talk = meeting_parts(:spouse_talk)
+    @draft = meeting_part_draft(talk, kind: "wording")
+    write(saved_reply(file: "meeting_part_wording") { it["wording"]["lines"] = it["wording"]["lines"].first(1) })
+    assert_predicate @draft.reload, :failed?
+
+    @draft = meeting_part_draft(talk, kind: "wording")
+    write(saved_reply(file: "meeting_part_wording") { it["wording"]["lines"] = it["wording"]["lines"].first(2) })
+    assert_predicate @draft.reload, :drafted?
+  end
+
+  test "a change: a new draft with revises set and its own chat, counted as one use; a blank change is refused" do
+    head = accepted_head
+    shown = meeting_part_draft(@part, status: "drafted", result: OUTLINE)
+
+    change = nil
+    assert_difference [ -> { Ai::Use.count }, -> { Chat.count }, -> { MeetingPart::Draft.count } ], 1 do
+      change = @part.draft(kind: "outline", request: "Shorter opening", revises: shown, by: head)
+    end
+
+    assert_predicate change, :persisted?
+    assert_equal [ shown, "outline", "Shorter opening", "drafting" ], [ change.revises, change.kind, change.request, change.status ]
+    assert_not_equal shown.chat_id, change.chat_id
+    assert_equal OUTLINE, change.reload.revised_result
+    assert_equal 2, change.version
+    assert_equal 12, head.part_drafts_left_today # with the setup's draft
+
+    assert_no_difference [ -> { Ai::Use.count }, -> { MeetingPart::Draft.count } ] do
+      blank = @part.draft(kind: "outline", request: "  ", revises: shown, by: head)
+      assert_predicate blank.errors[:request], :any?
+
+      long = @part.draft(kind: "outline", request: "a" * 301, revises: shown, by: head)
+      assert_predicate long.errors[:request], :any?
+    end
+    assert_predicate @part.draft(kind: "outline", request: "a" * 300, revises: shown, by: head), :persisted?
+  end
+
+  test "the text sent for a change holds the revised draft's fields and the change, and not the preparation" do
+    shown = meeting_part_draft(@part, status: "drafted", result: OUTLINE)
+    @draft = @part.draft(kind: "outline", request: "Shorter opening", revises: shown, by: accepted_head)
+
+    sent = sent_for_draft
+
+    [ "Leave the person curious about the earth's future.", "Mention the food drive sign.", "A promise worth hearing", "Psalm 37:10, 11",
+      "It speaks of peace on the earth.", "Agree on a day to come back.", "Shorter opening" ].each { assert_includes sent, it }
+    [ "My own words", "Slow down", "Ana Ortiz" ].each { assert_not_includes sent, it }
+    assert sent.start_with?("Part: Starting a Conversation")
+  end
+
+  test "a change to version 1 after version 2 exists sends version 1" do
+    head = accepted_head
+    version1 = meeting_part_draft(@part, status: "drafted", result: OUTLINE.merge("aim" => "The first version's aim."))
+    meeting_part_draft(@part, status: "drafted", revises: version1, revised_result: version1.result, request: "Simpler words",
+                              result: OUTLINE.merge("aim" => "The second version's aim."))
+
+    @draft = @part.draft(kind: "outline", request: "A different scripture", revises: version1, by: head)
+    sent = sent_for_draft
+
+    assert_includes sent, "The first version's aim."
+    assert_not_includes sent, "The second version's aim."
+    assert_not_includes sent, "Simpler words"
+    assert_equal 2, @draft.version
+  end
+
+  test "a sentence the checks removed from the revised draft isn't in the text sent" do
+    write(saved_reply { it["outline"]["opening"] = "Smile and say hello. He said “the meek will possess the earth forever.” Ask what they think." })
+    shown = @draft.reload
+
+    @draft = @part.draft(kind: "outline", request: "Shorter opening", revises: shown, by: accepted_head)
+    sent = sent_for_draft
+
+    assert_includes sent, "Smile and say hello. Ask what they think."
+    assert_not_includes sent, "meek"
+  end
+
+  test "the revised draft deleted after the change is made and before the job runs: the text sent still holds it" do
+    shown = meeting_part_draft(@part, status: "drafted", result: OUTLINE)
+    change = @part.draft(kind: "outline", request: "Shorter opening", revises: shown, by: accepted_head)
+
+    shown.destroy!
+    @draft = change.reload
+    sent = sent_for_draft
+
+    assert_nil @draft.revises
+    assert_includes sent, "Leave the person curious about the earth's future."
+    assert_includes sent, "Shorter opening"
+  end
+
+  test "revises that isn't drafted, belongs to another part, or is of the wrong kind is refused" do
+    head = accepted_head
+    wording = meeting_part_draft(@part, kind: "wording", status: "drafted", result: { "lines" => [ { "speaker" => "you", "text" => "Hello." } ] })
+    refused = [
+      [ "outline", meeting_part_draft(@part, status: "drafting") ],
+      [ "outline", meeting_part_draft(@part, status: "discarded", result: OUTLINE) ],
+      [ "outline", meeting_part_draft(meeting_parts(:head_disciples), status: "drafted", result: OUTLINE) ],
+      [ "outline", wording ]
+    ]
+
+    assert_no_difference [ -> { Ai::Use.count }, -> { MeetingPart::Draft.count } ] do
+      refused.each do |kind, revises|
+        draft = @part.draft(kind: kind, request: "Shorter opening", revises: revises, by: head)
+        assert_predicate draft.errors[:revises], :any?, "#{kind} revising a #{revises.status} #{revises.kind} should be refused"
+      end
+    end
+  end
+
+  test "write sample wording from an outline sets revises to it, and the text sent holds the outline" do
+    outline = meeting_part_draft(@part, status: "drafted", result: OUTLINE)
+
+    @draft = @part.draft(kind: "wording", request: nil, revises: outline, by: accepted_head)
+    sent = sent_for_draft(saved_reply(file: "meeting_part_wording"))
+
+    assert_equal [ outline, "wording", OUTLINE ], [ @draft.revises, @draft.kind, @draft.revised_result ]
+    assert_equal 1, @draft.version
+    assert_includes sent, "Write: sample wording."
+    assert_includes sent, "Leave the person curious about the earth's future."
+    assert_predicate @draft.reload, :drafted?
+  end
+
+  test "more than 15% over the time is over_time?; 10% over isn't" do
+    @part.update!(minutes: 10)
+    words = ->(count) { { "lines" => [ { "speaker" => "you", "text" => "word " * count } ] } }
+
+    ten_percent = meeting_part_draft(@part, kind: "wording", status: "drafted", result: words.(1430))
+    assert_equal 660, ten_percent.spoken_length.seconds
+    assert_not ten_percent.over_time?
+
+    over = meeting_part_draft(@part, kind: "wording", status: "drafted", result: words.(1517))
+    assert_equal 700, over.spoken_length.seconds
+    assert_predicate over, :over_time?
+  end
+
+  test "preparation_html for wording: a paragraph a line, the speaker in bold for a demonstration, a scripture to read as plain text" do
+    lines = [ { "speaker" => "you", "text" => "<b>Good</b> morning.", "read" => "Psalm 37:10, 11" }, { "speaker" => "other", "text" => "Hello." } ]
+
+    html = meeting_part_draft(@part, kind: "wording", status: "drafted", result: { "lines" => lines }).preparation_html
+
+    assert_includes html, "<p><strong>You:</strong> &lt;b&gt;Good&lt;/b&gt; morning. (Read Psalm 37:10, 11)</p>"
+    assert_includes html, "<p><strong>Householder:</strong> Hello.</p>"
+
+    talk = meeting_part_draft(meeting_parts(:spouse_talk), kind: "wording", status: "drafted", result: { "lines" => lines.first(1) }).preparation_html
+    assert_includes talk, "<p>&lt;b&gt;Good&lt;/b&gt; morning. (Read Psalm 37:10, 11)</p>"
+    assert_not_includes talk, "<strong>"
+  end
+
   private
+    def accepted_head
+      users(:head).tap { it.accept_ai_terms(understood: "1") }
+    end
+
+    # The text @draft's job sends, with the AI answering +reply+.
+    def sent_for_draft(reply = saved_reply)
+      sent = nil
+      write(->(text, **) { sent = text
+                           reply })
+      sent
+    end
+
     # Runs write_now with moderation and the AI stubbed: +answer+ is the Ai::Reply, or a lambda standing in for
     # Chat#ask_within_purpose; +flagged+ is moderation's answer, or a lambda for it. No test calls a provider.
     def write(answer, flagged: false)
@@ -345,10 +567,10 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
       end
     end
 
-    # The saved reply (test/fixtures/files/ai/meeting_part_outline.json) as Ai::Reply reads it, with any +citations+
-    # added, after the block changes its parsed fields.
-    def saved_reply(citations: [])
-      body = JSON.parse(file_fixture("ai/meeting_part_outline.json").read)
+    # A saved reply (test/fixtures/files/ai/meeting_part_outline.json, or +file+) as Ai::Reply reads it, with any
+    # +citations+ added, after the block changes its parsed fields.
+    def saved_reply(citations: [], file: "meeting_part_outline")
+      body = JSON.parse(file_fixture("ai/#{file}.json").read)
       texts = body["content"].select { it["type"] == "text" }
       parsed = JSON.parse(texts.pluck("text").join).tap { yield it if block_given? }
       cited = texts.flat_map { it["citations"].to_a }.map { RubyLLM::Citation.new(url: it["url"], title: it["title"], cited_text: it["cited_text"]) }

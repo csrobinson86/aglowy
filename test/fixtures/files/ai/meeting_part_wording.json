@@ -1,0 +1,75 @@
+{
+  "id": "msg_hand_built_meeting_part_wording",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-5-5",
+  "content": [
+    {
+      "type": "server_tool_use",
+      "id": "srvtoolu_01",
+      "name": "web_search",
+      "input": {
+        "query": "starting a conversation hope for the future site:wol.jw.org"
+      }
+    },
+    {
+      "type": "web_search_tool_result",
+      "tool_use_id": "srvtoolu_01",
+      "content": [
+        {
+          "type": "web_search_result",
+          "url": "https://wol.jw.org/en/wol/d/r1/lp-e/1102023301",
+          "title": "Love People brochure: lesson 1",
+          "encrypted_content": "enc-content-1",
+          "page_age": null
+        },
+        {
+          "type": "web_search_result",
+          "url": "https://www.jw.org/en/bible-teachings/questions/future-of-earth/",
+          "title": "Article: the Bible’s promise for the earth",
+          "encrypted_content": "enc-content-2",
+          "page_age": null
+        },
+        {
+          "type": "web_search_result",
+          "url": "https://wol.jw.org/en/wol/d/r1/lp-e/1102016104",
+          "title": "Teaching brochure: using questions",
+          "encrypted_content": "enc-content-3",
+          "page_age": null
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "{\"off_topic\":false,\"outline\":{\"aim\":\"\",\"opening\":\"\",\"points\":[],\"question\":\"\",\"close\":\"\",\"study_point\":\"\"},\"wording\":{\"lines\":[{\"speaker\":\"you\",\"text\":\"Good morning. I live a few streets over. I saw the food drive sign, and it's good to see neighbours helping each other.\",\"read\":\"\"},{\"speaker\":\"other\",\"text\":\"Yes, it's been a hard year for some families here.\",\"read\":\"\"},{\"speaker\":\"you\",\"text\":\"It has. Do you think problems like these will ever be solved for good?\",\"read\":\"\"},{\"speaker\":\"other\",\"text\":\"I'd like to think so, but I'm not sure.\",\"read\":\"\"},{\"speaker\":\"you\",\"text\":\""
+    },
+    {
+      "type": "text",
+      "text": "Many feel that way.",
+      "citations": [
+        {
+          "type": "web_search_result_location",
+          "url": "https://www.jw.org/en/bible-teachings/questions/future-of-earth/",
+          "title": "Article: the Bible’s promise for the earth",
+          "encrypted_index": "enc-index-1",
+          "cited_text": "Excerpt one from the page, as the search returned it, used only by the copy check."
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " May I show you a promise I find comforting?\",\"read\":\"Psalm 37:10, 11\"},{\"speaker\":\"you\",\"text\":\"What stands out to you in that?\",\"read\":\"\"},{\"speaker\":\"other\",\"text\":\"Peace on the earth would be nice.\",\"read\":\"\"},{\"speaker\":\"you\",\"text\":\"How God will bring that about is worth a look. Could I come back on Saturday morning and show you?\",\"read\":\"\"}]}}"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 3980,
+    "output_tokens": 520,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "server_tool_use": {
+      "web_search_requests": 1
+    }
+  }
+}
