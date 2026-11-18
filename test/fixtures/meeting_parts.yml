@@ -1,0 +1,34 @@
+# Each person's own student parts (docs/design/meeting-parts.md, MeetingPart): two of Hannah's, one coming up and one
+# earlier, Sam's coming up, and one for Eli, a child with a login. Preparation is made in the tests that need it.
+head_conversation:
+  user: head
+  kind: starting_a_conversation
+  meeting_on: <%= 10.days.from_now.to_date.iso8601 %>
+  minutes: 3
+  setting: house_to_house
+  topic: Start a conversation about hope for the future, and offer to come back.
+  study_point: lmd lesson 1 point 3
+  assistant: Ana Ortiz
+
+head_disciples:
+  user: head
+  kind: making_disciples
+  meeting_on: <%= 30.days.ago.to_date.iso8601 %>
+  minutes: 5
+  topic: Lesson on why God made the earth.
+
+spouse_talk:
+  user: spouse
+  kind: talk
+  meeting_on: <%= 3.days.from_now.to_date.iso8601 %>
+  minutes: 5
+  topic: Why we can trust the Bible
+
+eli_conversation:
+  user: eli
+  kind: starting_a_conversation
+  meeting_on: <%= 17.days.from_now.to_date.iso8601 %>
+  minutes: 2
+  setting: informal_witnessing
+  topic: Talk to a classmate about what makes a real friend.
+  assistant: Dad

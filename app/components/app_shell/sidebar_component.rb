@@ -55,6 +55,11 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_personal_notes_path(household_id: household.id)
   end
 
+  # Meeting parts, for everyone, children too (docs/design/meeting-parts.md, The sidebar).
+  def meeting_parts_path
+    household_meeting_parts_path(household_id: household.id)
+  end
+
   def my_goals_path
     household_my_goals_path(household_id: household.id)
   end

@@ -5,6 +5,8 @@ class User < ApplicationRecord
   has_many :memberships, dependent: :destroy
   has_many :households, through: :memberships
   has_many :meeting_notes, dependent: :destroy
+  # Destroyed one by one, so their encrypted preparation goes too.
+  has_many :meeting_parts, dependent: :destroy
   # Personal goals only, by user_id. Family goals they set are the household's (set_by_id).
   has_many :goals, dependent: :destroy
   # Before their studies and notes, which would otherwise nullify each one first.
@@ -116,6 +118,11 @@ class User < ApplicationRecord
   # then id, else UTC (docs/design/calendar.md, The person's own zone).
   def calendar_time_zone
     time_zone || active_households.order(:name, :id).first&.time_zone || "UTC"
+  end
+
+  # Today in their own zone, for what's coming up in their meeting parts (docs/design/meeting-parts.md, MeetingPart).
+  def today
+    Time.current.in_time_zone(calendar_time_zone).to_date
   end
 
   # Adding their first time with no profile zone saves the household's, so renaming or leaving a household never moves

@@ -1,0 +1,33 @@
+<% content_for :title, "Meeting parts" %>
+
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Meeting parts" } %>
+  <% subhead.with_description { "Your student parts in Apply Yourself to the Field Ministry. Private unless you share them." } %>
+  <% subhead.with_actions do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_meeting_part_path, scheme: :primary, data: { turbo_frame: "meeting_part_dialog" })) { "Add a part" } %>
+  <% end %>
+<% end %>
+
+<%# Coming up, soonest first, then Earlier, newest first (docs/design/meeting-parts.md, The list). %>
+<% if @coming_up.none? && @earlier.none? %>
+  <%= render(Primer::Beta::Blankslate.new(border: true)) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :"comment-discussion") %>
+    <% blankslate.with_heading(tag: :h2) { "No parts yet" } %>
+    <% blankslate.with_description { "When you're given a part in Apply Yourself to the Field Ministry, add it here to prepare." } %>
+    <% blankslate.with_primary_action(href: new_household_meeting_part_path, data: { turbo_frame: "meeting_part_dialog" }) { "Add a part" } %>
+  <% end %>
+<% else %>
+  <% { "coming-up" => [ "Coming up", @coming_up ], "earlier" => [ "Earlier", @earlier ] }.each do |id, (title, parts)| %>
+    <% next if parts.none? %>
+    <section aria-labelledby="<%= id %>" class="mb-4">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, color: :muted, mb: 2, id:)) { title } %>
+      <%= render(Primer::Beta::BorderBox.new) do |box| %>
+        <% parts.each do |part| %>
+          <% box.with_row(display: :flex, align_items: :center) { render "meeting_parts/part", part: } %>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>
+
+<%= turbo_frame_tag "meeting_part_dialog" %>

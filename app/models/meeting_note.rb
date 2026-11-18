@@ -119,9 +119,13 @@ class MeetingNote < ApplicationRecord
     end
   end
 
-  # The week's program on wol.jw.org, by ISO week: week 27 of 2026 is 29 June–5 July.
-  def program_url
+  # The week's program on wol.jw.org, by ISO week: week 27 of 2026 is 29 June–5 July. A meeting part links to it too.
+  def self.program_url(week_of)
     "#{PROGRAM_URL}/#{week_of.cwyear}/#{week_of.cweek}"
+  end
+
+  def program_url
+    self.class.program_url(week_of)
   end
 
   # "Week of November 16–22, 2026", or "Weekend of November 21–22, 2026".

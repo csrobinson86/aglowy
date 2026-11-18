@@ -1,0 +1,38 @@
+// A row on the meeting parts list (docs/design/meeting-parts.md, The list; frame meeting-parts.png): the date as a small
+// tile, its month over its day.
+.meeting-part-row__date {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-48);
+  padding: var(--base-size-4) 0;
+  line-height: var(--text-body-lineHeight-small);
+  background-color: var(--bgColor-muted);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}
+
+.meeting-part-row__month {
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
+  text-transform: uppercase;
+}
+
+.meeting-part-row__day {
+  font-size: var(--text-title-size-medium);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+// A part's time, setting, study point and assistant, side by side, wrapping onto more rows on a phone.
+.meeting-part-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--base-size-128), 1fr));
+  gap: var(--base-size-12) var(--base-size-16);
+}
+
+// The topic keeps the lines the person typed.
+.meeting-part-details__topic {
+  white-space: pre-line;
+}

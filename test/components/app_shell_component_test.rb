@@ -50,10 +50,10 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
-  test "My goals follows Notes in the Mine group, with the flag icon, and is the current item when selected_item is :personal_goals" do
+  test "My goals follows Notes and Meeting parts in the Mine group, with the flag icon, and is the current item when selected_item is :personal_goals" do
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :personal_goals))
 
-    assert_equal [ "Notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(2)
+    assert_equal [ "Notes", "Meeting parts", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(3)
     assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/my_goals']", text: "My goals"
     assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-flag"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
@@ -62,16 +62,16 @@ class AppShellComponentTest < ViewComponent::TestCase
   test "Personal study sits between Today's meeting and Notes, with the search icon, and is the current item on its pages" do
     render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :personal_studies))
 
-    assert_equal [ "Today's meeting", "Personal study", "Notes" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4).first(3)
+    assert_equal [ "Today's meeting", "Personal study", "Notes" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(5).first(3)
     assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/personal_studies']", text: "Personal study"
     assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-search"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1
   end
 
-  test "Notes sits between Personal study and My goals, with the pencil icon, and is the current item on its pages" do
+  test "Notes sits between Personal study and Meeting parts, with the pencil icon, and is the current item on its pages" do
     render_inline(AppShellComponent.new(membership: memberships(:child_in_home), selected_item: :personal_notes))
 
-    assert_equal [ "Personal study", "Notes", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(3)
+    assert_equal [ "Personal study", "Notes", "Meeting parts", "My goals" ], page.all("nav[aria-label='Main'] a").map { it.text.strip }.last(4)
     assert_selector "nav[aria-label='Main'] a[aria-current='page'][href='/#{households(:home).id}/notes']", text: "Notes"
     assert_selector "nav[aria-label='Main'] a[aria-current='page'] svg.octicon-pencil"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", count: 1

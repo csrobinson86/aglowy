@@ -1,0 +1,50 @@
+<% content_for :title, @meeting_part.kind_details.label %>
+<%# Only the preparation and counsel are sent from this page, so a refused save leaves the header and The part as saved. %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_meeting_parts_path) { "Meeting parts" } %>
+  <% breadcrumbs.with_item(href: household_meeting_part_path(id: @meeting_part)) { @meeting_part.kind_details.label } %>
+<% end %>
+
+<%# The kind as the heading, Private, then the date; Edit and Delete for the owner (frame part-child.png). Sharing and the
+    AI panel come in later stories. %>
+<%= render Primer::Beta::Subhead.new(mb: 3) do |subhead| %>
+  <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
+    <span class="mr-2 wb-break-word min-width-0"><%= @meeting_part.kind_details.label %></span>
+    <%= render(Primer::Beta::Label.new(scheme: :secondary)) { "Private" } %>
+  <% end %>
+  <% subhead.with_actions(display: :flex) do %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_part_path(id: @meeting_part), mr: 2, data: { turbo_frame: "meeting_part_dialog" })) { "Edit" } %>
+    <%= render(Primer::Alpha::Dialog.new(id: "delete-meeting-part", title: "Delete this part?")) do |dialog| %>
+      <% dialog.with_show_button(scheme: :danger) { "Delete" } %>
+      <% dialog.with_body { "Its preparation and counsel go too. This can't be undone." } %>
+      <% dialog.with_footer do %>
+        <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-meeting-part" })) { "Cancel" } %>
+        <%= primer_form_with(url: household_meeting_part_path(id: @meeting_part), method: :delete) do |f| %>
+          <%= render MeetingParts::DeleteForm.new(f) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% subhead.with_description { meeting_part_when(@meeting_part.meeting_on, Current.user.today) } %>
+<% end %>
+
+<%= render "meeting_parts/details", meeting_part: @meeting_part %>
+
+<%# Preparation and counsel, saved together by one Save (docs/design/meeting-parts.md, A part). %>
+<%= primer_form_with(model: @meeting_part, url: household_meeting_part_path(id: @meeting_part)) do |f| %>
+  <% if @meeting_part.errors[:preparation].any? %>
+    <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Preparation #{@meeting_part.errors[:preparation].to_sentence}." } %>
+  <% end %>
+  <section aria-labelledby="preparation" class="mb-4">
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "preparation")) { "Preparation" } %>
+    <%= render "meeting_notes/notes_field", form: f, attribute: :preparation, label: "Preparation", visually_hidden: true, tall: true,
+          placeholder: "What you'll say, in your own words. Type a scripture, or use the Scripture button." %>
+  </section>
+  <section aria-labelledby="after-the-meeting">
+    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, mb: 2, id: "after-the-meeting")) { "After the meeting" } %>
+    <%= render MeetingParts::CounselForm.new(f) %>
+  </section>
+<% end %>
+
+<%= turbo_frame_tag "meeting_part_dialog" %>
