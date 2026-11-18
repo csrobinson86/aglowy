@@ -338,6 +338,49 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     assert_no_selector ".shared-thought"
   end
 
+  test "Keep in Notes opens the brief as a note with the thread in it" do
+    written = written_writing
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+
+    click_on "Keep in Notes"
+
+    assert_text "Kept in Notes."
+    assert_field "Title", with: "Daily brief · Tuesday, November 17"
+    within(".personal-note") do
+      assert_text written.result["thread"]
+      assert_text "One thing in each role"
+      assert_link "Acts 10:29"
+    end
+    assert_turbo_idle
+    assert_accessible
+    capture_screens("brief-kept-note")
+  end
+
+  test "printed, the brief leaves out the sidebar, the side column and the buttons" do
+    written = written_writing
+    sign_in identities(:head)
+    visit household_daily_brief_url(household_id: households(:home))
+    assert_button "Print"
+    assert_selector "aside", text: "Daily brief"
+
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "print")
+
+    assert_no_selector "aside"
+    assert_no_selector "h2", text: "Today in Aglowy"
+    assert_no_button "Keep in Notes"
+    assert_no_button "Print"
+    assert_no_button "Another angle"
+    assert_no_link "Your plan"
+    assert_selector "h1", text: "Daily brief"
+    assert_text written.result["thread"]
+    assert_selector "h2", text: "One thing in each role"
+    # capture_screens sets the colour scheme, which clears print, so this one is saved as it is.
+    page.save_screenshot(Rails.root.join("tmp/screenshots/ui/brief-print-desktop-light.png")) if ENV["SCREENSHOTS"]
+  ensure
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "")
+  end
+
   private
     # Runs the queued writing's job with moderation stubbed and the saved reply (test/fixtures/files/ai/daily_brief.json)
     # given +thread+, through the real Chat#ask_within_purpose with the provider's connection stubbed.

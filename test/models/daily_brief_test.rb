@@ -381,6 +381,79 @@ class DailyBriefTest < ActiveSupport::TestCase
     end
   end
 
+  test "keep_as_note makes the owner's note titled with the brief's date, with the thread and every section" do
+    brief = DailyBrief.for(@user)
+    written_writing(brief)
+
+    note = assert_difference(-> { @user.personal_notes.count }) { brief.keep_as_note }
+
+    assert_equal "Daily brief · Tuesday, November 17", note.title
+    assert_equal "none", note.color
+    text = note.body.to_plain_text
+    [ "Today's thread", "Patience is letting Jehovah's timing be Jehovah's timing",
+      "Daily text", "What's happening", "Peter is in the home of Cornelius",
+      "Bible reading", "Peter wants a faster, kinder ending", "What Jesus already knows about the days ahead",
+      "Patience", "How Jesus showed it", "He isn't slow. He waits for people.",
+      "Your focus today", "Ask about her day and listen to the end", "Imitate their faith", "Abraham", "For me",
+      "For the children", "Have you ever really wanted something right now", "To end the day", "Where did I push for my own timing today?",
+      "Pages it used", "Today's text and comment" ].each { assert_includes text, it }
+  end
+
+  test "keep_as_note makes every reference a scripture link" do
+    brief = DailyBrief.for(@user)
+    written_writing(brief)
+
+    references = brief.keep_as_note.reload.scripture_references.map(&:to_s)
+
+    [ "Acts 10:28", "Acts 10:29", "Matthew 16:21-23", "Galatians 5:22, 23", "Luke 22:24-27", "2 Peter 3:9",
+      "Ephesians 5:25", "Deuteronomy 6:6, 7", "1 Timothy 3:8", "Genesis 21:5", "Hebrews 6:15", "Acts 7:23-30", "Hebrews 11:27" ]
+      .each { assert_includes references, it }
+  end
+
+  test "keep_as_note escapes AI text holding HTML, so the reply's markup is only ever text" do
+    brief = DailyBrief.for(@user)
+    daily_brief_writing(brief, status: "written", sources: [ { "url" => "https://www.jw.org/en/x", "title" => "<b>Page</b>" } ],
+      result: { "thread" => %(<script>alert("thread")</script> <a href="https://evil.example">Click</a>),
+                "faith" => { "examples" => [ { "name" => "<img src=x onerror=alert(1)>", "lesson" => "<i>Lesson</i>" } ], "for_me" => "<b>Me</b>" } })
+
+    note = brief.keep_as_note.reload
+    html = note.body.body.to_html
+
+    assert_no_match(/<script|<img|<i>|<b>|<a [^>]*evil/, html)
+    assert_includes note.body.to_plain_text, %(<script>alert("thread")</script>)
+    assert_includes note.body.to_plain_text, "<i>Lesson</i>"
+  end
+
+  test "keep_as_note with no written writing keeps the parts from the plan" do
+    brief = DailyBrief.for(@user)
+    daily_brief_writing(brief, status: "failed")
+
+    note = brief.keep_as_note
+
+    text = note.body.to_plain_text
+    assert_includes text, "From your plan"
+    assert_includes text, "Open the Daily text on wol.jw.org"
+    assert_not_includes text, "Today's thread"
+    assert_includes note.reload.scripture_references.map(&:to_s), "1 Timothy 3:8-13"
+  end
+
+  test "keeping the same brief twice makes a second note" do
+    brief = DailyBrief.for(@user)
+
+    assert_difference(-> { @user.personal_notes.count }, 2) { 2.times { brief.keep_as_note } }
+  end
+
+  test "the kept note survives the brief's deletion" do
+    brief = DailyBrief.for(@user)
+    written_writing(brief)
+    note = brief.keep_as_note
+
+    brief.destroy!
+
+    assert PersonalNote.exists?(note.id)
+    assert_includes note.reload.body.to_plain_text, "Patience is letting Jehovah's timing"
+  end
+
   private
     # Refused with +reason+: nothing made and no job queued.
     def assert_refused(reason)
@@ -393,5 +466,12 @@ class DailyBriefTest < ActiveSupport::TestCase
 
     def unseen_days(count)
       count.times { |ago| DailyBrief.for(@user, on: Date.new(2026, 11, 16) - ago) }
+    end
+
+    # The saved reply's fields and pages (test/fixtures/files/ai/daily_brief.json), as the checks keep them.
+    def written_writing(brief)
+      body = JSON.parse(file_fixture("ai/daily_brief.json").read)
+      sources = body["content"].select { it["type"] == "web_search_tool_result" }.flat_map { it["content"] }.map { it.slice("url", "title") }
+      daily_brief_writing(brief, status: "written", sources:, result: JSON.parse(body["content"].filter_map { it["text"] }.join).except("off_topic"))
     end
 end
