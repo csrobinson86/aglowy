@@ -139,8 +139,23 @@ class DailyBrief < ApplicationRecord
     with_lock { update!(seen_at: Time.current) unless seen_at }
   end
 
+  # A copy kept as one of the owner's own notes, titled with its date (Keep in Notes, and print). The body is our own
+  # partial, every field escaped and every reference a scripture link (Trap 11), from the newest written writing or,
+  # with none, the parts from the plan. Nothing links it back, so it stays when the brief is purged; keeping it twice
+  # makes two.
+  def keep_as_note
+    user.personal_notes.new(title: "Daily brief · #{on.strftime("%A, %B %-d")}", body: note_html).tap do |note|
+      note.link_scriptures
+      note.save!
+    end
+  end
+
   private
     def notifies_when_shared? = false
+
+    def note_html
+      ApplicationController.render(partial: "daily_briefs/note", locals: { brief: self, writing: })
+    end
 
     def write_refusal(by, first:)
       if by != user || !(by.may_have_daily_brief? && by.accepted_ai_terms?)

@@ -49,18 +49,16 @@
     <% end %>
   <% end %>
 
-  <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg)) do |layout| %>
+  <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg, classes: "daily-brief-page")) do |layout| %>
     <% layout.with_main do %>
       <% if @evening %>
         <%= render "daily_briefs/evening", brief: @brief, writing:, open: @brief.evening_open?(Time.current) %>
       <% else %>
         <%= render "daily_briefs/brief", brief: @brief, writing: %>
       <% end %>
-      <% if today %>
-        <%= render "daily_briefs/writings/actions", brief: @brief, latest:, write_now: params[:write] == "first" %>
-      <% end %>
+      <%= render "daily_briefs/writings/actions", brief: @brief, latest:, today:, write_now: params[:write] == "first" %>
     <% end %>
-    <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
+    <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "daily-brief-page__side") do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
             manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
       <% if writing && @brief.section?(:children) && (children = writing.section(:children)&.compact_blank.presence) %>

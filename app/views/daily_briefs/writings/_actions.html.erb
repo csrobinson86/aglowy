@@ -1,11 +1,18 @@
-<%# locals: (brief:, latest:, write_now: false) %>
-<%# Under today's brief (docs/design/daily-brief.md, The brief, its states; frame brief-today.png): "Another angle" with
-    how many are left today, "Write it with AI" for a brief with no writing yet, and "No more today" in their place at
-    the limit. Try again is in the Banner. Without the AI terms, "Turn on AI drafts" opens the same notice as elsewhere;
-    accepting comes back here with write_now, and today's writing starts. Nothing while one is being written. %>
+<%# locals: (brief:, latest:, today:, write_now: false) %>
+<%# Under the brief (docs/design/daily-brief.md, The brief, its states; frame brief-today.png): Keep in Notes and Print
+    (Keep in Notes, and print), then, under today's, "Another angle" with how many are left today, "Write it with AI" for
+    a brief with no writing yet, and "No more today" in their place at the limit. Try again is in the Banner. Without the
+    AI terms, "Turn on AI drafts" opens the same notice as elsewhere; accepting comes back here with write_now, and
+    today's writing starts. No AI button while one is being written. Printing leaves the whole row out. %>
 <% left = brief.writings_left %>
-<div class="d-flex flex-wrap flex-items-center gap-2 mt-3">
-  <% if !Current.user.accepted_ai_terms? %>
+<div class="daily-brief-page__actions d-flex flex-wrap flex-items-center mt-3">
+  <%= primer_form_with(url: household_daily_brief_note_path) do |f| %>
+    <%= render DailyBriefs::NoteForm.new(f, on: brief.on) %>
+  <% end %>
+  <%= render(Primer::Beta::Button.new(data: { controller: "print", action: "print#print beforeprint@window->print#lighten afterprint@window->print#restore" })) { "Print" } %>
+  <% if !today %>
+    <%# Another angle and the rest are for today's brief only. %>
+  <% elsif !Current.user.accepted_ai_terms? %>
     <%= render(Primer::Alpha::Dialog.new(id: "daily-brief-ai-terms", title: "Before you use AI", position_narrow: :fullscreen)) do |dialog| %>
       <% dialog.with_show_button do |button| %>
         <% button.with_leading_visual_icon(icon: :"sparkle-fill", color: :done) %>
