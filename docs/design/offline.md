@@ -117,7 +117,10 @@ Three forms: a meeting note's edit (`meeting_notes#update`), a note's page (`per
   - 422: refused, as an online save would be (a blank title); the save stays, `state: "refused"`, and Settings → Offline shows it with "Open", which opens the form with what was written
   - 403 or 404 (the note was deleted, or the person left the household): the save stays, `state: "failed"`, with "Discard" in Settings → Offline
   - no `Aglowy-Offline-Saved` header (the sign-in page, say), or a network error: it goes back to `waiting` for the next try
-- **A new Note offline** carries a `personal_note[offline_token]`, a UUID made on the device. `personal_notes.offline_token` (uuid, nullable, unique with `user_id`) means a save sent twice, because the first answer was lost, finds the first note instead of making a second. A create with a token that already exists redirects to that note.
+- **A new Note offline** carries a `personal_note[offline_token]`, a UUID made on the device. `personal_notes.offline_token` (uuid, nullable, unique with `user_id`) means a save sent twice, because the first answer was lost, finds the first note instead of making a second. The note also keeps `personal_notes.offline_revision` (uuid, nullable): the `revision` that created it.
+  - **A create with a token that already exists** writes nothing. If the stored `offline_revision` is the revision sent, the first send did save it: the answer is `200` with `Aglowy-Offline-Saved: <updated_at>` and `Location`, and the save is deleted as usual.
+  - **If the revision differs,** the person wrote more on the phone after the first send. The answer is `200` with `Aglowy-Offline-Created: <the note's created_at>` and `Location`, and no `Aglowy-Offline-Saved`. The `offline` controller turns the waiting save into an update of that note (its URL, `PATCH`, `base` = that `created_at`) and sends it again at once. If nobody changed the note since it was created, its `updated_at` still equals `created_at` and the newer words save. If somebody did, it's a conflict like any other (Changed on another device).
+  - Without the replay header, a create with an existing token redirects to the note.
 
 ### Changed on another device
 
@@ -151,7 +154,7 @@ The `offline` controller watches the sign-out forms (sidebar and header, `destro
 4. **Redirects.** Keep a redirect as `Response.redirect`; a followed redirect can't answer a navigation and the page fails to load.
 5. **No JSON API.** The kit is `text/plain`, a list of paths. Nothing else is added for the worker.
 6. **The words stay on the device until they save.** No offline text goes to the server except as the normal form submission it would have been. The conflict panel is built on the device from IndexedDB.
-7. **A save sent twice.** A new Note's `offline_token` stops a duplicate. An edit sent twice after a lost answer comes back 409 the second time, and shows a conflict whose offline words are already in the note: harmless, and the person discards it.
+7. **A save sent twice.** A new Note's `offline_token` stops a duplicate, and its `offline_revision` tells a repeat of the same save from newer words, which go on as an update. An edit sent twice after a lost answer comes back 409 the second time, and shows a conflict whose offline words are already in the note: harmless, and the person discards it.
 8. **Escape everything shown from IndexedDB.** The conflict panel and Settings' list use `textContent`, never `innerHTML`.
 9. **Saved means `Aglowy-Offline-Saved`.** Never treat a 2xx or a followed redirect as a save. Delete a waiting save only when it still holds the revision that was sent.
 10. **Lock, then compare.** The `offline_base` check and the replay's write happen inside one `with_lock`.
