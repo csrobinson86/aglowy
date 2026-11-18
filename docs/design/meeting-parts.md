@@ -118,7 +118,7 @@ One AI request and its checked reply.
 - `belongs_to :chat, dependent: :destroy`, so deleting a part deletes its drafts' chats with them, not at the next purge.
 - `revises` must be a `drafted` draft of the same part: of the same kind for a change, or an outline for sample wording. `part.draft` checks that and copies its `result` into `revised_result` in the same lock.
 - `Ai::Use` gains `meeting_part_draft_id` (FK, nullable, unique, `on_delete: :nullify`), used exactly as `question_id` is for personal study: made with the draft, deleted when the draft ends `failed` or `flagged`, kept when the draft or its part is deleted.
-- `draft.spoken_length` counts the words of the result, plus `READ_SECONDS` for each scripture marked to read.
+- `draft.spoken_length` counts the words of the result, plus `READ_SECONDS` for each scripture marked to read. An outline's aim and study point advice aren't said aloud, so they aren't counted; each point's scripture is read ("Read Psalm 37:10, 11." in its preparation), so it is.
 - `draft.preparation_html` builds notes from our own ERB partial with escaped fields, as `FamilyStudy::Draft#notes_html` does.
 
 ## Pages and routes

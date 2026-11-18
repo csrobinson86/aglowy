@@ -451,6 +451,16 @@ class MeetingPartsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#ai_panel button", text: "Draft outline"
   end
 
+  test "a refused preparation save still shows the drafted outline in the AI panel" do
+    meeting_part_draft(@part, status: "drafted", result: { "aim" => "Leave the person curious.", "points" => [ { "heading" => "A promise worth hearing" } ] })
+    sign_in identities(:head)
+
+    patch household_meeting_part_path(household_id: @home, id: @part), params: { meeting_part: { counsel: "a" * 2001 } }
+
+    assert_response :unprocessable_content
+    assert_select "turbo-frame#ai_panel", text: /Leave the person curious/
+  end
+
   test "no AI panel for a child, on their own part" do
     sign_in identities(:eli)
 

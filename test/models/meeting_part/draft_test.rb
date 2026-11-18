@@ -221,6 +221,12 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
     assert_empty capture_turbo_stream_broadcasts(@draft).select { it["action"] == "append" }
   end
 
+  test "a draft deleted with its part before the job runs: the job does nothing" do
+    @part.destroy!
+
+    assert_nothing_raised { MeetingPart::WriteDraftJob.perform_now(@draft.id) }
+  end
+
   test "discard sets discarded once done, never while drafting, and never deletes" do
     drafted = meeting_part_draft(@part, status: "drafted")
 
@@ -238,7 +244,9 @@ class MeetingPart::DraftTest < ActiveSupport::TestCase
                                                                   "points" => [ { "heading" => "six", "explain" => "seven eight" } ], "close" => "nine ten", "study_point" => "unsaid " * 130 })
 
     assert_equal "About 10 s to say", draft.spoken_length.to_s
-    assert_equal 10, draft.spoken_length.seconds
+
+    draft.result["points"].first["scripture"] = "Psalm 37:10, 11"
+    assert_equal 10 + MeetingPart::SpokenLength::READ_SECONDS, draft.spoken_length.seconds
   end
 
   test "preparation_html is our own markup with every field escaped and references as plain text" do

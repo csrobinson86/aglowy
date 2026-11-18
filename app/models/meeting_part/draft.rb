@@ -44,10 +44,12 @@ class MeetingPart::Draft < ApplicationRecord
     stop || discard
   end
 
-  # About how long the outline takes to say: what the person says, not the aim or the study point advice.
+  # About how long the outline takes to say: what the person says, not the aim or the study point advice, and each point's
+  # scripture read aloud, as preparation_html says to.
   def spoken_length
-    said = result.slice("opening", "question", "close").values + Array(result["points"]).flat_map { it.values_at("heading", "explain") }
-    MeetingPart::SpokenLength.new(said.compact.join(" "))
+    points = Array(result["points"])
+    said = result.slice("opening", "question", "close").values + points.flat_map { it.values_at("heading", "explain") }
+    MeetingPart::SpokenLength.new(said.compact.join(" "), scriptures: points.count { it["scripture"].present? })
   end
 
   # The outline as preparation, from our own partial with every field escaped. References stay plain text, linked when
