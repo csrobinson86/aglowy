@@ -63,7 +63,7 @@
     <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end) do %>
       <%= render TodayComponent.new(household: Current.household, viewer: Current.user, meeting_helper: false,
             manage_events: policy(Household::Event).create?, title: "Today in Aglowy", heading_tag: :h2, today: @today) %>
-      <% if writing && @brief.section?(:children) && (children = writing.section(:children)) %>
+      <% if writing && @brief.section?(:children) && (children = writing.section(:children)&.compact_blank.presence) %>
         <%= render "daily_briefs/children", brief: @brief, children:, today:, evening: @evening %>
       <% end %>
       <% if !@evening && @brief.evening_questions.any? %>

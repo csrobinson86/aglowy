@@ -48,6 +48,14 @@ class DailyBriefs::SharedThoughtComponentTest < ViewComponent::TestCase
     assert_no_selector "h3", text: "For the children"
   end
 
+  test "a children's box the checks left empty isn't drawn" do
+    daily_brief_writing(@brief, status: "written", result: { "thread" => "A thread.", "children" => { "ask" => "", "today" => "" } })
+
+    render_inline DailyBriefs::SharedThoughtComponent.new(brief: @brief, household: households(:home))
+
+    assert_no_selector "h3", text: "For the children"
+  end
+
   private
     # Every string in the other sections, long enough not to turn up by chance in the shown ones.
     def other_text(value)

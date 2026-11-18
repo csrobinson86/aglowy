@@ -21,8 +21,9 @@ class DailyBriefs::SharedThoughtComponent < ApplicationComponent
     Bible::Reference.parse(@writing.section(:reading)&.dig("passage"))
   end
 
+  # Nil when the checks left both of its fields empty.
   def children
-    @writing.section(:children)
+    @writing.section(:children)&.compact_blank.presence
   end
 
   def sharer

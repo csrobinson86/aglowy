@@ -372,6 +372,15 @@ class DailyBriefTest < ActiveSupport::TestCase
     assert_not brief.shared_with?(households(:home))
   end
 
+  test "the database refuses a second sharing of one brief with one household" do
+    brief = DailyBrief.for(@user)
+    brief.share_with(households(:home))
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      DailyBrief::Sharing.insert!({ daily_brief_id: brief.id, household_id: households(:home).id })
+    end
+  end
+
   private
     # Refused with +reason+: nothing made and no job queued.
     def assert_refused(reason)
