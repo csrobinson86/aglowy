@@ -59,6 +59,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 19 | **PARTS-01** Meeting parts: each person's student parts in Apply Yourself to the Field Ministry, with preparation, counsel and sharing; an AI outline, sample wording and changes for heads and adults, aimed at the part's time | Design done |
 | 20 | **BRIEF-01** Daily brief: a brief ready each morning from the person's own plan of focus areas, with the day's text, a reading, a quality and a faith example tied by one thread; evening questions; written by AI for heads and adults, with a plan-only brief when there's no AI | Design done |
 | 21 | **OFFLINE-01** Offline: turned on per device in Settings; the pages for the meeting, the ministry, the morning and family study kept on the device; meeting notes and Notes written offline and saved when back online, never over a newer version; everything removed on sign out | Design done |
+| 22 | **GAME-01** Listening game: the meeting helper's Treasures, Spiritual Gems, Bible Reading and Congregation Bible Study steps as rounds of four cards found by a weekly AI research job, checked by a parent; a score for that meeting only; the child's own typed answer for the Bible Study | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 

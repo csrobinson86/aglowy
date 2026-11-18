@@ -25,7 +25,7 @@ This builds on these docs:
 - **The helper keeps its own switch, off by default.** A head or an adult turns it on in Household settings.
 - **Pictures over words.** Many children this age can't read yet, so every part has a big icon and one short prompt a parent can read aloud before the meeting.
 - **Drawing is the main way to respond.** Typing stays on the normal meeting note page for older children.
-- **Calm, and nothing that nags:** a dark screen, no sounds, no animation, and no points, streaks or rewards (`docs/product/vision.md`, goal 4).
+- **Calm, and nothing that nags:** a dark screen, no sounds, no animation, and no streaks, running totals or rewards (`docs/product/vision.md`, goal 4). Since GAME-01 (18 Nov), the listening game shows a score for that meeting only (`docs/design/listening-game.md`).
 - **A parent reads it** when the child taps "Show my family", using the existing meeting-note sharing. The shared note shows "Talk about it with <child>" questions taken from the prompts. No AI.
 
 ## What KIDS-01 builds, and what comes later
@@ -33,8 +33,8 @@ This builds on these docs:
 | In KIDS-01 | Later |
 | --- | --- |
 | Meeting times in Household settings, for heads and adults | Weeks with no meetings (assemblies, conventions) and circuit overseer visit weeks |
-| Today's meeting for everyone: sidebar item, Home card on meeting days, the right note | Preparing a Watchtower comment with a parent beforehand ("Your paragraph is 7") |
-| The helper switch, for heads and adults | Prompts written for that week's program |
+| Today's meeting for everyone: sidebar item, Home card on meeting days, the right note | Preparing a Watchtower comment with a parent beforehand ("Your paragraph is 7"); the Congregation Bible Study answer is in `docs/design/listening-game.md` |
+| The helper switch, for heads and adults | Prompts written for that week's program: the listening game, `docs/design/listening-game.md` |
 | The helper: one part at a time, "I heard it!" marks, drawing | A child mode on a parent's phone, for children without a login |
 | The helper's end screen and "Show my family" | Light theme for the helper |
 | A parent reading a helper note, with "Talk about it" | Reminders before a meeting (with notifications) |
