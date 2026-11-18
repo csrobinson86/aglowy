@@ -45,4 +45,38 @@ class Ai::PurgeExpiredChatsJobTest < ActiveJob::TestCase
     assert Chat.exists?(recent.chat_id)
     assert_equal "My own words.", part.reload.preparation.to_plain_text
   end
+
+  test "a change made 10 days ago revises a 61-day-old draft, and sample wording made 10 days ago revises a 61-day-old outline: the purge deletes each older draft and its chat; each newer draft keeps its revised_result, its chat and its messages, with revises nil. 61 days after the newer drafts were made, they, their copies and their chats go" do
+    part = meeting_parts(:head_conversation)
+    outline = { "aim" => "Leave the person curious.", "points" => [ { "heading" => "A promise worth hearing" } ] }
+    older = travel_to(61.days.ago) { Array.new(2) { meeting_part_draft(part, status: "drafted", result: outline) } }
+    newer = travel_to(10.days.ago) do
+      [ meeting_part_draft(part, status: "drafted", revises: older.first, revised_result: outline, request: "Shorter opening"),
+        meeting_part_draft(part, kind: "wording", status: "drafted", revises: older.last, revised_result: outline) ].each do
+        it.chat.messages.create!(role: "user", content: "Starting a Conversation")
+      end
+    end
+
+    Ai::PurgeExpiredChatsJob.perform_now
+
+    older.each do
+      assert_not MeetingPart::Draft.exists?(it.id)
+      assert_not Chat.exists?(it.chat_id)
+    end
+    newer.each do
+      it.reload
+      assert_nil it.revises_id
+      assert_equal outline, it.revised_result
+      assert Chat.exists?(it.chat_id)
+      assert_equal 1, it.chat.messages.count
+    end
+
+    travel_to(newer.first.created_at + 61.days) { Ai::PurgeExpiredChatsJob.perform_now }
+
+    newer.each do
+      assert_not MeetingPart::Draft.exists?(it.id)
+      assert_not Chat.exists?(it.chat_id)
+      assert_empty Message.where(chat_id: it.chat_id)
+    end
+  end
 end

@@ -35,10 +35,18 @@ seed_meeting_part(lucia, kind: "starting_a_conversation", meeting_on: next_meeti
 # A drafted AI outline on her Starting a Conversation, which its page shows in the panel, from the saved reply in
 # test/fixtures/files/ai/ rather than a provider call (docs/design/meeting-parts.md, Elsewhere). It has no use, so it
 # doesn't take one of her 15 requests for today.
-unless conversation.drafts.exists?
-  body = JSON.parse(Rails.root.join("test/fixtures/files/ai/meeting_part_outline.json").read)
+# Then sample wording written from that outline, which the panel shows now, from its own saved reply (frame
+# part-ai-wording.png). It keeps a copy of the outline, as a real request would.
+def seed_part_draft(part, user, kind:, reply:, **attributes)
+  body = JSON.parse(Rails.root.join("test/fixtures/files/ai/#{reply}.json").read)
   results = body["content"].select { it["type"] == "web_search_tool_result" }.flat_map { it["content"] }.map { { url: it["url"], title: it["title"] } }
-  conversation.drafts.create!(user: maria, kind: "outline", status: "drafted", chat: Chat.new(user: maria, purpose: MeetingPart::Draft::PURPOSE),
-    request: "The person is busy and has a young family.", result: JSON.parse(body["content"].filter_map { it["text"] }.join)["outline"],
+  part.drafts.create!(user: user, kind: kind, status: "drafted", chat: Chat.new(user: user, purpose: MeetingPart::Draft::PURPOSE),
+    result: JSON.parse(body["content"].filter_map { it["text"] }.join)[kind], **attributes,
     sources: Ai::SourceLink.keep(results, search_results: results, allowed_hosts: Ai::Purpose::ALLOWED_HOSTS))
+end
+
+outline = conversation.drafts.find_by(kind: "outline") ||
+  seed_part_draft(conversation, maria, kind: "outline", reply: "meeting_part_outline", request: "The person is busy and has a young family.")
+unless conversation.drafts.exists?(kind: "wording")
+  seed_part_draft(conversation, maria, kind: "wording", reply: "meeting_part_wording", revises: outline, revised_result: outline.result)
 end

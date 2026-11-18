@@ -131,9 +131,13 @@ class SeedsTest < ActiveSupport::TestCase
     # Her note for the week of her coming conversation, which names it under its header.
     conversation = maria.meeting_parts.find_by!(kind: "starting_a_conversation")
     assert_equal [ conversation ], maria.meeting_notes.find_by!(kind: "midweek", week_of: conversation.week_of).meeting_parts
-    outline = conversation.current_draft_for(maria)
+    outline = conversation.drafts.find_by!(kind: "outline")
     assert_equal [ "outline", "drafted", 3 ], [ outline.kind, outline.status, outline.sources.size ]
     assert_equal [ "Psalm 37:10, 11", "Proverbs 20:5" ], outline.result["points"].pluck("scripture")
+    # Sample wording written from that outline, which the panel shows.
+    wording = conversation.current_draft_for(maria)
+    assert_equal [ "wording", "drafted", outline, outline.result ], [ wording.kind, wording.status, wording.revises, wording.revised_result ]
+    assert_equal [ "Psalm 37:10, 11" ], wording.result["lines"].pluck("read").compact_blank
 
     assert_equal 0, Ai::Use.count
   end

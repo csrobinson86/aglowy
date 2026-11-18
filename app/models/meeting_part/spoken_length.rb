@@ -6,6 +6,9 @@ class MeetingPart::SpokenLength
   WORDS_PER_MINUTE = 130
   READ_SECONDS = 20
 
+  # How many scriptures are read aloud, for "plus 1 scripture to read".
+  attr_reader :scriptures
+
   # Four fifths of what fits, leaving room for reading scriptures and for pauses.
   def self.target_words(minutes)
     minutes * WORDS_PER_MINUTE * 4 / 5

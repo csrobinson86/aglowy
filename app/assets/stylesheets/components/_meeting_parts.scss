@@ -57,3 +57,20 @@
 .meeting-part-prepare.Layout > .meeting-part-prepare__ai.Layout-sidebar {
   display: block;
 }
+
+// AI sample wording (frame part-ai-wording.png): a numbered list drawn as a stack of line boxes, without the numbers.
+.meeting-part-wording {
+  display: grid;
+  gap: var(--base-size-8);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+// "Show all 14 lines" is a touch target of its own on a phone: a 20px line with 12px above and below makes 44px, and its
+// disclosure triangle stays.
+.meeting-part-wording__more {
+  @media (pointer: coarse) {
+    padding-block: var(--base-size-12);
+  }
+}

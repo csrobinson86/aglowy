@@ -1,0 +1,24 @@
+<%# locals: (lines:, other_speaker:) -%>
+<%# Checked sample wording in the AI panel (frame part-ai-wording.png): each line labelled You or the other speaker
+    (other_speaker nil for a talk, which has no labels), and "(Read …)" as a scripture link after a line that reads one.
+    The first 6 lines show; the rest open in a Primer Details, with no request. Every field is the AI's text, so it's only
+    ever escaped by ERB (docs/design/ai.md, safety measure 6). %>
+<% shown = 6 %>
+<% line_items = ->(group) { capture do %>
+  <% group.each do |line| %>
+    <li class="Box color-bg-subtle p-3">
+      <% if other_speaker %><span class="d-block text-small text-bold color-fg-muted mb-1"><%= line["speaker"] == "other" ? other_speaker : "You" %></span><% end %>
+      <span class="wb-break-word"><%= line["text"] %></span>
+      <% if (reference = Bible::Reference.parse(line["read"])) %>(Read <%= render "bible/references/reference", reference: reference %>)<% end %>
+    </li>
+  <% end %>
+<% end } %>
+<ol class="meeting-part-wording"><%= line_items.(lines.first(shown)) %></ol>
+<% if lines.size > shown %>
+  <%= render(Primer::Beta::Details.new(mt: 2)) do |details| %>
+    <% details.with_summary(button: false, classes: "Link meeting-part-wording__more") { "Show all #{lines.size} lines" } %>
+    <% details.with_body do %>
+      <ol class="meeting-part-wording mt-2" start="<%= shown + 1 %>"><%= line_items.(lines.drop(shown)) %></ol>
+    <% end %>
+  <% end %>
+<% end %>

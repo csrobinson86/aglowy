@@ -8,6 +8,8 @@ class MeetingPartAiTest < ApplicationSystemTestCase
   EDITOR = "lexxy-editor[name='meeting_part[preparation]']"
   END_OF_TEXT = RUBY_PLATFORM.include?("darwin") ? [ :command, :down ] : [ :control, :end ]
   REQUEST = "The person is busy and has a young family."
+  OUTLINE = { "aim" => "Leave the person curious.", "opening" => "Say hello.",
+              "points" => [ { "heading" => "A promise worth hearing", "scripture" => "Psalm 37:10, 11", "explain" => "It speaks of peace." } ] }.freeze
 
   setup do
     @part = meeting_parts(:head_conversation)
@@ -28,6 +30,10 @@ class MeetingPartAiTest < ApplicationSystemTestCase
       check "I understand how AI drafts work"
       click_on "Turn on AI drafts"
       assert_text "15 of 15 left today"
+      choose "Sample wording"
+      assert_button "Draft wording"
+      choose "An outline"
+      assert_button "Draft outline"
       fill_in "Anything it should know? (optional)", with: REQUEST
     end
     assert_accessible
@@ -138,6 +144,96 @@ class MeetingPartAiTest < ApplicationSystemTestCase
     assert_selector ".Label", text: "From an AI draft"
   end
 
+  test "from an outline, write sample wording, ask for a change with a chip, see version 2, Use this wording, and save" do
+    users(:head).accept_ai_terms(understood: "1")
+    meeting_part_draft(@part, status: "drafted", result: OUTLINE)
+    sign_in identities(:head)
+    visit household_meeting_part_url(household_id: households(:home), id: @part)
+
+    within("turbo-frame#ai_panel") do
+      click_on "Write sample wording"
+      assert_selector "h2", text: "Drafting with AI"
+    end
+    assert_selector "turbo-cable-stream-source[data-ai-panel-target='stream'][connected]", visible: :all
+    write_draft(file: "meeting_part_wording", midway: -> { within("turbo-frame#ai_panel") { assert_selector "li", text: "Writing the sample wording…" } })
+
+    within("turbo-frame#ai_panel") do
+      assert_selector "h3", text: "Sample conversation"
+      assert_text "Householder"
+      assert_text "plus 1 scripture to read"
+      assert_link "Psalm 37:10, 11"
+      assert_text "Version 1 of the wording"
+      assert_link "Back to the outline"
+      assert_no_text "Peace on the earth would be nice."
+      find("summary", text: "Show all 8 lines").click
+      assert_text "Peace on the earth would be nice."
+    end
+    assert_accessible
+    capture_screens("part-ai-wording", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
+
+    within("turbo-frame#ai_panel") do
+      click_on "Shorter opening"
+      assert_field "Your change", with: "Shorter opening"
+      click_on "Change it"
+      assert_selector "h2", text: "Drafting with AI"
+    end
+    assert_selector "turbo-cable-stream-source[data-ai-panel-target='stream'][connected]", visible: :all
+    change = MeetingPart::Draft.drafting.sole
+    assert_equal [ "wording", "Shorter opening" ], [ change.kind, change.request ]
+    write_draft(file: "meeting_part_wording")
+
+    within("turbo-frame#ai_panel") do
+      assert_text "Version 2 · See version 1"
+      assert_text "12 of 15 left today"
+    end
+    assert_accessible
+    capture_screens("part-ai-change", scroll_to: "turbo-frame#ai_panel section", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
+
+    click_on "Use this wording"
+
+    assert_selector EDITOR, text: "Householder: Yes, it's been a hard year"
+    assert_selector ".Label", text: "From an AI draft"
+    assert_selector "turbo-frame#ai_panel h2", text: "Wording added"
+    assert_accessible
+
+    click_on "Save"
+
+    assert_text "Part saved."
+    assert_selector "#{EDITOR} .scripture-link", text: "Psalm 37:10, 11"
+    assert_includes @part.reload.preparation.to_plain_text, "Many feel that way."
+  end
+
+  test "on a phone: sample wording and a change in the full-screen panel" do
+    users(:head).accept_ai_terms(understood: "1")
+    outline = meeting_part_draft(@part, status: "drafted", result: OUTLINE)
+    use_phone
+    sign_in identities(:head)
+    visit household_meeting_part_url(household_id: households(:home), id: @part)
+
+    click_on "Prepare with AI"
+    wait_for_dialog
+    within("dialog[open]") { click_on "Write sample wording" }
+    write_draft(file: "meeting_part_wording")
+
+    within("dialog[open]") { assert_selector "h3", text: "Sample conversation" }
+    assert_equal outline, MeetingPart::Draft.wording.sole.revises
+    assert_accessible
+    capture_screens("part-ai-wording", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+    use_phone # capture_screens leaves the desktop window, which puts the panel back beside the preparation
+
+    within("dialog[open]") do
+      click_on "Simpler words"
+      click_on "Change it"
+      assert_selector "h2", text: "Drafting with AI"
+    end
+    assert_selector "turbo-cable-stream-source[data-ai-panel-target='stream'][connected]", visible: :all
+    write_draft(file: "meeting_part_wording")
+
+    within("dialog[open]") { assert_text "Version 2 · See version 1" }
+    assert_accessible
+    capture_screens("part-ai-change", scroll_to: "turbo-frame#ai_panel section", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+  end
+
   test "a child sees no Prepare with AI" do
     sign_in identities(:eli)
     visit household_meeting_part_url(household_id: households(:home), id: meeting_parts(:eli_conversation))
@@ -154,13 +250,14 @@ class MeetingPartAiTest < ApplicationSystemTestCase
       emulate_touch(true)
     end
 
-    # Runs the draft's job here, with moderation passing and Chat#ask_within_purpose standing in for the provider: it
-    # streams the saved reply's text (test/fixtures/files/ai/meeting_part_outline.json), calls +midway+ after the first
-    # chunk, then answers with the saved reply as the provider's HTTP response would arrive. No test calls a provider.
-    def write_draft(midway: -> { })
-      draft = MeetingPart::Draft.sole
+    # Runs the drafting draft's job here, with moderation passing and Chat#ask_within_purpose standing in for the
+    # provider: it streams the saved reply's text (test/fixtures/files/ai/meeting_part_outline.json, or +file+), calls
+    # +midway+ after the first chunk, then answers with the saved reply as the provider's HTTP response would arrive. No
+    # test calls a provider.
+    def write_draft(file: "meeting_part_outline", midway: -> { })
+      draft = MeetingPart::Draft.drafting.sole
       ask_for_real = draft.chat.method(:ask_within_purpose)
-      body = JSON.parse(file_fixture("ai/meeting_part_outline.json").read)
+      body = JSON.parse(file_fixture("ai/#{file}.json").read)
       ask = lambda do |text, stream:|
         body["content"].filter_map { it["text"] }.each_with_index do |chunk, index|
           stream.call(RubyLLM::Chunk.new(role: :assistant, content: chunk))

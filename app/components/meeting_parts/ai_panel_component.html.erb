@@ -27,18 +27,31 @@
         <% case state %>
         <% when :drafting %>
           <%= tag.ul id: dom_id(draft, :progress), class: "list-style-none mb-3", aria: { live: "polite" } do %>
-            <%= render "family_studies/drafts/progress", step: :searching %>
+            <%= render "family_studies/drafts/progress", step: :searching, thing: draft.kind_label %>
           <% end %>
-          <p class="text-small color-fg-muted" aria-busy="true">The outline appears here once its scriptures, links and wording have been checked.</p>
+          <p class="text-small color-fg-muted" aria-busy="true">The <%= draft.kind_label %> appears here once its scriptures, links and wording have been checked.</p>
           <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
             <%= render FamilyStudies::DraftActionForm.new(f, label: "Stop") %>
           <% end %>
         <% when :drafted %>
+          <% if failed? %>
+            <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't make a draft right now. Try again in a moment." } %>
+          <% end %>
           <div class="d-flex flex-wrap flex-items-baseline flex-justify-between mb-2">
-            <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mr: 2)) { "Outline" } %>
-            <span class="text-small color-fg-muted"><%= draft.spoken_length %></span>
+            <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mr: 2)) { drafted_heading } %>
+            <span class="text-small color-fg-muted"><%= time_line %></span>
           </div>
-          <%= render "meeting_parts/drafts/outline", outline: draft.result %>
+          <%# Said once, with the draft; nothing asks again by itself (docs/design/meeting-parts.md, Over the time). %>
+          <% if draft.over_time? %>
+            <p class="d-flex flex-items-baseline text-small color-fg-attention">
+              <%= render(Primer::Beta::Octicon.new(:alert, mr: 1, flex_shrink: 0)) %>This runs about <%= over_by %> over. Ask for a change to shorten it.
+            </p>
+          <% end %>
+          <% if draft.outline? %>
+            <%= render "meeting_parts/drafts/outline", outline: draft.result %>
+          <% else %>
+            <%= render "meeting_parts/drafts/wording", lines: draft.result["lines"], other_speaker: other_speaker %>
+          <% end %>
           <div class="border-top pt-3 mt-3">
             <p class="text-small text-bold color-fg-muted mb-2">Pages it used</p>
             <% if draft.sources.any? %>
@@ -54,20 +67,46 @@
               <p class="color-fg-muted mb-0">No matching pages found on jw.org or wol.jw.org.</p>
             <% end %>
           </div>
-          <%# The outline as preparation, for "Use this outline" to put in the editor. Our own partial, every field escaped. %>
+          <%# The draft as preparation, for "Use this outline" or "Use this wording" to put in the editor. Our own partial,
+              every field escaped. %>
           <template data-ai-draft-target="template"><%= draft.preparation_html %></template>
           <%# On a phone this moves into the dialog's footer, within thumb reach. %>
           <div data-ai-panel-target="footerHome">
             <div data-ai-panel-target="footer" data-ai-draft-target="review">
-              <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) { "AI can get things wrong. Check each point against its source." } %>
+              <%= render(Primer::Alpha::Banner.new(scheme: :warning, icon: :alert, my: 3)) do %>
+                <%= draft.outline? ? "AI can get things wrong. Check each point against its source." : "This is a sample to learn from. Put it in your own words, and check each point against its source." %>
+              <% end %>
               <div class="ai-draft-actions">
-                <%= render(Primer::Beta::Button.new(scheme: :primary, classes: "ai-draft-actions__use", data: { action: "ai-draft#use" })) { "Use this outline" } %>
-                <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
-                  <%= render FamilyStudies::DraftActionForm.new(f, label: "Discard") %>
+                <%= render(Primer::Beta::Button.new(scheme: :primary, classes: "ai-draft-actions__use", data: { action: "ai-draft#use" })) { "Use this #{draft.outline? ? "outline" : "wording"}" } %>
+                <% if draft.outline? %>
+                  <%= primer_form_with(model: wording_from_outline, url: drafts_path, method: :post) do |f| %>
+                    <%= render MeetingParts::ChangeForm.new(f, wording: true) %>
+                  <% end %>
+                <% elsif outline_revised %>
+                  <%= render(Primer::Beta::Button.new(tag: :a, href: draft_path(outline_revised))) { "Back to the outline" } %>
                 <% end %>
               </div>
             </div>
           </div>
+          <%# A change is a new draft of the same kind, revising this one, in its own chat (How a request runs). %>
+          <section class="border-top pt-3 mt-3" aria-labelledby="<%= dom_id(draft, :change) %>">
+            <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mb: 2, id: dom_id(draft, :change))) { "Ask for a change" } %>
+            <%= primer_form_with(model: change, url: drafts_path, method: :post) do |f| %>
+              <%= render MeetingParts::ChangeForm.new(f) %>
+            <% end %>
+            <div class="d-flex flex-items-center flex-justify-between text-small color-fg-muted mt-2">
+              <span>
+                <% if draft.version == 1 %>
+                  Version 1 of the <%= draft.outline? ? "outline" : "wording" %>
+                <% else %>
+                  Version <%= draft.version %> · <%= render(Primer::Beta::Link.new(href: draft_path(draft.revises))) { "See version #{draft.version - 1}" } %>
+                <% end %>
+              </span>
+              <%= primer_form_with(url: draft_path, method: :delete) do |f| %>
+                <%= render FamilyStudies::DraftActionForm.new(f, label: "Discard", scheme: :invisible) %>
+              <% end %>
+            </div>
+          </section>
         <% when :refused %>
           <%# The refusal, and nothing else from the reply (docs/design/ai.md, safety measure 1). %>
           <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 3, description: "Ask for an outline of this part: its points, scriptures, and ideas for the opening and the close.")) do %>
@@ -97,20 +136,22 @@
         <% else %>
           <% if failed? %>
             <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "Couldn't make a draft right now. Try again in a moment." } %>
+          <% elsif unrevisable? %>
+            <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { "That draft can't be changed now." } %>
           <% end %>
           <p>Get a starting point for this part. The AI searches only jw.org and wol.jw.org, writes in its own words, and links the pages it used. It aims at your <%= pluralize(meeting_part.minutes, "minute") %>.</p>
           <%= primer_form_with(model: draft, url: drafts_path, method: :post) do |f| %>
-            <%= render MeetingParts::DraftForm.new(f) %>
+            <%= render MeetingParts::DraftForm.new(f, kind: draft.kind) %>
           <% end %>
         <% end %>
       <% end %>
     <% end %>
     <% if state == :drafted %>
-      <%# "Use this outline" shows this in place of the outline, with the outline in the preparation. %>
+      <%# "Use this outline" or "Use this wording" shows this in place of the draft, with the draft in the preparation. %>
       <%= render(Primer::Beta::BorderBox.new(hidden: true, classes: "border-0 border-md", data: { ai_draft_target: "added" })) do |box| %>
         <% box.with_body(border_bottom: 0) do %>
           <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mb: 2, display: :flex, align_items: :center, tabindex: -1)) do %>
-            <%= render(Primer::Beta::Octicon.new(:check, color: :success, mr: 2)) %>Outline added
+            <%= render(Primer::Beta::Octicon.new(:check, color: :success, mr: 2)) %><%= draft.outline? ? "Outline" : "Wording" %> added
           <% end %>
           <p>It's at the end of your preparation. Put it in your own words, then Save.</p>
           <%# Done with: discarded, back to Start. %>

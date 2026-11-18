@@ -2,6 +2,8 @@
 # references and Traps). A scripture field that isn't a real reference is dropped, so the AI can't invent a verse,
 # and links reach a page only through Ai::SourceLink.
 class Ai::ScriptureFilter
+  # A meeting part's sample wording gives a scripture to read aloud after a line in read (docs/design/meeting-parts.md).
+  SCRIPTURE_FIELDS = %w[ scripture read ].freeze
   # A web address: with a scheme, starting www., or a host name followed by a path. The stop after it isn't part of it.
   URL = %r{\b(?:(?:[a-z][a-z0-9+.-]*://|www\.)\S*|(?:[a-z0-9-]+\.)+[a-z]{2,}/\S*)(?<![.,!?;:)\]"”’])}i
 
@@ -22,7 +24,7 @@ class Ai::ScriptureFilter
 
   private
     def keep_field(kept, key, value)
-      if key.to_s != "scripture"
+      if !key.to_s.in?(SCRIPTURE_FIELDS)
         kept[key] = keep(value)
       elsif (reference = Bible::Reference.parse(value))
         kept[key] = reference.to_s

@@ -13,6 +13,9 @@ hands it to RubyLLM as the HTTP response would arrive.
   result. Hand-built.
 - `meeting_part_outline.json`: a meeting part outline (`outline` filled, `wording` empty) with three search results and
   two citations carrying `cited_text`. Hand-built, like the draft. The seeds use it too, for the drafted outline.
+- `meeting_part_wording.json`: sample wording for a conversation (`wording` filled, `outline` empty): 8 lines, one with a
+  scripture to read, the same three search results and one citation carrying `cited_text`. Hand-built. The seeds use it
+  for the drafted wording.
 
 ## Recording a reply
 

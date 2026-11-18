@@ -27,7 +27,7 @@ class Ai::Purpose::MeetingPart < Ai::Purpose
           study_point: { type: "string", description: "How to work on the study point given; empty when none is given. 500 characters at most" }
         ),
         wording: object(
-          lines: { type: "array", description: "2 to 20 lines",
+          lines: { type: "array", description: "4 to 20 lines for a demonstration, 2 to 20 for a talk",
                    items: object(speaker: { type: "string", enum: %w[ you other ] }, text: TEXT,
                                  read: { type: "string", description: "A scripture to read aloud after the line, as a plain-text reference, or empty. Never verse text" }) }
         )

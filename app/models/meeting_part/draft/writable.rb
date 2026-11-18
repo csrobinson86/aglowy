@@ -9,6 +9,10 @@ module MeetingPart::Draft::Writable
   OUTLINE_TEXT = %w[ aim opening question close study_point ].freeze
   POINT_TEXT = %w[ heading scripture explain ].freeze
   MAX_POINTS = 3
+  LINE_TEXT = %w[ speaker text read ].freeze
+  MAX_LINES = 20
+  # Sample wording needs this many lines after the checks (docs/design/meeting-parts.md, The reply).
+  MIN_LINES = { demonstration: 4, talk: 2 }.freeze
   # Every string in the reply (docs/design/meeting-parts.md, The reply). The schema only describes it.
   TEXT_MAX = 500
 
@@ -43,13 +47,38 @@ module MeetingPart::Draft::Writable
       @purpose ||= Ai::Purpose.find(chat.purpose)
     end
 
-    # Only the part's five details, the length to aim at and what the person typed (Trap 2). Never the preparation, the
-    # counsel, the assistant, the person's name or a household's (docs/design/ai.md, safety measure 7).
+    # Only the part's five details, the length to aim at, what the person typed and, for a change or sample wording, the
+    # copy of the draft it builds on (Trap 2), all inside the marked block. Never the preparation, the counsel, the
+    # assistant, the person's name or a household's (docs/design/ai.md, safety measure 7), and never revises itself,
+    # which the purge may have taken.
     def sent_text
       part = meeting_part
-      [ "Part: #{part.kind_details.label} (#{part.kind_details.talk? ? "talk" : "demonstration"})", "Time: #{part.minutes} minutes",
-        ("Setting: #{part.setting_label}" if part.setting), "What it's about: #{part.topic}", ("Study point: #{part.study_point}" if part.study_point),
-        "Aim at about #{MeetingPart::SpokenLength.target_words(part.minutes)} words.", "Write: an #{kind}.", ("Anything else: #{request}" if request) ].compact.join("\n")
+      [ "Part: #{part.kind_details.label} (#{form})", "Time: #{part.minutes} minutes", ("Setting: #{part.setting_label}" if part.setting),
+        "What it's about: #{part.topic}", ("Study point: #{part.study_point}" if part.study_point),
+        "Aim at about #{MeetingPart::SpokenLength.target_words(part.minutes)} words.", "Write: #{outline? ? "an outline" : "sample wording"}.",
+        *revised_text, ("#{change? ? "The change asked for" : "Anything else"}: #{request}" if request) ].compact.join("\n")
+    end
+
+    def form = meeting_part.kind_details.talk? ? :talk : :demonstration
+
+    # The copy as plain text, under what it's for.
+    def revised_text
+      return [] unless revised_result
+
+      [ change? ? "The draft to change:" : "The outline to write it from:", *(revised_result.key?("lines") ? wording_text : outline_text) ]
+    end
+
+    def outline_text
+      outline = revised_result
+      points = Array(outline["points"]).map.with_index(1) do |point, number|
+        [ "Point #{number}", [ point["heading"], point["explain"], ("(#{point["scripture"]})" if point["scripture"]) ].compact_blank.join(" ") ]
+      end
+      [ [ "Aim", outline["aim"] ], [ "Opening", outline["opening"] ], *points, [ "Question", outline["question"] ], [ "Close", outline["close"] ],
+        [ "Study point", outline["study_point"] ] ].filter_map { |label, text| "#{label}: #{text}" if text.present? }
+    end
+
+    def wording_text
+      revised_result["lines"].map { "#{it["speaker"].capitalize}: #{it["text"]}#{" (Read #{it["read"]})" if it["read"]}" }
     end
 
     # Never the chunk's text, which is unchecked. A Stop ends the request here.
@@ -61,13 +90,33 @@ module MeetingPart::Draft::Writable
       progress :writing
     end
 
-    # Off topic is settled before this. An outline needs its aim and a point after the checks.
+    # Off topic is settled before this.
     def finish_checked(reply)
-      outline = checked_outline(reply)
-      return finish("failed") if outline["aim"].blank? || outline["points"].none?
+      fields = wording? ? checked_wording(reply) : checked_outline(reply)
+      return finish("failed") if too_thin?(fields)
 
-      finish "drafted", result: outline,
+      finish "drafted", result: fields,
         sources: Ai::SourceLink.keep(reply.sources, search_results: reply.search_results, allowed_hosts: purpose.allowed_hosts)
+    end
+
+    # An outline needs its aim and a point after the checks; wording, its lines, and a demonstration both speakers, so
+    # a sample conversation never shows one side of it.
+    def too_thin?(fields)
+      return fields["aim"].blank? || fields["points"].none? unless wording?
+
+      lines = fields["lines"]
+      lines.size < MIN_LINES[form] || (form == :demonstration && lines.pluck("speaker").uniq.size < 2)
+    end
+
+    # The lines as strings, each 500 characters at most, through the same checks as an outline, then without empty lines.
+    # Every line is the person's in a talk; in a demonstration a line is the other speaker's only when it says so.
+    def checked_wording(reply)
+      wording = reply.parsed["wording"].then { it.is_a?(Hash) ? it : {} }
+      lines = Array(wording["lines"]).grep(Hash).first(MAX_LINES).map { strings(it, LINE_TEXT) }
+
+      lines, _removed = Ai::CopyCheck.clean(Ai::ScriptureFilter.keep(lines), citations: reply.sources,
+        overlap_words: purpose.copy_overlap_words, quote_max_words: purpose.quote_max_words)
+      { "lines" => lines.select { it["text"].present? }.map { it.merge("speaker" => form == :demonstration && it["speaker"] == "other" ? "other" : "you") } }
     end
 
     # The outline's fields as strings, each 500 characters at most, without references that don't parse, web addresses or copied sentences, then
@@ -102,6 +151,6 @@ module MeetingPart::Draft::Writable
 
     # The progress lines, at +step+, to the draft's own stream (turbo_stream_from the draft), never a household's.
     def progress(step, pages: nil)
-      broadcast_update_to self, target: [ self, :progress ], html: ApplicationController.render(partial: "family_studies/drafts/progress", locals: { step:, pages: })
+      broadcast_update_to self, target: [ self, :progress ], html: ApplicationController.render(partial: "family_studies/drafts/progress", locals: { step:, pages:, thing: kind_label })
     end
 end

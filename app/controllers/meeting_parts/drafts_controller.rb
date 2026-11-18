@@ -10,8 +10,12 @@ class MeetingParts::DraftsController < ApplicationController
   # The panel hides the request box until then, but the server doesn't trust the UI (docs/design/ai.md, First use).
   before_action { head :forbidden unless Current.user.accepted_ai_terms? }
 
+  # An outline or sample wording; or, with revises_id, a change or sample wording built on one of the person's own drafts
+  # of this part, so anyone else's is a 404.
   def create
-    draft = @meeting_part.draft(kind: "outline", request: params.expect(meeting_part_draft: [ :request ])[:request], by: Current.user)
+    attributes = params.expect(meeting_part_draft: [ :kind, :request, :revises_id ])
+    revises = @meeting_part.drafts.where(user: Current.user).find(attributes[:revises_id]) if attributes[:revises_id].present?
+    draft = @meeting_part.draft(kind: attributes.fetch(:kind, "outline"), request: attributes[:request], revises: revises, by: Current.user)
 
     render turbo_stream: turbo_stream.replace(:ai_panel, panel(draft)), status: draft.persisted? ? :ok : :unprocessable_content
   end
@@ -25,11 +29,12 @@ class MeetingParts::DraftsController < ApplicationController
     end
   end
 
-  # Never deletes the draft, so a stopped request keeps its use and still counts.
+  # Never deletes the draft, so a stopped request keeps its use and still counts. Start keeps what was typed for it, but
+  # not a change, which only meant something under the draft it changed.
   def destroy
     @draft.stop_or_discard
 
-    render turbo_stream: turbo_stream.replace(:ai_panel, panel(@meeting_part.drafts.new(kind: @draft.kind, request: @draft.request)))
+    render turbo_stream: turbo_stream.replace(:ai_panel, panel(@meeting_part.drafts.new(kind: @draft.kind, request: (@draft.request unless @draft.change?))))
   end
 
   private
