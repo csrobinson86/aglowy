@@ -144,7 +144,7 @@ changes when it does.
 1. **Aglowy mark:** `LogoComponent`, the Two flames mark then "Aglowy" (`docs/design/brand.md`). Links to the household home.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
 3. **Household group:** Home, Calendar (`docs/design/calendar.md`, once CAL-01 builds it), Family studies, Members, Family goals.
-4. **Mine group:** Today's meeting, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`, whose tabs hold notes, meeting notes and bookmarks), Meeting parts (`docs/design/meeting-parts.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
+4. **Mine group:** Daily brief (`docs/design/daily-brief.md`, heads and adults), Today's meeting, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`, whose tabs hold notes, meeting notes and bookmarks), Meeting parts (`docs/design/meeting-parts.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
 5. **Footer:** Notifications with its unread counter, once NOTIFY-01 adds it (`docs/design/notifications.md`, The sidebar), then Settings, for everyone (`docs/design/settings.md`; it replaced Household settings and the link on the person's name in SETTINGS-01), then the person's initial and name with a Sign out button.
 
 **Main**
