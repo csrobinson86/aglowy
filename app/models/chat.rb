@@ -25,6 +25,7 @@ class Chat < ApplicationRecord
   # inside the marked block. Chunks go to +stream+ as they arrive.
   def ask_within_purpose(text, stream: nil)
     follow_configured_model
+    keep_to_request_timeout
     raise UnsupportedProvider, "AI_MODEL must be an #{PROVIDER} model, not #{provider}" unless provider.to_s == PROVIDER
 
     with_instructions(ai_purpose.instructions)
@@ -45,6 +46,13 @@ class Chat < ApplicationRecord
     # request moves it to the one AI_MODEL names now (docs/design/ai.md, The model and the web search).
     def follow_configured_model
       with_model(RubyLLM.config.default_model) unless model_id == RubyLLM.config.default_model
+    end
+
+    # A purpose with its own timeout gets one try at it: RubyLLM's retries would each wait as long again.
+    def keep_to_request_timeout
+      return unless (timeout = ai_purpose.request_timeout)
+
+      with_context(RubyLLM.context { it.request_timeout = timeout.to_i; it.max_retries = 0 })
     end
 
     # Only the purpose's last context_exchanges questions and their replies go with a new question, and the

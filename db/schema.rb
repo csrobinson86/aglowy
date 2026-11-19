@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_19_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -470,6 +470,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_180000) do
     t.check_constraint "\"position\" >= 1 AND \"position\" <= 4", name: "listening_game_cards_position_check"
     t.check_constraint "char_length(label::text) <= 40", name: "listening_game_cards_label_check"
     t.check_constraint "kind::text = ANY (ARRAY['person'::character varying, 'place'::character varying, 'book'::character varying, 'thing'::character varying, 'feeling'::character varying, 'action'::character varying]::text[])", name: "listening_game_cards_kind_check"
+  end
+
+  create_table "listening_game_preparations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.date "week_of", null: false
+    t.uuid "token", null: false
+    t.datetime "created_at", null: false
+    t.index ["household_id", "week_of"], name: "index_listening_game_preparations_on_household_id_and_week_of", unique: true
   end
 
   create_table "listening_game_rounds", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1042,6 +1050,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_180000) do
   add_foreign_key "invitations", "households", on_delete: :cascade
   add_foreign_key "invitations", "users", column: "invited_by_id"
   add_foreign_key "listening_game_cards", "listening_game_rounds", column: "round_id", on_delete: :cascade
+  add_foreign_key "listening_game_preparations", "households", on_delete: :cascade
   add_foreign_key "listening_game_rounds", "listening_games", on_delete: :cascade
   add_foreign_key "listening_game_rounds", "users", column: "changed_by_id", on_delete: :nullify
   add_foreign_key "listening_game_sources", "listening_games", on_delete: :cascade

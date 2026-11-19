@@ -6,6 +6,8 @@ class ListeningGame < ApplicationRecord
   # Keep in step with the listening_game_rounds_step_check constraint.
   ROUNDS = { "talk" => 5, "spiritual_gems" => 2, "bible_reading" => 2, "congregation_bible_study" => 6 }.freeze
   STEPS = ROUNDS.keys.freeze
+  # By the week each game is for, so a game stays 8 whole weeks after its own (ListeningGame::PurgeJob).
+  KEEP_FOR = 8.weeks
 
   belongs_to :household
   belongs_to :chat, optional: true
@@ -14,6 +16,7 @@ class ListeningGame < ApplicationRecord
   has_many :sources, -> { order(:position) }, inverse_of: :listening_game
 
   scope :preloaded, -> { includes(:sources, rounds: :cards) }
+  scope :expired, -> { where(week_of: ...Date.current.beginning_of_week(:monday) - KEEP_FOR) }
 
   # The game from a reply's fields, with each round that passes ListeningGame::Round.from_reply and the pages that
   # passed Ai::SourceLink, or nil when no step has a round. Rounds that fail leave no gap: the next moves up.

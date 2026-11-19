@@ -15,6 +15,8 @@ class Ai::Purpose::ListeningGame < Ai::Purpose
   # Per household (docs/design/listening-game.md, What it asks).
   def daily_limit = 3
   def keep_for = 7.days
+  # Well under the 15 minutes its claim is held, and a timeout fails the run (When it runs).
+  def request_timeout = 5.minutes
   def user_block = "listening_game_week"
 
   def schema

@@ -3,6 +3,13 @@
 class Ai::Acceptance < ApplicationRecord
   belongs_to :user
 
+  # Each household where they're an active head or adult, with the helper on and no game this week, can have its
+  # listening game now. Once committed, so the job's worker sees the acceptance (docs/design/listening-game.md, When it runs).
+  after_create_commit do
+    Household.where(id: user.memberships.active.where(role: %w[ head adult ]).select(:household_id)).includes(:meeting_helper)
+      .select(&:listening_game_due?).each(&:prepare_listening_game_later)
+  end
+
   # "I understand how AI drafts work". Primer's required: marks the box but doesn't add the HTML attribute, so the
   # tick is checked here. allow_nil: false, so a request without the box at all is refused too.
   validates :understood, acceptance: { allow_nil: false, message: "Tick “I understand how AI drafts work” to turn on AI drafts" }
