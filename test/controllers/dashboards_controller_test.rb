@@ -537,6 +537,19 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Check this week's listening game/, count: 0
   end
 
+  test "with the weekend meeting earlier in the week than the midweek meeting, the days between still show Check this week's listening game" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:head)
+
+    households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 2, weekend_time: "10:00")
+    travel_to(Time.utc(2026, 11, 16, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "x-banner a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+
+    households(:home).change_meeting_times(midweek_wday: 0, midweek_time: "19:00", weekend_wday: 6, weekend_time: "10:00")
+    travel_to(Time.utc(2026, 11, 17, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "x-banner a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+  end
+
   test "on a weekend meeting day there's no Check this week's listening game" do
     set_meeting_times
     households(:home).enable_meeting_helper(by: users(:head))
