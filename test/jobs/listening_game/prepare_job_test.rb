@@ -191,6 +191,21 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
     assert game_this_week(@home)
   end
 
+  test "a failed request whose claim was taken over leaves the newer claim, and its chat goes" do
+    newer = SecureRandom.uuid
+    stub_request(:post, PROVIDER).to_return do
+      ListeningGame::Preparation.sole.update!(token: newer, created_at: Time.current)
+      { status: 500 }
+    end
+
+    travel_to(MONDAY) do
+      assert_error_reported(RubyLLM::ServerError) { ListeningGame::PrepareJob.perform_now }
+    end
+
+    assert_equal newer, ListeningGame::Preparation.sole.token
+    assert_empty @home.chats.where(purpose: "listening_game")
+  end
+
   test "a reply with nothing usable leaves no claim" do
     stub_request(:post, PROVIDER).to_return(**unusable_reply)
 

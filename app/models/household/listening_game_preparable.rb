@@ -58,14 +58,17 @@ module Household::ListeningGamePreparable
 
     # Saved, and the claim let go, under the lock and only while the claim is still this run's: a run whose claim was
     # taken over saves nothing and leaves the newer claim. A failed request or a reply with nothing usable lets it go
-    # too, so the next daily run tries again. A failed request's chat goes with it, so it doesn't count towards the
-    # daily limit (docs/design/ai.md, safety measure 9); a reply with nothing usable does.
+    # too, so the next daily run tries again. A failed request's chat goes, even when its claim was taken over, so it
+    # doesn't count towards the daily limit (docs/design/ai.md, safety measure 9); a reply with nothing usable does.
     def ask_for_listening_game(claim, chat)
       game = listening_game_from_ai(chat, week_of: claim.week_of)
       with_lock { game&.save! if claim.release }
       game if game&.persisted?
     rescue StandardError
-      with_lock { claim.release && chat.destroy! }
+      with_lock do
+        claim.release
+        chat.destroy!
+      end
       raise
     end
 
