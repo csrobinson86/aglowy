@@ -13,7 +13,8 @@ Frames in `docs/design/notes/` (README there). Mockups are in the "Notes" row on
 - **Collections:** a base set shared with Personal study, plus collections that belong only to Notes (`Collection` in `docs/design/personal-study.md`).
 - **In the first version:**
   - pin notes so they stay at the top
-  - save a Personal study answer as a new note
+  - a Personal study's note: "Save to note" on an answer adds it to the study's one note (Casey, 19 Nov; `docs/design/personal-study.md`, Save to note)
+- **A note opens read-only (Casey, 19 Nov).** Clicking a note shows it; Edit opens the form with the Lexxy editor.
   - show pinned notes on Home
 - **Private**, like everything in Mine. Nobody else sees a person's notes; there's no sharing.
 
@@ -64,10 +65,12 @@ Its breadcrumb starts "Notes / Meeting notes", linking to the Notes tab and the 
 | `collection_id` | uuid | FK → collections, nullable, `on_delete: :nullify` | Must be `Collection.for_notes` and owned by the note's `user` (validation). Looked up through `Current.user.collections`, so another person's id is a 404 |
 | `title` | string | not null, 1 to 120 characters | |
 | `color` | string | not null, default `none`, check in (`none`, `yellow`, `orange`, `red`, `pink`, `purple`, `blue`, `green`, `brown`, `gray`), the order the picker and the filter show | |
+| `personal_study_id` | uuid | FK → personal_studies, nullable, `on_delete: :nullify`, unique where not null | The study this is the note of (`docs/design/personal-study.md`, Save to note). Must belong to the note's `user` (validation) |
 
 - `has_rich_text :body, encrypted: true`, with `ScriptureLinkable`, so typed references link on save and the Scripture button works in the editor
 - `include Taggable` (`docs/design/tags.md`; NOTES-01 adds `PersonalNote` to the tagging check)
 - `has_one :pin`
+- `belongs_to :personal_study, optional: true`
 - Scopes:
   - `pinned` and `unpinned`
   - `recent_first` by `updated_at`
@@ -113,8 +116,9 @@ Under `/:household_id` for the household layout. Always found through `Current.u
 | --- | --- | --- |
 | Notes | `GET /:household_id/notes` (`PersonalNotesController#index`; `?collection=`, `?tag=`, `?color=`, `?q=`) | `notes.png` |
 | New note | `GET /:household_id/notes/new`, `POST /:household_id/notes` | |
-| A note | `GET /:household_id/notes/:id`, which opens straight into editing, as drawn | `note.png` |
-| Save | `PATCH /:household_id/notes/:id` | |
+| A note | `GET /:household_id/notes/:id`: the read view | `note-read.png`, `note-read-from-study.png` |
+| Edit a note | `GET /:household_id/notes/:id/edit`: the form | `note-editing.png` (`note.png` before 19 Nov) |
+| Save | `PATCH /:household_id/notes/:id`, then back to the read view | |
 | Delete | `DELETE /:household_id/notes/:id`, after a Primer dialog | |
 | Pin and unpin | `resource :pin, only: %i[ create destroy ]` under the note (`PersonalNotes::PinsController`) | |
 | Collections | `resources :collections` (shared; `docs/design/personal-study.md`) | `notes-new-collection.png` |
@@ -134,30 +138,28 @@ Under `/:household_id` for the household layout. Always found through `Current.u
 
 ### A note
 
-- **Header:** the breadcrumb (Notes / the collection) and a "Pinned" toggle button.
-- **The note card**, drawn in the note's color, holds:
+- **Header:** the breadcrumb (Notes / the collection), Edit (on the read view) and the "Pinned" toggle.
+- **The read view** (frames `note-read.png`, `note-read-from-study.png`): the note card, drawn in the note's color, holds the title as the page's `h1`; a line with the color's name beside its dot, the collection as a link and the tags as links; for a study's note, "From your study" with the study's title linking to it (gone once the study is deleted); then the body as saved, with working scripture links. Nothing on it is a form field.
+- **Edit** (frame `note-editing.png`) opens the form on its own page. **The note card**, drawn in the note's color, holds:
   - the title field (labelled "Title", drawn large)
   - the color picker
   - the collection select ("None" plus `for_notes`)
   - the tag editor (`TagEditorComponent`)
   - the Lexxy body editor with the Scripture button
-  - "Save note" and "Saved <time>"
-- **Side panel:** "Scriptures in this note" (each a scripture link, with "Each opens on jw.org, or in JW Library if it's installed."), and Details (created, edited, Delete note).
+  - "Save note", Cancel (back to the read view without saving) and "Saved <time>"
+- **New note** still opens straight into the form, and saving it goes to its read view.
+- **The version check.** The edit form carries `personal_note[base]`, a hidden field holding the note's `updated_at` (microseconds, ISO 8601) when the form was rendered. `PersonalNote#revise(attributes, base:)` takes the note's row lock, compares `base` with `updated_at`, and saves only when they match. Every change to the body moves `updated_at`: a save from either form, and an answer appended by "Save to note" (`docs/design/personal-study.md`). So does a change to the title, color, collection or tags. Both note forms use it, this one and the study page's (`PersonalStudies::NoteForm`).
+  - **A stale save is refused, not merged.** Nothing is written, and the form renders again with status 409: every field holds the note as it is now, with the new `base`, under a Primer `Banner` (warning): "This note changed after you started editing, so your changes weren't saved. It's shown as it is now. What you wrote is below." Beneath the form, "What you wrote" shows every field submitted, read-only and escaped: the title, the color's name beside its dot, the collection, the tags, and the body rendered from the submitted Action Text (sanitized, as the read view renders a note), so its headings, lists and links keep their formatting when selected and pasted into the editor. A Primer `ClipboardCopyButton`, "Copy text", copies the body as plain text. The person picks what to keep, sets it in the form and saves again.
+  - The offline replay check (`offline_base`, `docs/design/offline.md`) is separate and unchanged. Both hold the same `updated_at`.
+- **Side panel**, on both views: "Scriptures in this note" (each a scripture link, with "Each opens on jw.org, or in JW Library if it's installed."), and Details (created, edited, Delete note).
 
 ### Pinned notes on Home
 
 Home's Mine column (frame `home-pinned-notes.png`) gets "Pinned notes" above Recent meeting notes. It shows up to 5 notes, most recently pinned first, each with a color dot and its title, and "All notes" beneath. The section is hidden when the person has no pinned notes.
 
-### Save an AI answer as a note
+### A Personal study's note
 
-On a Personal study answer, next to "Save to notes", there's "Save as a note" (frame `docs/design/personal-study/personal-study.png`):
-- `POST /:household_id/personal_studies/:id/questions/:question_id/personal_note` (`resource :personal_note, only: :create`) calls `question.save_as_note`
-- the new note's title is the question, up to 120 characters
-- its body is the same partial as "Save to notes": the escaped paragraphs with references as plain text, which link on save, then "Pages:" and the source links
-- it takes the study's collection when that collection is shared with Notes, and the study's tags
-- its color is none
-- the person is taken to the new note
-- only `answered` questions can be saved (422 otherwise)
+A study has one note, made by its first "Save to note" or by "Start a note" on the study page (`docs/design/personal-study.md`, Save to note). It's an ordinary note in Notes, with `personal_study_id` set: it shows in the list like any other, and its read view says which study it's from. "Save as a note", which made a new note for each answer, is gone (Casey, 19 Nov).
 
 ## Traps
 
@@ -165,11 +167,14 @@ On a Personal study answer, next to "Save to notes", there's "Save as a note" (f
 - **A collection's `used_in` decides where it can go.** Validate that a note's collection is `for_notes`, and a study's is `for_studies`.
 - **Color modifiers come from the allowed list,** never interpolated straight from params into a class name.
 - **Tags stay private** (`tags_for(Current.user)`). Notes are never shared, so there's no shared view to leak them, but use it anyway.
-- **"Save as a note" copies, it doesn't link.** The note stands on its own if the study is deleted.
+- **A study's note outlives the study.** `personal_study_id` is nullified when the study is deleted, and the read view drops "From your study".
+- **Never save a whole body over a newer one.** Every save from a note form goes through `revise` with its `base`, under the row lock, so a form opened before "Save to note" appended an answer can't remove it.
+- **The read view is still escaped.** The body is Action Text, rendered as saved; the title, collection and tags are escaped like any text.
 
 ## States each story checks
 
 - Owner, another member (404), a non-member (404)
+- Editing: saved; Cancel; a stale save refused (changed in another tab, or an answer saved to a study's note meanwhile)
 - No notes; notes in every color; pinned and not; in a shared collection, a notes-only one and none; with tags
 - Filters: collection, tag, color, search (title, collection, tag; not body)
 - Home with and without pinned notes, with more than 5 pinned
