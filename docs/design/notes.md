@@ -148,6 +148,9 @@ Under `/:household_id` for the household layout. Always found through `Current.u
   - the Lexxy body editor with the Scripture button
   - "Save note", Cancel (back to the read view without saving) and "Saved <time>"
 - **New note** still opens straight into the form, and saving it goes to its read view.
+- **The version check.** The edit form carries `personal_note[base]`, a hidden field holding the note's `updated_at` (microseconds, ISO 8601) when the form was rendered. `PersonalNote#revise(attributes, base:)` takes the note's row lock, compares `base` with `updated_at`, and saves only when they match. Every change to the body moves `updated_at`: a save from either form, and an answer appended by "Save to note" (`docs/design/personal-study.md`). So does a change to the title, color, collection or tags. Both note forms use it, this one and the study page's (`PersonalStudies::NoteForm`).
+  - **A stale save is refused, not merged.** Nothing is written, and the form renders again with status 409: every field holds the note as it is now, with the new `base`, under a Primer `Banner` (warning): "This note changed after you started editing, so your changes weren't saved. It's shown as it is now. What you wrote is below." Beneath the form, "What you wrote" shows the submitted title and body read-only (the body rendered as Action Text, sanitized), with a Primer `ClipboardCopyButton`, "Copy", for the body's text. The person copies what they need into the note and saves again.
+  - The offline replay check (`offline_base`, `docs/design/offline.md`) is separate and unchanged. Both hold the same `updated_at`.
 - **Side panel**, on both views: "Scriptures in this note" (each a scripture link, with "Each opens on jw.org, or in JW Library if it's installed."), and Details (created, edited, Delete note).
 
 ### Pinned notes on Home
@@ -165,11 +168,13 @@ A study has one note, made by its first "Save to note" or by "Start a note" on t
 - **Color modifiers come from the allowed list,** never interpolated straight from params into a class name.
 - **Tags stay private** (`tags_for(Current.user)`). Notes are never shared, so there's no shared view to leak them, but use it anyway.
 - **A study's note outlives the study.** `personal_study_id` is nullified when the study is deleted, and the read view drops "From your study".
+- **Never save a whole body over a newer one.** Every save from a note form goes through `revise` with its `base`, under the row lock, so a form opened before "Save to note" appended an answer can't remove it.
 - **The read view is still escaped.** The body is Action Text, rendered as saved; the title, collection and tags are escaped like any text.
 
 ## States each story checks
 
 - Owner, another member (404), a non-member (404)
+- Editing: saved; Cancel; a stale save refused (changed in another tab, or an answer saved to a study's note meanwhile)
 - No notes; notes in every color; pinned and not; in a shared collection, a notes-only one and none; with tags
 - Filters: collection, tag, color, search (title, collection, tag; not body)
 - Home with and without pinned notes, with more than 5 pinned

@@ -141,7 +141,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 | Ask | `POST /:household_id/personal_studies/:id/questions` | |
 | Stop | `DELETE /:household_id/personal_studies/:id/questions/:question_id` (sets `stopped` while asking) | |
 | Save an answer to the study's note | `POST …/questions/:question_id/note_saving` (`resource :note_saving, only: :create`), which calls `question.save_to_note` | `personal-study-note.png` |
-| Start the study's note | `POST /:household_id/personal_studies/:id/note` (`resource :note, only: %i[ create edit update ]`, `PersonalStudies::NotesController`), an empty note, opened for editing in place | `personal-study-no-note.png` |
+| Start the study's note | `POST /:household_id/personal_studies/:id/note` (`resource :note, only: %i[ create edit update ]`, `PersonalStudies::NotesController`), which calls `personal_study.start_note` (below) and opens the note for editing in place | `personal-study-no-note.png` |
 | Edit the study's note in place | `GET …/personal_studies/:id/note/edit` and `PATCH …/personal_studies/:id/note`, in the panel's Turbo Frame | `personal-study-note-editing.png` |
 | Tags | `docs/design/tags.md` | |
 | On a phone | the same page, with Conversation, Note and Sources tabs | `phone-personal-study.png` |
@@ -162,15 +162,17 @@ Under `/:household_id` for the household layout. The data is always found throug
   - **No note yet:** "No note yet. Save an answer to start one, or write your own." with "Start a note", which makes an empty linked note and opens it for editing here.
   - **The note, read-only:** its body as saved, with working scripture links, and "In Notes · Edited <date>" beneath. The header has "Open in Notes" and Edit.
   - **Editing in place:** Edit swaps in the Lexxy editor with the Scripture button (`docs/design/scripture-links.md`), "Save note" and Cancel, and the line "Title, color and tags are in Notes." Saving or cancelling returns to the read-only view. The form is `PersonalStudies::NoteForm`, a Primer form class with the approved `rich_text_area` exception.
+  - **A save never writes over a newer note.** The form carries the note's version (`docs/design/notes.md`, A note: the version check), and a save from a form opened before the note last changed is refused, as in Notes. It happens here when the person chooses "Save to note" on an answer while editing: the answer goes into the note, and the editor's stale copy can't then remove it. The refused save renders the editor again with the note as it is now, the warning Banner and "What you wrote" (frame `personal-study-note-editing.png` shows the editor; the conflict uses the same panel).
   - The note card's left edge is drawn in the note's color, like a card in Notes.
 - **Sources in this study.** Every page linked across the study's answers, without duplicates, with the line "Titles and links only. Open a page to read it on jw.org."
 - **Bookmarks** (BOOKMARKS-01, `docs/design/bookmarks.md`): a bookmark button beside each page in "Pages used" and "Sources in this study", and a "Scriptures in this study" box with a button on each scripture.
 
 ### Save to note
 
-`question.save_to_note`, under the study's lock:
-- **The study's note**, made on the first save if there isn't one: titled with the study's title, color none, the study's collection when it's used in Notes, the study's tags, and `personal_study` set. After that its title, color, collection and tags are the note's own: renaming the study doesn't rename the note.
-- **Appends to its body:** the question as a heading, the answer's paragraphs from our own partial with escaped text and references as plain text (`ScriptureLinkable` links them on save), then "Pages:" and the source links.
+`question.save_to_note` takes the study's lock (`personal_study.with_lock`), then the note's row lock once the note exists, and holds both through the write:
+- **The study's note**, from `personal_study.start_note`: the study's note if it has one, or a new one. "Start a note" calls the same method under the same study lock, so the two ways of making the note wait for each other, and whichever runs second finds the note the first made and carries on with it (the second request still saves its answer, or still opens the editor). The new note is titled with the study's title, color none, the study's collection when it's used in Notes, the study's tags, and `personal_study` set. After that its title, color, collection and tags are the note's own: renaming the study doesn't rename the note.
+- **Appends to its body,** from our own partial, all text escaped: the question as a heading; the answer's `not_found_note` as its own paragraph when it has one (a `not_found` answer can have no paragraphs, only this); the answer's paragraphs with references as plain text (`ScriptureLinkable` links them on save); then "Pages:" and the source links, when there are any.
+- **Moves the note's version.** The append saves the note, so its `updated_at` moves, and a form opened before it is refused (Study note above; `docs/design/notes.md`, the version check).
 - **Records that the answer is saved:** a `PersonalStudy::Question::NoteSaving` (below). Saving an answer that's already in the note does nothing and returns the note, so a double click can't add it twice.
 - Returns the note. The answer card shows "Saved to note · Open note" and the Study note panel refreshes, both by Turbo Stream.
 
@@ -205,7 +207,8 @@ This epic makes these changes, in the same PR as this doc:
 - **Deleting a study can't refund questions.** The limit reads `Ai::Use`, never `PersonalStudy::Question` (above).
 - **The answer card is untrusted text.** Escape every field. References are linked by `Bible::Linker` after escaping, never by trusting markup from the reply.
 - **Never show `cited_text`**, and never fetch jw.org (`docs/design/ai.md`).
-- **One note per study, in the database.** `personal_notes.personal_study_id` has a unique index where it isn't null, and `save_to_note` runs under the study's lock, so two saves at once can't make two notes.
+- **One note per study, in the database.** `personal_notes.personal_study_id` has a unique index where it isn't null. Both ways of making the note, `save_to_note` and "Start a note", go through `personal_study.start_note` under the study's lock, so two requests at once, of either kind, find one note between them; the index is the database's guarantee behind the lock, and a request that hits it is a bug, not a path to handle.
+- **An open editor can't erase a saved answer.** "Save to note" appends to the note while the person may have it open in an editor, here or in Notes. The version check refuses the stale save, so the answer stays in the note, matching its "Saved to note" mark. The Turbo Stream that refreshes the Study note panel targets the read-only view, so it changes nothing while the editor is open.
 - **The chat grows.** Send at most the last 10 questions and answers as context, so long studies stay within the model's limits and cost.
 
 ## States each story checks
@@ -213,5 +216,6 @@ This epic makes these changes, in the same PR as this doc:
 - Person: head, adult, child with a grant, child without one, a head viewing a child's studies, another head without a grant here (404), a non-member (404)
 - Limit: 0, 29 and 30 used; a new day in the person's time zone; a deleted study's questions still counted
 - Answer: good, not found, off topic, flagged, failed, stopped, with a link not in the search results, with copied text
+- Study note: none, started, one answer saved, two saved, the same answer saved twice, a not-found answer with only its note, "Start a note" and "Save to note" at once, an answer saved while the editor is open (the stale save refused)
 - Study: no questions yet, no note yet, a note with one saved answer and with several, an answer saved twice, the note deleted (answers show "Save to note" again), the study deleted (the note stays, unlinked), in a collection or none, with tags
 - Desktop and phone; light and dark
