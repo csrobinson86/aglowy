@@ -6,8 +6,10 @@
   <p class="meeting-helper__part"><%= meeting_note_dot(@step.color) %><%= @step.title %></p>
   <%= meeting_helper_icon(icon: @step.icon, color: @step.color, size: :large) %>
   <h1 class="meeting-helper__heading"><%= @step.prompt %></h1>
+  <%# With her answer, the mark button sits in its card. %>
+  <%= render "meeting_notes/steps/answer", meeting_note: @meeting_note, step: @step if @step.answerable? %>
   <div class="meeting-helper__actions">
-    <%= render "meeting_notes/steps/mark", meeting_note: @meeting_note, step: @step %>
+    <%= render "meeting_notes/steps/mark", meeting_note: @meeting_note, step: @step unless @meeting_note.answered?(@step) %>
     <%= render Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_step_drawing_path(step_id: @step.key), size: :large, classes: "meeting-helper__button meeting-helper__button--big") do |button| %>
       <% button.with_leading_visual_icon(icon: :pencil) %>
       <%= @meeting_note.drawn?(@step.key) ? "My drawing" : "Draw it" %>

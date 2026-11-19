@@ -1,0 +1,22 @@
+<%# locals: (meeting_note:, step:) %>
+<%# Her answer on the Bible Study step and its rounds (frame tablet-game-study.png): "My answer · paragraph N", her
+    words, escaped like all her text, "Change my answer" and the mark button, which reads "I gave my answer!". Before
+    she has one, "Write my answer". %>
+<% if meeting_note.answered?(step) %>
+  <section class="meeting-helper__answer" aria-labelledby="<%= dom_id(meeting_note, :answer_label) %>">
+    <%= meeting_helper_icon(icon: "hand", color: :accent, size: :small) %>
+    <div class="meeting-helper__answer-text">
+      <h2 class="meeting-helper__answer-label" id="<%= dom_id(meeting_note, :answer_label) %>">My answer · paragraph <%= meeting_note.answer.paragraph %></h2>
+      <p class="meeting-helper__answer-body"><%= meeting_note.answer.body %></p>
+      <%= render Primer::Beta::Link.new(href: edit_household_meeting_note_step_answer_path(meeting_note_id: meeting_note, step_id: step.key), classes: "meeting-helper__answer-change") do %>
+        Change my answer
+      <% end %>
+    </div>
+    <%= render "meeting_notes/steps/mark", meeting_note:, step: %>
+  </section>
+<% else %>
+  <%= render Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_step_answer_path(meeting_note_id: meeting_note, step_id: step.key), size: :large, classes: "meeting-helper__button meeting-helper__button--step") do |button| %>
+    <% button.with_leading_visual_icon(icon: :pencil) %>
+    Write my answer
+  <% end %>
+<% end %>

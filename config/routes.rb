@@ -163,6 +163,8 @@ Rails.application.routes.draw do
         resource :mark, only: %i[ create destroy ], module: :steps
         # edit and update are helper pages; show serves the image to anyone who can read the note.
         resource :drawing, only: %i[ show edit update ], module: :steps
+        # Her answer, on the Congregation Bible Study step only (docs/design/listening-game.md, Pages, Her answer).
+        resource :answer, only: %i[ edit update ], module: :steps
         # The listening game's rounds; :id is the round's position (docs/design/listening-game.md, Pages).
         resources :rounds, only: :show, module: :steps do
           resource :find, only: :create, module: :rounds

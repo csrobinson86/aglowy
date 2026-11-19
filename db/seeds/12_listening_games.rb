@@ -21,3 +21,7 @@ lucia = seeded_person("lucia.rivera")
 game_note = lucia.start_meeting_note(kind: "midweek", week_of:)
 first_round = rivera.listening_rounds(week_of, "talk").first
 game_note.find_card(first_round.answer) if first_round
+
+# She has written her answer for this week's Congregation Bible Study, so its step shows her answer card with "I gave
+# my answer!" (docs/design/listening-game.md, Pages, Her answer). An answer she has already written stays.
+game_note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.") unless game_note.answer

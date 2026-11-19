@@ -60,6 +60,8 @@ en:
         ends_at: "Ends"
         repeat: "Repeats"
         location: "Where"
+      meeting_note/answer:
+        body: "What I'll say"
   activemodel:
     attributes:
       family_study/scheduling:

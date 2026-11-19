@@ -53,4 +53,76 @@ class ListeningGamePlayTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Listen for something kind Jehovah did."
     assert_equal 2, @note.reload.found_count
   end
+
+  test "she writes her answer the evening before, then taps I gave my answer! at the meeting" do
+    travel_to Time.utc(2026, 11, 11, 18) # Wednesday evening, the day before the midweek meeting
+    households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    listening_round("congregation_bible_study", 1, answer: "Elijah", others: [ "Moses", "Jericho", "A jar of oil" ])
+    sign_in identities(:eli)
+    visit household_todays_meeting_url(household_id: households(:home))
+    assert_selector "h1", text: "Sing along with everyone."
+
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: @note, id: "congregation_bible_study")
+    assert_text "Congregation Bible Study · Round 1 of 1"
+    assert_accessible
+    capture_screens("game-study-write-link", viewports: TABLET)
+    click_on "Write my answer"
+
+    assert_selector "h1", text: "My answer for Bible study"
+    fill_in "Paragraph", with: "7"
+    fill_in "What I'll say", with: "Jehovah helps us when we are sad."
+    assert_accessible
+    capture_screens("game-write-answer", viewports: TABLET)
+    click_on "Save my answer"
+
+    assert_text "My answer · paragraph 7"
+    assert_text "Jehovah helps us when we are sad."
+    assert_link "Change my answer"
+    assert_selector "button[name=card]", count: 4
+
+    travel_to Time.utc(2026, 11, 12, 19, 40) # at the meeting
+    visit household_todays_meeting_url(household_id: households(:home))
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: @note, id: "congregation_bible_study")
+
+    assert_selector "h1", text: "Tap it when you hear it."
+    assert_text "My answer · paragraph 7"
+    assert_accessible
+    capture_screens("game-study", viewports: TABLET)
+    click_button "I gave my answer!"
+
+    assert_selector "button[aria-pressed=true]", text: "Gave my answer"
+    assert @note.reload.marked?("congregation_bible_study")
+  end
+
+  test "with no game rounds, her answer card still shows on today's step" do
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.write_answer(paragraph: 3, body: "<b>Noah</b> listened to Jehovah.")
+    sign_in identities(:eli)
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: note, id: "congregation_bible_study")
+
+    assert_selector "h1", text: "Look at the pictures. Which one do you like?"
+    assert_text "My answer · paragraph 3"
+    assert_text "<b>Noah</b> listened to Jehovah."
+    assert_no_selector "main b"
+    assert_link "Change my answer"
+    assert_link "Draw it"
+    assert_accessible
+    capture_screens("game-study-no-rounds", viewports: TABLET)
+    click_button "I gave my answer!"
+
+    assert_selector "button[aria-pressed=true]", text: "Gave my answer"
+    assert note.reload.marked?("congregation_bible_study")
+  end
+
+  test "without an answer, today's step offers Write my answer and keeps I watched!" do
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    sign_in identities(:eli)
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: note, id: "congregation_bible_study")
+
+    assert_link "Write my answer"
+    assert_no_text "My answer ·"
+    assert_button "I watched!"
+    assert_accessible
+    capture_screens("game-study-no-answer", viewports: TABLET)
+  end
 end
