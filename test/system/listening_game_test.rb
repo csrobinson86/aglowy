@@ -45,6 +45,8 @@ class ListeningGamePlayTest < ApplicationSystemTestCase
     click_button "<b>Ruth</b>"
 
     assert_selector "h1", text: "You heard it!"
+    assert_selector "button[aria-pressed=true]", text: "<b>Ruth</b>"
+    assert_no_selector "button[name=card] b"
     assert_no_link "Next round"
     click_on "Next part"
 

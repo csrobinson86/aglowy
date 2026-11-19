@@ -67,6 +67,15 @@ class MeetingNotes::Steps::Rounds::FindsControllerTest < ActionDispatch::Integra
     assert_empty @note.finds
   end
 
+  test "a list of cards is a bad request" do
+    sign_in identities(:eli)
+
+    post find_path, params: { card: [ @answer.id ] }, as: :turbo_stream
+
+    assert_response :bad_request
+    assert_empty @note.finds
+  end
+
   test "an adult is 404" do
     note = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
     sign_in identities(:spouse)

@@ -7,7 +7,7 @@ class MeetingNotes::Steps::Rounds::FindsController < ApplicationController
   before_action { set_round(params[:round_id]) }
 
   def create
-    @card = @round.cards.find(params[:card])
+    @card = @round.cards.find(params.expect(:card))
     @meeting_note.find_card(@card)
 
     respond_to do |format|
