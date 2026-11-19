@@ -9,5 +9,8 @@ module ListeningGameScoped
     rescue_from(Pundit::NotAuthorizedError) { raise ActiveRecord::RecordNotFound }
 
     before_action { authorize Current.household, policy_class: ListeningGamePolicy }
+    # The answers are kept from the children: Back after a sign-out and a child's sign-in can't show them, as with the
+    # daily brief. The views also keep the page out of Turbo's snapshot cache, which ignores no-store.
+    before_action :no_store
   end
 end

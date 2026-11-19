@@ -1,4 +1,6 @@
 <% content_for :title, "Change a round" %>
+<%# Kept out of Turbo's snapshot cache like the game page, for when it's opened on its own. %>
+<% turbo_exempts_page_from_cache %>
 <%= turbo_frame_tag "listening_game_round_dialog" do %>
   <%# Change a round (docs/design/listening-game.md, Pages; frame phone-game-change.png), open as soon as the game page's
       frame loads it. Saving empties the frame with the dialog still open, so dialog-removal lets the page scroll again. %>

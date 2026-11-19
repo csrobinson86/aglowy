@@ -29,7 +29,9 @@ class ListeningGame::Round::Change
   def save(by:)
     return false if invalid?
 
-    round.transaction do
+    # The lock reloads the round and its cards, so every submitted label is written over the latest ones: two parents
+    # saving at once can't leave the same label on two cards.
+    round.with_lock do
       round.answer.update!(label: answer_label, kind: answer_kind)
       round.others.zip(other_labels).each { |card, label| card.update!(label:) }
       round.update!(changed_by: by)

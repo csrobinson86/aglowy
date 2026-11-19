@@ -10,6 +10,21 @@ class ListeningGameParentTest < ApplicationSystemTestCase
     listening_round("bible_reading", 1, answer: "Lamentations", others: %w[ Genesis Psalms Jonah ], kind: "book")
   end
 
+  test "the day before the midweek meeting, a head goes from Home to this week's game" do
+    households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+
+    assert_no_selector ".todays-meeting-card"
+    assert_selector "x-banner", text: "Check this week's listening game before the midweek meeting."
+    assert_accessible
+    capture_screens("listening-game-home")
+
+    within("x-banner") { click_on "Check this week's listening game" }
+
+    assert_selector "h1", text: "This week's listening game"
+  end
+
   test "a head changes round 2 and the child's tablet shows the new card; a label with <script> shows as text" do
     sign_in identities(:head)
     visit household_settings_children_url(household_id: households(:home))

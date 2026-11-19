@@ -44,6 +44,15 @@ class ListeningGamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main h1", "This week's listening game"
   end
 
+  test "the page is kept out of Turbo's snapshot cache and the browser's, so Back can't show the answers to a child who signs in next" do
+    sign_in identities(:head)
+
+    get household_listening_game_path(household_id: households(:home))
+
+    assert_select "meta[name=turbo-cache-control][content=no-cache]"
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
   test "a label with markup shows as text" do
     listening_round("talk", 2, answer: "<script>alert(1)</script>", others: [ "A rainbow", "A lion", "A boat" ])
     sign_in identities(:head)

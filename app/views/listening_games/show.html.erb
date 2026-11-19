@@ -1,4 +1,7 @@
 <% content_for :title, "This week's listening game" %>
+<%# The answers are kept from the children: Turbo's in-memory snapshot ignores the controller's no-store, so without this
+    Back after a sign-out and a child's sign-in would show them again. %>
+<% turbo_exempts_page_from_cache %>
 
 <%# This week's game for a head or adult to check (docs/design/listening-game.md, Pages; frame phone-game-check.png): the
     pages the AI used, then a box per step with each round's answer and other cards, and Change, which loads the dialog

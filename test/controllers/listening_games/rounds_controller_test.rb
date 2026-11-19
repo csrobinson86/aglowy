@@ -27,6 +27,13 @@ class ListeningGames::RoundsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "the dialog, opened on its own, is kept out of Turbo's snapshot cache and the browser's like the game page" do
+    get edit_round_path(@round)
+
+    assert_select "meta[name=turbo-cache-control][content=no-cache]"
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
   test "change a round: the labels and kind change, changed_by is set, and the cards keep their positions" do
     patch round_path(@round), as: :turbo_stream, params: { listening_game_round_change: {
       answer_label: "  Isaiah ", answer_kind: "book", other_label_1: "Ruth", other_label_2: "Esther", other_label_3: "Jonah" } }

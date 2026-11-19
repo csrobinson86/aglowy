@@ -40,10 +40,13 @@ class DashboardsController < ApplicationController
     end
     helper_method :meeting_helper?
 
-    # Check this week's listening game, for heads and adults with the helper on, before a midweek meeting starts
-    # (docs/design/listening-game.md, Pages, Who sees the parent's page).
+    # Check this week's listening game, for heads and adults with the helper on, on the days before this week's midweek
+    # meeting and on its day until it starts (docs/design/listening-game.md, Pages, Who sees the parent's page). Once
+    # it's started, or the next one is next week's, the game page's week is over.
     def check_listening_game?
-      @todays_meeting.kind == "midweek" && @todays_meeting.starts_at.future? && ListeningGamePolicy.new(pundit_user, Current.household).show?
+      meeting = Current.household.current_or_next_meeting
+      meeting&.kind == "midweek" && meeting.starts_at.future? && meeting.week_of == Current.household.today.beginning_of_week(:monday) &&
+        ListeningGamePolicy.new(pundit_user, Current.household).show?
     end
     helper_method :check_listening_game?
 end
