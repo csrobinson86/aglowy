@@ -55,9 +55,10 @@ class PersonalNotesController < ApplicationController
   # Anything refused shows the form again with the reason. A stale save shows the note as it is now, with what the form
   # sent under "What you wrote".
   def update
-    attributes = note_attributes
+    base = params.dig(:personal_note, :base)
+    attributes = note_attributes(stale: !@personal_note.based_on?(base))
 
-    if @personal_note.revise(attributes, base: params.dig(:personal_note, :base))
+    if @personal_note.revise(attributes, base:)
       redirect_to household_personal_note_path(id: @personal_note), notice: "Note saved."
     else
       render :edit, status: :unprocessable_content
@@ -87,12 +88,14 @@ class PersonalNotesController < ApplicationController
   end
 
   # A blank collection_id takes the note out of any collection. tag_names, the names the tag editor showed, are only
-  # for "What you wrote".
-  def note_attributes
+  # for "What you wrote". On a save that will be refused as stale, a collection that isn't found (deleted in another
+  # window since the form was rendered) is left out rather than a 404, so "What you wrote" still shows the rest.
+  def note_attributes(stale: false)
     attributes = params.expect(personal_note: %i[ title color collection_id body tag_names ]).to_h
     if attributes.key?(:collection_id)
-      collection_id = attributes.delete(:collection_id)
-      attributes[:collection] = collection_id.presence && Current.user.collections.find(collection_id)
+      collection_id = attributes.delete(:collection_id).presence
+      collections = Current.user.collections
+      attributes[:collection] = collection_id && (stale ? collections.find_by(id: collection_id) : collections.find(collection_id))
     end
     attributes
   end

@@ -573,6 +573,31 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a stale update whose collection was deleted meanwhile is still a 409 with What you wrote; a fresh one is a 404" do
+    gone = users(:head).collections.add(name: "Gone", used_in: "notes")
+    stale = base(@note)
+    travel(1.minute) do
+      PersonalNote.find(@note.id).update!(title: "Saved in the other window")
+      gone.destroy!
+    end
+    sign_in identities(:head)
+
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: stale, title: "Mine", collection_id: gone.id, body: "<p>My point</p>" } }
+
+    assert_response :conflict
+    assert_equal "Saved in the other window", @note.reload.title
+    assert_equal collections(:head_quick_references), @note.collection
+    assert_select "section[aria-labelledby=what-you-wrote]" do
+      assert_select "*", text: "Mine"
+      assert_select ".lexxy-content", text: /My point/
+    end
+
+    sign_in identities(:head)
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), title: "Mine", collection_id: gone.id } }
+    assert_response :not_found
+    assert_equal "Saved in the other window", @note.reload.title
+  end
+
   test "update without a base is refused as stale" do
     sign_in identities(:head)
 

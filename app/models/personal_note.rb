@@ -67,13 +67,19 @@ class PersonalNote < ApplicationRecord
     updated_at&.utc&.iso8601(6)
   end
 
+  # Whether a form with this base was rendered from the note as it is now. updated_at only moves forward, so a base
+  # that isn't stays stale.
+  def based_on?(base)
+    base.present? && base == self.base
+  end
+
   # Saves the form's title, color, collection and body, with the references typed in the body linked, only when the
   # form was based on the note as it is now. Under the row lock, which reloads the note, so a save can't land between
   # the check and the write. A stale base raises StaleObjectError and writes nothing, leaving the note as it is now for
   # the form to show again. Tag names are only for "What you wrote": the tag editor saves tags as they're added.
   def revise(attributes, base:)
     with_lock do
-      raise ActiveRecord::StaleObjectError.new(self, "revise") unless base.present? && base == self.base
+      raise ActiveRecord::StaleObjectError.new(self, "revise") unless based_on?(base)
 
       assign_attributes(attributes.except(:tag_names))
       link_scriptures
