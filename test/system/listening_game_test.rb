@@ -64,6 +64,8 @@ class ListeningGamePlayTest < ApplicationSystemTestCase
 
     visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: @note, id: "congregation_bible_study")
     assert_text "Congregation Bible Study · Round 1 of 1"
+    assert_accessible
+    capture_screens("game-study-write-link", viewports: TABLET)
     click_on "Write my answer"
 
     assert_selector "h1", text: "My answer for Bible study"
@@ -121,5 +123,6 @@ class ListeningGamePlayTest < ApplicationSystemTestCase
     assert_no_text "My answer ·"
     assert_button "I watched!"
     assert_accessible
+    capture_screens("game-study-no-answer", viewports: TABLET)
   end
 end

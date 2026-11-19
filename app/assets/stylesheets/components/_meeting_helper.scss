@@ -638,3 +638,51 @@
   width: calc(var(--base-size-128) + var(--base-size-32));
   height: auto;
 }
+
+// On the Bible Study, her answer sits above the round, so the round fits a tablet with its footer in view, as in frame
+// tablet-game-study.png: a closer layout, the cards smaller, the mark button at Back and Next's height, and a long
+// answer cut to three lines (the whole of it is on Change my answer).
+.meeting-helper__round--answer {
+  .meeting-helper__content {
+    gap: var(--base-size-16);
+  }
+
+  .meeting-helper__answer {
+    padding: var(--base-size-16) var(--base-size-24);
+  }
+
+  .meeting-helper__answer .meeting-helper__button--big {
+    min-height: calc(var(--base-size-64) + var(--base-size-8));
+    padding-inline: var(--base-size-32);
+  }
+
+  .meeting-helper__answer-body {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .meeting-helper__cards {
+    gap: var(--base-size-16);
+  }
+
+  .meeting-helper__card.Button {
+    &,
+    &:hover:not(:disabled):not(.Button--inactive),
+    &:disabled {
+      min-height: var(--base-size-112);
+      padding: var(--base-size-16) var(--base-size-32);
+    }
+  }
+
+  .meeting-helper__card .meeting-helper__icon--medium {
+    width: var(--base-size-64);
+    height: var(--base-size-64);
+
+    svg {
+      width: var(--base-size-32);
+      height: var(--base-size-32);
+    }
+  }
+}

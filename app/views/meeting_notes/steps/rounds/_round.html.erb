@@ -6,7 +6,7 @@
 <% found = meeting_note.found?(round) %>
 <% previous_round, next_round = rounds[rounds.index(round) - 1], rounds[rounds.index(round) + 1] %>
 <% previous_step, next_step = steps.previous(step), steps.next(step) %>
-<%= tag.div id: dom_id(meeting_note, :round), class: "meeting-helper__round" do %>
+<%= tag.div id: dom_id(meeting_note, :round), class: [ "meeting-helper__round", { "meeting-helper__round--answer": step.answerable? } ] do %>
   <div class="meeting-helper__content">
     <p class="meeting-helper__part"><%= meeting_note_dot(step.color) %><%= step.title %> · Round <%= round.position %> of <%= rounds.size %></p>
     <h1 class="meeting-helper__heading"><%= found ? "You heard it!" : "Tap it when you hear it." %></h1>
