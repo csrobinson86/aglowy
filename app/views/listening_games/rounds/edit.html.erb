@@ -1,0 +1,17 @@
+<% content_for :title, "Change a round" %>
+<%# Kept out of Turbo's snapshot cache like the game page, for when it's opened on its own. %>
+<% turbo_exempts_page_from_cache %>
+<%= turbo_frame_tag "listening_game_round_dialog" do %>
+  <%# Change a round (docs/design/listening-game.md, Pages; frame phone-game-change.png), open as soon as the game page's
+      frame loads it. Saving empties the frame with the dialog still open, so dialog-removal lets the page scroll again. %>
+  <div data-controller="dialog-removal">
+    <% dialog_id = "listening-game-round-dialog" %>
+    <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: "#{@round.helper_step.short_title} · round #{@round.position} of #{@rounds_in_step}", size: :medium_portrait, position_narrow: :bottom, open: true)) do |dialog| %>
+      <% dialog.with_body(pb: 3) do %>
+        <%= primer_form_with(model: @change, url: household_listening_game_round_path(id: @round), method: :patch) do |f| %>
+          <%= render ListeningGames::RoundForm.new(f, dialog_id:) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -400,6 +400,15 @@ class HouseholdTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 11, 16), meeting.week_of
   end
 
+  test "this_weeks_midweek_meeting is this week's, even after a weekend meeting earlier in the week or once it's over" do
+    assert_nil households(:home).this_weeks_midweek_meeting
+
+    assert_equal chicago(11, 19, 19), household_meeting(weekend: [ 2, "10:00" ]).this_weeks_midweek_meeting(chicago(11, 16, 8)).starts_at
+    assert_equal chicago(11, 19, 19), household_meeting.this_weeks_midweek_meeting(chicago(11, 21, 8)).starts_at
+    meeting = household_meeting(midweek: [ 0, "19:00" ], weekend: [ 6, "10:00" ]).this_weeks_midweek_meeting(chicago(11, 17, 8))
+    assert_equal [ "midweek", chicago(11, 22, 19) ], [ meeting.kind, meeting.starts_at ]
+  end
+
   test "meetings_between gives both meetings in a week" do
     meetings = household_meeting.meetings_between(Date.new(2026, 11, 16)..Date.new(2026, 11, 22))
 

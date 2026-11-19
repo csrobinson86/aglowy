@@ -33,6 +33,16 @@ module Household::ListeningGamePreparable
     meeting_helper? && week_of.present? && !listening_games.exists?(week_of:)
   end
 
+  # A week's game with its sources, rounds and cards, or nil while there's none (docs/design/listening-game.md, Models).
+  def listening_game_for(week_of)
+    listening_games.preloaded.find_by(week_of:)
+  end
+
+  # Whether a head or adult here has accepted the AI terms, so the job can ask for cards (What it asks).
+  def listening_game_owner?
+    listening_game_owner.present?
+  end
+
   # The rounds of a week's game for one helper step, in order, with their cards: none while the week has no game or
   # the step no rounds, so the step stays as it is (docs/design/listening-game.md, Pages, A step).
   def listening_rounds(week_of, step)

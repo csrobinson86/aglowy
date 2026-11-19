@@ -178,6 +178,13 @@ class Household < ApplicationRecord
     today.then { it + (midweek_meeting_wday - it.wday) % 7 }
   end
 
+  # The midweek meeting in this week, Monday to Sunday where the household lives, whichever kind comes first and whether
+  # or not it's over, or nil before meeting times are set. It's the week a listening game is for
+  # (docs/design/listening-game.md).
+  def this_weeks_midweek_meeting(now = Time.current)
+    meeting_in(now.in_time_zone(time_zone).to_date.beginning_of_week(:monday), "midweek") if meeting_times_set?
+  end
+
   # True for the whole of the meeting's day, including after it ends.
   def meeting_day?(now = Time.current)
     current_or_next_meeting(now)&.starts_at&.to_date == now.in_time_zone(time_zone).to_date

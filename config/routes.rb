@@ -174,6 +174,11 @@ Rails.application.routes.draw do
       resource :summary, only: :show, module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
+    # This week's listening game for heads and adults, and changing a round in a dialog (docs/design/listening-game.md,
+    # Pages).
+    resource :listening_game, only: :show do
+      resources :rounds, only: %i[ edit update ], module: :listening_games
+    end
     # The signed-in person's own student parts, found through Current.user; new and edit open in a dialog
     # (docs/design/meeting-parts.md, Pages and routes). A part shared into this household is read through show.
     resources :meeting_parts do

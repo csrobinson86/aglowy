@@ -25,4 +25,13 @@ class ListeningGame::Round < ApplicationRecord
   def answer
     cards.find(&:answer?)
   end
+
+  def others
+    cards.reject(&:answer?)
+  end
+
+  # Its step in the midweek meeting helper, for the step's title.
+  def helper_step
+    MeetingNote::HelperSteps.for("midweek").fetch(step)
+  end
 end

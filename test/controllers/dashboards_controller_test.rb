@@ -467,6 +467,100 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".todays-meeting-card + .Box .blankslate h2", "Welcome to The Head Family"
   end
 
+  test "before a midweek meeting with the helper on, heads and adults see Check this week's listening game on the card" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+
+    %i[ head spouse ].each do |identity|
+      sign_in identities(identity)
+      travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+      assert_select ".todays-meeting-card a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+    end
+  end
+
+  test "Check this week's listening game isn't on the card for a child, with the helper off, or once the meeting has started" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:eli)
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+
+    sign_in identities(:head)
+    travel_to(Time.utc(2026, 11, 19, 19, 30)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+
+    households(:home).disable_meeting_helper
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+  end
+
+  test "on the days before a midweek meeting, heads and adults with the helper on see Check this week's listening game" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+
+    %i[ head spouse ].each do |identity|
+      sign_in identities(identity)
+      travel_to(Time.utc(2026, 11, 17, 18)) { get household_root_path(household_id: households(:home)) }
+
+      assert_select ".todays-meeting-card", count: 0
+      assert_select "x-banner a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+    end
+  end
+
+  test "before a midweek meeting there's no Check this week's listening game for a child, with the helper off, or once the week's midweek meeting is over" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:eli)
+    travel_to(Time.utc(2026, 11, 17, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "main", text: /Check this week's listening game/, count: 0
+
+    sign_in identities(:head)
+    travel_to(Time.utc(2026, 11, 21, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "main", text: /Check this week's listening game/, count: 0
+
+    households(:home).disable_meeting_helper
+    travel_to(Time.utc(2026, 11, 17, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "main", text: /Check this week's listening game/, count: 0
+  end
+
+  test "with a Monday midweek meeting, the Sunday before (after a Saturday weekend meeting) doesn't link to the week that's ending" do
+    households(:home).change_meeting_times(midweek_wday: 1, midweek_time: "19:00", weekend_wday: 6, weekend_time: "10:00")
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:head)
+
+    travel_to(Time.utc(2026, 11, 22, 18)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select "main", text: /Check this week's listening game/, count: 0
+  end
+
+  test "with the weekend meeting earlier in the week than the midweek meeting, the days between still show Check this week's listening game" do
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:head)
+
+    households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 2, weekend_time: "10:00")
+    travel_to(Time.utc(2026, 11, 16, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "x-banner a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+
+    households(:home).change_meeting_times(midweek_wday: 0, midweek_time: "19:00", weekend_wday: 6, weekend_time: "10:00")
+    travel_to(Time.utc(2026, 11, 17, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select "x-banner a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+  end
+
+  test "on a weekend meeting day there's no Check this week's listening game" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:head)
+
+    travel_to(Time.utc(2026, 11, 22, 8)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".todays-meeting-card .text-bold", "Weekend meeting · 10:00 AM"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+  end
+
   test "the day before a meeting there's no Today's meeting card" do
     set_meeting_times
     sign_in identities(:spouse)
