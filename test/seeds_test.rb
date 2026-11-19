@@ -56,10 +56,10 @@ class SeedsTest < ActiveSupport::TestCase
     assert this_weeks_note.filled_parts.any?
     assert_not head.meeting_notes.exists?(kind: "weekend", week_of: this_week)
     assert_equal 2, MeetingNote.shared_with(demo).count
-    child_note = user("lucia.rivera").meeting_notes.sole
+    child_note = user("lucia.rivera").meeting_notes.find_by!(week_of: this_week - 1.week)
     assert child_note.marks.any?
     assert child_note.shared_with?(Household.find_by!(name: "The Rivera Family"))
-    assert_equal 16, MeetingNote.count
+    assert_equal 17, MeetingNote.count
 
     assert_equal [ 1, 1, 1 ], [ demo.goals.active.count, demo.goals.completed.count, demo.goals.archived.count ]
     steps = demo.goals.active.sole.steps
@@ -156,6 +156,8 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal monday, game.week_of
     assert_equal({ "talk" => 5, "spiritual_gems" => 2, "bible_reading" => 1, "congregation_bible_study" => 6 }, game.rounds.map(&:step).tally)
     assert_equal 3, game.sources.count
+    # Lucia found its first Treasures round, so her Treasures step opens at the second.
+    assert_equal [ game.rounds.first.answer.label ], user("lucia.rivera").meeting_notes.find_by!(week_of: monday).finds_for("talk").map(&:label)
 
     assert_equal 0, Ai::Use.count
   end

@@ -1,0 +1,46 @@
+<%# locals: (meeting_note:, steps:, step:, rounds:, round:, tapped: nil) %>
+<%# A round of the listening game (frames tablet-game-round.png, tablet-game-found.png, tablet-game-again.png): the
+    step's title with Round N of M, the heading, the four cards, and Back, Draw it and Next. tapped: the card just
+    tapped, which keeps the focus, since Turbo's swap would drop it, and says "Listen again" unless it was the answer. %>
+<% found = meeting_note.found?(round) %>
+<% previous_round, next_round = rounds[rounds.index(round) - 1], rounds[rounds.index(round) + 1] %>
+<% previous_step, next_step = steps.previous(step), steps.next(step) %>
+<%= tag.div id: dom_id(meeting_note, :round), class: "meeting-helper__round" do %>
+  <div class="meeting-helper__content">
+    <p class="meeting-helper__part"><%= meeting_note_dot(step.color) %><%= step.title %> · Round <%= round.position %> of <%= rounds.size %></p>
+    <h1 class="meeting-helper__heading"><%= found ? "You heard it!" : "Tap it when you hear it." %></h1>
+    <%= primer_form_with(url: household_meeting_note_step_round_find_path(meeting_note_id: meeting_note, step_id: step.key, round_id: round.position), class: "meeting-helper__cards") do %>
+      <% round.cards.each do |card| %>
+        <%= render "meeting_notes/steps/rounds/card", card:, found:, again: !found && card == tapped, focused: card == tapped %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# Back on round 1 goes to the step before, as on a step. Next goes to the next round once she's found this one;
+      otherwise, and after the last round, to the next part. %>
+  <nav class="meeting-helper__steps" aria-label="Steps">
+    <% back = round == rounds.first ? (previous_step ? household_meeting_note_step_path(meeting_note_id: meeting_note, id: previous_step.key) : household_root_path) :
+                                      household_meeting_note_step_round_path(meeting_note_id: meeting_note, step_id: step.key, id: previous_round.position) %>
+    <%= render Primer::Beta::Button.new(tag: :a, href: back, size: :large, classes: "meeting-helper__button meeting-helper__button--step") do |button| %>
+      <% button.with_leading_visual_icon(icon: :"arrow-left") %>
+      Back
+    <% end %>
+    <%= render Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_step_drawing_path(meeting_note_id: meeting_note, step_id: step.key), size: :large, classes: "meeting-helper__button meeting-helper__button--step") do |button| %>
+      <% button.with_leading_visual_icon(icon: :pencil) %>
+      <%= meeting_note.drawn?(step.key) ? "My drawing" : "Draw it" %>
+    <% end %>
+    <% if found && next_round %>
+      <%= render Primer::Beta::Button.new(tag: :a, href: household_meeting_note_step_round_path(meeting_note_id: meeting_note, step_id: step.key, id: next_round.position), size: :large,
+                                          classes: "meeting-helper__button meeting-helper__button--step meeting-helper__button--next-round") do |button| %>
+        <% button.with_trailing_visual_icon(icon: :"arrow-right") %>
+        Next round
+      <% end %>
+    <% else %>
+      <%= render Primer::Beta::Button.new(tag: :a, href: next_step ? household_meeting_note_step_path(meeting_note_id: meeting_note, id: next_step.key) : household_meeting_note_summary_path(meeting_note_id: meeting_note), size: :large,
+                                          classes: "meeting-helper__button meeting-helper__button--step meeting-helper__button--next") do |button| %>
+        <% button.with_trailing_visual_icon(icon: :"arrow-right") %>
+        <%= next_step ? "Next part" : "Finish" %>
+      <% end %>
+    <% end %>
+  </nav>
+<% end %>

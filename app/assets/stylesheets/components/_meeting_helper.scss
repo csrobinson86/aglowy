@@ -123,6 +123,18 @@
   }
 }
 
+// A listening game card's kind.
+.meeting-helper__icon--medium {
+  flex-shrink: 0;
+  width: var(--base-size-96);
+  height: var(--base-size-96);
+
+  svg {
+    width: var(--base-size-40);
+    height: var(--base-size-40);
+  }
+}
+
 .meeting-helper__icon--small {
   width: var(--base-size-64);
   height: var(--base-size-64);
@@ -151,6 +163,11 @@
 .meeting-helper__icon--danger {
   color: var(--fgColor-danger);
   background-color: var(--bgColor-danger-muted);
+}
+
+.meeting-helper__icon--success {
+  color: var(--fgColor-success);
+  background-color: var(--bgColor-success-muted);
 }
 
 // Primer Buttons at the helper's sizes: Start at least 96px tall, Back and Next at least 72px.
@@ -406,4 +423,118 @@
   display: flex;
   align-items: center;
   color: var(--fgColor-success);
+}
+
+// A round of the listening game (frames tablet-game-round.png, tablet-game-found.png, tablet-game-again.png): the
+// content and the footer, redrawn together when she taps a card.
+.meeting-helper__round {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--base-size-24);
+}
+
+.meeting-helper__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--base-size-24);
+  width: 100%;
+}
+
+// Each card is a Primer Button at least 176px tall, its icon and words on the left. Chained, to outrank Primer's
+// .Button colours, hover and disabled rules. No transition: the found state is a colour and a check (Trap 8).
+.meeting-helper__card.Button {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive),
+  &:disabled {
+    min-width: 0;
+    min-height: calc(var(--base-size-128) + var(--base-size-48));
+    height: auto;
+    padding: var(--base-size-24) var(--base-size-40);
+    border: var(--borderWidth-thick) solid var(--borderColor-default);
+    border-radius: var(--borderRadius-large);
+    color: var(--fgColor-default);
+    background-color: var(--bgColor-muted);
+    text-align: start;
+    transition: none;
+  }
+
+  // The label fills the card, so the check sits at its far edge.
+  .Button-content {
+    display: flex;
+  }
+
+  .Button-label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--base-size-32);
+    color: inherit;
+  }
+}
+
+.meeting-helper__card-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--base-size-4);
+  min-width: 0;
+}
+
+.meeting-helper__card-label {
+  font-size: var(--text-title-size-large);
+  font-weight: var(--base-text-weight-semibold);
+  line-height: var(--text-title-lineHeight-large);
+  overflow-wrap: anywhere;
+}
+
+.meeting-helper__card-status {
+  font-size: var(--text-title-size-medium);
+  font-weight: var(--base-text-weight-medium);
+}
+
+// She heard it: green, with a check and "You heard it!".
+.meeting-helper__card--found.Button {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive) {
+    border-color: var(--borderColor-success-emphasis);
+    color: var(--fgColor-success);
+    background-color: var(--bgColor-success-muted);
+  }
+}
+
+.meeting-helper__card-check {
+  flex-shrink: 0;
+  width: var(--base-size-40);
+  height: var(--base-size-40);
+  color: var(--fgColor-success);
+}
+
+// A wrong tap: a dashed border and "Listen again", in muted words.
+.meeting-helper__card--again.Button {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive) {
+    border-style: dashed;
+    color: var(--fgColor-muted);
+  }
+}
+
+// The cards she didn't need once she found the round: muted words, the icon without its circle.
+.meeting-helper__card--dimmed.Button:disabled {
+  color: var(--fgColor-muted);
+
+  .meeting-helper__icon {
+    color: var(--fgColor-muted);
+    background-color: transparent;
+  }
+}
+
+// "Next round": Primer has no success button, so the footer's Next takes the success colours, as in the frame.
+.meeting-helper__button.meeting-helper__button--next-round {
+  &,
+  &:hover:not(:disabled):not(.Button--inactive) {
+    border-color: var(--borderColor-success-emphasis);
+    color: var(--fgColor-onEmphasis);
+    background-color: var(--bgColor-success-emphasis);
+  }
 }
