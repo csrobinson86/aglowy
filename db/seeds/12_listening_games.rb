@@ -25,3 +25,12 @@ game_note.find_card(first_round.answer) if first_round
 # She has written her answer for this week's Congregation Bible Study, so its step shows her answer card with "I gave
 # my answer!" (docs/design/listening-game.md, Pages, Her answer). An answer she has already written stays.
 game_note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.") unless game_note.answer
+
+# Last week's helper note, which she shared with the family (04_meeting_notes.rb), has what she found and the answer she
+# gave, so a head reading it sees "Listening game · found 3" and her answer (docs/design/listening-game.md, Pages, A
+# helper note, read). Last week's game is gone, so the finds are made as the game made them, each with its own label.
+last_week = lucia.meeting_notes.find_by!(kind: "midweek", week_of: week_of - 1.week)
+[ [ "talk", 1, "Jeremiah", "person" ], [ "talk", 2, "Praying to Jehovah", "action" ], [ "bible_reading", 1, "Lamentations", "book" ] ]
+  .each { |step, position, label, kind| last_week.finds.create_or_find_by!(step:, position:) { it.assign_attributes(label:, kind:) } }
+last_week.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.") unless last_week.answer
+last_week.mark("congregation_bible_study")

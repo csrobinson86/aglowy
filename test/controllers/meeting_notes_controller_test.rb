@@ -961,6 +961,30 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .Box-row", text: /Public Talk\s+✓ Heard it/
   end
 
+  test "the author sees her answer and her finds, escaped, with Found on the step's row, though nothing is marked" do
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 16))
+    note.write_answer(paragraph: 3, body: "<b>Noah</b> listened.")
+    note.finds.create!(step: "talk", position: 2, label: "<b>Ruth</b>", kind: "person")
+    note.finds.create!(step: "talk", position: 1, label: "Jeremiah", kind: "person")
+    sign_in identities(:eli)
+
+    get note_path(note)
+
+    assert_select "main #helper-note-answer" do
+      assert_select "h3", "Your answer for Bible study"
+      assert_select "p", text: "Paragraph 3"
+      assert_select "p", text: "<b>Noah</b> listened."
+      assert_select "p", text: /Gave it at the meeting/, count: 0
+    end
+    assert_select "main #helper-note-finds" do
+      assert_select "h3", "Listening game · found 2"
+      assert_select ".Box-row", 1
+      assert_select ".Box-row", text: /Treasures\s+Jeremiah, <b>Ruth<\/b>/
+    end
+    assert_select "main .Box-row", text: /Treasures From God's Word\s+✓ Found 2/
+    assert_select "main b", count: 0
+  end
+
   test "a note without marks or drawings has no helper section" do
     meeting_notes(:head_midweek).share_with(households(:home))
     sign_in identities(:spouse)

@@ -54,6 +54,52 @@ class ListeningGamePlayTest < ApplicationSystemTestCase
     assert_equal 2, @note.reload.found_count
   end
 
+  test "she finishes with finds and an answer, shows her family, and a head reads them, even after a round changed" do
+    @note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    @note.mark("congregation_bible_study")
+    sign_in identities(:eli)
+    visit household_meeting_note_step_url(household_id: households(:home), meeting_note_id: @note, id: "talk")
+    click_button "Jeremiah"
+    click_on "Next round"
+    click_button "<b>Ruth</b>"
+    assert_selector "h1", text: "You heard it!"
+
+    visit household_meeting_note_summary_url(household_id: households(:home), meeting_note_id: @note)
+
+    assert_selector "h1", text: "You found 2 things today!"
+    assert_selector "li#summary-talk", text: "Found 2"
+    assert_selector "li#summary-congregation_bible_study", text: "Gave my answer"
+    assert_accessible
+    capture_screens("game-done", viewports: TABLET)
+    click_on "Show my family"
+    assert_selector "[role=status]", text: "Your family can see it now"
+
+    # A head changes the round after she found it; her find keeps its own label (Trap 5).
+    listening_game_cards(:home_talk_jeremiah).update!(label: "Isaiah")
+    sign_out :identity
+    sign_in identities(:head)
+    visit household_shared_meeting_notes_url(household_id: households(:home))
+    within("main .Box-row", text: "Eli Child") { click_on "Life and Ministry" }
+
+    assert_selector "li", text: "You found Jeremiah. What do you remember about it?"
+    assert_selector "li", text: "You found <b>Ruth</b>. What do you remember about it?"
+    assert_selector "li", text: "Tell me about your answer for paragraph 7."
+    within("#helper-note-answer") do
+      assert_selector "h3", text: "Eli's answer for Bible study"
+      assert_text "Paragraph 7"
+      assert_text "Jehovah helps us when we are sad."
+      assert_text "Gave it at the meeting"
+    end
+    within("#helper-note-finds") do
+      assert_selector "h3", text: "Listening game · found 2"
+      assert_selector ".Box-row", text: /Treasures\s+Jeremiah, <b>Ruth<\/b>/
+    end
+    assert_no_text "Isaiah"
+    assert_no_selector "main b"
+    assert_accessible
+    capture_screens("game-shared")
+  end
+
   test "she writes her answer the evening before, then taps I gave my answer! at the meeting" do
     travel_to Time.utc(2026, 11, 11, 18) # Wednesday evening, the day before the midweek meeting
     households(:home).change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")

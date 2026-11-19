@@ -158,6 +158,10 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal 3, game.sources.count
     # Lucia found its first Treasures round, so her Treasures step opens at the second.
     assert_equal [ game.rounds.first.answer.label ], user("lucia.rivera").meeting_notes.find_by!(week_of: monday).finds_for("talk").map(&:label)
+    # Last week's shared helper note has her finds and the answer she gave.
+    shared = user("lucia.rivera").meeting_notes.find_by!(week_of: monday - 1.week)
+    assert_equal [ 3, 7 ], [ shared.found_count, shared.answer.paragraph ]
+    assert shared.marked?("congregation_bible_study")
 
     assert_equal 0, Ai::Use.count
   end
