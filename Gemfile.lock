@@ -423,7 +423,7 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
-    ruby_llm (2.2.0)
+    ruby_llm (2.2.3)
       base64
       faraday (>= 1.10.0, != 2.0.0)
       faraday-multipart (>= 1)
@@ -581,7 +581,7 @@ DEPENDENCIES
   webmock
 
 RUBY VERSION
-   ruby 4.0.9p0
+   ruby 4.0.10p0
 
 BUNDLED WITH
    2.6.9

@@ -4,7 +4,7 @@
 
   ## Requirements
 
-  - Ruby 4.0.2 (see `.ruby-version`)
+  - Ruby 4.0.10 (see `.ruby-version`)
   - Rails 8.1
   - PostgreSQL
   - Node.js + Yarn (for esbuild JS bundling)
