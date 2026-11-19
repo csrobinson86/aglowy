@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_19_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_19_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -519,6 +519,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_020000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["meeting_note_id", "step"], name: "index_meeting_note_drawings_on_meeting_note_id_and_step", unique: true
+  end
+
+  create_table "meeting_note_finds", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "meeting_note_id", null: false
+    t.string "step", null: false
+    t.integer "position", limit: 2, null: false
+    t.string "label", null: false
+    t.string "kind", null: false
+    t.datetime "created_at", null: false
+    t.index ["meeting_note_id", "step", "position"], name: "index_meeting_note_finds_on_note_step_position", unique: true
   end
 
   create_table "meeting_note_gems", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1057,6 +1067,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_020000) do
   add_foreign_key "listening_games", "chats", on_delete: :nullify
   add_foreign_key "listening_games", "households", on_delete: :cascade
   add_foreign_key "meeting_note_drawings", "meeting_notes", on_delete: :cascade
+  add_foreign_key "meeting_note_finds", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_gems", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_marks", "meeting_notes", on_delete: :cascade
   add_foreign_key "meeting_note_parts", "meeting_notes", on_delete: :cascade

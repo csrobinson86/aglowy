@@ -1,0 +1,4 @@
+<% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@meeting_note.kind) %>
+<% content_for :helper_progress, render("meeting_notes/steps/dots", meeting_note: @meeting_note, step: @step) %>
+
+<%= render "meeting_notes/steps/rounds/round", meeting_note: @meeting_note, steps: @steps, step: @step, rounds: @rounds, round: @round %>

@@ -11,6 +11,11 @@ module MeetingNotesHelper
   MEETING_HELPER_COLOURS = %w[ yellow orange red green blue purple white ].freeze
   # The helper's "Which meeting is it?" cards (frame tablet-pick.png).
   MEETING_HELPER_PICKER_ICONS = { "midweek" => { icon: "book", color: :accent }, "weekend" => { icon: "ear", color: :attention } }.freeze
+  # A listening game card's icon and colour by its kind (docs/design/listening-game.md, On her tablet).
+  MEETING_HELPER_CARD_ICONS = {
+    "person" => { icon: "person", color: :accent }, "place" => { icon: "pin", color: :attention }, "book" => { icon: "book", color: :muted },
+    "thing" => { icon: "box", color: :muted }, "feeling" => { icon: "heart", color: :danger }, "action" => { icon: "rays", color: :success }
+  }.freeze
 
   def meeting_note_title(note)
     MEETING_NOTE_TITLES.fetch(note.kind)

@@ -10,6 +10,8 @@ class MeetingNote < ApplicationRecord
   has_many :parts, -> { order(:position) }, dependent: :destroy
   has_many :gems, -> { order(:position) }, dependent: :delete_all
   has_many :marks, dependent: :delete_all
+  # The listening game's finds, each step's in round order (docs/design/listening-game.md, MeetingNote::Find).
+  has_many :finds, -> { order(:step, :position) }, dependent: :delete_all
   # Destroyed one by one, so their images are purged.
   has_many :drawings, dependent: :destroy
   # Deleting the note takes its "shared with you" notifications with it (docs/design/notifications.md, Models).
@@ -54,6 +56,34 @@ class MeetingNote < ApplicationRecord
   # Reads the loaded marks, so the step dots ask once for the whole note.
   def marked?(step)
     marks.any? { it.step == step }
+  end
+
+  # Tapping a card in a round of the listening game. The answer card makes a find, copying the card's label and kind;
+  # create_or_find_by! leans on the unique index, so a double tap finds the first (Trap 6). Any other card saves nothing
+  # and returns nil: a wrong tap costs nothing.
+  def find_card(card)
+    return unless card.answer?
+
+    finds.create_or_find_by!(step: card.round.step, position: card.round.position) { it.assign_attributes(card.slice(:label, :kind)) }
+  end
+
+  # Reads the loaded finds, like marked?.
+  def found?(round)
+    finds.any? { it.step == round.step && it.position == round.position }
+  end
+
+  # The score for this meeting only (docs/design/listening-game.md, Decisions).
+  def found_count
+    finds.size
+  end
+
+  def finds_for(step)
+    finds.select { it.step == step }
+  end
+
+  # The round a step opens at: the first she hasn't found, or the last once she's found them all.
+  def current_round(rounds)
+    rounds.find { !found?(it) } || rounds.last
   end
 
   # Saves the step's drawing, replacing the one before (whose image Active Storage purges). create_or_find_by

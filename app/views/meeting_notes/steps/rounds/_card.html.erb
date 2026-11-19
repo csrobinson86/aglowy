@@ -1,0 +1,19 @@
+<%# locals: (card:, found:, again:, focused:) %>
+<%# One card in a round: a real button with its kind's icon and its label, escaped like all AI text (Trap 4). Once
+    she's found the round, the answer is pressed, green with a check and "You heard it!", and the others dim. A wrong
+    tap gets a dashed border and "Listen again". Nothing moves (Trap 8). %>
+<% pressed = found && card.answer? %>
+<%= render Primer::Beta::Button.new(type: :submit, name: "card", value: card.id, autofocus: focused, disabled: found && !card.answer?, align_content: :start, label_wrap: true,
+                                    aria: { pressed: ("true" if pressed) },
+                                    classes: [ "meeting-helper__card", { "meeting-helper__card--found": pressed, "meeting-helper__card--again": again, "meeting-helper__card--dimmed": found && !card.answer? } ]) do %>
+  <%= meeting_helper_icon(**MeetingNotesHelper::MEETING_HELPER_CARD_ICONS.fetch(card.kind), size: :medium) %>
+  <span class="meeting-helper__card-text">
+    <span class="meeting-helper__card-label"><%= card.label %></span>
+    <% if pressed %>
+      <span class="meeting-helper__card-status">You heard it!</span>
+    <% elsif again %>
+      <span class="meeting-helper__card-status">Listen again</span>
+    <% end %>
+  </span>
+  <%= render Primer::Beta::Octicon.new(:check, size: :medium, classes: "meeting-helper__card-check") if pressed %>
+<% end %>

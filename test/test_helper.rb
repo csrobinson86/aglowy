@@ -80,6 +80,13 @@ module ActiveSupport
       study.questions.create!(user: study.user, prompt: "Why does Jehovah allow suffering?", use: Ai::Use.new(user: study.user, purpose: "personal_study"), **attributes)
     end
 
+    # A round of the home household's game for the week of 9 November, its answer in the first place in the grid, as
+    # Household#prepare_listening_game saves one, without asking the AI.
+    def listening_round(step, position, answer:, others:, kind: "person", game: listening_games(:home_nov_9))
+      labels = [ answer, *others ]
+      game.rounds.create!(step:, position:, cards: labels.map.with_index(1) { |label, place| ListeningGame::Card.new(label:, kind:, position: place, answer: label == answer) })
+    end
+
     # A plain image, no attachment at all, as a crafted request could send.
     def image_tag_html
       %(<img src="https://example.com/cat.png">)

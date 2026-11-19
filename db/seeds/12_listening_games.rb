@@ -14,3 +14,10 @@ unless rivera.listening_games.exists?(week_of:)
                                  sources: Ai::SourceLink.keep(results, search_results: results, allowed_hosts: purpose.allowed_hosts),
                                  copy_check:, household: rivera, week_of:).save!
 end
+
+# Lucia has started this week's helper note and found the first Treasures round, so signing in as lucia.rivera and
+# opening Today's meeting's Treasures step lands on the second round (docs/design/listening-game.md, Pages).
+lucia = seeded_person("lucia.rivera")
+game_note = lucia.start_meeting_note(kind: "midweek", week_of:)
+first_round = rivera.listening_rounds(week_of, "talk").first
+game_note.find_card(first_round.answer) if first_round
