@@ -67,6 +67,15 @@ class ListeningGamesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main section[id^=listening-game-]", count: 0
   end
 
+  test "a week across two months names both" do
+    travel_to Time.utc(2026, 12, 2, 12)
+    sign_in identities(:head)
+
+    get household_listening_game_path(household_id: households(:home))
+
+    assert_select "main", text: /Week of November 30 – December 6, 2026/
+  end
+
   test "with no game and nobody who has turned on AI features: Cards need a head or adult who has, with a link to where" do
     travel_to Time.utc(2026, 11, 18, 12)
     sign_in identities(:head)
