@@ -1,0 +1,24 @@
+<%# locals: (color:, collection:, tag_names:, linked: true) %>
+<%# The line under a note's title (frame note-read.png): the color's name beside its dot, the collection and the tags,
+    linking to the list filtered by the collection and to each tag's page. "What you wrote" draws it unlinked, as a tag
+    the form sent may not exist. None, no collection and no tags show nothing. color is one of PersonalNote.colors, so
+    the class is only ever built from the list (Traps); the names are escaped like any text. %>
+<% if color != "none" || collection || tag_names.any? %>
+  <div class="d-flex flex-wrap flex-items-center mb-2">
+    <% unless color == "none" %>
+      <span class="d-inline-flex flex-items-center mr-3 mb-1"><span class="note-dot note-dot--<%= color %> mr-1" aria-hidden="true"></span><span><%= color.humanize %></span></span>
+    <% end %>
+    <% if collection && linked %>
+      <%= render(Primer::Beta::Link.new(href: household_personal_notes_path(collection: collection.id), underline: true, mr: 3, mb: 1)) { collection.name } %>
+    <% elsif collection %>
+      <span class="mr-3 mb-1"><%= collection.name %></span>
+    <% end %>
+    <% tag_names.each do |name| %>
+      <% if linked %>
+        <%= render(Primer::Beta::Label.new(tag: :a, href: household_tag_path(name:), scheme: :accent, mr: 1, mb: 1)) { "##{name}" } %>
+      <% else %>
+        <%= render(Primer::Beta::Label.new(scheme: :accent, mr: 1, mb: 1)) { "##{name}" } %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

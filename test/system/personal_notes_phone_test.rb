@@ -95,6 +95,15 @@ class PersonalNotesPhoneTest < ApplicationSystemTestCase
     visit notes_url
     click_on "Ideas for family worship"
 
+    assert_selector "main .note-card h1", text: "Ideas for family worship"
+    assert_no_selector "main lexxy-editor"
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
+    assert_accessible
+
+    click_on "Edit"
+    assert_selector "main lexxy-editor"
+    assert_turbo_idle
+
     all(".color-picker__swatch").each do |swatch|
       assert_operator swatch.evaluate_script("this.offsetWidth"), :>=, 44, "a swatch is too small to tap"
       assert_operator swatch.evaluate_script("this.offsetHeight"), :>=, 44, "a swatch is too small to tap"
@@ -107,8 +116,11 @@ class PersonalNotesPhoneTest < ApplicationSystemTestCase
     click_on "Save note"
 
     assert_text "Note saved."
-    assert_selector "main .note-card.note-card--blue", text: "Blue note"
+    assert_selector "main .note-card.note-card--blue .note-dot--blue + *", text: "Blue"
     assert_equal "blue", personal_notes(:head_family_worship).reload.color
+    click_on "Edit"
+    assert_selector "main lexxy-editor"
+    assert_turbo_idle
     assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
     assert_accessible
     capture_screens("phone-note")
@@ -116,6 +128,9 @@ class PersonalNotesPhoneTest < ApplicationSystemTestCase
     visit notes_url
     assert_selector "main .note-card.note-card--blue", text: "Ideas for family worship"
     capture_screens("phone-notes")
+
+    visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
+    capture_screens("phone-note-read")
   end
 
   private

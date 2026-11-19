@@ -1,0 +1,37 @@
+<% content_for :title, @personal_note.title_in_database %>
+<%# A color chosen but not saved recolors the card; Turbo's cache would bring it back on Back as if saved, so the page is
+    never cached (docs/design/notes.md, Colors). %>
+<% turbo_exempts_page_from_cache %>
+
+<%# The header and the note open for editing, with its scriptures and details beside it (frame note-editing.png), or
+    under it on a phone. The heading names the saved note, so a refused save doesn't show its title as saved. A stale
+    save shows the note as it is now under a warning, and what the form sent beneath it (the version check). %>
+<%= render "personal_notes/header", personal_note: @personal_note %>
+<h1 class="sr-only"><%= @personal_note.title_in_database %></h1>
+
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>
+  <% layout.with_main do %>
+    <% if @written %>
+      <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) do %>
+        This note changed after you started editing, so your changes weren't saved. It's shown as it is now. What you wrote is below.
+      <% end %>
+    <% end %>
+    <%# The note card, drawn in the note's color like its card on the list. %>
+    <div class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4">
+      <%= render "personal_notes/color_name", personal_note: @personal_note %>
+      <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_note_path(id: @personal_note) %>
+      <%# Tags save as they're added, outside the note's form, as a form can't hold another. %>
+      <div class="mt-3">
+        <%= render TagEditorComponent.new(taggable: @personal_note, user: Current.user, household: Current.household) %>
+      </div>
+    </div>
+    <% if @written %>
+      <%= render "personal_notes/written", note: @written, tag_names: @written_tag_names %>
+    <% end %>
+  <% end %>
+
+  <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-note__sidebar") do %>
+    <%= render "personal_notes/scriptures", personal_note: @personal_note, bookmarked: Current.user.bookmarked %>
+    <%= render "personal_notes/details", personal_note: @personal_note %>
+  <% end %>
+<% end %>

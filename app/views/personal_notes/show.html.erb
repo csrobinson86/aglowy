@@ -1,34 +1,19 @@
-<% content_for :title, @personal_note.title_in_database %>
-<%# A color chosen but not saved recolors the card; Turbo's cache would bring it back on Back as if saved, so the page is
-    never cached (docs/design/notes.md, Colors). %>
-<% turbo_exempts_page_from_cache %>
-<% collection = Current.user.collections.find_by(id: @personal_note.collection_id_in_database) %>
+<% content_for :title, @personal_note.title %>
 
-<%# The breadcrumb and the Pinned toggle, then the note open for editing, with its scriptures and details beside it (frame note.png), or
-    under it on a phone. The breadcrumb and heading name the saved note, so a refused save doesn't show its title or
-    collection as saved. %>
-<div class="d-flex flex-items-center flex-justify-between mb-3">
-  <%= render(Primer::Beta::Breadcrumbs.new(mr: 3)) do |breadcrumbs| %>
-    <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
-    <% if collection %>
-      <% breadcrumbs.with_item(href: household_personal_notes_path(collection: collection.id)) { collection.name } %>
-    <% end %>
-  <% end %>
-  <%= render "personal_notes/pin", personal_note: @personal_note %>
-</div>
-<h1 class="sr-only"><%= @personal_note.title_in_database %></h1>
+<%# The read view (frame note-read.png): the header with Edit, the note card in the note's color holding the title, the
+    line with its color, collection and tags, and the body as saved, with its scriptures and details beside it, or under
+    it on a phone. Nothing on it is a form field; the title, collection and tags are escaped, and the body is Action
+    Text, sanitized as it renders (Traps). %>
+<%= render "personal_notes/header", personal_note: @personal_note, edit_link: true %>
 
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>
   <% layout.with_main do %>
-    <%# The note card, drawn in the note's color like its card on the list. %>
-    <div class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4">
-      <%= render "personal_notes/color_name", personal_note: @personal_note %>
-      <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_note_path(id: @personal_note) %>
-      <%# Tags save as they're added, outside the note's form, as a form can't hold another. %>
-      <div class="mt-3">
-        <%= render TagEditorComponent.new(taggable: @personal_note, user: Current.user, household: Current.household) %>
-      </div>
-    </div>
+    <article class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4" aria-labelledby="note-title">
+      <h1 class="f2 mb-2 wb-break-word" id="note-title"><%= @personal_note.title %></h1>
+      <%= render "personal_notes/line", color: @personal_note.drawn_color, collection: @personal_note.collection,
+            tag_names: @personal_note.tags_for(Current.user).map(&:name).sort %>
+      <%= @personal_note.body %>
+    </article>
   <% end %>
 
   <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-note__sidebar") do %>

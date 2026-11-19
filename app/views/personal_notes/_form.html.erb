@@ -1,10 +1,15 @@
 <%# locals: (personal_note:, url:) %>
-<%# A note's title, color, collection and body, with "Save note" (frame note.png): the New note page, and a note's page, which
-    opens straight into editing. Why the last save was refused shows above it. "Saved" reads the saved note. %>
+<%# A note's title, color, collection and body, with "Save note" (frame note-editing.png): the New note page, and a note's
+    Edit page, which adds the version check's hidden fields and Cancel, back to the read view. Why the last save was
+    refused shows above it. "Saved" reads the saved note. %>
 <% if personal_note.errors.any? %>
   <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { personal_note.errors.full_messages.to_sentence } %>
 <% end %>
-<%= primer_form_with(model: personal_note, url:) do |f| %>
+<% form_data = { controller: "note-tag-names", action: "submit->note-tag-names#fill", note_tag_names_editor_value: dom_id(personal_note, :tag_editor) } if personal_note.persisted? %>
+<%= primer_form_with(model: personal_note, url:, data: form_data) do |f| %>
+  <% if personal_note.persisted? %>
+    <%= render PersonalNotes::VersionForm.new(f, tag_names: personal_note.tags_for(Current.user).map(&:name).sort) %>
+  <% end %>
   <%= render PersonalNotes::NoteForm.new(f) %>
   <div class="my-3"><%= render ColorPickerComponent.new(name: "personal_note[color]", selected: personal_note.drawn_color, colors: PersonalNote.colors.keys, legend: "Color", legend_beside: true) %></div>
   <%= render PersonalNotes::CollectionForm.new(f, collections: Current.user.collections.for_notes.positioned) %>
@@ -15,6 +20,7 @@
   <div class="d-flex flex-items-center">
     <%= render PersonalNotes::SaveForm.new(f) %>
     <% if personal_note.persisted? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_personal_note_path(id: personal_note), ml: 2)) { "Cancel" } %>
       <span class="f6 color-fg-muted ml-3">Saved <%= render(Primer::Beta::RelativeTime.new(datetime: personal_note.updated_at_in_database, tense: :past)) %></span>
     <% end %>
   </div>

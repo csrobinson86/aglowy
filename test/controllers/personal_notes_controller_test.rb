@@ -350,8 +350,8 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Collection is only used in Personal study/
   end
 
-  test "show opens the note for editing, with its scriptures and details beside it" do
-    @note.body = "<p>Daniel 2:44, then Daniel 2:31-33, then Daniel 2:44 again</p>"
+  test "show is the read view: the title, color, collection and tags, the body as saved, and no form fields" do
+    @note.body = "<h2>Statue</h2><p>Daniel 2:44, then Daniel 2:31-33, then Daniel 2:44 again</p>"
     @note.link_scriptures
     @note.save!
     @note.tag_with("ministry", by: users(:head))
@@ -364,19 +364,21 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Main'] a[aria-current='page']", "Notes"
     assert_select "nav[aria-label='Breadcrumb'] a", text: "Notes"
     assert_select "nav[aria-label='Breadcrumb'] a[href=?]", household_personal_notes_path(household_id: @home, collection: collections(:head_quick_references).id), text: "Quick references"
-    assert_select "form[action=?]", household_personal_note_path(household_id: @home, id: @note) do
-      assert_select "input[name='personal_note[title]'][value=?]", @note.title
-      assert_select "select[name='personal_note[collection_id]'] option[selected]", text: "Quick references"
-      assert_select "fieldset legend", "Color"
-      assert_select "input[type=radio][name='personal_note[color]'][value=orange][checked]"
-      assert_select "lexxy-editor[name='personal_note[body]']"
-      assert_select "button[type=submit]", "Save note"
+    assert_select "a.Button[href=?]", edit_household_personal_note_path(household_id: @home, id: @note), text: "Edit"
+    assert_select "#pin_personal_note_#{@note.id} form[action=?] button[type=submit][aria-pressed=false]",
+                  household_personal_note_pin_path(household_id: @home, personal_note_id: @note), text: "Pin"
+    assert_select "main .note-card.note-card--orange" do
+      assert_select "h1", @note.title
+      assert_select ".note-dot--orange + *", "Orange"
+      assert_select "a[href=?]", household_personal_notes_path(household_id: @home, collection: collections(:head_quick_references).id), text: "Quick references"
+      assert_select "a.Label[href=?]", household_tag_path(household_id: @home, name: "ministry"), text: "#ministry"
+      assert_select ".lexxy-content h2", "Statue"
+      assert_select ".lexxy-content a.scripture-link", count: 3
     end
-    assert_select "main", text: /Saved/
-    assert_select "main .note-card.note-card--orange .sr-only", "Orange note"
-    assert_select "#tag_editor_personal_note_#{@note.id} a.Label", "#ministry"
+    assert_select "main input:not([type=hidden]), main select, main textarea, main lexxy-editor", count: 0
+    assert_select "main form input[name=_method][value=patch]", count: 0
+    assert_select "#tag_editor_personal_note_#{@note.id}", count: 0
     assert_select "section[aria-labelledby=note-scriptures]" do
-      assert_select "a.scripture-link", count: 2
       assert_select "a.scripture-link" do |links|
         assert_equal [ "Daniel 2:44", "Daniel 2:31-33" ], links.map { it.text.strip }
       end
@@ -384,8 +386,49 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_select "section[aria-labelledby=note-details]", text: /Created/
     assert_select "dialog#delete-personal-note"
-    assert_select "#pin_personal_note_#{@note.id} form[action=?] button[type=submit][aria-pressed=false]",
-                  household_personal_note_pin_path(household_id: @home, personal_note_id: @note), text: "Pin"
+  end
+
+  test "show escapes the title, collection and tags, and a note with no color or collection shows neither" do
+    note = personal_notes(:head_family_worship)
+    note.update!(title: "<b>Bold</b> plans")
+    sign_in identities(:head)
+
+    get household_personal_note_path(household_id: @home, id: note)
+
+    assert_select "main h1", "<b>Bold</b> plans"
+    assert_select "main h1 b", count: 0
+    assert_select "main .note-card.note-card--none .note-dot", count: 0
+    assert_select "main .note-card a[href*=collection]", count: 0
+  end
+
+  test "edit opens today's form with the version check's base, Cancel back to the read view, and the tag editor" do
+    @note.tag_with("ministry", by: users(:head))
+    sign_in identities(:head)
+
+    get edit_household_personal_note_path(household_id: @home, id: @note)
+
+    assert_response :success
+    assert_select "title", "#{@note.title} · The Head Family · Aglowy"
+    assert_select "nav[aria-label='Main'] a[aria-current='page']", "Notes"
+    assert_select "nav[aria-label='Breadcrumb'] a[href=?]", household_personal_notes_path(household_id: @home, collection: collections(:head_quick_references).id), text: "Quick references"
+    assert_select "a.Button", text: "Edit", count: 0
+    assert_select "#pin_personal_note_#{@note.id} button[type=submit]", "Pin"
+    assert_select "main .note-card.note-card--orange form[action=?]", household_personal_note_path(household_id: @home, id: @note) do
+      assert_select "input[type=hidden][name='personal_note[base]'][value=?]", @note.reload.updated_at.utc.iso8601(6)
+      assert_select "input[type=hidden][name='personal_note[tag_names]'][value=ministry]"
+      assert_select "input[name='personal_note[title]'][value=?]", @note.title
+      assert_select "select[name='personal_note[collection_id]'] option[selected]", text: "Quick references"
+      assert_select "fieldset legend", "Color"
+      assert_select "input[type=radio][name='personal_note[color]'][value=orange][checked]"
+      assert_select "lexxy-editor[name='personal_note[body]']"
+      assert_select "button[type=submit]", "Save note"
+      assert_select "a.Button[href=?]", household_personal_note_path(household_id: @home, id: @note), text: "Cancel"
+    end
+    assert_select "main", text: /Saved/
+    assert_select "main .note-card.note-card--orange .sr-only", "Orange note"
+    assert_select "#tag_editor_personal_note_#{@note.id} a.Label", "#ministry"
+    assert_select "section[aria-labelledby=note-scriptures]"
+    assert_select "section[aria-labelledby=note-details]"
   end
 
   # docs/design/bookmarks.md, The bookmark button: beside each scripture in Scriptures in this note, filled where it's
@@ -418,11 +461,11 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#pin_personal_note_#{@note.id} [name=from]", count: 0
   end
 
-  test "update: title, body, and move to another collection and out of any" do
+  test "update: title, body, and move to another collection and out of any, each back to the read view" do
     sign_in identities(:head)
 
     patch household_personal_note_path(household_id: @home, id: @note),
-          params: { personal_note: { title: "Daniel 2", collection_id: collections(:head_bible_questions).id, body: "<p>Read Daniel 2:44</p>" } }
+          params: { personal_note: { base: base(@note), title: "Daniel 2", collection_id: collections(:head_bible_questions).id, body: "<p>Read Daniel 2:44</p>" } }
 
     assert_redirected_to household_personal_note_path(household_id: @home, id: @note)
     assert_equal "Note saved.", flash[:notice]
@@ -431,17 +474,18 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal collections(:head_bible_questions), @note.collection
     assert_equal [ Bible::Reference.find("27:2:44") ], @note.body.body.attachables
 
-    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { collection_id: "" } }
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), collection_id: "" } }
     assert_nil @note.reload.collection
 
-    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { color: "purple" } }
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), color: "purple" } }
+    assert_redirected_to household_personal_note_path(household_id: @home, id: @note)
     assert @note.reload.color_purple?
   end
 
-  test "update: a color outside the list shows the page again" do
+  test "update: a color outside the list shows the form again" do
     sign_in identities(:head)
 
-    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { color: "teal" } }
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), color: "teal" } }
 
     assert_response :unprocessable_content
     assert_select "main", text: /Color is not included in the list/
@@ -449,16 +493,93 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .note-card.note-card--orange"
   end
 
-  test "update: a title too long, or a body with more than scripture links, shows the page again" do
+  test "update: a failed update re-renders edit with the error; a title too long, or a body with more than scripture links" do
     sign_in identities(:head)
 
-    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { title: "x" * 121 } }
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), title: "x" * 121 } }
     assert_response :unprocessable_content
-    assert_select "main", text: /Title is too long/
+    assert_select ".Banner--error", text: /Title is too long/
+    assert_select "form[action=?] input[name='personal_note[title]']", household_personal_note_path(household_id: @home, id: @note)
+    assert_select "input[type=hidden][name='personal_note[base]'][value=?]", base(@note)
+    assert_select "a.Button", text: "Cancel"
+    assert_select "h2", text: "What you wrote", count: 0
 
-    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { body: "<p>A cat</p>#{remote_image_attachment}" } }
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), body: "<p>A cat</p>#{remote_image_attachment}" } }
     assert_response :unprocessable_content
     assert_nil @note.reload.body.body
+  end
+
+  # docs/design/notes.md, A note: the version check. The other window saved since this form was rendered.
+  test "update with a stale base: a 409 that writes nothing, the note as it is now with the Banner, and What you wrote" do
+    @note.tag_with("ministry", by: users(:head))
+    stale = base(@note)
+    travel(1.minute) { PersonalNote.find(@note.id).update!(title: "Saved in the other window", color: "green", body: "<p>Theirs</p>") }
+    sign_in identities(:head)
+
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: {
+      base: stale, title: "<i>Mine</i>", color: "blue", collection_id: collections(:head_bible_questions).id,
+      tag_names: "ministry family", body: "<h2>My heading</h2><ul><li>My point</li></ul><script>alert(1)</script>"
+    } }
+
+    assert_response :conflict
+    @note.reload
+    assert_equal "Saved in the other window", @note.title
+    assert @note.color_green?
+    assert_equal collections(:head_quick_references), @note.collection
+    assert_equal "Theirs", @note.body.to_plain_text.strip
+    assert_select ".Banner--warning", text: "This note changed after you started editing, so your changes weren't saved. It's shown as it is now. What you wrote is below."
+    assert_select "main .note-card.note-card--green form[action=?]", household_personal_note_path(household_id: @home, id: @note) do
+      assert_select "input[type=hidden][name='personal_note[base]'][value=?]", @note.updated_at.utc.iso8601(6)
+      assert_select "input[name='personal_note[title]'][value=?]", "Saved in the other window"
+      assert_select "input[type=radio][name='personal_note[color]'][value=green][checked]"
+      assert_select "select[name='personal_note[collection_id]'] option[selected]", text: "Quick references"
+      assert_select "lexxy-editor[name='personal_note[body]'][value*=Theirs]"
+    end
+    assert_select "section[aria-labelledby=what-you-wrote]" do
+      assert_select "h2#what-you-wrote", "What you wrote"
+      assert_select "*", text: "<i>Mine</i>"
+      assert_select "i", count: 0
+      assert_select ".note-dot--blue + *", "Blue"
+      assert_select "*", text: "Bible questions"
+      assert_select ".Label", text: "#ministry"
+      assert_select ".Label", text: "#family"
+      assert_select ".lexxy-content h2", "My heading"
+      assert_select ".lexxy-content li", "My point"
+      assert_select "script", count: 0
+      assert_select "clipboard-copy[aria-label='Copy text']" do |copy|
+        assert_match(/My heading.*My point/m, copy.first["value"])
+      end
+      assert_select "input, select, textarea, lexxy-editor", count: 0
+    end
+  end
+
+  test "a stale update writes no tags, and a blank or unknown color in What you wrote isn't drawn" do
+    stale = base(@note)
+    travel(1.minute) { PersonalNote.find(@note.id).update!(title: "Saved in the other window") }
+    sign_in identities(:head)
+
+    assert_no_difference -> { Tagging.count } do
+      assert_no_difference -> { Tag.count } do
+        patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: stale, title: "Mine", color: "teal", tag_names: "brand-new" } }
+      end
+    end
+
+    assert_response :conflict
+    assert_empty @note.reload.tags
+    assert_select "section[aria-labelledby=what-you-wrote]" do
+      assert_select ".Label", text: "#brand-new"
+      assert_select "[class*=teal]", count: 0
+      assert_select "clipboard-copy", count: 0
+    end
+  end
+
+  test "update without a base is refused as stale" do
+    sign_in identities(:head)
+
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { title: "No base" } }
+
+    assert_response :conflict
+    assert_equal "Daniel 2 image: quick reference", @note.reload.title
   end
 
   test "destroy" do
@@ -471,12 +592,13 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Note deleted.", flash[:notice]
   end
 
-  test "another person's note: 404 for show, update, destroy and tagging" do
+  test "another person's note: 404 for show, edit, update, destroy and tagging" do
     note = personal_notes(:spouse_grieving)
 
     [
       -> { get household_personal_note_path(household_id: @home, id: note) },
-      -> { patch household_personal_note_path(household_id: @home, id: note), params: { personal_note: { title: "Mine now" } } },
+      -> { get edit_household_personal_note_path(household_id: @home, id: note) },
+      -> { patch household_personal_note_path(household_id: @home, id: note), params: { personal_note: { base: base(note), title: "Mine now" } } },
       -> { delete household_personal_note_path(household_id: @home, id: note) },
       -> { post household_personal_note_taggings_path(household_id: @home, personal_note_id: note), params: { name: "ministry" }, as: :turbo_stream },
       -> { delete household_personal_note_tagging_path(household_id: @home, personal_note_id: note, id: tags(:head_ministry)), as: :turbo_stream }
@@ -500,7 +622,7 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
 
     sign_in identities(:head)
-    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { collection_id: spouse_collection.id } }
+    patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), collection_id: spouse_collection.id } }
     assert_response :not_found
     assert_equal collections(:head_quick_references), @note.reload.collection
   end
@@ -535,5 +657,11 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
 
     get household_personal_note_path(household_id: @home, id: note)
     assert_response :success
+  end
+
+  private
+
+  def base(note)
+    note.reload.updated_at.utc.iso8601(6)
   end
 end

@@ -72,7 +72,7 @@ class BookmarksTest < ApplicationSystemTestCase
     capture_screens("personal-study-scriptures", scroll_to: "section[aria-labelledby=study-scriptures]", viewports: { desktop: ScreenshotHelper::VIEWPORTS[:desktop] })
 
     visit household_personal_note_url(household_id: households(:home), id: note)
-    assert_selector "lexxy-editor [contenteditable='true']"
+    assert_selector "main h1", text: note.title
     assert_turbo_idle
     within("section[aria-labelledby=note-scriptures]") do
       find("button[aria-label='Bookmark: Psalm 83:18']").click

@@ -61,6 +61,26 @@ class PersonalNote < ApplicationRecord
     pin.present?
   end
 
+  # The version an edit form is based on: updated_at, to the microsecond (docs/design/notes.md, A note: the version
+  # check). Tagging doesn't move it, so a window's own tag change never makes its form stale.
+  def base
+    updated_at&.utc&.iso8601(6)
+  end
+
+  # Saves the form's title, color, collection and body, with the references typed in the body linked, only when the
+  # form was based on the note as it is now. Under the row lock, which reloads the note, so a save can't land between
+  # the check and the write. A stale base raises StaleObjectError and writes nothing, leaving the note as it is now for
+  # the form to show again. Tag names are only for "What you wrote": the tag editor saves tags as they're added.
+  def revise(attributes, base:)
+    with_lock do
+      raise ActiveRecord::StaleObjectError.new(self, "revise") unless base.present? && base == self.base
+
+      assign_attributes(attributes.except(:tag_names))
+      link_scriptures
+      save
+    end
+  end
+
   # The scriptures linked in the body, in order and once each, for "Scriptures in this note". Read from the
   # decrypted body, never the database (Traps).
   def scripture_references

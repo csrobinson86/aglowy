@@ -46,6 +46,9 @@ application.register("meeting-helper--drawing", MeetingHelper__DrawingController
 import NoUploadsController from "./no_uploads_controller"
 application.register("no-uploads", NoUploadsController)
 
+import NoteTagNamesController from "./note_tag_names_controller"
+application.register("note-tag-names", NoteTagNamesController)
+
 import OpenFromMdController from "./open_from_md_controller"
 application.register("open-from-md", OpenFromMdController)
 

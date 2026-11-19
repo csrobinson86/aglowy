@@ -137,6 +137,80 @@ class PersonalNoteTest < ActiveSupport::TestCase
     end
   end
 
+  # docs/design/notes.md, A note: the version check.
+  test "revise saves with a matching base, links scriptures, and moves updated_at" do
+    note = personal_notes(:head_daniel)
+    base = note.base
+
+    travel 1.minute do
+      assert note.revise({ title: "Daniel 2", color: "blue", body: "<p>Read Daniel 2:44</p>" }, base:)
+    end
+
+    note.reload
+    assert_equal "Daniel 2", note.title
+    assert note.color_blue?
+    assert_equal [ Bible::Reference.find("27:2:44") ], note.body.body.attachables
+    assert_not_equal base, note.base
+  end
+
+  test "revise refuses a stale base and changes nothing, leaving the note as it is now" do
+    note = personal_notes(:head_daniel)
+    stale = note.base
+    travel(1.minute) { PersonalNote.find(note.id).update!(title: "Changed elsewhere") }
+
+    assert_raises(ActiveRecord::StaleObjectError) do
+      note.revise({ title: "Mine", color: "blue", body: "<p>Mine</p>" }, base: stale)
+    end
+
+    assert_equal "Changed elsewhere", note.title
+    note.reload
+    assert_equal "Changed elsewhere", note.title
+    assert note.color_orange?
+    assert_nil note.body.body
+  end
+
+  test "revise refuses a missing or malformed base" do
+    note = personal_notes(:head_daniel)
+
+    [ nil, "", "yesterday" ].each do |base|
+      assert_raises(ActiveRecord::StaleObjectError) { note.revise({ title: "Mine" }, base:) }
+    end
+    assert_equal "Daniel 2 image: quick reference", note.reload.title
+  end
+
+  test "revise ignores tag names" do
+    note = personal_notes(:head_daniel)
+
+    assert_no_difference -> { Tagging.count } do
+      assert note.revise({ title: "Daniel 2", tag_names: "ministry prayer" }, base: note.base)
+    end
+    assert_empty note.reload.tags
+  end
+
+  test "revise with an invalid title saves nothing and keeps the errors" do
+    note = personal_notes(:head_daniel)
+
+    assert_not note.revise({ title: "x" * 121 }, base: note.base)
+
+    assert note.errors[:title].any?
+    assert_equal "Daniel 2 image: quick reference", note.reload.title
+  end
+
+  test "tag_with and untag leave updated_at alone, so a revise with the base from before tagging still saves" do
+    note = personal_notes(:head_daniel)
+    base = note.base
+
+    travel 1.minute do
+      note.tag_with("ministry", by: users(:head))
+      note.untag(tags(:head_ministry))
+      note.tag_with("prayer", by: users(:head))
+    end
+
+    assert_equal base, note.reload.base
+    assert note.revise({ title: "Daniel 2" }, base:)
+    assert_equal [ "prayer" ], note.reload.tags.map(&:name)
+  end
+
   test "the ten colors, in order: none, then Casey's nine; the filter has all but none" do
     assert_equal %w[ none yellow orange red pink purple blue green brown gray ], PersonalNote.colors.keys
     assert_equal %w[ yellow orange red pink purple blue green brown gray ], PersonalNote::FILTER_COLORS

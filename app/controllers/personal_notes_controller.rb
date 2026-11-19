@@ -5,7 +5,7 @@ class PersonalNotesController < ApplicationController
   include HouseholdScoped
   include TagFiltered
 
-  before_action :set_personal_note, only: %i[ show update destroy ]
+  before_action :set_personal_note, only: %i[ show edit update destroy ]
 
   # ?collection=, ?tag= and ?color= narrow the list, and ?q= searches titles, collection names and tag names. A
   # collection that isn't one of the person's for notes, like an unknown tag, filters the list to nothing; a color
@@ -33,7 +33,7 @@ class PersonalNotesController < ApplicationController
 
   # References typed in the body are linked on save, as on every save.
   def create
-    @personal_note = Current.user.personal_notes.new(note_attributes)
+    @personal_note = Current.user.personal_notes.new(note_attributes.except(:tag_names))
     authorize @personal_note
     @personal_note.link_scriptures
 
@@ -44,19 +44,28 @@ class PersonalNotesController < ApplicationController
     end
   end
 
+  # The read view (docs/design/notes.md, A note).
   def show
   end
 
-  # Title, color, collection and body. Anything refused shows the page again with the reason.
-  def update
-    @personal_note.assign_attributes(note_attributes)
-    @personal_note.link_scriptures
+  def edit
+  end
 
-    if @personal_note.save
+  # Title, color, collection and body, saved only when the form's base is the note as it is now (the version check).
+  # Anything refused shows the form again with the reason. A stale save shows the note as it is now, with what the form
+  # sent under "What you wrote".
+  def update
+    attributes = note_attributes
+
+    if @personal_note.revise(attributes, base: params.dig(:personal_note, :base))
       redirect_to household_personal_note_path(id: @personal_note), notice: "Note saved."
     else
-      render :show, status: :unprocessable_content
+      render :edit, status: :unprocessable_content
     end
+  rescue ActiveRecord::StaleObjectError
+    @written = PersonalNote.new(attributes.except(:tag_names))
+    @written_tag_names = attributes[:tag_names].to_s.split
+    render :edit, status: :conflict
   end
 
   def destroy
@@ -77,9 +86,10 @@ class PersonalNotesController < ApplicationController
     @query ? notes.matching(@query) : notes
   end
 
-  # A blank collection_id takes the note out of any collection.
+  # A blank collection_id takes the note out of any collection. tag_names, the names the tag editor showed, are only
+  # for "What you wrote".
   def note_attributes
-    attributes = params.expect(personal_note: %i[ title color collection_id body ]).to_h
+    attributes = params.expect(personal_note: %i[ title color collection_id body tag_names ]).to_h
     if attributes.key?(:collection_id)
       collection_id = attributes.delete(:collection_id)
       attributes[:collection] = collection_id.presence && Current.user.collections.find(collection_id)
