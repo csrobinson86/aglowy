@@ -30,6 +30,49 @@ class MeetingNotes::SummariesControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/missed|score|\d+ of \d+/i, response.body)
   end
 
+  test "with finds, the score and a Found tile for each game step, and Gave my answer on the Bible Study" do
+    found("talk", 1, "Jeremiah")
+    found("talk", 2, "Tears")
+    found("bible_reading", 1, "Lamentations")
+    found("congregation_bible_study", 1, "Elijah")
+    @note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    @note.mark("congregation_bible_study")
+    @note.mark("closing_song")
+    sign_in identities(:eli)
+
+    get summary_path
+
+    assert_select "main h1", "You found 4 things today!"
+    assert_select "main", text: /You listened all the way through\. Here's what you did\./
+    assert_select "main li#summary-talk", text: /\A\s*Treasures\s*✓ Found 2\s*\z/
+    assert_select "main li#summary-bible_reading", text: /\A\s*Bible reading\s*✓ Found 1\s*\z/
+    assert_select "main li#summary-congregation_bible_study", text: /\A\s*Bible study\s*✓ Found 1\s*Gave my answer\s*\z/
+    assert_select "main li#summary-spiritual_gems", text: /\A\s*Spiritual gems\s*\z/
+    assert_select "main li#summary-closing_song", text: /Last song\s*✓ Sang it/
+  end
+
+  test "one find is one thing" do
+    found("talk", 1, "Jeremiah")
+    sign_in identities(:eli)
+
+    get summary_path
+
+    assert_select "main h1", "You found 1 thing today!"
+  end
+
+  test "with no finds, no score: today's heading, and the Bible Study tile says Gave my answer once she gave it" do
+    @note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    @note.mark("congregation_bible_study")
+    sign_in identities(:eli)
+
+    get summary_path
+
+    assert_select "main h1", "You listened all the way through!"
+    assert_select "main", text: /Here's what you did today\./
+    assert_select "main li#summary-congregation_bible_study", text: /\A\s*Bible study\s*✓ Gave my answer\s*\z/
+    assert_select "main", text: /found/i, count: 0
+  end
+
   test "a step with neither shows only its title" do
     sign_in identities(:eli)
 
@@ -75,6 +118,10 @@ class MeetingNotes::SummariesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+    def found(step, position, label)
+      @note.finds.create!(step:, position:, label:, kind: "thing")
+    end
+
     def summary_path
       household_meeting_note_summary_path(household_id: households(:home), meeting_note_id: @note)
     end

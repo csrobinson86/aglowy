@@ -1,21 +1,34 @@
 <% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@meeting_note.kind) %>
 
-<%# The end (frame tablet-done.png): what the child did on each step, a drawing or a mark or nothing, with no counts,
-    score or "missed" (docs/design/meeting-helper.md, Decisions). Drawings come through the authorizing drawing route,
-    never an Active Storage URL (Trap 9). %>
+<%# The end (frames tablet-done.png, tablet-game-done.png): what the child did on each step, a drawing or a mark or
+    nothing, never "missed" (docs/design/meeting-helper.md, Decisions). With listening game finds, the score for this
+    meeting only and "Found N" on a game step (docs/design/listening-game.md, Decisions). Drawings come through the
+    authorizing drawing route, never an Active Storage URL (Trap 9). %>
+<% found_count = @meeting_note.found_count %>
 <div class="meeting-helper__content meeting-helper__content--summary">
-  <span class="meeting-helper__icon meeting-helper__icon--attention meeting-helper__icon--small"><%= render Primer::Beta::Octicon.new(:sun) %></span>
-  <h1 class="meeting-helper__heading">You listened all the way through!</h1>
-  <p class="meeting-helper__lead">Here's what you did today.</p>
+  <span class="meeting-helper__icon meeting-helper__icon--attention meeting-helper__icon--small"><%= render Primer::Beta::Octicon.new(found_count.positive? ? :star : :sun) %></span>
+  <% if found_count.positive? %>
+    <h1 class="meeting-helper__heading">You found <%= pluralize(found_count, "thing") %> today!</h1>
+    <p class="meeting-helper__lead">You listened all the way through. Here's what you did.</p>
+  <% else %>
+    <h1 class="meeting-helper__heading">You listened all the way through!</h1>
+    <p class="meeting-helper__lead">Here's what you did today.</p>
+  <% end %>
 
   <ul class="meeting-helper__tiles">
     <% @steps.each do |step| %>
       <li id="summary-<%= step.key %>" class="meeting-helper__tile">
         <p class="meeting-helper__tile-title"><%= meeting_helper_icon(icon: step.icon, color: step.color, size: :tiny) %><%= step.short_title %></p>
+        <% finds = @meeting_note.finds_for(step.key) %>
+        <% if finds.any? %>
+          <p class="meeting-helper__tile-mark"><span aria-hidden="true">✓</span> Found <%= finds.size %></p>
+        <% end %>
         <% if @meeting_note.drawn?(step.key) %>
           <%= image_tag household_meeting_note_step_drawing_path(step_id: step.key), alt: "Your drawing", class: "meeting-helper__tile-drawing" %>
+        <% elsif @meeting_note.marked?(step.key) && finds.any? %>
+          <p class="meeting-helper__tile-note"><%= @meeting_note.marked_label(step) %></p>
         <% elsif @meeting_note.marked?(step.key) %>
-          <p class="meeting-helper__tile-mark"><span aria-hidden="true">✓</span> <%= step.marked_label %></p>
+          <p class="meeting-helper__tile-mark"><span aria-hidden="true">✓</span> <%= @meeting_note.marked_label(step) %></p>
         <% end %>
       </li>
     <% end %>

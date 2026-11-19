@@ -31,7 +31,7 @@ class MeetingNote < ApplicationRecord
   validates :week_of, presence: true
   validate :only_repeating_parts_removed
 
-  scope :preloaded, -> { includes(:user, :gems, :shared_households, :marks, drawings: { image_attachment: :blob }, parts: :rich_text_notes) }
+  scope :preloaded, -> { includes(:user, :gems, :shared_households, :marks, :finds, :answer, drawings: { image_attachment: :blob }, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
 
   def outline
@@ -83,6 +83,11 @@ class MeetingNote < ApplicationRecord
     finds.select { it.step == step }
   end
 
+  # The finds in the helper's step order; the association's order is by the step's key.
+  def finds_in_step_order
+    helper_steps.flat_map { finds_for(it.key) }
+  end
+
   # The round a step opens at: the first she hasn't found, or the last once she's found them all.
   def current_round(rounds)
     rounds.find { !found?(it) } || rounds.last
@@ -127,16 +132,21 @@ class MeetingNote < ApplicationRecord
     drawings.any? { it.persisted? && it.step == step }
   end
 
-  # True once the child marked or drew anything in Today's meeting. Reads the loaded marks and drawings, like marked?.
+  # True once the child marked, drew, found or wrote anything in Today's meeting. Reads the loaded records, like marked?.
   def helper_used?
-    marks.any? || drawings.any?(&:persisted?)
+    marks.any? || drawings.any?(&:persisted?) || finds.any? || answer.present?
   end
 
   # Up to three "Talk about it" questions for a parent to ask (docs/design/meeting-helper.md): drawn steps first, then
-  # marked ones, each in step order. A drawn step asks about the drawing, never guessing what's in it.
+  # up to two finds and her answer (docs/design/listening-game.md, Pages), then marked steps, each in step order. A drawn
+  # step asks about the drawing, never guessing what's in it; a given answer asks about the answer, not the pictures.
   def talk_questions
-    drawn, marked = helper_steps.select { drawn?(it.key) }, helper_steps.select { marked?(it.key) && !drawn?(it.key) }
-    drawn.map { "Tell me about your drawing of #{it.short_title.downcase}." }.concat(marked.map(&:talk_question)).first(3)
+    drawn = helper_steps.select { drawn?(it.key) }
+    marked = helper_steps.select { marked?(it.key) && !drawn?(it.key) && !answered?(it) }
+    [ *drawn.map { "Tell me about your drawing of #{it.short_title.downcase}." },
+      *finds_in_step_order.first(2).map { "You found #{it.label}. What do you remember about it?" },
+      *("Tell me about your answer for paragraph #{answer.paragraph}." if answer),
+      *marked.map(&:talk_question) ].first(3)
   end
 
   # Builds every part the outline starts with, in order; a repeating part starts with one.

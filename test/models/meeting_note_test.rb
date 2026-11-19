@@ -250,8 +250,73 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_equal [ "Tell me about your drawing of public talk." ], note.reload.talk_questions
   end
 
-  test "preloaded loads the marks and the drawings with their images" do
+  test "talk_questions asks about two finds in step order, before marked steps" do
+    note = meeting_notes(:head_midweek)
+    note.mark("closing_song")
+    found(note, "bible_reading", 1, "Lamentations")
+    found(note, "talk", 2, "Tears")
+    found(note, "talk", 1, "Jeremiah")
+
+    assert_equal [
+      "You found Jeremiah. What do you remember about it?",
+      "You found Tears. What do you remember about it?",
+      "What was the last song about?"
+    ], note.reload.talk_questions
+  end
+
+  test "talk_questions asks about her answer after the finds, and not about the picture once she gave it" do
+    note = meeting_notes(:head_midweek)
+    note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    note.mark("congregation_bible_study")
+    found(note, "spiritual_gems", 1, "A lamp")
+
+    assert_equal [
+      "You found A lamp. What do you remember about it?",
+      "Tell me about your answer for paragraph 7."
+    ], note.reload.talk_questions
+  end
+
+  test "talk_questions puts drawn steps before finds and her answer" do
+    note = meeting_notes(:head_midweek)
+    note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    found(note, "talk", 1, "Jeremiah")
+    note.draw("living", photo)
+
+    assert_equal [
+      "Tell me about your drawing of living as christians.",
+      "You found Jeremiah. What do you remember about it?",
+      "Tell me about your answer for paragraph 7."
+    ], note.reload.talk_questions
+  end
+
+  test "talk_questions still stops at 3 with drawings, finds and an answer" do
+    note = meeting_notes(:head_midweek)
+    note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    found(note, "talk", 1, "Jeremiah")
+    found(note, "talk", 2, "Tears")
+    %w[ field_ministry bible_reading ].each { note.draw(it, photo) }
+
+    assert_equal [
+      "Tell me about your drawing of bible reading.",
+      "Tell me about your drawing of field ministry.",
+      "You found Jeremiah. What do you remember about it?"
+    ], note.reload.talk_questions
+  end
+
+  test "helper_used? is true with a find, and true with an answer" do
+    found_note = meeting_notes(:head_midweek)
+    found(found_note, "talk", 1, "Jeremiah")
+    assert found_note.reload.helper_used?
+
+    answered = meeting_notes(:head_weekend)
+    answered.write_answer(paragraph: 3, body: "Noah listened to Jehovah.")
+    assert answered.reload.helper_used?
+  end
+
+  test "preloaded loads the marks, the finds, the answer and the drawings with their images" do
     meeting_notes(:head_midweek).mark("talk")
+    found(meeting_notes(:head_midweek), "talk", 1, "Jeremiah")
+    meeting_notes(:head_midweek).write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
     %w[ talk field_ministry ].each { meeting_notes(:head_midweek).draw(it, photo) }
 
     note = MeetingNote.preloaded.find(meeting_notes(:head_midweek).id)
@@ -259,6 +324,8 @@ class MeetingNoteTest < ActiveSupport::TestCase
     assert_no_queries do
       assert note.helper_used?
       assert_equal %w[ talk ], note.marks.map(&:step)
+      assert_equal 1, note.found_count
+      assert_equal 7, note.answer.paragraph
       assert_equal [ "image/png" ] * 2, note.drawings.map { it.image.content_type }
     end
   end
@@ -372,6 +439,10 @@ class MeetingNoteTest < ActiveSupport::TestCase
   end
 
   private
+    def found(note, step, position, label)
+      note.finds.create!(step:, position:, label:, kind: "thing")
+    end
+
     def photo
       Rack::Test::UploadedFile.new(file_fixture("photo.png"), "image/png")
     end

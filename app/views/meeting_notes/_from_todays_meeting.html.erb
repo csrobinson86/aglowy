@@ -1,7 +1,9 @@
 <%# locals: (meeting_note:, author:) %>
-<%# What a child did in Today's meeting (frame phone-parent.png): questions to ask them, then each step with its mark
-    or drawing. Read-only, for the author and for members it's shared with. Drawings come through the authorizing
-    drawing route, never an Active Storage URL (docs/design/meeting-helper.md, Trap 9). %>
+<%# What a child did in Today's meeting (frames phone-parent.png, phone-game-shared.png): questions to ask them, her
+    Bible Study answer, what she found in the listening game, then each step with its mark or drawing. Read-only, for
+    the author and for members it's shared with. Finds are read from the note, never the game, so a changed or purged
+    round still reads the same (docs/design/listening-game.md, Trap 5). Drawings come through the authorizing drawing
+    route, never an Active Storage URL (docs/design/meeting-helper.md, Trap 9). %>
 <% first_name = meeting_note.user.first_name %>
 <section aria-labelledby="helper-note-heading" class="mb-4">
   <h2 id="helper-note-heading" class="sr-only">From Today's meeting</h2>
@@ -17,6 +19,37 @@
     </ul>
   <% end %>
 
+  <% if (answer = meeting_note.answer) %>
+    <%= render(Primer::Box.new(id: "helper-note-answer", border: true, border_radius: 2, p: 3, mb: 3)) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mb: 1)) do %>
+        <%= author ? "Your answer for Bible study" : "#{first_name}'s answer for Bible study" %>
+      <% end %>
+      <p class="color-fg-muted mb-1">Paragraph <%= answer.paragraph %></p>
+      <p class="f3 wb-break-word mb-1"><%= answer.body %></p>
+      <% if meeting_note.marked?("congregation_bible_study") %>
+        <p class="color-fg-success mb-0"><span aria-hidden="true">✓</span> Gave it at the meeting</p>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% if meeting_note.finds.any? %>
+    <%= render(Primer::Beta::BorderBox.new(id: "helper-note-finds", mb: 3)) do |box| %>
+      <% box.with_header do %>
+        <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4)) { "Listening game · found #{meeting_note.found_count}" } %>
+      <% end %>
+      <% meeting_note.helper_steps.each do |step| %>
+        <% finds = meeting_note.finds_for(step.key) %>
+        <% next if finds.empty? %>
+        <% box.with_row do %>
+          <div class="d-flex">
+            <span class="flex-shrink-0 mr-3"><%= step.short_title %></span>
+            <span class="flex-auto min-width-0 wb-break-word color-fg-muted"><%= finds.map(&:label).join(", ") %></span>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+
   <%= render(Primer::Beta::BorderBox.new) do |box| %>
     <% meeting_note.helper_steps.each do |step| %>
       <% box.with_row(id: "helper-note-#{step.key}") do %>
@@ -26,7 +59,9 @@
           <% if meeting_note.drawn?(step.key) %>
             <span class="color-fg-success flex-shrink-0 no-wrap">Drew a picture</span>
           <% elsif meeting_note.marked?(step.key) %>
-            <span class="color-fg-success flex-shrink-0 no-wrap"><span aria-hidden="true">✓</span> <%= step.marked_label %></span>
+            <span class="color-fg-success flex-shrink-0 no-wrap"><span aria-hidden="true">✓</span> <%= meeting_note.marked_label(step) %></span>
+          <% elsif (finds = meeting_note.finds_for(step.key)).any? %>
+            <span class="color-fg-success flex-shrink-0 no-wrap"><span aria-hidden="true">✓</span> Found <%= finds.size %></span>
           <% else %>
             <span class="color-fg-muted flex-shrink-0 no-wrap">Not marked</span>
           <% end %>
