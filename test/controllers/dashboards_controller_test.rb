@@ -467,6 +467,48 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".todays-meeting-card + .Box .blankslate h2", "Welcome to The Head Family"
   end
 
+  test "before a midweek meeting with the helper on, heads and adults see Check this week's listening game on the card" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+
+    %i[ head spouse ].each do |identity|
+      sign_in identities(identity)
+      travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+      assert_select ".todays-meeting-card a[href=?]", household_listening_game_path(household_id: households(:home)), "Check this week's listening game"
+    end
+  end
+
+  test "Check this week's listening game isn't on the card for a child, with the helper off, or once the meeting has started" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:eli)
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+
+    sign_in identities(:head)
+    travel_to(Time.utc(2026, 11, 19, 19, 30)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+
+    households(:home).disable_meeting_helper
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+  end
+
+  test "on a weekend meeting day there's no Check this week's listening game" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    sign_in identities(:head)
+
+    travel_to(Time.utc(2026, 11, 22, 8)) { get household_root_path(household_id: households(:home)) }
+
+    assert_select ".todays-meeting-card .text-bold", "Weekend meeting · 10:00 AM"
+    assert_select "main", text: /Check this week's listening game/, count: 0
+  end
+
   test "the day before a meeting there's no Today's meeting card" do
     set_meeting_times
     sign_in identities(:spouse)

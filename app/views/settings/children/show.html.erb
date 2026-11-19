@@ -14,6 +14,9 @@
           <p class="f6 color-fg-muted mt-3 mb-0">
             Turned on by <%= meeting_helper.enabled_by.name %> on <%= meeting_helper.created_at.in_time_zone(Current.household.time_zone).strftime("%B %-d") %>.
           </p>
+          <p class="mt-2 mb-0">
+            <%= render(Primer::Beta::Link.new(href: household_listening_game_path, underline: true)) { "Check this week's listening game" } %>
+          </p>
         <% end %>
       <% end %>
       <% box.with_row do %>

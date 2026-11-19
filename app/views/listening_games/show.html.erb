@@ -1,0 +1,60 @@
+<% content_for :title, "This week's listening game" %>
+
+<%# This week's game for a head or adult to check (docs/design/listening-game.md, Pages; frame phone-game-check.png): the
+    pages the AI used, then a box per step with each round's answer and other cards, and Change, which loads the dialog
+    into the frame at the bottom. Labels are AI or parent text, always escaped (Trap 4). %>
+<%= render(Primer::Beta::Link.new(href: household_root_path, display: :inline_block, mb: 3)) do |link| %>
+  <% link.with_leading_visual_icon(icon: :"arrow-left") %>
+  Home
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "This week's listening game" } %>
+  <% subhead.with_description { "Midweek meeting · Week of #{listening_game_week(@week_of)}" } %>
+<% end %>
+
+<% if @listening_game %>
+  <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 4)) do %>
+    <p class="mb-2">AI found these from this week's program. Check them before the meeting. A change is for your household only.</p>
+    <ul class="list-style-none">
+      <% @listening_game.sources.each do |source| %>
+        <li>
+          <%= render(Primer::Beta::Link.new(href: source.url, target: "_blank", rel: "noopener noreferrer", underline: true, classes: "wb-break-word")) do %>
+            <%= source.title %><%= render(Primer::Beta::Octicon.new(:"link-external", size: :xsmall, ml: 1)) %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% @listening_game.rounds.group_by(&:helper_step).each do |step, rounds| %>
+    <section id="listening-game-<%= step.key %>" aria-labelledby="listening-game-<%= step.key %>-title" class="mb-4">
+      <%= render Primer::Beta::BorderBox.new do |box| %>
+        <% box.with_header(display: :flex, align_items: :center) do %>
+          <%= render(Primer::Beta::Octicon.new(:"dot-fill", color: step.color, mr: 2)) %>
+          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, id: "listening-game-#{step.key}-title", flex: 1)) { step.title } %>
+          <span class="color-fg-muted text-small"><%= pluralize(rounds.size, "round") %></span>
+        <% end %>
+        <% rounds.each do |round| %>
+          <% box.with_row(id: dom_id(round), display: :flex, align_items: :center) do %>
+            <%= render "listening_games/round", round: %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%= turbo_frame_tag "listening_game_round_dialog" %>
+<% elsif Current.household.listening_game_owner? %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :clock) %>
+    <% blankslate.with_heading(tag: :h2) { "Cards for this week aren't ready yet" } %>
+    <% blankslate.with_description { "AI looks for this week's cards early each morning until the midweek meeting. Until then, the helper's steps stay as they are." } %>
+  <% end %>
+<% else %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :"light-bulb") %>
+    <% blankslate.with_heading(tag: :h2) { "Cards need a head or adult who has turned on AI features" } %>
+    <% blankslate.with_description { "Turn them on from Draft with AI when you schedule a family study. This week's cards follow soon after." } %>
+    <% blankslate.with_primary_action(href: new_household_family_study_path) { "Schedule a family study" } %>
+  <% end %>
+<% end %>

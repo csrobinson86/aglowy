@@ -26,7 +26,7 @@
 <% end %>
 
 <% if @todays_meeting %>
-  <%= render "dashboards/todays_meeting", meeting: @todays_meeting, meeting_helper: meeting_helper? %>
+  <%= render "dashboards/todays_meeting", meeting: @todays_meeting, meeting_helper: meeting_helper?, listening_game: check_listening_game? %>
 <% end %>
 
 <% if @welcome %>

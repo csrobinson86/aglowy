@@ -1,0 +1,13 @@
+<%# locals: (round:, focus: false) -%>
+<%# One round on This week's listening game: its number, ✓ the card heard in the part, the three others, and Change. Redrawn
+    in place when the dialog saves, with focus back on Change. %>
+<span class="color-fg-muted mr-3 flex-shrink-0"><%= round.position %></span>
+<div class="flex-1 min-width-0">
+  <p class="text-bold color-fg-success mb-0 wb-break-word">
+    <%= render(Primer::Beta::Octicon.new(:check, "aria-label": "Heard in the part:")) %>
+    <%= round.answer.label %>
+  </p>
+  <p class="color-fg-muted mb-0 wb-break-word"><%= safe_join(round.others.map(&:label), " · ") %></p>
+</div>
+<%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_listening_game_round_path(id: round), ml: 3, flex_shrink: 0, autofocus: focus,
+      "aria-label": "Change #{round.helper_step.short_title} round #{round.position}", data: { turbo_frame: "listening_game_round_dialog" })) { "Change" } %>

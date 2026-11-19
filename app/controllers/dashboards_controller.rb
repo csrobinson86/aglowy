@@ -39,4 +39,11 @@ class DashboardsController < ApplicationController
       MeetingHelperPolicy.new(pundit_user, Current.household).show?
     end
     helper_method :meeting_helper?
+
+    # Check this week's listening game, for heads and adults with the helper on, before a midweek meeting starts
+    # (docs/design/listening-game.md, Pages, Who sees the parent's page).
+    def check_listening_game?
+      @todays_meeting.kind == "midweek" && @todays_meeting.starts_at.future? && ListeningGamePolicy.new(pundit_user, Current.household).show?
+    end
+    helper_method :check_listening_game?
 end

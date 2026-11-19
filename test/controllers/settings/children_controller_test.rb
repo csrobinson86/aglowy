@@ -58,6 +58,17 @@ class Settings::ChildrenControllerTest < ActionDispatch::IntegrationTest
     assert_select "main p", text: "Turned on by Sam Spouse on November 15."
   end
 
+  test "with the helper on, the box links to this week's listening game; with it off, it doesn't" do
+    sign_in identities(:spouse)
+
+    get household_settings_children_path(household_id: @home)
+    assert_select "main a", text: "Check this week's listening game", count: 0
+
+    @home.enable_meeting_helper(by: users(:head))
+    get household_settings_children_path(household_id: @home)
+    assert_select "main a[href=?]", household_listening_game_path(household_id: @home), "Check this week's listening game"
+  end
+
   test "a child is refused" do
     sign_in identities(:eli)
 
