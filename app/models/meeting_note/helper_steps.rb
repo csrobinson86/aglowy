@@ -11,6 +11,11 @@ class MeetingNote::HelperSteps
     def color
       TONE_COLORS.fetch(tone)
     end
+
+    # The step she writes her own answer for (docs/design/listening-game.md, Her answer).
+    def answerable?
+      key == "congregation_bible_study"
+    end
   end
 
   OPENING_SONG = Step.new(key: "opening_song", title: "Song and prayer", short_title: "Song and prayer",

@@ -538,3 +538,103 @@
     background-color: var(--bgColor-success-emphasis);
   }
 }
+
+// Her answer on the Bible Study step and its rounds (frame tablet-game-study.png): the raised hand, "My answer ·
+// paragraph N" and her words, then the mark button, in an accent box above the cards.
+.meeting-helper__answer {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-24);
+  width: 100%;
+  padding: var(--base-size-24) var(--base-size-32);
+  border: var(--borderWidth-thick) solid var(--borderColor-accent-emphasis);
+  border-radius: var(--borderRadius-large);
+  background-color: var(--bgColor-accent-muted);
+  text-align: start;
+}
+
+.meeting-helper__answer-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--base-size-4);
+  min-width: 0;
+}
+
+.meeting-helper__answer-label {
+  margin: 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-title-size-medium);
+  font-weight: var(--base-text-weight-medium);
+}
+
+// Her words as she typed them, line breaks and all.
+.meeting-helper__answer-body {
+  margin: 0;
+  font-size: var(--text-title-size-large);
+  font-weight: var(--base-text-weight-semibold);
+  line-height: var(--text-title-lineHeight-large);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+// At least 44px to touch.
+.meeting-helper__answer-change {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--base-size-44);
+  font-size: var(--text-title-size-medium);
+}
+
+// "My answer for Bible study" (frame tablet-game-write-answer.png): the words and fields down the page, then Back and
+// Save my answer along the bottom. Primer wraps the fields and the submit button together, so the wrappers step aside
+// (display: contents) and both buttons go in the grid's last row, which takes the rest of the page.
+.meeting-helper__answer-form {
+  display: grid;
+  flex: 1;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: repeat(5, auto) 1fr;
+  gap: var(--base-size-24);
+
+  > *,
+  .FormControl-spacingWrapper > * {
+    grid-column: 1 / -1;
+  }
+
+  .FormControl-spacingWrapper,
+  .FormControl-spacingWrapper > div:has(> .meeting-helper__answer-save) {
+    display: contents;
+  }
+}
+
+// An auto margin, since Primer's flex-self-start on the submit button outranks align-self.
+.meeting-helper__answer-form .meeting-helper__answer-back,
+.meeting-helper__answer-form .meeting-helper__answer-save {
+  grid-row: -2;
+  margin-block-start: auto;
+}
+
+.meeting-helper__answer-form .meeting-helper__answer-back {
+  grid-column: 1;
+}
+
+.meeting-helper__answer-form .meeting-helper__answer-save {
+  grid-column: 2;
+  justify-self: end;
+}
+
+.meeting-helper__label {
+  font-size: var(--text-title-size-medium);
+}
+
+// Chained, to outrank Primer's input sizes.
+.FormControl-input.meeting-helper__input {
+  padding: var(--base-size-16) var(--base-size-24);
+  font-size: var(--text-title-size-large);
+}
+
+.FormControl-input.meeting-helper__input--paragraph {
+  width: calc(var(--base-size-128) + var(--base-size-32));
+  height: auto;
+}

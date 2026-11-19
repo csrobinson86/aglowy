@@ -1,6 +1,7 @@
 <%# locals: (meeting_note:, steps:, step:, rounds:, round:, tapped: nil) %>
 <%# A round of the listening game (frames tablet-game-round.png, tablet-game-found.png, tablet-game-again.png): the
-    step's title with Round N of M, the heading, the four cards, and Back, Draw it and Next. tapped: the card just
+    step's title with Round N of M, the heading, her answer on the Bible Study (tablet-game-study.png), the four cards,
+    and Back, Draw it and Next. tapped: the card just
     tapped, which keeps the focus, since Turbo's swap would drop it, and says "Listen again" unless it was the answer. %>
 <% found = meeting_note.found?(round) %>
 <% previous_round, next_round = rounds[rounds.index(round) - 1], rounds[rounds.index(round) + 1] %>
@@ -9,6 +10,7 @@
   <div class="meeting-helper__content">
     <p class="meeting-helper__part"><%= meeting_note_dot(step.color) %><%= step.title %> · Round <%= round.position %> of <%= rounds.size %></p>
     <h1 class="meeting-helper__heading"><%= found ? "You heard it!" : "Tap it when you hear it." %></h1>
+    <%= render "meeting_notes/steps/answer", meeting_note: meeting_note, step: step if step.answerable? %>
     <%= primer_form_with(url: household_meeting_note_step_round_find_path(meeting_note_id: meeting_note, step_id: step.key, round_id: round.position), class: "meeting-helper__cards") do %>
       <% round.cards.each do |card| %>
         <%= render "meeting_notes/steps/rounds/card", card:, found:, again: !found && card == tapped, focused: card == tapped %>
