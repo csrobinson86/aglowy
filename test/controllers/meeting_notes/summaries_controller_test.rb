@@ -51,6 +51,21 @@ class MeetingNotes::SummariesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main li#summary-closing_song", text: /Last song\s*✓ Sang it/
   end
 
+  test "the Bible Study tile still says Gave my answer under her drawing, while another drawn step's mark stays hidden" do
+    found("congregation_bible_study", 1, "Elijah")
+    @note.write_answer(paragraph: 7, body: "Jehovah helps us when we are sad.")
+    %w[ congregation_bible_study talk ].each { @note.mark(it) }
+    %w[ congregation_bible_study talk ].each { @note.draw(it, fixture_file_upload("photo.png", "image/png")) }
+    sign_in identities(:eli)
+
+    get summary_path
+
+    assert_select "main li#summary-congregation_bible_study", text: /\A\s*Bible study\s*✓ Found 1\s*Gave my answer\s*\z/
+    assert_select "main li#summary-congregation_bible_study img[alt='Your drawing']"
+    assert_select "main li#summary-talk", text: /\A\s*Treasures\s*\z/
+    assert_select "main li#summary-talk img[alt='Your drawing']"
+  end
+
   test "one find is one thing" do
     found("talk", 1, "Jeremiah")
     sign_in identities(:eli)

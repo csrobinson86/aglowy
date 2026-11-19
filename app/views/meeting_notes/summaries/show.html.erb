@@ -19,16 +19,19 @@
     <% @steps.each do |step| %>
       <li id="summary-<%= step.key %>" class="meeting-helper__tile">
         <p class="meeting-helper__tile-title"><%= meeting_helper_icon(icon: step.icon, color: step.color, size: :tiny) %><%= step.short_title %></p>
-        <% finds = @meeting_note.finds_for(step.key) %>
+        <%# A drawing takes a mark's place, except "Gave my answer", which always shows. Under "Found N" or a drawing, the
+            mark is a quieter line. %>
+        <% finds, drawn, marked = @meeting_note.finds_for(step.key), @meeting_note.drawn?(step.key), @meeting_note.marked?(step.key) %>
         <% if finds.any? %>
           <p class="meeting-helper__tile-mark"><span aria-hidden="true">✓</span> Found <%= finds.size %></p>
         <% end %>
-        <% if @meeting_note.drawn?(step.key) %>
+        <% if drawn %>
           <%= image_tag household_meeting_note_step_drawing_path(step_id: step.key), alt: "Your drawing", class: "meeting-helper__tile-drawing" %>
-        <% elsif @meeting_note.marked?(step.key) && finds.any? %>
-          <p class="meeting-helper__tile-note"><%= @meeting_note.marked_label(step) %></p>
-        <% elsif @meeting_note.marked?(step.key) %>
+        <% elsif marked && finds.none? %>
           <p class="meeting-helper__tile-mark"><span aria-hidden="true">✓</span> <%= @meeting_note.marked_label(step) %></p>
+        <% end %>
+        <% if marked && (drawn ? @meeting_note.answered?(step) : finds.any?) %>
+          <p class="meeting-helper__tile-note"><%= @meeting_note.marked_label(step) %></p>
         <% end %>
       </li>
     <% end %>
