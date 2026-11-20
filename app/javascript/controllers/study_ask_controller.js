@@ -39,7 +39,7 @@ export default class extends Controller {
   }
 
   // The job's checked result is rendered once for every page showing the question, in whichever household, so it
-  // has no household for Save to notes to post to. The page's own card has, so it takes the result's place.
+  // has no household for Save to note to post to. The page's own card has, so it takes the result's place.
   unscopedTargetConnected(element) {
     this.queue(() => this.replaceFromPage(element.closest(".study-question"), element))
   }
@@ -69,7 +69,7 @@ export default class extends Controller {
     const page = new DOMParser().parseFromString(await response.text(), "text/html")
     if (!watched.isConnected) return
     const finished = page.getElementById(question.id)
-    // Still asking there, or a card without Save to notes either, which would only look again.
+    // Still asking there, or a card without Save to note either, which would only look again.
     if (!finished || finished.querySelector("turbo-cable-stream-source, [data-study-ask-target~=unscoped]")) return
 
     for (const fresh of [ finished, ...page.querySelectorAll("[data-study-ask-catch-up]") ]) {

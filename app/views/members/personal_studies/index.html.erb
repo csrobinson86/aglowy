@@ -20,7 +20,7 @@
           <%= render "members/personal_studies/tags", personal_study: %>
         </div>
         <div class="f6 color-fg-muted mt-1">
-          Updated <%= render(Primer::Beta::RelativeTime.new(datetime: personal_study.updated_at, tense: :past)) %><% if personal_study.notes.present? %> · notes<% end %>
+          Updated <%= render(Primer::Beta::RelativeTime.new(datetime: personal_study.updated_at, tense: :past)) %><% if personal_study.note %> · note<% end %>
         </div>
       <% end %>
     <% end %>

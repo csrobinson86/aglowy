@@ -14,10 +14,8 @@ def seed_source(path, title)
   { "url" => "https://#{path}", "title" => "[Sample article] #{title}" }
 end
 
-# References typed in the notes are linked on save, as the notes form does.
-def seed_personal_study(user, title:, notes:, collection: nil, tags: [], questions: [])
-  user.personal_studies.find_by(title: title) || user.personal_studies.new(title: title, collection: collection, notes: notes).tap do |study|
-    study.link_scriptures
+def seed_personal_study(user, title:, collection: nil, tags: [], questions: [])
+  user.personal_studies.find_by(title: title) || user.personal_studies.new(title: title, collection: collection).tap do |study|
     study.save!
     tags.each { study.tag_with(it, by: user) }
     questions.each { study.questions.create!(user: user, **it) }
@@ -25,7 +23,6 @@ def seed_personal_study(user, title:, notes:, collection: nil, tags: [], questio
 end
 
 daniel = seed_personal_study(head, title: "Daniel's courage", collection: collections["Bible characters"], tags: %w[ faith courage ],
-  notes: "<p>Dan 6:10 shows he kept his routine of prayer even when it was against the law.</p><p>Compare Acts 5:29.</p>",
   questions: [
     { prompt: "Why did Daniel keep praying when it was against the law?", status: "answered",
       answer: seed_answer([ "Sample answer: Daniel put his worship of Jehovah first, as Daniel 6:10 describes.",
@@ -39,7 +36,6 @@ daniel = seed_personal_study(head, title: "Daniel's courage", collection: collec
   ])
 
 seed_personal_study(head, title: "Preparing my heart for the convention", collection: collections["Convention 2026"], tags: %w[ prayer ],
-  notes: "<p>Ps 122:1 is how I want to feel when we arrive.</p>",
   questions: [
     { prompt: "How can I get more from a convention?", status: "answered",
       answer: seed_answer([ "Sample answer: prepare beforehand, take notes, and talk about it as a family afterwards." ]),
@@ -48,7 +44,6 @@ seed_personal_study(head, title: "Preparing my heart for the convention", collec
   ])
 
 seed_personal_study(head, title: "Why does God allow suffering?", collection: collections["Research"], tags: %w[ hope faith ],
-  notes: "<p>Start with Rev 21:4 and Jas 1:13.</p>",
   questions: [
     { prompt: "Why does God allow suffering?", status: "answered",
       answer: seed_answer([ "Sample answer: James 1:13 says God never tries anyone with bad things." ]),
@@ -59,9 +54,9 @@ seed_personal_study(head, title: "Why does God allow suffering?", collection: co
 # (docs/design/bookmarks.md). Saving again finds each one.
 daniel.sources.each { seeded!(head.bookmark(url: it["url"], source: daniel)) }
 
-seed_personal_study(lucia, title: "Brave like Daniel", notes: "<p>Dan 6:22: the angel shut the lions' mouths!</p>")
+seed_personal_study(lucia, title: "Brave like Daniel")
 
-# Every color at least once, two pinned, references in the bodies. The eleventh is a seeded answer saved as a note.
+# Every color at least once, two pinned, references in the bodies. The eleventh is Daniel's study note, from a saved answer below.
 [
   { title: "Thoughts on Romans 12", color: "yellow", pin: true, collection: "Bible characters", tags: %w[ faith ],
     body: "<p>Rom 12:11: aglow with the spirit. Keep the routine going even on tired days.</p>" },
@@ -87,8 +82,8 @@ seed_personal_study(lucia, title: "Brave like Daniel", notes: "<p>Dan 6:22: the 
   note.pin_to_top if attributes[:pin]
 end
 
-saved_answer = daniel.questions.answered.first
-saved_answer.save_as_note unless head.personal_notes.exists?(title: saved_answer.prompt)
+# Daniel's first answer saved to the study's note, as Save to note does. Saving it again changes nothing.
+daniel.questions.answered.first.save_to_note
 
 # A scripture from Daniel's answers and one from a note, bookmarked as their buttons save them, so the Bookmarks tab
 # has scripture rows and Show has something to narrow (docs/design/bookmarks.md). Saving again finds each one.

@@ -76,7 +76,9 @@ class SeedsTest < ActiveSupport::TestCase
 
     assert_equal 3, head.personal_studies.count
     assert_equal 3, head.personal_studies.distinct.count(:collection_id)
-    assert head.personal_studies.all? { it.notes.body.attachables.any?(Bible::Reference) }
+    daniel = head.personal_studies.find_by!(title: "Daniel's courage")
+    assert_equal [ true, false ], daniel.questions.map(&:saved_to_note?)
+    assert daniel.note.body.body.attachables.any?(Bible::Reference)
     assert_equal 4, PersonalStudy::Question.answered.count
     assert_equal 1, PersonalStudy::Question.off_topic.count
     assert user("lucia.rivera").memberships.sole.study_ai_grant?

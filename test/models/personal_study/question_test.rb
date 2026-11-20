@@ -249,124 +249,113 @@ class PersonalStudy::QuestionTest < ActiveSupport::TestCase
     assert_nil use.reload.question_id
   end
 
-  test "save_to_notes appends the text and links" do
+  # docs/design/personal-study.md, Save to note.
+  test "save_to_note: the first save makes the study's one note, with its title, collection and tags, linked to it" do
     study = @question.personal_study
-    study.update!(notes: "<p>My own thoughts first.</p>")
-    saved_answer
-
-    @question.save_to_notes
-
-    notes = study.reload.notes.body
-    assert_equal [ "My own thoughts first.", "Jehovah never causes suffering.", "He will soon end it for good.", "Pages:" ],
-      notes.fragment.find_all("p").map { it.text.squish }
-    assert_equal [ [ SUFFERING, "Why Does God Allow Suffering?" ], [ END_OF_SUFFERING, "The End of Suffering" ] ],
-      notes.fragment.find_all("li a").map { [ it["href"], it.text ] }
-    assert_operator notes.to_html.index("My own thoughts first."), :<, notes.to_html.index("Jehovah never causes suffering.")
-  end
-
-  test "save_to_notes keeps a not_found answer's note, which may be all it has" do
-    saved_answer(paragraphs: [])
-    @question.answer.update("not_found" => true, "not_found_note" => NOT_FOUND)
-    @question.save!
-
-    @question.save_to_notes
-
-    assert_equal [ NOT_FOUND, "Pages:" ], @question.personal_study.reload.notes.body.fragment.find_all("p").map { it.text.squish }
-  end
-
-  test "references become scripture links after save" do
-    study = @question.personal_study
-    study.update!(notes: "<p>Start with Job 1:9.</p>")
-    study.link_scriptures
-    study.save!
-    saved_answer(paragraphs: [ "Jehovah never causes suffering. Read James 1:13." ])
-
-    @question.save_to_notes
-
-    assert_equal [ Bible::Reference.find("18:1:9"), Bible::Reference.find("59:1:13") ], study.reload.notes.body.attachables
-  end
-
-  test "escapes <script>" do
-    saved_answer(paragraphs: [ %(<script>alert("hi")</script> Read James 1:13.) ],
-      sources: [ { "url" => SUFFERING, "title" => "<script>alert(1)</script>" } ])
-
-    @question.save_to_notes
-
-    notes = @question.personal_study.reload.notes.body
-    assert_empty notes.fragment.find_all("script")
-    assert_includes notes.to_plain_text, %(<script>alert("hi")</script>)
-    assert_includes notes.to_plain_text, "<script>alert(1)</script>"
-  end
-
-  test "a stopped question raises" do
-    @question.update!(status: "stopped")
-
-    assert_raises(PersonalStudy::Question::NotAnswered) { @question.save_to_notes }
-    assert_not_predicate @question.personal_study.reload.notes, :persisted?
-  end
-
-  test "save_as_note makes a note with the title, the paragraphs (scripture links after save) and the page links" do
+    study.tag_with("suffering", by: users(:head))
+    study.tag_with("ministry", by: users(:head))
+    @question.update!(prompt: "Where did suffering come from?")
     saved_answer(paragraphs: [ "Jehovah never causes suffering. Read James 1:13.", "He will soon end it for good." ])
 
-    note = @question.save_as_note
+    note = assert_difference -> { PersonalNote.count } => 1, -> { PersonalStudy::Question::NoteSaving.count } => 1 do
+      @question.save_to_note
+    end
 
-    assert_predicate note, :persisted?
+    assert_equal study, note.personal_study
+    assert_equal note, study.reload.note
     assert_equal users(:head), note.user
     assert_equal "Why does Jehovah allow suffering?", note.title
     assert_equal "none", note.color
     assert_equal collections(:head_bible_questions), note.collection
-    body = note.reload.body.body
-    assert_match(/\AJehovah never causes suffering\. Read James 1:13\.\s+He will soon end it for good\.\s+Pages:/, body.to_plain_text)
+    assert_equal %w[ ministry suffering ], note.reload.tags.map(&:name).sort
+    body = note.body.body
+    assert_equal [ "Where did suffering come from?" ], body.fragment.find_all("h2").map { it.text.squish }
+    assert_match(/Jehovah never causes suffering\. Read James 1:13\.\s+He will soon end it for good\.\s+Pages:/, body.to_plain_text)
     assert_equal [ Bible::Reference.find("59:1:13") ], body.attachables
     assert_equal [ [ SUFFERING, "Why Does God Allow Suffering?" ], [ END_OF_SUFFERING, "The End of Suffering" ] ],
       body.fragment.find_all("li a").map { [ it["href"], it.text ] }
+    assert_predicate @question.reload, :saved_to_note?
   end
 
-  test "save_as_note cuts a long question to the title's 120 characters" do
-    @question.update!(prompt: "Why does Jehovah allow suffering, #{"and what does the Bible say about it " * 5}?")
-    saved_answer
-
-    assert_equal "Why does Jehovah allow suffering, and what does the Bible say about it and what does the Bible say about it and what...",
-      @question.save_as_note.title
-  end
-
-  test "save_as_note: a studies-only collection isn't copied" do
+  test "save_to_note: a studies-only collection isn't the note's" do
     @question = personal_study_question(personal_studies(:head_kindness))
     saved_answer
 
-    assert_nil @question.save_as_note.collection
+    assert_nil @question.save_to_note.collection
   end
 
-  test "save_as_note: tags are copied" do
-    study = @question.personal_study
-    study.tag_with("suffering", by: users(:head))
-    study.tag_with("ministry", by: users(:head))
+  test "save_to_note: a second answer goes into the same note, after the first, under its own question" do
     saved_answer
+    note = @question.save_to_note
+    second = personal_study_question(prompt: "Will suffering ever end?", status: "answered",
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Yes, God's Kingdom will end it." ], "next_questions" => [] })
 
-    note = @question.save_as_note
+    assert_no_difference -> { PersonalNote.count } do
+      assert_equal note, second.save_to_note
+    end
 
-    assert_equal %w[ ministry suffering ], note.reload.tags.map(&:name).sort
-    assert_equal %w[ ministry suffering ], study.reload.tags.map(&:name).sort
+    body = note.reload.body.body
+    assert_equal [ "Why does Jehovah allow suffering?", "Will suffering ever end?" ], body.fragment.find_all("h2").map { it.text.squish }
+    assert_operator body.to_html.index("He will soon end it for good."), :<, body.to_html.index("Will suffering ever end?")
+    assert_operator body.to_html.index("Will suffering ever end?"), :<, body.to_html.index("Yes, God's Kingdom will end it.")
+    assert_predicate second.reload, :saved_to_note?
   end
 
-  test "save_as_note: deleting the study keeps the note" do
-    study = @question.personal_study
-    study.tag_with("suffering", by: users(:head))
+  test "save_to_note: saving the same answer twice adds it once and returns the note" do
     saved_answer
-    note = @question.save_as_note
+    note = @question.save_to_note
 
-    study.destroy!
+    assert_no_difference -> { PersonalStudy::Question::NoteSaving.count } do
+      assert_equal note, @question.save_to_note
+    end
 
-    assert_includes note.reload.body.to_plain_text, "Jehovah never causes suffering."
-    assert_equal %w[ suffering ], note.tags.map(&:name)
+    assert_equal 1, note.reload.body.body.fragment.find_all("h2").size
   end
 
-  test "save_as_note: a stopped question raises and makes no note" do
+  test "save_to_note: a question that isn't answered raises and makes no note" do
     @question.update!(status: "stopped")
 
     assert_no_difference -> { PersonalNote.count } do
-      assert_raises(PersonalStudy::Question::NotAnswered) { @question.save_as_note }
+      assert_raises(PersonalStudy::Question::NotAnswered) { @question.save_to_note }
     end
+    assert_not_predicate @question.reload, :saved_to_note?
+  end
+
+  test "save_to_note escapes the question and the answer" do
+    @question.update!(prompt: "<b>Why</b> suffering?")
+    saved_answer(paragraphs: [ %(<script>alert("hi")</script> Read James 1:13.) ],
+      sources: [ { "url" => SUFFERING, "title" => "<script>alert(1)</script>" } ])
+
+    body = @question.save_to_note.reload.body.body
+
+    assert_empty body.fragment.find_all("script")
+    assert_empty body.fragment.find_all("b")
+    assert_includes body.to_plain_text, "<b>Why</b> suffering?"
+    assert_includes body.to_plain_text, %(<script>alert("hi")</script>)
+    assert_includes body.to_plain_text, "<script>alert(1)</script>"
+  end
+
+  test "save_to_note: a not_found answer with only its note saves that note" do
+    saved_answer(paragraphs: [], sources: [])
+    @question.answer.update("not_found" => true, "not_found_note" => NOT_FOUND)
+    @question.save!
+
+    body = @question.save_to_note.reload.body.body
+
+    assert_equal [ NOT_FOUND ], body.fragment.find_all("p").map { it.text.squish }
+  end
+
+  test "save_to_note moves the note's updated_at, so a form opened before it is stale" do
+    saved_answer
+    note = travel_to(1.hour.ago) { @question.personal_study.with_lock { @question.personal_study.start_note } }
+    base = note.base
+    second = personal_study_question(prompt: "Will suffering ever end?", status: "answered",
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Yes." ], "next_questions" => [] })
+
+    second.save_to_note
+
+    assert_operator note.reload.updated_at, :>, Time.zone.parse(base)
+    assert_not note.based_on?(base)
   end
 
   test "database: a status of done raises CheckViolation" do

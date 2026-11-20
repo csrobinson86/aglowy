@@ -7,6 +7,8 @@ class PersonalStudy::Question < ApplicationRecord
   belongs_to :user
   # Kept when the question goes (the database nulls question_id), so deleting a study can't give questions back.
   has_one :use, class_name: "Ai::Use", inverse_of: :question
+  # The database deletes it with the question or the note.
+  has_one :note_saving, inverse_of: :question
 
   # Keep in step with the personal_study_questions_status_check constraint.
   enum :status, %w[ asking answered off_topic flagged failed stopped ].index_by(&:itself), validate: true
@@ -18,33 +20,33 @@ class PersonalStudy::Question < ApplicationRecord
   # How many questions a person may ask in a day (docs/design/ai.md, safety measure 9).
   def self.daily_limit = Ai::Purpose.find(PersonalStudy::PURPOSE).daily_limit
 
-  # Only an answer that passed the checks can go into the notes.
+  # Only an answer that passed the checks can go into the note.
   class NotAnswered < StandardError; end
 
-  # Appends the answer to the study's notes: our own partial, every field escaped, references left as plain text for
-  # link_scriptures to link, then "Pages:" and the links (docs/design/personal-study.md, Save to notes). The notes are
-  # the person's record now, kept if the question goes. Under the study's lock, so two saves can't drop each other's text.
-  def save_to_notes
-    raise NotAnswered, "Only an answered question can be saved to notes" unless answered?
+  # Appends the answer to the study's note, making the note on the first save: our own partial, every field escaped,
+  # the question as a heading, references left as plain text for link_scriptures to link, then "Pages:" and the links
+  # (docs/design/personal-study.md, Save to note). Under the study's lock, so Start a note and another save find the
+  # same note, then the note's, so it can't change between reading the body and writing it. The save moves the note's
+  # updated_at, so an editor opened before it can't remove the answer. An answer already in the note changes nothing.
+  def save_to_note
+    raise NotAnswered, "Only an answered question can be saved to the note" unless answered?
 
     personal_study.with_lock do
-      personal_study.notes = "#{personal_study.notes&.body&.to_html}#{notes_html}"
-      personal_study.link_scriptures
-      personal_study.save!
+      personal_study.start_note.tap do |note|
+        note.with_lock do
+          next if reload_note_saving
+
+          note.body = "#{note.body&.body&.to_html}#{note_html}"
+          note.link_scriptures
+          note.save!
+          create_note_saving!(personal_note: note)
+        end
+      end
     end
   end
 
-  # A new note holding the answer, made from the same partial as save_to_notes, titled with the question cut to a
-  # note title's length. It takes the study's collection when Notes uses it, and the study's tags, in color none
-  # (docs/design/notes.md, Save an AI answer as a note). It's a copy: nothing links it back, so it stays if the study goes.
-  def save_as_note
-    raise NotAnswered, "Only an answered question can be saved as a note" unless answered?
-
-    personal_study.user.personal_notes.new(title: prompt.squish.truncate(PersonalNote::TITLE_MAX, separator: " "), body: notes_html, color: "none",
-      collection: personal_study.collection&.then { it if it.for_notes? }, tags: personal_study.tags).tap do |note|
-      note.link_scriptures
-      note.save!
-    end
+  def saved_to_note?
+    note_saving.present?
   end
 
   # Each paragraph of the answer escaped, so the reply's own markup is only ever text, then with its references linked
@@ -62,7 +64,7 @@ class PersonalStudy::Question < ApplicationRecord
   end
 
   private
-    def notes_html
-      ApplicationController.render(partial: "personal_studies/questions/notes", locals: { question: self })
+    def note_html
+      ApplicationController.render(partial: "personal_studies/questions/note", locals: { question: self })
     end
 end

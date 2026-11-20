@@ -1,5 +1,5 @@
 # A head's read-only view of a child's personal studies: the list, and each study with its conversation, sources,
-# notes and tags (docs/design/personal-study.md, Children). Only for a head here, while the child has a study AI
+# note and tags (docs/design/personal-study.md, Children). Only for a head here, while the child has a study AI
 # grant here (ChildStudyPolicy); anyone else, and any study that isn't the child's, gets a 404.
 class Members::PersonalStudiesController < ApplicationController
   include HouseholdScoped

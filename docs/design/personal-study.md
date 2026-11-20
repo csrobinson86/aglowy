@@ -135,7 +135,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 | Studies and collections | `GET /:household_id/personal_studies` (`?collection=`, `?tag=`, `?q=`) | `personal-studies.png` |
 | New study | `POST /:household_id/personal_studies` (title, optional collection, optional first question) | |
 | A study | `GET /:household_id/personal_studies/:id` | `personal-study.png` |
-| Rename, move, edit notes | `PATCH /:household_id/personal_studies/:id` | |
+| Rename, move | `PATCH /:household_id/personal_studies/:id` | |
 | Delete | `DELETE /:household_id/personal_studies/:id`, after a Primer dialog | |
 | Collections | `resources :collections, only: %i[ create update destroy ]` (shared with Notes) | |
 | Ask | `POST /:household_id/personal_studies/:id/questions` | |

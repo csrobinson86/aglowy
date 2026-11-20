@@ -31,8 +31,9 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_selector "h3", text: "Pages used"
     assert_link "Why Does God Allow Suffering?", href: SUFFERING
     assert_text "Check each point against its page."
-    assert_selector "form[action$='/note_saving'] button", text: "Save to notes"
-    assert_selector "form[action$='/personal_note'][method=post] button", text: "Save as a note"
+    assert_selector "form[action$='/note_saving'] button", text: "Save to note"
+    assert_no_button "Save as a note"
+    assert_no_text "Saved to note"
     assert_no_selector ".color-bg-subtle", text: "I couldn't find"
     assert_no_button "Stop"
     assert_no_selector "turbo-cable-stream-source", visible: :all
@@ -127,6 +128,17 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_no_text "From jw.org and wol.jw.org"
   end
 
+  test "answered and saved to the note: Saved to note and Open note, with nothing to press" do
+    question = personal_study_question(status: "answered", answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering." ], "next_questions" => [] })
+    note = question.save_to_note
+
+    render_inline(PersonalStudies::AnswerComponent.new(question: question.reload, household: @household))
+
+    assert_selector "#note_saving_personal_study_question_#{question.id}", text: "Saved to note"
+    assert_link "Open note", href: "/#{@household.id}/notes/#{note.id}"
+    assert_no_button "Save to note"
+  end
+
   test "read-only asking: a muted line, with no stream and no Stop" do
     render_inline(PersonalStudies::AnswerComponent.new(question: personal_study_question, household: nil, read_only: true))
 
@@ -135,7 +147,7 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_no_selector "form"
   end
 
-  test "read-only answered: the answer and its pages, with no chips, no Save to notes and nothing to press" do
+  test "read-only answered: the answer and its pages, with no chips, no Save to note and nothing to press" do
     answer = { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [ "What did Job learn?" ] }
     question = personal_study_question(status: "answered", answer:, sources: [ { "url" => SUFFERING, "title" => "Why Does God Allow Suffering?" } ])
 

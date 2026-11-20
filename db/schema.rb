@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_19_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_20_010200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -744,7 +744,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_040000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "color", default: "none", null: false
+    t.uuid "personal_study_id"
     t.index ["collection_id"], name: "index_personal_notes_on_collection_id"
+    t.index ["personal_study_id"], name: "index_personal_notes_on_personal_study_id", unique: true, where: "(personal_study_id IS NOT NULL)"
     t.index ["user_id"], name: "index_personal_notes_on_user_id"
     t.check_constraint "char_length(title::text) >= 1 AND char_length(title::text) <= 120", name: "personal_notes_title_length_check"
     t.check_constraint "color::text = ANY (ARRAY['none'::character varying, 'yellow'::character varying, 'orange'::character varying, 'red'::character varying, 'pink'::character varying, 'purple'::character varying, 'blue'::character varying, 'green'::character varying, 'brown'::character varying, 'gray'::character varying]::text[])", name: "personal_notes_color_check"
@@ -777,6 +779,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_040000) do
     t.index ["personal_study_id", "created_at"], name: "index_personal_study_questions_on_study_and_created_at"
     t.index ["user_id"], name: "index_personal_study_questions_on_user_id"
     t.check_constraint "status::text = ANY (ARRAY['asking'::character varying, 'answered'::character varying, 'off_topic'::character varying, 'flagged'::character varying, 'failed'::character varying, 'stopped'::character varying]::text[])", name: "personal_study_questions_status_check"
+  end
+
+  create_table "personal_study_question_note_savings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "question_id", null: false
+    t.uuid "personal_note_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["personal_note_id"], name: "index_personal_study_question_note_savings_on_personal_note_id"
+    t.index ["question_id"], name: "index_personal_study_question_note_savings_on_question_id", unique: true
   end
 
   create_table "personal_time_completions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1106,10 +1116,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_040000) do
   add_foreign_key "notifications", "users", on_delete: :cascade
   add_foreign_key "personal_note_pins", "personal_notes", on_delete: :cascade
   add_foreign_key "personal_notes", "collections", on_delete: :nullify
+  add_foreign_key "personal_notes", "personal_studies", on_delete: :nullify
   add_foreign_key "personal_notes", "users"
   add_foreign_key "personal_studies", "chats"
   add_foreign_key "personal_studies", "collections", on_delete: :nullify
   add_foreign_key "personal_studies", "users"
+  add_foreign_key "personal_study_question_note_savings", "personal_notes", on_delete: :cascade
+  add_foreign_key "personal_study_question_note_savings", "personal_study_questions", column: "question_id", on_delete: :cascade
   add_foreign_key "personal_study_questions", "personal_studies", on_delete: :cascade
   add_foreign_key "personal_study_questions", "users"
   add_foreign_key "personal_time_completions", "personal_times", on_delete: :cascade

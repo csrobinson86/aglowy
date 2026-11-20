@@ -1,0 +1,15 @@
+<%# locals: (question:, household:) -%>
+<%# An answer card's Save to note, or "Saved to note" with Open note once the answer is in the study's note (frame
+    personal-study-note.png). PersonalStudies::NoteSavingsController replaces it after a save. %>
+<%= tag.div id: dom_id(question, :note_saving), class: "d-flex flex-items-center mr-3" do %>
+  <% if question.saved_to_note? %>
+    <span class="d-flex flex-items-center text-small color-fg-success mr-2">
+      <%= render(Primer::Beta::Octicon.new(:check, size: :xsmall, mr: 1)) %>Saved to note
+    </span>
+    <%= render(Primer::Beta::Link.new(href: household_personal_note_path(household_id: household, id: question.note_saving.personal_note_id), font_size: :small)) { "Open note" } %>
+  <% else %>
+    <%= primer_form_with(url: household_personal_study_question_note_saving_path(household_id: household, personal_study_id: question.personal_study_id, question_id: question)) do |f| %>
+      <%= render PersonalStudies::NoteSavingForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>

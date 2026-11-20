@@ -280,9 +280,9 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".Banner--error", text: /Collection is only used in Notes/
   end
 
-  test "show has the header with the tag editor, and My notes with Save notes" do
+  test "show has the header with the tag editor, and the study's note linked beside the conversation" do
     @study.tag_with("ministry", by: users(:head))
-    @study.update!(notes: "<p>Rebellion in Eden</p>")
+    note = @study.with_lock { @study.start_note }
     sign_in identities(:head)
 
     get household_personal_study_path(household_id: @home, id: @study)
@@ -294,9 +294,11 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", @study.title
     assert_select "#tag_editor_personal_study_#{@study.id} a.Label", "#ministry"
     assert_select "nav[aria-label='Main'] a[aria-current='page']", "Personal study"
-    assert_select "form[action=?] lexxy-editor[name='personal_study[notes]'][value*='Rebellion in Eden']", household_personal_study_path(household_id: @home, id: @study)
-    assert_select "label.sr-only[for=personal_study_notes]", "Notes"
-    assert_select "button[type=submit]", "Save notes"
+    assert_select "#note_personal_study_#{@study.id}" do
+      assert_select "h2", "Study note"
+      assert_select "a[href=?]", household_personal_note_path(household_id: @home, id: note), text: note.title
+    end
+    assert_select "lexxy-editor", false
     assert_select "dialog#delete-personal-study"
   end
 
@@ -337,25 +339,6 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
     assert_equal collections(:head_bible_questions), @study.reload.collection
-  end
-
-  test "update: notes, with a scripture reference linked on save" do
-    sign_in identities(:head)
-
-    patch household_personal_study_path(household_id: @home, id: @study), params: { personal_study: { notes: "<p>Start with Romans 5:12</p>" } }
-
-    assert_redirected_to household_personal_study_path(household_id: @home, id: @study)
-    assert_equal "Notes saved.", flash[:notice]
-    assert_equal [ Bible::Reference.find("45:5:12") ], @study.reload.notes.body.attachables
-  end
-
-  test "update: notes with anything but scripture links show the page again" do
-    sign_in identities(:head)
-
-    patch household_personal_study_path(household_id: @home, id: @study), params: { personal_study: { notes: "<p>A cat</p>#{remote_image_attachment}" } }
-
-    assert_response :unprocessable_content
-    assert_nil @study.reload.notes.body
   end
 
   test "destroy" do
@@ -404,7 +387,7 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     get household_personal_study_path(household_id: @home, id: study)
     assert_response :success
 
-    patch household_personal_study_path(household_id: @home, id: study), params: { personal_study: { title: "How life began", notes: "<p>Genesis 1:1</p>" } }
+    patch household_personal_study_path(household_id: @home, id: study), params: { personal_study: { title: "How life began" } }
     assert_redirected_to household_personal_study_path(household_id: @home, id: study)
     assert_equal "How life began", study.reload.title
 

@@ -41,29 +41,26 @@ class PersonalStudiesController < ApplicationController
   def show
   end
 
-  # Rename, move and notes all come here. References typed in the notes are linked; anything refused shows the page
-  # again with the reason.
+  # Rename and move come here; anything refused shows the page again with the reason.
   def update
-    attributes = study_attributes(:title, :collection_id, :notes)
-    @personal_study.assign_attributes(attributes)
-    @personal_study.link_scriptures
-
-    if @personal_study.save
-      redirect_to household_personal_study_path(id: @personal_study), notice: attributes.key?(:notes) ? "Notes saved." : "Study saved."
+    if @personal_study.update(study_attributes(:title, :collection_id))
+      redirect_to household_personal_study_path(id: @personal_study), notice: "Study saved."
     else
       render :show, status: :unprocessable_content
     end
   end
 
+  # Under the study's lock, taken before the note's as Save to note takes them, so the two can't deadlock.
   def destroy
-    @personal_study.destroy!
+    @personal_study.with_lock { @personal_study.destroy! }
     redirect_to household_personal_studies_path, notice: "Study deleted."
   end
 
   private
 
+  # With whether each answer is in the study's note, for its card's Save to note when the page is shown.
   def set_personal_study
-    @personal_study = Current.user.personal_studies.preloaded.find(params[:id])
+    @personal_study = Current.user.personal_studies.preloaded.includes(questions: :note_saving).find(params[:id])
     authorize @personal_study
   end
 

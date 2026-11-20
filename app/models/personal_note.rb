@@ -5,6 +5,8 @@ class PersonalNote < ApplicationRecord
   include Collectable, ScriptureLinkable, Taggable
 
   belongs_to :user
+  # The study this is the note of, until the study is deleted (docs/design/notes.md, A Personal study's note).
+  belongs_to :personal_study, optional: true
   # The database deletes the pin with the note.
   has_one :pin
   # Deleting it keeps the bookmarks saved from it, with no source (docs/design/bookmarks.md, Bookmark).
@@ -28,6 +30,7 @@ class PersonalNote < ApplicationRecord
   TITLE_MAX = 120
 
   validates :title, presence: true, length: { maximum: TITLE_MAX }
+  validate :personal_study_is_own, if: :personal_study
 
   scope :preloaded, -> { includes(:collection, :tags, :rich_text_body) }
   scope :recent_first, -> { order(updated_at: :desc, id: :desc) }
@@ -94,6 +97,10 @@ class PersonalNote < ApplicationRecord
   end
 
   private
+
+  def personal_study_is_own
+    errors.add(:personal_study, "must be your own study") unless personal_study.user_id == user_id
+  end
 
   # A studies-only collection isn't on Notes' list (Collectable).
   def collection_refusal

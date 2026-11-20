@@ -137,6 +137,43 @@ class PersonalNoteTest < ActiveSupport::TestCase
     end
   end
 
+  # A study's note (docs/design/notes.md, PersonalNote: personal_study_id).
+  test "a note can't link another person's study" do
+    note = personal_notes(:head_return_visit)
+    note.personal_study = personal_studies(:spouse_ransom)
+
+    assert_not note.valid?
+    assert_equal [ "must be your own study" ], note.errors[:personal_study]
+  end
+
+  test "deleting the study keeps its note and drops the link" do
+    study = personal_studies(:head_suffering)
+    note = study.with_lock { study.start_note }
+
+    study.destroy!
+
+    assert_nil note.reload.personal_study_id
+  end
+
+  test "deleting the note deletes its savings, so the answers can be saved again" do
+    question = personal_study_question(status: "answered", answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering." ], "next_questions" => [] })
+    note = question.save_to_note
+
+    assert_difference -> { PersonalStudy::Question::NoteSaving.count } => -1 do
+      note.destroy!
+    end
+    assert_not_predicate question.reload, :saved_to_note?
+  end
+
+  test "database: a study has one note" do
+    study = personal_studies(:head_suffering)
+    study.with_lock { study.start_note }
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      PersonalNote.insert!({ user_id: users(:head).id, personal_study_id: study.id, title: "Another", color: "none" })
+    end
+  end
+
   # docs/design/notes.md, A note: the version check.
   test "revise saves with a matching base, links scriptures, and moves updated_at" do
     note = personal_notes(:head_daniel)
