@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_20_010200) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_20_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -399,6 +399,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_010200) do
     t.datetime "updated_at", null: false
     t.index ["enabled_by_id"], name: "index_household_meeting_helpers_on_enabled_by_id"
     t.index ["household_id"], name: "index_household_meeting_helpers_on_household_id", unique: true
+  end
+
+  create_table "household_meeting_preps", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.uuid "enabled_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["enabled_by_id"], name: "index_household_meeting_preps_on_enabled_by_id"
+    t.index ["household_id"], name: "index_household_meeting_preps_on_household_id", unique: true
   end
 
   create_table "households", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1076,6 +1085,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_010200) do
   add_foreign_key "household_events", "users", column: "created_by_id"
   add_foreign_key "household_meeting_helpers", "households", on_delete: :cascade
   add_foreign_key "household_meeting_helpers", "users", column: "enabled_by_id"
+  add_foreign_key "household_meeting_preps", "households", on_delete: :cascade
+  add_foreign_key "household_meeting_preps", "users", column: "enabled_by_id"
   add_foreign_key "identities", "users"
   add_foreign_key "invitations", "households", on_delete: :cascade
   add_foreign_key "invitations", "users", column: "invited_by_id"

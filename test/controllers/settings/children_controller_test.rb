@@ -55,7 +55,39 @@ class Settings::ChildrenControllerTest < ActionDispatch::IntegrationTest
     get household_settings_children_path(household_id: @home)
 
     assert_select "input[type=checkbox][name=?][checked]", "meeting_helper[enabled]"
-    assert_select "main p", text: "Turned on by Sam Spouse on November 15."
+    assert_select ".FormControl-checkbox-wrap:has(input[name='meeting_helper[enabled]']) .FormControl-caption", text: /their own meeting note\. Turned on by Sam Spouse on November 15\.\z/
+  end
+
+  # Get ready's box (docs/design/meeting-prep.md, The Settings check box).
+  test "with the helper off, there's no Get ready box" do
+    sign_in identities(:head)
+
+    get household_settings_children_path(household_id: @home)
+
+    assert_select "input[name=?]", "meeting_helper[meeting_prep]", count: 0
+  end
+
+  test "with the helper on and Get ready off, its box is unticked and says nobody turned it on" do
+    @home.enable_meeting_helper(by: users(:head))
+    sign_in identities(:spouse)
+
+    get household_settings_children_path(household_id: @home)
+
+    assert_select "input[type=checkbox][name=?]:not([checked])", "meeting_helper[meeting_prep]"
+    assert_select "label", text: "Get ready cards"
+    assert_select ".FormControl-checkbox-wrap:has(input[name='meeting_helper[meeting_prep]']) .FormControl-caption", text: /You can read and change them\.\z/
+  end
+
+  test "with Get ready on, its box is ticked and says who turned it on, on the date where the household lives" do
+    @home.update!(time_zone: "Central Time (US & Canada)")
+    @home.enable_meeting_helper(by: users(:head))
+    travel_to(Time.utc(2026, 11, 16, 2)) { @home.enable_meeting_prep(by: users(:spouse)) }
+    sign_in identities(:head)
+
+    get household_settings_children_path(household_id: @home)
+
+    assert_select "input[type=checkbox][name=?][checked]", "meeting_helper[meeting_prep]"
+    assert_select ".FormControl-checkbox-wrap:has(input[name='meeting_helper[meeting_prep]']) .FormControl-caption", text: /You can read and change them\. Turned on by Sam Spouse on November 15\.\z/
   end
 
   test "with the helper on, the box links to this week's listening game; with it off, it doesn't" do

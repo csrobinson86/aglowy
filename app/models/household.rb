@@ -15,6 +15,7 @@ class Household < ApplicationRecord
   has_many :invitations, dependent: :delete_all
   has_many :goal_steps, through: :goals, source: :steps, class_name: "Goal::Step"
   has_one :meeting_helper, dependent: :delete
+  has_one :meeting_prep, dependent: :delete
   has_many :chats, dependent: :destroy
   has_many :events, class_name: "Household::Event", dependent: :delete_all
   # The weekly previews about it (docs/design/notifications.md, Models).
@@ -195,14 +196,37 @@ class Household < ApplicationRecord
     Household::MeetingHelper.create_with(enabled_by: by).create_or_find_by!(household: self).tap { reset_meeting_helper }
   end
 
-  # Only the switch: the children's marks and drawings are their own and stay (docs/design/meeting-helper.md, Trap 7).
+  # Only the switches: the children's marks and drawings are their own and stay (docs/design/meeting-helper.md, Trap 7).
+  # Get ready goes with the helper, under the household's lock, so an enable_meeting_prep waiting on it finds the
+  # helper gone (docs/design/meeting-prep.md, Models; Trap 8). The lock reloads the household, and its switches with it.
   def disable_meeting_helper
-    Household::MeetingHelper.where(household: self).delete_all
-    reset_meeting_helper
+    with_lock do
+      Household::MeetingPrep.where(household: self).delete_all
+      Household::MeetingHelper.where(household: self).delete_all
+    end
   end
 
   def meeting_helper?
     meeting_helper.present?
+  end
+
+  # Checks the helper under the household's lock, the one disable_meeting_helper takes, so Get ready can't be turned on
+  # just as the helper is turned off. False, saving nothing, while the helper is off. create_or_find_by! on the unique
+  # index, as enable_meeting_helper does, keeps the first person who turned it on.
+  def enable_meeting_prep(by:)
+    with_lock do
+      meeting_helper? && Household::MeetingPrep.create_with(enabled_by: by).create_or_find_by!(household: self)
+    end.tap { reset_meeting_prep }
+  end
+
+  def disable_meeting_prep
+    Household::MeetingPrep.where(household: self).delete_all
+    reset_meeting_prep
+  end
+
+  # Both switches: Get ready needs the helper (docs/design/meeting-prep.md, Decisions).
+  def meeting_prep?
+    meeting_helper? && meeting_prep.present?
   end
 
   def schedule_family_study(topic: nil, notes: nil, links: [], files: [], **attributes)
