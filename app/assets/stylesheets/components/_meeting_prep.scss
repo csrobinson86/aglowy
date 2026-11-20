@@ -12,7 +12,7 @@
 // Get ready (frame tablet-prep-week.png): a tile for each meeting, side by side on a tablet.
 .meeting-prep__tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(calc(var(--base-size-128) * 3), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--base-size-128) * 3)), 1fr));
   gap: var(--base-size-24);
   width: 100%;
   padding: 0;
@@ -140,7 +140,7 @@
 
 .meeting-prep__boxes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(calc(var(--base-size-128) * 3), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--base-size-128) * 3)), 1fr));
   gap: var(--base-size-24);
 }
 
