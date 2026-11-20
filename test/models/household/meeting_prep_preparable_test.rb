@@ -280,14 +280,15 @@ class Household::MeetingPrepPreparableTest < ActiveSupport::TestCase
     assert_equal %w[ congregation_bible_study watchtower_study ], week.cards.map(&:step)
   end
 
-  test "a web address on any domain, a country's too, drops the card" do
+  test "a web address on any domain, a country's too, or an IP address drops the card" do
     accept users(:head)
     week = prepare(reply do |parsed|
       card(parsed, "talk")["about"] = "Read example.edu with your family."
       card(parsed, "bible_reading")["story"][1] = "Find the city on example.co.uk tonight."
+      card(parsed, "living")["i_can"] = "Open 192.0.2.1 with Mom."
     end)
 
-    assert_equal %w[ living congregation_bible_study watchtower_study ], week.cards.map(&:step)
+    assert_equal %w[ congregation_bible_study watchtower_study ], week.cards.map(&:step)
   end
 
   test "a field longer than its column drops the card" do
