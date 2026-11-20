@@ -128,8 +128,8 @@ class Household::MeetingPrepPreparableTest < ActiveSupport::TestCase
 
   test "the owner skips anyone who hasn't accepted or has left, then takes the oldest adult" do
     joined = @household.add_member(name: "Rosa", role: :adult)
-    # The fixtures' memberships are made at today's real time, and this test runs on 16 November.
-    joined.update_column(:created_at, 1.year.from_now)
+    # Rosa joins after the spouse, whenever the fixtures were loaded.
+    joined.update_column(:created_at, memberships(:spouse_in_home).created_at + 1.day)
     newer = joined.user
     @household.disable_meeting_prep
     @household.enable_meeting_prep(by: users(:former))
@@ -278,6 +278,16 @@ class Household::MeetingPrepPreparableTest < ActiveSupport::TestCase
     end)
 
     assert_equal %w[ congregation_bible_study watchtower_study ], week.cards.map(&:step)
+  end
+
+  test "a web address on any domain, a country's too, drops the card" do
+    accept users(:head)
+    week = prepare(reply do |parsed|
+      card(parsed, "talk")["about"] = "Read example.edu with your family."
+      card(parsed, "bible_reading")["story"][1] = "Find the city on example.co.uk tonight."
+    end)
+
+    assert_equal %w[ living congregation_bible_study watchtower_study ], week.cards.map(&:step)
   end
 
   test "a field longer than its column drops the card" do

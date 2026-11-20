@@ -29,8 +29,9 @@ class PrepWeek::Card < ApplicationRecord
   REPLY_WORDS = { about: 20, quality_line: 14, i_can: 14 }.freeze
   REPLY_STORY_SENTENCES = 2..4
   REPLY_SENTENCE_WORDS = 14
-  # A web address in card text: links come only from Ai::SourceLink (docs/design/ai.md, Traps).
-  LINK = %r{https?://|\bwww\.|\b[[:alnum:]-]+\.(?:org|com|net|info|io)\b}i
+  # A web address in card text: links come only from Ai::SourceLink (docs/design/ai.md, Traps). Any domain suffix of
+  # two letters or more counts, a country's too; a sentence's full stop is followed by a space, so prose doesn't match.
+  LINK = %r{https?://|\bwww\.|\b[[:alnum:]-]+\.[[:alpha:]]{2,}\b}i
 
   belongs_to :prep_week
   belongs_to :changed_by, class_name: "User", optional: true
