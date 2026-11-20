@@ -56,7 +56,7 @@ class PersonalNotesController < ApplicationController
   # sent under "What you wrote".
   def update
     base = params.dig(:personal_note, :base)
-    attributes = note_attributes(stale: !@personal_note.based_on?(base))
+    attributes = note_attributes(stale: -> { !@personal_note.reload.based_on?(base) })
 
     if @personal_note.revise(attributes, base:)
       redirect_to household_personal_note_path(id: @personal_note), notice: "Note saved."
@@ -88,14 +88,16 @@ class PersonalNotesController < ApplicationController
   end
 
   # A blank collection_id takes the note out of any collection. tag_names, the names the tag editor showed, are only
-  # for "What you wrote". On a save that will be refused as stale, a collection that isn't found (deleted in another
-  # window since the form was rendered) is left out rather than a 404, so "What you wrote" still shows the rest.
-  def note_attributes(stale: false)
+  # for "What you wrote". A collection that isn't found is a 404, unless the save will be refused as stale (deleted in
+  # another window since the form was rendered): then it's left out, so "What you wrote" still shows the rest. stale
+  # is asked only then, after the lookup, so it reads the note as it is now: updated_at only moves forward, so a note
+  # changed before the lookup stays stale under revise's lock.
+  def note_attributes(stale: -> { false })
     attributes = params.expect(personal_note: %i[ title color collection_id body tag_names ]).to_h
     if attributes.key?(:collection_id)
       collection_id = attributes.delete(:collection_id).presence
       collections = Current.user.collections
-      attributes[:collection] = collection_id && (stale ? collections.find_by(id: collection_id) : collections.find(collection_id))
+      attributes[:collection] = collection_id && (collections.find_by(id: collection_id) || (collections.find(collection_id) unless stale.call))
     end
     attributes
   end

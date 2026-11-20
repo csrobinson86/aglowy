@@ -598,6 +598,27 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Saved in the other window", @note.reload.title
   end
 
+  test "a note changed and its collection deleted while the update runs is still a 409 with What you wrote" do
+    gone = users(:head).collections.add(name: "Gone", used_in: "notes")
+    fresh = base(@note)
+    sign_in identities(:head)
+    # Right after the update loads the note, still at the form's base, another window saves it and deletes the collection.
+    meanwhile = lambda do |*, payload|
+      next unless payload[:sql].start_with?('SELECT "personal_notes"') && gone.persisted?
+
+      PersonalNote.where(id: @note).update_all(title: "Saved in the other window", updated_at: 1.minute.from_now)
+      gone.destroy!
+    end
+
+    ActiveSupport::Notifications.subscribed(meanwhile, "sql.active_record") do
+      patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: fresh, title: "Mine", collection_id: gone.id } }
+    end
+
+    assert_response :conflict
+    assert_equal "Saved in the other window", @note.reload.title
+    assert_select "section[aria-labelledby=what-you-wrote]", text: /Mine/
+  end
+
   test "update without a base is refused as stale" do
     sign_in identities(:head)
 
