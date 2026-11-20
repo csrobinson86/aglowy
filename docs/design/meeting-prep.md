@@ -102,10 +102,11 @@ Sizes are the helper's: the `h1` at 42px (36px on the reading card, to leave roo
 
 It follows the listening game's job rules exactly (`docs/design/listening-game.md`, The weekly research job), with these differences:
 
-- **`PrepWeek::PrepareJob`** runs every Monday at 2:30am (`config/recurring.yml`), and every day at 2:30am to retry, for each household with Get ready on and no `PrepWeek` for the week. It stops retrying once the week's weekend meeting has passed, not its midweek one: a week whose midweek meeting is over still gets cards for the weekend.
+- **`PrepWeek::PrepareJob`** runs every Monday at 2:30am (`config/recurring.yml`), and every day at 2:30am to retry, for each household with Get ready on whose week is missing a card it can still use: a step with no card whose meeting hasn't passed yet (`household.missing_prep_steps(week_of, now)`). A week with no `PrepWeek` misses all five. It stops once the weekend meeting has passed: a week whose midweek meeting is over still gets its Watchtower card.
+- **Filling in, never replacing.** A run asks only for the missing steps (they go into the question with the week), and saves a card only for a step that still has none, under the claim. Cards already saved, whether the AI's or changed by a parent, are never touched. The unique (`prep_week_id`, `step`) index stops a second card for a step. A first run that finds cards for some steps saves the `PrepWeek` with those, so she sees them straight away; the next daily runs try for the rest. Each try counts toward the daily limit, so a part the AI never finds costs at most one request a day until its meeting.
 - **The week** is the Monday of the household's current week, in its time zone (`Household::Meeting#week_of`). Both meetings of that week share it, as their meeting notes do.
 - **The claim** is a `PrepWeek::Preparation`, with the same token, 15-minute takeover and 5-minute request timeout as `ListeningGame::Preparation`. The story may extract the claim into a concern shared with `Household::ListeningGamePreparable`, as long as the listening game's tests still pass unchanged.
-- **The owner** is picked the same way: the person who turned Get ready on, then the heads, then the adults, oldest membership first, who has accepted the AI terms. Nobody has: `:not_allowed`, no claim, no chat, and her page says "Cards aren't ready yet". Accepting the AI terms enqueues the week for each of the person's households with Get ready on, from the same `after_create_commit` on `Ai::Acceptance`.
+- **The owner** is picked the same way: the person who turned Get ready on, then the heads, then the adults, oldest membership first, who has accepted the AI terms. Nobody has: `:not_allowed`, no claim, no chat. Her page then says "Cards aren't ready yet", and the parent's page says "Cards need a head or adult who has turned on AI features", with a link to where the AI terms are accepted, as the listening game's does. Accepting the AI terms enqueues the week for each of the person's households with Get ready on, from the same `after_create_commit` on `Ai::Acceptance`.
 - `household.prepare_meeting_prep(week_of)` makes a chat (`purpose: "meeting_prep"`, the owner as `user`, `household` the household) and calls `Chat#ask_within_purpose` with the week's dates and `MeetingNote.program_url(week_of)`, which shows both meetings' material on wol.jw.org. Aglowy builds that address but never requests it.
 
 ### `Ai::Purpose::MeetingPrep`
@@ -114,7 +115,7 @@ Instructions in `config/ai/meeting_prep.md`:
 
 - `allowed_hosts`: the usual three. `max_searches`: 6 (the program, the Bible Study chapter and the Watchtower study article are pages of their own).
 - `schema`: `off_topic`, and `cards`, a list of `{ step, about, quality, quality_line, i_can, reading, story }`:
-  - `step`: one of `talk`, `bible_reading`, `living`, `congregation_bible_study`, `watchtower_study`
+  - `step`: one of the steps the question asks for, from `talk`, `bible_reading`, `living`, `congregation_bible_study`, `watchtower_study`
   - `about`: at most 20 words. `quality_line` and `i_can`: at most 14 words each
   - `quality`: one of the ten keys
   - `reading` (the chapters, like "Lamentations 1–2") and `story` (2 to 4 sentences, at most 14 words each): only for `bible_reading`, empty otherwise
@@ -129,7 +130,7 @@ Instructions in `config/ai/meeting_prep.md`:
   - return fewer cards, or none, rather than guess
 - `daily_limit`: 3 a day per household. `keep_for`: 7 days (the chat; the cards have their own rule below).
 - **Every safety measure in `docs/design/ai.md` applies.** Moderation is skipped because no person's text is sent. The copy check runs on every text field. A card loses nothing quietly: if the check removes `about`, `quality_line` or `i_can`, the card is dropped; if it removes a story sentence, that sentence goes, and a story left with fewer than 2 sentences goes with its `reading`, leaving the card without a story. Every field is escaped when shown.
-- **Checks before saving:** each step at most once; `quality` one of the ten; lengths within the columns'; a story only on `bible_reading`. A card that fails is dropped. A week left with no cards saves nothing and lets the claim go, so the next daily run tries again.
+- **Checks before saving:** each step at most once, and only a step that was asked for and still has no card; `quality` one of the ten; lengths within the columns'; a story only on `bible_reading`. A card that fails is dropped. A run left with no new cards saves nothing (a first run makes no `PrepWeek`) and lets the claim go, so the next daily run tries again.
 - **Every page the AI used is linked** on the parent's page: each source that passes `Ai::SourceLink` is kept as a `PrepWeek::Source`, its title and URL only.
 
 ## Models
@@ -144,8 +145,8 @@ The switch, as a record like `Household::MeetingHelper`: it exists while Get rea
 | `enabled_by_id` | uuid | FK → users, not null | "Turned on by Daniel Rivera on November 20" |
 | `created_at`, `updated_at` | datetime | | |
 
-- `household.enable_meeting_prep(by:)` uses `create_or_find_by!`, and refuses (returns false, saving nothing) while the helper is off.
-- `household.disable_meeting_prep` deletes it. `household.disable_meeting_helper` calls it in the same transaction.
+- `household.enable_meeting_prep(by:)` takes the household's row lock (`with_lock`), checks under it that the helper is on, then uses `create_or_find_by!`. It refuses (returns false, saving nothing) while the helper is off.
+- `household.disable_meeting_prep` deletes it. `household.disable_meeting_helper` takes the same lock and deletes both switches inside it. So an enable that started before a disable either finishes first and is then turned off with the helper, or waits and finds the helper off.
 - `household.meeting_prep?` is true only while both switches exist.
 
 ### `PrepWeek`
@@ -169,17 +170,17 @@ One week's cards for one household.
 | `prep_week_id` | uuid | FK, not null, cascade | |
 | `meeting` | string | not null, check in (`midweek`, `weekend`) | |
 | `step` | string | not null, check in the five steps; check that `watchtower_study` is `weekend` and the others `midweek`; unique with `prep_week_id` | One card per part |
-| `about` | string | not null, 1 to 160 characters | |
+| `about` | text | not null, encrypted, 1 to 160 characters (validated) | |
 | `quality` | string | not null, check in the ten keys | Its words and icon come from `QUALITIES`, never from the AI |
-| `quality_line` | string | not null, 1 to 120 characters | |
-| `i_can` | string | not null, 1 to 120 characters | |
-| `reading` | string | nullable, at most 40 characters | Bible Reading only |
-| `story` | string array | not null, default `{}`, check `cardinality(story) <= 4` | Bible Reading only; each sentence at most 120 characters (validated) |
+| `quality_line` | text | not null, encrypted, 1 to 120 characters (validated) | |
+| `i_can` | text | not null, encrypted, 1 to 120 characters (validated) | |
+| `reading` | text | nullable, encrypted, at most 40 characters (validated) | Bible Reading only |
+| `story` | text | nullable, encrypted; a JSON list (`serialize :story, coder: JSON`), at most 4 sentences of at most 120 characters (validated) | Bible Reading only |
 | `changed_by_id` | uuid | FK → users, nullable, nullify | Set when a head or adult changes it |
 | `created_at`, `updated_at` | datetime | | |
 
-- A check keeps `reading` null and `story` empty on every step but `bible_reading`.
-- The cards' text is AI output that a parent may have changed, not personal text, so it isn't encrypted, like the listening game's labels.
+- A check keeps `reading` and `story` null on every step but `bible_reading`.
+- **The card text is encrypted** (`encrypts :about, :quality_line, :i_can, :reading, :story`). The AI writes it, but a parent can rewrite any of it in their own words, and `vision.md` says personal text is encrypted. So, as with `MeetingNote::Answer`, the lengths are checked in the model only, because the database sees the ciphertext. `step` and `quality` stay plain: they're fixed values, and the code reads them.
 - `prep_week.cards_for(meeting)` lists a meeting's cards in step order (`MeetingNote::HelperSteps` order).
 
 ### `PrepWeek::Source` and `PrepWeek::Preparation`
@@ -207,7 +208,7 @@ end
 
 | Page | Route | What's on it |
 | --- | --- | --- |
-| Get ready | `GET /:household_id/meeting_preps` (`MeetingPrepsController#index`) | For a child: frame `tablet-prep-week.png`, in the helper's layout. For a head or adult: frame `phone-prep-check.png`, in the household layout. "Cards aren't ready yet" while the week has none |
+| Get ready | `GET /:household_id/meeting_preps` (`MeetingPrepsController#index`) | For a child: frame `tablet-prep-week.png`, in the helper's layout. For a head or adult: frame `phone-prep-check.png`, in the household layout. "Cards aren't ready yet" while the week has none, or, on the parent's page, "Cards need a head or adult who has turned on AI features" with a link to where the AI terms are accepted, when nobody can make them |
 | A meeting | `GET …/meeting_preps/:meeting` (`#show`) | A child only: redirects to the meeting's first card. A meeting with no cards redirects to Get ready |
 | A card | `GET …/meeting_preps/:meeting/cards/:id` (`MeetingPreps::CardsController#show`) | A child only: frames `tablet-prep-card.png`, `tablet-prep-reading.png`, `tablet-prep-study-comment.png`, `tablet-prep-watchtower.png`. A step with no card is a 404 |
 | Change a card | `GET …/cards/:id/edit`, `PATCH …/cards/:id` (`MeetingPreps::CardsController#edit`, `#update`) | Heads and adults: frame `phone-prep-change.png`. Saving sets `changed_by` and returns to Get ready |
@@ -243,8 +244,8 @@ end
 
 ## States each story checks
 
-- **The switch:** off; on; helper off (no check box; turning the helper off turns it off); turned on by an adult; a child (no Children section)
-- **The job:** first run for a week; run twice; two runs at once (one request); a claim left by a run that died; a run whose claim was taken over; nobody has accepted the AI terms; the AI terms accepted later; a week that has cards; the AI returns fewer cards, a repeated step, an unknown quality, a story on the wrong step, or nothing; the copy check removes a field, or a story sentence; the midweek meeting over but not the weekend (still prepared); both over (no retry); Get ready off (no job)
+- **The switch:** off; on; helper off (no check box; turning the helper off turns it off; an enable and a helper disable at once never leave Get ready on); turned on by an adult; a child (no Children section)
+- **The job:** first run for a week; run twice; two runs at once (one request); a claim left by a run that died; a run whose claim was taken over; nobody has accepted the AI terms; the AI terms accepted later; a week that has all its cards (no request); a week missing only its Watchtower card (asks for that one; the others untouched, a parent's change kept); a missing midweek step after the midweek meeting (not asked for); the AI returns fewer cards, a repeated step, an unknown quality, a story on the wrong step, or nothing; the copy check removes a field, or a story sentence; the midweek meeting over but not the weekend (still prepared); both over (no retry); Get ready off (no job)
 - **Her pages:** a child with both on; the helper off, Get ready off (404); a head or adult on a card page (404); no cards yet; one meeting with cards and one without; the first and last card; the reading card with and without a story
 - **Her comment:** none yet; written from Get ready; written from the helper and seen in Get ready; changed; the Watchtower answer at the meeting; a shared weekend note with an answer read by a head
 - **Draw it!:** from the reading card; back to the card after "All done"; the same drawing in the helper's Bible Reading step
