@@ -30,7 +30,7 @@ class SeedsTest < ActiveSupport::TestCase
     # One adult has a photo Aglowy made, from a gradient drawn in the seed.
     assert_equal [ "image/webp" ], User.joins(:avatar_attachment).map { it.avatar.content_type }
     assert user("spouse@example.com").avatar.attached?
-    assert Household.find_by!(name: "The Rivera Family").meeting_helper?
+    assert Household.find_by!(name: "The Rivera Family").meeting_prep?
 
     assert_equal 4, FamilyStudy.count
     Household.find_each do |household|

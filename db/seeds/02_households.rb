@@ -27,6 +27,7 @@ rivera = seed_household(name: "The Rivera Family", head: maria, time_zone: "Paci
 rivera.memberships.find_or_create_by!(user: spouse) { it.role = :adult }
 seed_member(rivera, name: "Mateo Rivera", role: :child)
 rivera.enable_meeting_helper(by: maria)
+rivera.enable_meeting_prep(by: maria)
 
 # A child's username login (docs/design/invitations.md, Child logins). give_login picks a password nobody knows;
 # the sample one replaces it, as the child would through a password link.
