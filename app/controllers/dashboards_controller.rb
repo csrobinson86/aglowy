@@ -40,6 +40,12 @@ class DashboardsController < ApplicationController
     end
     helper_method :meeting_helper?
 
+    # Her Get ready pages, with this week's cards ready (docs/design/meeting-prep.md, Where she finds it).
+    def get_ready?
+      MeetingPrepPolicy.new(pundit_user, Current.household).show? && Current.household.prep_cards_this_week?
+    end
+    helper_method :get_ready?
+
     # Check this week's listening game, for heads and adults with the helper on, on the days before this week's midweek
     # meeting and on its day until it starts (docs/design/listening-game.md, Pages, Who sees the parent's page). Once
     # it's started, the game page's week is over. This week's midweek meeting, not the next meeting, so a weekend meeting

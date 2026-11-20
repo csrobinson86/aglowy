@@ -1,0 +1,10 @@
+<%# locals: (cards:, card:, step:) %>
+<%# A dot for each of the meeting's cards in the helper's header: decorative, with the card spelled out for screen
+    readers. The cards before this one are filled. %>
+<% position = cards.index(card) %>
+<span class="meeting-helper__dots" aria-hidden="true">
+  <% cards.each.with_index do |each_card, index| %>
+    <%= tag.span class: [ "meeting-helper__dot", { "meeting-helper__dot--current": each_card == card, "meeting-helper__dot--marked": index < position } ] %>
+  <% end %>
+</span>
+<span class="sr-only">Card <%= position + 1 %> of <%= cards.size %>: <%= step.title %></span>

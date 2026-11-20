@@ -174,6 +174,11 @@ Rails.application.routes.draw do
       resource :summary, only: :show, module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
+    # Get ready: this week's cards for a child, a meeting at a time; :meeting is midweek or weekend, and a card's :id is
+    # its step key (docs/design/meeting-prep.md, Pages and routes).
+    resources :meeting_preps, only: %i[ index show ], param: :meeting do
+      resources :cards, only: :show, module: :meeting_preps
+    end
     # This week's listening game for heads and adults, and changing a round in a dialog (docs/design/listening-game.md,
     # Pages).
     resource :listening_game, only: :show do

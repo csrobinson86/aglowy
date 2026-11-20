@@ -13,6 +13,10 @@ Household::Meeting = Data.define(:kind, :starts_at) do
     starts_at + self.class::LENGTH
   end
 
+  def passed?(now = Time.current)
+    ends_at <= now
+  end
+
   # It stays today's meeting for the rest of its day, and until it ends if it runs past midnight.
   def current_until
     [ ends_at, starts_at.end_of_day ].max

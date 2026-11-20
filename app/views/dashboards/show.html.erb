@@ -26,7 +26,9 @@
 <% end %>
 
 <% if @todays_meeting %>
-  <%= render "dashboards/todays_meeting", meeting: @todays_meeting, meeting_helper: meeting_helper?, listening_game: check_listening_game? %>
+  <%= render "dashboards/todays_meeting", meeting: @todays_meeting, meeting_helper: meeting_helper?, listening_game: check_listening_game?, get_ready: get_ready? %>
+<% elsif get_ready? %>
+  <%= render "dashboards/get_ready" %>
 <% elsif check_listening_game? %>
   <%# On the days before the midweek meeting there's no Today's meeting card, so the link stands on its own. %>
   <%= render(Primer::Alpha::Banner.new(mb: 4)) do %>

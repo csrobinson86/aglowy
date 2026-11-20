@@ -56,6 +56,16 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_daily_brief_path(household_id: household.id)
   end
 
+  # Get ready, under Today's meeting, for a child with this week's cards ready (docs/design/meeting-prep.md, Where she
+  # finds it).
+  def get_ready?
+    MeetingPrepPolicy.new(membership, household).show? && household.prep_cards_this_week?
+  end
+
+  def meeting_preps_path
+    household_meeting_preps_path(household_id: household.id)
+  end
+
   def personal_studies_path
     household_personal_studies_path(household_id: household.id)
   end

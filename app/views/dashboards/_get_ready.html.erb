@@ -1,0 +1,15 @@
+<%# locals: () -%>
+<%# Her "Get ready" card on a day with no meeting, while this week has cards (docs/design/meeting-prep.md, Where she
+    finds it). Get ready's own pages check MeetingPrepPolicy, so hiding the card is never the authorization. %>
+<%= render(Primer::Box.new(border: true, border_radius: 2, bg: :subtle, p: 4, mb: 4, display: :flex, direction: [ :column, nil, :row ], align_items: [ nil, nil, :center ], classes: "get-ready-card")) do %>
+  <div class="d-flex flex-items-start flex-auto">
+    <span class="get-ready-card__icon mr-3 flex-shrink-0">
+      <%= render(Primer::Beta::Octicon.new(icon: :"light-bulb", size: :medium, color: :attention)) %>
+    </span>
+    <div class="flex-auto min-width-0">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3)) { "Get ready" } %>
+      <p class="color-fg-muted mb-0">Read this week's cards with Mom or Dad.</p>
+    </div>
+  </div>
+  <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_preps_path, scheme: :primary, size: :large, block: true, classes: "flex-shrink-0 mt-3 mt-md-0 ml-md-3 width-md-auto")) { "Get ready" } %>
+<% end %>

@@ -21,6 +21,25 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     end
   end
 
+  test "Get ready shows under Today's meeting, with the light-bulb icon, for a child while this week has cards" do
+    travel_to Time.utc(2026, 11, 10, 16) # the week of 9 November, which has cards (prep_week_cards.yml)
+    households(:home).enable_meeting_helper(by: users(:head))
+    households(:home).enable_meeting_prep(by: users(:head))
+
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:eli_in_home), selected_item: :meeting_preps, label: "Main"))
+
+    mine = page.all("nav[aria-label='Main'] a").map { it.text.strip }
+    assert_equal mine.index("Today's meeting") + 1, mine.index("Get ready")
+    assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/meeting_preps'][aria-current=page] svg.octicon-light-bulb", count: 1
+
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards, label: "Main"))
+    assert_no_text "Get ready"
+
+    travel_to Time.utc(2026, 11, 17, 16) # the week of 16 November, which has none
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:eli_in_home), selected_item: :dashboards, label: "Main"))
+    assert_no_text "Get ready"
+  end
+
   test "Daily brief shows first in the Mine group, with the north-star icon, for a head and an adult, not for a child" do
     %i[ head_in_home spouse_in_home ].each do |membership|
       render_inline(AppShell::SidebarComponent.new(membership: memberships(membership), selected_item: :dashboards, label: "Main"))

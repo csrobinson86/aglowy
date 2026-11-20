@@ -186,6 +186,15 @@ class Household < ApplicationRecord
     meeting_in(now.in_time_zone(time_zone).to_date.beginning_of_week(:monday), "midweek") if meeting_times_set?
   end
 
+  # This week's two meetings, Monday to Sunday where the household lives, the next first and those that have passed
+  # after it, or none before meeting times are set (docs/design/meeting-prep.md, On her tablet).
+  def this_weeks_meetings(now = Time.current)
+    return [] unless meeting_times_set?
+
+    monday = now.in_time_zone(time_zone).to_date.beginning_of_week(:monday)
+    MEETING_KINDS.map { meeting_in(monday, it) }.sort_by { [ it.passed?(now) ? 1 : 0, it.starts_at ] }
+  end
+
   # True for the whole of the meeting's day, including after it ends.
   def meeting_day?(now = Time.current)
     current_or_next_meeting(now)&.starts_at&.to_date == now.in_time_zone(time_zone).to_date
