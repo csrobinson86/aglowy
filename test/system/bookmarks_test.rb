@@ -15,8 +15,6 @@ class BookmarksTest < ApplicationSystemTestCase
 
   test "bookmark a page from Pages used, its button in Sources fills too, then find it and remove it in the Bookmarks tab" do
     visit household_personal_study_url(household_id: households(:home), id: @study)
-    # The notes editor lays the page out again as it starts; a click before then can land beside the button.
-    assert_selector "lexxy-editor [contenteditable='true']"
     assert_turbo_idle
 
     within("ul[aria-label='Pages used']") { find("button[aria-label='Bookmark: Bible Questions Answered']").click }
@@ -60,7 +58,6 @@ class BookmarksTest < ApplicationSystemTestCase
     note.save!
 
     visit household_personal_study_url(household_id: households(:home), id: @study)
-    assert_selector "lexxy-editor [contenteditable='true']"
     assert_turbo_idle
     within("section[aria-labelledby=study-scriptures]") do
       assert_link "James 1:13", href: Bible::Reference.find("59:1:13").jw_url

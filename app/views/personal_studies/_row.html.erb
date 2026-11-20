@@ -1,6 +1,6 @@
 <%# locals: (personal_study:) %>
 <%# One study in the list: its title, collection and tags, then when it was last changed (frame personal-studies.png).
-    From a preloaded collection, tags and notes, so the list asks no query per row. %>
+    From a preloaded collection, tags and note, so the list asks no query per row. %>
 <div class="d-flex flex-wrap flex-items-center">
   <%= render(Primer::Beta::Link.new(href: household_personal_study_path(id: personal_study), font_weight: :bold, mr: 2, classes: "wb-break-word")) { personal_study.title } %>
   <% if personal_study.collection %>
@@ -9,5 +9,5 @@
   <%= render "tags/labels", taggable: personal_study %>
 </div>
 <div class="f6 color-fg-muted mt-1">
-  Updated <%= render(Primer::Beta::RelativeTime.new(datetime: personal_study.updated_at, tense: :past)) %><% if personal_study.notes.present? %> · notes<% end %>
+  Updated <%= render(Primer::Beta::RelativeTime.new(datetime: personal_study.updated_at, tense: :past)) %><% if personal_study.note %> · note<% end %>
 </div>

@@ -26,11 +26,11 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
 
     assert_selector "[role=tab][aria-selected=true]", text: "Conversation"
     assert_selector "section[aria-labelledby=study-conversation]"
-    assert_no_selector "section[aria-labelledby=my-notes]"
+    assert_no_selector "section[aria-labelledby=study-note]"
 
     find("[role=tab]", text: "Conversation").send_keys(:right)
     assert_selector "[role=tab][aria-selected=true]", text: "Notes"
-    assert_selector "section[aria-labelledby=my-notes]"
+    assert_selector "section[aria-labelledby=study-note]"
     assert_no_selector "section[aria-labelledby=study-conversation]"
 
     find("[role=tab]", text: "Notes").send_keys(:right)
@@ -39,7 +39,7 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
 
     find("[role=tab]", text: "Sources").send_keys(:left)
     assert_selector "[role=tab][aria-selected=true]", text: "Notes"
-    assert_selector "section[aria-labelledby=my-notes]"
+    assert_selector "section[aria-labelledby=study-note]"
   end
 
   test "\"See sources\" opens Sources" do
@@ -81,7 +81,7 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
     assert_selector "[role=tab][aria-selected=true]", text: "Conversation"
     within("section[aria-labelledby=study-conversation]") do
       within(question_card("Why does Jehovah allow suffering, and will it ever end?")) do
-        assert_button "Save to notes"
+        assert_button "Save to note"
         assert_text "The publications explain that suffering didn't start with God."
         assert_link "Genesis 3:1-6"
         assert_text "3 pages used"

@@ -2,7 +2,8 @@ require "test_helper"
 
 class Members::PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @study = users(:eli).personal_studies.create!(title: "How did life begin?", notes: "<p>Ask about Genesis 1.</p>")
+    @study = users(:eli).personal_studies.create!(title: "How did life begin?")
+    @study.with_lock { @study.start_note }.update!(body: "<p>Ask about Genesis 1.</p>")
     @study.tag_with("creation", by: users(:eli))
     personal_study_question(@study, prompt: "Who made the animals?", status: "answered",
       answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah made them (Genesis 1:24)." ], "next_questions" => [ "Why?" ] },

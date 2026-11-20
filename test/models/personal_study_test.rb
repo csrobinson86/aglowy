@@ -20,39 +20,44 @@ class PersonalStudyTest < ActiveSupport::TestCase
     assert_equal "The ransom", users(:head).personal_studies.new(title: "  The   ransom ").title
   end
 
-  test "notes are encrypted at rest" do
+  # docs/design/personal-study.md, Save to note.
+  test "start_note makes the study's note: its title, color none, its collection when Notes uses it, its tags, linked" do
     study = personal_studies(:head_suffering)
-    study.update!(notes: "<p>Rebellion in Eden, not God's doing</p>")
+    study.tag_with("suffering", by: users(:head))
 
-    raw = ActionText::RichText.connection.select_value(ActionText::RichText.where(record: study, name: "notes").select(:body).to_sql)
+    note = assert_difference -> { PersonalNote.count } => 1 do
+      study.with_lock { study.start_note }
+    end
 
-    assert_not_includes raw, "Rebellion in Eden"
-    assert_includes study.reload.notes.to_plain_text, "Rebellion in Eden, not God's doing"
+    assert_predicate note, :persisted?
+    assert_equal [ users(:head), "Why does Jehovah allow suffering?", "none", collections(:head_bible_questions), study ],
+      [ note.user, note.title, note.color, note.collection, note.personal_study ]
+    assert_equal %w[ suffering ], note.reload.tags.map(&:name)
+    assert_equal note, study.reload.note
   end
 
-  test "link_scriptures links the references typed in the notes" do
-    study = personal_studies(:head_suffering)
-    study.notes = "<p>Read Genesis 3:1-6 again</p>"
+  test "start_note leaves out a studies-only collection" do
+    study = personal_studies(:head_kindness)
 
-    study.link_scriptures
-    study.save!
-
-    assert_equal [ Bible::Reference.find("1:3:1-6") ], study.reload.notes.body.attachables
+    assert_nil study.with_lock { study.start_note }.collection
   end
 
-  test "notes can only hold scripture links" do
+  test "start_note returns the note the study already has" do
     study = personal_studies(:head_suffering)
-    study.notes = "<p>A cat</p>#{remote_image_attachment}"
+    note = study.with_lock { study.start_note }
+    study.update!(title: "Renamed")
 
-    assert_not study.valid?
-    assert_equal [ "can only link scriptures" ], study.errors[:notes]
+    assert_no_difference -> { PersonalNote.count } do
+      assert_equal note, study.with_lock { study.start_note }
+    end
+    assert_equal "Why does Jehovah allow suffering?", note.reload.title
   end
 
   test "matching finds by title, by collection name and by tag, and not by note text" do
     head = users(:head)
     suffering, kindness, daniel = personal_studies(:head_suffering, :head_kindness, :head_daniel)
     daniel.tag_with("Prophecy", by: head)
-    kindness.update!(notes: "<p>The neighborly Samaritan</p>")
+    kindness.with_lock { kindness.start_note }.update!(body: "<p>The neighborly Samaritan</p>")
 
     assert_equal [ suffering ], head.personal_studies.matching("suffering").to_a
     assert_equal [ kindness ], head.personal_studies.matching("preparing a").to_a
@@ -90,12 +95,11 @@ class PersonalStudyTest < ActiveSupport::TestCase
     assert_nil study.reload.collection_id
   end
 
-  test "deleting a study deletes its taggings and notes" do
+  test "deleting a study deletes its taggings" do
     study = personal_studies(:head_suffering)
     study.tag_with("ministry", by: users(:head))
-    study.update!(notes: "<p>Gone with it</p>")
 
-    assert_difference -> { Tagging.count } => -1, -> { ActionText::RichText.count } => -1 do
+    assert_difference -> { Tagging.count } => -1 do
       study.destroy!
     end
   end

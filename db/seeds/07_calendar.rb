@@ -20,7 +20,7 @@ end
 # week back, so the days before today show; saving the first settles the person's zone to the Riveras'. Titles are
 # encrypted, so each is found by its kind.
 lucia = seeded_person("lucia.rivera")
-listening = seed_personal_study(maria, title: "Being a good listener", notes: "<p>Jas 1:19: quick to listen, slow to speak.</p>")
+listening = seed_personal_study(maria, title: "Being a good listener")
 
 def seed_personal_time(user, household, kind:, **attributes)
   user.personal_times.find_by(kind:) || user.personal_times.new(starts_on: household.today - 7).tap do |time|

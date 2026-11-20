@@ -31,9 +31,9 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     })
 
     within(question_card("Why does Jehovah allow suffering, and will it ever end?")) do
-      # The broadcast can't know the page's household; the page's own card brings Save to notes and takes its place.
+      # The broadcast can't know the page's household; the page's own card brings Save to note and takes its place.
       # Wait for it first, so no link below is read from the card as it's replaced.
-      assert_button "Save to notes"
+      assert_button "Save to note"
       assert_text "From jw.org and wol.jw.org"
       assert_text "The publications explain that suffering didn't start with God."
       assert_link "Genesis 3:1-6", href: %r{\Ahttps://www.jw.org/finder}
@@ -129,55 +129,6 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
       assert_selector "ul[aria-live=polite] li", text: "Searching jw.org and wol.jw.org…"
     end
     assert_enqueued_jobs 1, only: PersonalStudy::AnswerQuestionJob
-  end
-
-  test "save an answer to notes and see it with scripture links" do
-    @study.update!(notes: "<p>Start with Job.</p>")
-    personal_study_question(@study, status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
-      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [] })
-    visit household_personal_study_url(household_id: households(:home), id: @study)
-
-    within(question_card("Why does Jehovah allow suffering?")) { click_on "Save to notes" }
-
-    within("section[aria-labelledby=my-notes]") do
-      assert_text "Saved"
-      within("lexxy-editor") do
-        assert_text "Start with Job."
-        assert_text "Jehovah never causes suffering"
-        assert_selector ".scripture-link", text: "James 1:13"
-        assert_text "Pages:"
-        assert_link "Why Does God Allow Suffering?"
-      end
-    end
-    assert_accessible
-    capture_screens("personal-study-saved-to-notes", scroll_to: "#my-notes")
-
-    visit household_personal_study_url(household_id: households(:home), id: @study)
-    within("section[aria-labelledby=my-notes] lexxy-editor") { assert_text "Jehovah never causes suffering" }
-  end
-
-  test "Save as a note opens the new note with the answer" do
-    @study.tag_with("suffering", by: users(:head))
-    personal_study_question(@study, status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
-      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [] })
-    visit household_personal_study_url(household_id: households(:home), id: @study)
-    within(question_card("Why does Jehovah allow suffering?")) { assert_button "Save to notes" }
-    capture_screens("personal-study-save-as-note")
-
-    within(question_card("Why does Jehovah allow suffering?")) { click_on "Save as a note" }
-
-    assert_text "Saved as a note."
-    assert_selector "main h1", text: "Why does Jehovah allow suffering?"
-    within("nav[aria-label=Breadcrumb]") { assert_link "Bible questions" }
-    within("main .note-card .lexxy-content") do
-      assert_text "Jehovah never causes suffering"
-      assert_selector ".scripture-link", text: "James 1:13"
-      assert_text "Pages:"
-      assert_link "Why Does God Allow Suffering?"
-    end
-    assert_text "#suffering"
-    assert_accessible
-    capture_screens("personal-note-saved-from-study")
   end
 
   test "plan a family study and see the prefilled box" do

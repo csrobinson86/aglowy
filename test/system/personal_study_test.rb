@@ -1,11 +1,12 @@
 require "application_system_test_case"
+require_relative "../support/study_answer_helper"
 
 class PersonalStudiesTest < ApplicationSystemTestCase
-  END_OF_TEXT = RUBY_PLATFORM.include?("darwin") ? [ :command, :down ] : [ :control, :end ]
+  include StudyAnswerHelper
 
   setup { sign_in identities(:head) }
 
-  test "create a study in a new collection, tag it, write notes with a scripture reference, find it by tag" do
+  test "create a study in a new collection, tag it, find it by tag" do
     visit household_personal_studies_url(household_id: households(:home))
 
     assert_selector "h1", text: "Personal study"
@@ -35,14 +36,6 @@ class PersonalStudiesTest < ApplicationSystemTestCase
 
     find_field("Add a tag").send_keys("Prayer", :enter)
     within("[id^=tag_editor_personal_study]") { assert_selector "a.Label", text: "#prayer" }
-
-    editor = find("lexxy-editor [contenteditable='true']")
-    editor.click
-    editor.send_keys(END_OF_TEXT, "Read Philippians 4:6 often")
-    click_on "Save notes"
-
-    assert_text "Notes saved."
-    assert_selector "lexxy-editor .scripture-link", text: "Philippians 4:6"
     assert_accessible
     capture_screens("personal-study")
 
@@ -53,6 +46,51 @@ class PersonalStudiesTest < ApplicationSystemTestCase
     assert_selector "main .Box-row", text: "Why do we pray?"
     assert_accessible
     capture_screens("personal-studies-tag")
+  end
+
+  # docs/design/personal-study.md, Save to note (frames personal-study-no-note.png, personal-study-note.png).
+  test "save two answers to the study's one note, then open it in Notes" do
+    study = personal_studies(:head_suffering)
+    personal_study_question(study, prompt: "Where did suffering come from?", status: "answered", sources: [ { "url" => "https://www.jw.org/en/bible-teachings/questions/why-does-god-allow-suffering/", "title" => "Why Does God Allow Suffering?" } ],
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Jehovah never causes suffering (James 1:13)." ], "next_questions" => [] })
+    personal_study_question(study, prompt: "Will suffering ever end?", status: "answered",
+      answer: { "not_found" => false, "not_found_note" => "", "paragraphs" => [ "Yes, God's Kingdom will end it (Revelation 21:4)." ], "next_questions" => [] })
+    visit household_personal_study_url(household_id: households(:home), id: study)
+
+    assert_no_button "Save as a note"
+    within(question_card("Where did suffering come from?")) { assert_button "Save to note" }
+    assert_accessible
+    capture_screens("personal-study-no-note")
+
+    within(question_card("Where did suffering come from?")) do
+      click_on "Save to note"
+      assert_text "Saved to note"
+      assert_link "Open note"
+      assert_no_button "Save to note"
+    end
+    within(question_card("Will suffering ever end?")) do
+      click_on "Save to note"
+      assert_text "Saved to note"
+    end
+    assert_no_button "Save as a note"
+    within("section[aria-labelledby=study-note]") { assert_link "Why does Jehovah allow suffering?" }
+    assert_accessible
+    capture_screens("personal-study-note")
+
+    within(question_card("Will suffering ever end?")) { click_on "Open note" }
+
+    assert_selector "main h1", text: "Why does Jehovah allow suffering?"
+    within("main .note-card") do
+      assert_selector "h2", text: "Where did suffering come from?"
+      assert_selector "h2", text: "Will suffering ever end?"
+      assert_text "Jehovah never causes suffering"
+      assert_selector ".scripture-link", text: "James 1:13"
+      assert_link "Why Does God Allow Suffering?"
+      assert_text "Yes, God's Kingdom will end it"
+      assert_selector ".scripture-link", text: "Revelation 21:4"
+    end
+    assert_equal 1, users(:head).personal_notes.where(personal_study: study).count
+    assert_accessible
   end
 
   test "search, then delete a study after the dialog" do

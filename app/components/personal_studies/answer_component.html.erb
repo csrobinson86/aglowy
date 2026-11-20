@@ -60,15 +60,10 @@
       <div class="d-flex flex-wrap flex-items-center mt-3">
         <% if read_only? %>
         <% elsif household %>
-          <%= primer_form_with(url: note_saving_path, class: "mr-3") do |f| %>
-            <%= render PersonalStudies::NoteSavingForm.new(f) %>
-          <% end %>
-          <%= primer_form_with(url: personal_note_path, class: "mr-3") do |f| %>
-            <%= render PersonalStudies::PersonalNoteForm.new(f) %>
-          <% end %>
+          <%= render "personal_studies/questions/note_saving", question:, household: %>
         <% else %>
           <%# The job's broadcast reaches the page in whichever household it's viewed, so it can't build the path: the
-              study-ask controller puts the page's own card, with its Save buttons, in its place. %>
+              study-ask controller puts the page's own card, with its Save to note, in its place. %>
           <span hidden data-study-ask-target="unscoped"></span>
         <% end %>
         <p class="text-small color-fg-muted mb-0">Check each point against its page.</p>

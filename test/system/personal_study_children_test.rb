@@ -6,7 +6,8 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
   include ActiveJob::TestHelper
 
   setup do
-    @study = users(:eli).personal_studies.create!(title: "How did life begin?", notes: "<p>Ask about Genesis 1.</p>")
+    @study = users(:eli).personal_studies.create!(title: "How did life begin?")
+    @study.with_lock { @study.start_note }.update!(body: "<p>Ask about Genesis 1.</p>")
     @study.tag_with("creation", by: users(:eli))
   end
 
@@ -66,7 +67,7 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
     assert_text "The publications explain that suffering didn't start with God."
     within("#study-notes") { assert_text "Ask about Genesis 1." }
     assert_selector ".Label", text: "#creation"
-    assert_no_button "Save to notes"
+    assert_no_button "Save to note"
     assert_no_field "Ask a follow-up"
     assert_accessible
     capture_screens("child-personal-study-read-by-head")
@@ -109,7 +110,7 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
     assert_field "Ask a question", disabled: true
     assert_text "Ask a head to turn on AI for your personal study."
     assert_no_text "Your parents can read your personal study"
-    within("section[aria-labelledby=my-notes]") { assert_text "Ask about Genesis 1." }
+    within("section[aria-labelledby=study-note]") { assert_link "How did life begin?" }
   end
 
   private

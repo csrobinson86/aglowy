@@ -1,7 +1,7 @@
-# One person's research on one topic: their questions to the AI, in the study's own chat, and their notes
+# One person's research on one topic: their questions to the AI, in the study's own chat, and its one note in Notes
 # (docs/design/personal-study.md, PersonalStudy). Personal: it belongs to the person and follows them between households.
 class PersonalStudy < ApplicationRecord
-  include Collectable, ScriptureLinkable, Taggable
+  include Collectable, Taggable
 
   PURPOSE = "personal_study".freeze
 
@@ -15,14 +15,14 @@ class PersonalStudy < ApplicationRecord
   # Deleting it keeps the calendar times that opened it, opening nothing (docs/design/calendar.md, PersonalTime).
   has_many :personal_times, as: :opens, dependent: :nullify
 
-  has_rich_text :notes, encrypted: true
-  scripture_linkable :notes
+  # The study's note in Notes, made by its first Save to note or by Start a note. Deleting the study keeps the note.
+  has_one :note, class_name: "PersonalNote", dependent: :nullify
 
   normalizes :title, with: -> { it.squish }
 
   validates :title, presence: true, length: { maximum: 120 }
 
-  scope :preloaded, -> { includes(:collection, :tags, :rich_text_notes) }
+  scope :preloaded, -> { includes(:collection, :tags, :note) }
   scope :recent_first, -> { order(arel_table[:last_asked_at].desc.nulls_last, updated_at: :desc, id: :desc) }
 
   # The question, asking, with its use, then answered in the background; or an unsaved question with errors: :limit
@@ -53,13 +53,20 @@ class PersonalStudy < ApplicationRecord
     questions.select(&:persisted?)
   end
 
+  # The study's note, or a new one titled with the study's title, in color none, in the study's collection when Notes
+  # uses it, with the study's tags (docs/design/personal-study.md, Save to note). Callers hold the study's lock, so Save
+  # to note and Start a note at once find one note between them; the unique index stands behind it.
+  def start_note
+    note || create_note!(user:, title:, color: "none", collection: (collection if collection&.for_notes?), tags:)
+  end
+
   # Every page linked across the study's answers, once each: [{ "url", "title" }] (The study page, Sources in this study).
   def sources
     conversation.select(&:answered?).flat_map(&:sources).uniq { it["url"] }
   end
 
   # Every scripture linked across the study's answers, in order and once each: exactly the links the answers show, so a
-  # chapter alone stays out (Bible::Linker). Never its own notes (docs/design/bookmarks.md, PersonalStudy#scripture_references).
+  # chapter alone stays out (Bible::Linker). Never its note's (docs/design/bookmarks.md, PersonalStudy#scripture_references).
   def scripture_references
     conversation.select(&:answered?).flat_map(&:scripture_references).uniq
   end
