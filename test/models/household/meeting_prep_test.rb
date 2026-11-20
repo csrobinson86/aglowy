@@ -2,9 +2,43 @@ require "test_helper"
 
 # Get ready's switch, which can only be on while the meeting helper is (docs/design/meeting-prep.md, Models; Trap 8).
 class Household::MeetingPrepTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @home = households(:home)
     @home.enable_meeting_helper(by: users(:head))
+  end
+
+  # Turning it on prepares this week straight away (docs/design/meeting-prep.md, The Settings check box).
+  test "turning it on enqueues this week's preparation, once it's committed" do
+    @home.change_meeting_times(midweek_wday: 2, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+
+    assert_enqueued_with(job: PrepWeek::PrepareJob, args: [ @home ]) { @home.enable_meeting_prep(by: users(:head)) }
+  end
+
+  test "turning it on when it's already on enqueues nothing" do
+    @home.change_meeting_times(midweek_wday: 2, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    @home.enable_meeting_prep(by: users(:head))
+
+    assert_no_enqueued_jobs(only: PrepWeek::PrepareJob) { @home.enable_meeting_prep(by: users(:spouse)) }
+  end
+
+  test "nothing is enqueued when turning it on rolls back" do
+    @home.change_meeting_times(midweek_wday: 2, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+
+    assert_no_enqueued_jobs(only: PrepWeek::PrepareJob) do
+      Household.transaction do
+        @home.enable_meeting_prep(by: users(:head))
+        raise ActiveRecord::Rollback
+      end
+    end
+  end
+
+  test "turning it on before meeting times are set enqueues nothing" do
+    assert_not @home.meeting_times_set?
+
+    assert_no_enqueued_jobs(only: PrepWeek::PrepareJob) { @home.enable_meeting_prep(by: users(:head)) }
+    assert @home.meeting_prep?
   end
 
   test "enabling records who turned it on" do

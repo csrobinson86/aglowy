@@ -46,6 +46,9 @@ production:
   purge_old_listening_games:
     class: ListeningGame::PurgeJob
     schedule: every day at 4:45am
+  prepare_prep_weeks:
+    class: PrepWeek::PrepareJob
+    schedule: every hour at minute 30
   purge_old_prep_weeks:
     class: PrepWeek::PurgeJob
     schedule: every day at 4:50am
