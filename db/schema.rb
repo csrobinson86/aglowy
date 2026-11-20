@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_20_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_20_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -73,7 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_020000) do
     t.index ["meeting_part_draft_id"], name: "index_ai_uses_on_meeting_part_draft_id", unique: true
     t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
     t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying]::text[])", name: "ai_uses_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying, 'meeting_prep'::character varying]::text[])", name: "ai_uses_purpose_check"
   end
 
   create_table "bookmarks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -123,7 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_020000) do
     t.index ["household_id"], name: "index_chats_on_household_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying]::text[])", name: "chats_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying, 'meeting_prep'::character varying]::text[])", name: "chats_purpose_check"
   end
 
   create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -826,6 +826,57 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_020000) do
     t.check_constraint "opens_type::text = ANY (ARRAY['PersonalStudy'::character varying, 'PersonalNote'::character varying]::text[])", name: "personal_times_opens_type_check"
   end
 
+  create_table "prep_week_cards", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "prep_week_id", null: false
+    t.string "meeting", null: false
+    t.string "step", null: false
+    t.text "about", null: false
+    t.string "quality", null: false
+    t.text "quality_line", null: false
+    t.text "i_can", null: false
+    t.text "reading"
+    t.text "story"
+    t.uuid "changed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["changed_by_id"], name: "index_prep_week_cards_on_changed_by_id"
+    t.index ["prep_week_id", "step"], name: "index_prep_week_cards_on_prep_week_id_and_step", unique: true
+    t.check_constraint "(step::text = 'watchtower_study'::text) = (meeting::text = 'weekend'::text)", name: "prep_week_cards_step_meeting_check"
+    t.check_constraint "meeting::text = ANY (ARRAY['midweek'::character varying, 'weekend'::character varying]::text[])", name: "prep_week_cards_meeting_check"
+    t.check_constraint "quality::text = ANY (ARRAY['loving'::character varying, 'caring'::character varying, 'kind'::character varying, 'wise'::character varying, 'fair'::character varying, 'strong'::character varying, 'patient'::character varying, 'generous'::character varying, 'forgiving'::character varying, 'faithful'::character varying]::text[])", name: "prep_week_cards_quality_check"
+    t.check_constraint "step::text = 'bible_reading'::text OR reading IS NULL AND story IS NULL", name: "prep_week_cards_reading_check"
+    t.check_constraint "step::text = ANY (ARRAY['talk'::character varying, 'bible_reading'::character varying, 'living'::character varying, 'congregation_bible_study'::character varying, 'watchtower_study'::character varying]::text[])", name: "prep_week_cards_step_check"
+  end
+
+  create_table "prep_week_preparations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.date "week_of", null: false
+    t.uuid "token", null: false
+    t.datetime "created_at", null: false
+    t.index ["household_id", "week_of"], name: "index_prep_week_preparations_on_household_id_and_week_of", unique: true
+  end
+
+  create_table "prep_week_sources", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "prep_week_id", null: false
+    t.integer "position", limit: 2, null: false
+    t.string "title", null: false
+    t.string "url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["prep_week_id", "position"], name: "index_prep_week_sources_on_prep_week_id_and_position", unique: true
+    t.check_constraint "url::text ~~ 'https://%'::text", name: "prep_week_sources_url_check"
+  end
+
+  create_table "prep_weeks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.date "week_of", null: false
+    t.uuid "chat_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_prep_weeks_on_chat_id"
+    t.index ["household_id", "week_of"], name: "index_prep_weeks_on_household_id_and_week_of", unique: true
+  end
+
   create_table "push_subscriptions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.string "endpoint", null: false
@@ -1138,6 +1189,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_020000) do
   add_foreign_key "personal_study_questions", "users"
   add_foreign_key "personal_time_completions", "personal_times", on_delete: :cascade
   add_foreign_key "personal_times", "users"
+  add_foreign_key "prep_week_cards", "prep_weeks", on_delete: :cascade
+  add_foreign_key "prep_week_cards", "users", column: "changed_by_id", on_delete: :nullify
+  add_foreign_key "prep_week_preparations", "households", on_delete: :cascade
+  add_foreign_key "prep_week_sources", "prep_weeks", on_delete: :cascade
+  add_foreign_key "prep_weeks", "chats", on_delete: :nullify
+  add_foreign_key "prep_weeks", "households", on_delete: :cascade
   add_foreign_key "push_subscriptions", "users", on_delete: :cascade
   add_foreign_key "taggings", "tags", on_delete: :cascade
   add_foreign_key "tags", "users"

@@ -1,0 +1,26 @@
+# Two of last week's cards in the home household (docs/design/meeting-prep.md, PrepWeek::Card). Their text is
+# encrypted when the fixtures load.
+_fixture:
+  model_class: PrepWeek::Card
+
+home_nov_9_talk:
+  prep_week: home_nov_9
+  meeting: midweek
+  step: talk
+  about: Jeremiah felt very sad. But he remembered that Jehovah never stops caring.
+  quality: caring
+  quality_line: His kindness is new every morning.
+  i_can: Tell Jehovah when I feel sad.
+
+home_nov_9_bible_reading:
+  prep_week: home_nov_9
+  meeting: midweek
+  step: bible_reading
+  about: A sad song about Jerusalem.
+  quality: fair
+  quality_line: He warned his people many times first.
+  i_can: Listen when Mom and Dad warn me.
+  reading: Lamentations 1–2
+  story:
+    - Jerusalem was the city where Jehovah’s people lived.
+    - The people stopped listening to Jehovah.
