@@ -53,6 +53,8 @@ gem "ruby_llm"
 # libvips, for avatars only: crop, resize and strip a photo on the server (docs/design/avatars.md).
 # Active Storage variants stay off (config/application.rb).
 gem "image_processing", "~> 2.2"
+# image_processing 2 leaves its backend to the app; Avatarable also reads headers with Vips::Image directly.
+gem "ruby-vips", "~> 2.0"
 
 # ─── Notifications ────────────────────────────────────────────────────────────
 # Web Push with VAPID, encrypted end to end (RFC 8291), for phones and browsers (docs/design/notifications.md, Push).
