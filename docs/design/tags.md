@@ -66,6 +66,8 @@ Tag pages sit under `/:household_id` only so they use the household layout. The 
 - an "Add a tag" input built on Primer's `AutoComplete`, suggesting the person's own tags with their counts, plus "Create "#<name>"" when the text is new
 - Enter adds, Escape closes the suggestions, and focus returns to the input after adding
 
+**On a note that isn't saved yet** (New note, `docs/design/notes.md`), the editor works the same, but adding and removing change only the page: no tagging is posted, since there's nothing to tag yet. It keeps the names in its `current` value, and "Save note" sends them with the note. The suggestions and "Create" are the same. Its Labels are plain Labels, not links, because a new name has no tag or page until the note is saved; each shows the name as typed until then. Removing a tag there is a button that removes the Label, not a form. Once the note is saved its Labels link to their pages as everywhere else. A note's Edit page, and every other kind of thing, keep saving each tag as it's added.
+
 ### Filtering lists
 
 The meeting notes list, My goals, Personal study and Notes each take `?tag=<name>`. When it's set, the page shows a removable "#name" filter and only tagged things. Each list row shows its tags as small Labels.
