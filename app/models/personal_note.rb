@@ -93,9 +93,9 @@ class PersonalNote < ApplicationRecord
   # Saves a new note with the tags its New note editor showed, as typed, all or nothing (docs/design/notes.md, A note:
   # Tags on a new note). Names that normalize the same are one tag, added once. A refused tag (a name that normalizes
   # to nothing, an 11th, the person's 201st) saves nothing and says why in errors; the rollback leaves the note unsaved
-  # for the form to show again.
+  # for the form to show again. Its own savepoint, so the rollback holds inside a caller's transaction too.
   def save_with_tags(tag_names)
-    transaction do
+    transaction(requires_new: true) do
       raise ActiveRecord::Rollback unless save && tag_names.uniq { Tag.normalize(it) }.all? { add_tag(it) }
 
       true

@@ -219,7 +219,7 @@ class PersonalNoteTest < ActiveSupport::TestCase
     note = personal_notes(:head_daniel)
 
     assert_no_difference -> { Tagging.count } do
-      assert note.revise({ title: "Daniel 2", tag_names: "ministry prayer" }, base: note.base)
+      assert note.revise({ title: "Daniel 2", tag_names: [ "ministry", "prayer" ] }, base: note.base)
     end
     assert_empty note.reload.tags
   end
