@@ -8,7 +8,7 @@ class Ai::Purpose
   # Keep in step with the chats_purpose_check and ai_uses_purpose_check constraints.
   CLASSES = { "family_study_draft" => "Ai::Purpose::FamilyStudyDraft", "personal_study" => "Ai::Purpose::PersonalStudyAnswer",
               "meeting_part" => "Ai::Purpose::MeetingPart", "daily_brief" => "Ai::Purpose::DailyBrief",
-              "listening_game" => "Ai::Purpose::ListeningGame" }.freeze
+              "listening_game" => "Ai::Purpose::ListeningGame", "meeting_prep" => "Ai::Purpose::MeetingPrep" }.freeze
 
   def self.names = CLASSES.keys
 

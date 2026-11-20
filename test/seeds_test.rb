@@ -165,6 +165,12 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ 3, 7 ], [ shared.found_count, shared.answer.paragraph ]
     assert shared.marked?("congregation_bible_study")
 
+    # This week's Get ready cards in the Rivera Family, from the saved reply, with the pages it used (13_prep_weeks.rb).
+    prep_week = rivera.prep_week_for(monday)
+    assert_equal PrepWeek::Card::STEPS.keys, prep_week.cards.map(&:step)
+    assert_equal [ "Lamentations 1–2", 4 ], [ prep_week.cards.second.reading, prep_week.cards.second.story.size ]
+    assert_equal 3, prep_week.sources.size
+
     assert_equal 0, Ai::Use.count
   end
 

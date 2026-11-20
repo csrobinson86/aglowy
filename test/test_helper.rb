@@ -87,6 +87,14 @@ module ActiveSupport
       game.rounds.create!(step:, position:, cards: labels.map.with_index(1) { |label, place| ListeningGame::Card.new(label:, kind:, position: place, answer: label == answer) })
     end
 
+    # A Get ready card for one step of a week, as Household#prepare_meeting_prep saves one, without asking the AI. The
+    # Bible Reading card has its reading and a two-sentence story.
+    def prep_card(week, step, **attributes)
+      reading = { reading: "Lamentations 1–2", story: [ "Jerusalem was broken.", "Jeremiah cried." ] } if step == "bible_reading"
+      week.cards.create!(step:, meeting: PrepWeek::Card::STEPS.fetch(step), about: "Jehovah helps us.", quality: "loving",
+                         quality_line: "He loves us.", i_can: "Pray.", **reading.to_h, **attributes)
+    end
+
     # A plain image, no attachment at all, as a crafted request could send.
     def image_tag_html
       %(<img src="https://example.com/cat.png">)

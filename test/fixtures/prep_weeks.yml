@@ -1,0 +1,4 @@
+# The home household's Get ready cards for the week of 9 November 2026 (docs/design/meeting-prep.md, Models).
+home_nov_9:
+  household: home
+  week_of: 2026-11-09

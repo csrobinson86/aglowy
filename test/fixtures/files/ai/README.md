@@ -23,6 +23,11 @@ hands it to RubyLLM as the HTTP response would arrive.
   Gems, 1 Bible Reading and 6 Congregation Bible Study, every label written for the fixture, never taken from jw.org.
   Three search results (the week's program among them) and two citations carrying `cited_text`, one naming a page the
   search never returned, which `Ai::SourceLink` drops. Hand-built. The seeds use it too, for this week's game.
+- `meeting_prep.json`: the Get ready cards for the week of 16–22 November 2026, one for each of the five parts, with the
+  Bible Reading's four-sentence story, every word written for the fixture (the design's example cards), never taken from
+  jw.org. Three search results (the week's program and the Watchtower study article among them) and two citations
+  carrying `cited_text`, one naming a page the search never returned, which `Ai::SourceLink` drops. Hand-built. The seeds
+  use it too, for this week's cards.
 
 ## Recording a reply
 
