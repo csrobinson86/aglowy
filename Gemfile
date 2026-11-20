@@ -52,7 +52,7 @@ gem "ruby_llm"
 # ─── Images ───────────────────────────────────────────────────────────────────
 # libvips, for avatars only: crop, resize and strip a photo on the server (docs/design/avatars.md).
 # Active Storage variants stay off (config/application.rb).
-gem "image_processing", "~> 1.14"
+gem "image_processing", "~> 2.2"
 
 # ─── Notifications ────────────────────────────────────────────────────────────
 # Web Push with VAPID, encrypted end to end (RFC 8291), for phones and browsers (docs/design/notifications.md, Push).
