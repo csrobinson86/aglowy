@@ -88,10 +88,10 @@ The page uses Primer components and utilities. The few app-specific styles (the 
 
 `StudyGuide::PrepareJob` follows Get ready's job (`docs/design/meeting-prep.md`, The weekly AI job) with these differences:
 
-- **Whose clock:** the person's (`User#limit_time_zone`, as personal study and the daily brief use). It runs hourly at minute 15 and takes the people with the setting on for whom it's now 3am (`User.at_local_hour(3)`, added alongside `Household.at_local_hour`), so with the 5-minute request timeout the guide is there by 4am. Retries run at the same time each day.
+- **Whose clock:** the person's (`User#limit_time_zone`, as personal study and the daily brief use). It runs hourly at minute 15 (UTC) and takes the people with the setting on for whom it's now 3am (`User.at_local_hour(3)`, added alongside `Household.at_local_hour`). So it starts within their 3am hour: at 3:15 in most zones, 3:45 in a half-hour zone such as UTC+05:30. **4am is a target, not a promise.** With the 5-minute request timeout the guide is normally there before 4am, but a failed or slow request, or a busy queue, can leave it missing until the next day's run; the page says "This week's isn't ready yet" meanwhile.
 - **Only heads and adults.** The run takes only people with an active head or adult membership somewhere. Someone who loses their last one keeps the setting, but the job skips them and the Settings section is hidden. If they become a head or adult again, it resumes from the next run, as they left it.
 - **The week** is the Monday of the person's current week. The program is the same everywhere, so no household's meeting times are needed.
-- **Retries** run each day at 3:15am for a week still missing parts, until the week ends (Sunday night in the person's time zone).
+- **Retries** run in the same 3am-hour run each day for a week still missing parts, until the week ends (Sunday night in the person's time zone).
 - **Filling in, never replacing,** as Get ready does: a run asks only for the missing parts, and saves a part only where there's none. The unique (`study_guide_id`, `step`) index stops a second one.
 - **The claim** is a `StudyGuide::Preparation` (`user_id`, `week_of`, unique; `token`; `created_at`), with the same token, 15-minute takeover and 5-minute timeout rules, taken under the person's lock (`user.with_lock`).
 - **The owner** is the person. Without accepted AI terms nothing is asked (`:not_allowed`, no chat).
