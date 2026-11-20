@@ -219,9 +219,74 @@ class PersonalNoteTest < ActiveSupport::TestCase
     note = personal_notes(:head_daniel)
 
     assert_no_difference -> { Tagging.count } do
-      assert note.revise({ title: "Daniel 2", tag_names: "ministry prayer" }, base: note.base)
+      assert note.revise({ title: "Daniel 2", tag_names: [ "ministry", "prayer" ] }, base: note.base)
     end
     assert_empty note.reload.tags
+  end
+
+  # docs/design/notes.md, A note: Tags on a new note.
+  test "creating with tags saves the note and its taggings, reusing an existing tag name" do
+    note = users(:head).personal_notes.new(title: "Talks")
+
+    assert_difference -> { Tag.count } => 1, -> { Tagging.count } => 2 do
+      assert note.save_with_tags([ "Ministry", "prayer" ])
+    end
+
+    assert note.persisted?
+    assert_equal %w[ ministry prayer ], note.reload.tags.map(&:name).sort
+    assert_includes note.tags, tags(:head_ministry)
+  end
+
+  test "creating with Talk Prep makes one tag, talk-prep; Talk Prep with talk-prep makes one tagging" do
+    note = users(:head).personal_notes.new(title: "Talks")
+
+    assert note.save_with_tags([ "Talk Prep", "talk-prep" ])
+
+    assert_equal [ "talk-prep" ], note.reload.tags.map(&:name)
+    assert_equal 1, note.taggings.count
+  end
+
+  test "creating with a name that normalizes to nothing saves neither the note nor any tag" do
+    note = users(:head).personal_notes.new(title: "Talks")
+
+    assert_no_difference -> { PersonalNote.count } => 0, -> { Tag.count } => 0, -> { Tagging.count } => 0 do
+      assert_not note.save_with_tags([ "prayer", "###" ])
+    end
+
+    assert note.new_record?
+    assert_includes note.errors[:base], %(Couldn't add the tag "###": Name needs at least one letter or number)
+  end
+
+  test "creating with 11 tags saves nothing" do
+    note = users(:head).personal_notes.new(title: "Talks")
+
+    assert_no_difference -> { PersonalNote.count } => 0, -> { Tag.count } => 0, -> { Tagging.count } => 0 do
+      assert_not note.save_with_tags(Array.new(11) { "tag-#{it}" })
+    end
+
+    assert note.new_record?
+    assert_includes note.errors[:base], %(Couldn't add the tag "tag-10": This already has 10 tags, the most it can have)
+  end
+
+  test "creating with the person's 201st tag saves nothing" do
+    Tag.insert_all(Array.new(199) { |n| { user_id: users(:head).id, name: "tag-#{n}" } })
+    note = users(:head).personal_notes.new(title: "Talks")
+
+    assert_no_difference -> { PersonalNote.count } => 0, -> { Tag.count } => 0 do
+      assert_not note.save_with_tags([ "ministry", "one-more" ])
+    end
+
+    assert_includes note.errors[:base], %(Couldn't add the tag "one-more": You already have 200 tags, the most you can have)
+  end
+
+  test "creating with tags and an invalid title saves nothing and keeps the title's error" do
+    note = users(:head).personal_notes.new(title: " ")
+
+    assert_no_difference -> { PersonalNote.count } => 0, -> { Tag.count } => 0 do
+      assert_not note.save_with_tags([ "brand-new" ])
+    end
+
+    assert note.errors[:title].any?
   end
 
   test "revise with an invalid title saves nothing and keeps the errors" do

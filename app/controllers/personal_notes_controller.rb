@@ -31,13 +31,16 @@ class PersonalNotesController < ApplicationController
     authorize @personal_note
   end
 
-  # References typed in the body are linked on save, as on every save.
+  # References typed in the body are linked on save, as on every save. The tags New note's editor showed are saved with
+  # it, all or nothing, and a refused save shows them again as typed (docs/design/notes.md, A note: Tags on a new note).
   def create
-    @personal_note = Current.user.personal_notes.new(note_attributes.except(:tag_names))
+    attributes = note_attributes
+    @tag_names = attributes.delete(:tag_names) || []
+    @personal_note = Current.user.personal_notes.new(attributes)
     authorize @personal_note
     @personal_note.link_scriptures
 
-    if @personal_note.save
+    if @personal_note.save_with_tags(@tag_names)
       redirect_to household_personal_note_path(id: @personal_note), notice: "Note saved."
     else
       render :new, status: :unprocessable_content
@@ -65,7 +68,7 @@ class PersonalNotesController < ApplicationController
     end
   rescue ActiveRecord::StaleObjectError
     @written = PersonalNote.new(attributes.except(:tag_names))
-    @written_tag_names = attributes[:tag_names].to_s.split
+    @written_tag_names = attributes.fetch(:tag_names, [])
     render :edit, status: :conflict
   end
 
@@ -87,13 +90,13 @@ class PersonalNotesController < ApplicationController
     @query ? notes.matching(@query) : notes
   end
 
-  # A blank collection_id takes the note out of any collection. tag_names, the names the tag editor showed, are only
-  # for "What you wrote". A collection that isn't found is a 404, unless the save will be refused as stale (deleted in
+  # A blank collection_id takes the note out of any collection. tag_names, the names the tag editor showed, are added
+  # by create, and are only for "What you wrote" on update. A collection that isn't found is a 404, unless the save will be refused as stale (deleted in
   # another window since the form was rendered): then it's left out, so "What you wrote" still shows the rest. stale
   # is asked only then, after the lookup, so it reads the note as it is now: updated_at only moves forward, so a note
   # changed before the lookup stays stale under revise's lock.
   def note_attributes(stale: -> { false })
-    attributes = params.expect(personal_note: %i[ title color collection_id body tag_names ]).to_h
+    attributes = params.expect(personal_note: [ :title, :color, :collection_id, :body, tag_names: [] ]).to_h
     if attributes.key?(:collection_id)
       collection_id = attributes.delete(:collection_id).presence
       collections = Current.user.collections

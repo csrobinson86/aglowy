@@ -72,6 +72,38 @@ class TagEditorComponentTest < ViewComponent::TestCase
     assert_selector "form[action='/#{households(:home).id}/goals/#{goal.id}/taggings']"
   end
 
+  # docs/design/tags.md, The tag editor, on a note that isn't saved yet.
+  test "for an unsaved note, no tagging forms are rendered, the Labels aren't links, and the remove buttons are buttons" do
+    note = users(:head).personal_notes.new
+
+    render_inline(TagEditorComponent.new(taggable: note, user: users(:head), household: households(:home), tag_names: [ "Talk Prep", "ministry" ]))
+
+    assert_selector "#tag_editor_personal_note[data-tag-editor-current-value='#{[ "Talk Prep", "ministry" ].to_json}']"
+    assert_selector "span.Label", count: 2
+    assert_selector "span.Label", text: "#Talk Prep"
+    assert_selector "span.Label", text: "#ministry"
+    assert_no_selector "a.Label"
+    assert_selector "button[type=button][aria-label='Remove tag Talk Prep'][data-action='tag-editor#remove']"
+    assert_selector "button[type=button][aria-label='Remove tag ministry']"
+    assert_no_selector "form button[aria-label^='Remove tag']"
+    assert_no_selector "form[action*=taggings]"
+    assert_selector "form[data-action='submit->tag-editor#add'] auto-complete input[name=name]"
+    assert_selector "label.sr-only", text: "Add a tag"
+    # What adding a tag clones: the same plain Label and remove button.
+    template = rendered_content[%r{<template data-tag-editor-target="template">.*?</template>}m]
+    assert_match(/class="[^"]*Label/, template)
+    assert_match(/<button[^>]*\btype="button"/, template)
+    assert_match(/<button[^>]*\bdata-action="tag-editor#remove"/, template)
+    assert_includes rendered_content[%r{<template data-tag-editor-target="suggestions">.*?</template>}m], %(data-autocomplete-value="ministry")
+  end
+
+  test "a saved note's editor has no template to clone, and its add form isn't stopped" do
+    render_inline(TagEditorComponent.new(taggable: @note, user: users(:head), household: households(:home)))
+
+    assert_not_includes rendered_content, %(data-tag-editor-target="template")
+    assert_no_selector "form[data-action]"
+  end
+
   private
 
   def taggings_path

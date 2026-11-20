@@ -350,6 +350,65 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Collection is only used in Personal study/
   end
 
+  # docs/design/notes.md, A note: Tags on a new note.
+  test "new has the tag editor under the form in the note card, with the form sending its names" do
+    sign_in identities(:head)
+
+    get new_household_personal_note_path(household_id: @home)
+
+    assert_select "main .note-card" do
+      assert_select "form[action=?][data-controller=note-tag-names][data-note-tag-names-editor-value=tag_editor_personal_note]", household_personal_notes_path(household_id: @home)
+      assert_select "form + div #tag_editor_personal_note[data-tag-editor-current-value='[]']" do
+        assert_select "input[name=name][placeholder='Add a tag']"
+      end
+    end
+    assert_select "form[action*=taggings]", count: 0
+  end
+
+  test "create with tag_names[] tags the note, with Talk Prep as one tag" do
+    sign_in identities(:head)
+
+    assert_difference -> { users(:head).personal_notes.count } => 1, -> { Tagging.count } => 2 do
+      post household_personal_notes_path(household_id: @home), params: { personal_note: { title: "Talks", tag_names: [ "Talk Prep", "Ministry" ] } }
+    end
+
+    note = users(:head).personal_notes.find_by!(title: "Talks")
+    assert_redirected_to household_personal_note_path(household_id: @home, id: note)
+    assert_equal %w[ ministry talk-prep ], note.tags.map(&:name).sort
+    assert_includes note.tags, tags(:head_ministry)
+  end
+
+  test "a refused tag re-renders new with the error and keeps the names" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { PersonalNote.count } => 0, -> { Tag.count } => 0, -> { Tagging.count } => 0 do
+      post household_personal_notes_path(household_id: @home), params: { personal_note: { title: "Talks", body: "<p>Kept</p>", tag_names: [ "Talk Prep", "###" ] } }
+    end
+
+    assert_response :unprocessable_content
+    assert_select "h1", "New note"
+    assert_select ".Banner--error", text: %(Couldn't add the tag "###": Name needs at least one letter or number)
+    assert_select "input[name='personal_note[title]'][value=Talks]"
+    assert_select "lexxy-editor[value*=Kept]"
+    assert_select "#tag_editor_personal_note[data-tag-editor-current-value=?]", [ "Talk Prep", "###" ].to_json do
+      assert_select "span.Label", text: "#Talk Prep"
+      assert_select "span.Label", text: "####"
+      assert_select "button[type=button][aria-label='Remove tag Talk Prep']"
+    end
+  end
+
+  test "update ignores tag_names" do
+    sign_in identities(:head)
+
+    assert_no_difference -> { Tag.count } => 0, -> { Tagging.count } => 0 do
+      patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: base(@note), title: "Daniel 2", tag_names: [ "prayer" ] } }
+    end
+
+    assert_redirected_to household_personal_note_path(household_id: @home, id: @note)
+    assert_equal "Daniel 2", @note.reload.title
+    assert_empty @note.tags
+  end
+
   test "show is the read view: the title, color, collection and tags, the body as saved, and no form fields" do
     @note.body = "<h2>Statue</h2><p>Daniel 2:44, then Daniel 2:31-33, then Daniel 2:44 again</p>"
     @note.link_scriptures
@@ -413,9 +472,9 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav[aria-label='Breadcrumb'] a[href=?]", household_personal_notes_path(household_id: @home, collection: collections(:head_quick_references).id), text: "Quick references"
     assert_select "a.Button", text: "Edit", count: 0
     assert_select "#pin_personal_note_#{@note.id} button[type=submit]", "Pin"
-    assert_select "main .note-card.note-card--orange form[action=?]", household_personal_note_path(household_id: @home, id: @note) do
+    assert_select "main .note-card.note-card--orange form[action=?][data-controller=note-tag-names]", household_personal_note_path(household_id: @home, id: @note) do
       assert_select "input[type=hidden][name='personal_note[base]'][value=?]", @note.reload.updated_at.utc.iso8601(6)
-      assert_select "input[type=hidden][name='personal_note[tag_names]'][value=ministry]"
+      assert_select "input[name^='personal_note[tag_names]']", count: 0
       assert_select "input[name='personal_note[title]'][value=?]", @note.title
       assert_select "select[name='personal_note[collection_id]'] option[selected]", text: "Quick references"
       assert_select "fieldset legend", "Color"
@@ -518,7 +577,7 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
 
     patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: {
       base: stale, title: "<i>Mine</i>", color: "blue", collection_id: collections(:head_bible_questions).id,
-      tag_names: "ministry family", body: "<h2>My heading</h2><ul><li>My point</li></ul><script>alert(1)</script>"
+      tag_names: [ "ministry", "Talk Prep" ], body: "<h2>My heading</h2><ul><li>My point</li></ul><script>alert(1)</script>"
     } }
 
     assert_response :conflict
@@ -542,7 +601,8 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
       assert_select ".note-dot--blue + *", "Blue"
       assert_select "*", text: "Bible questions"
       assert_select ".Label", text: "#ministry"
-      assert_select ".Label", text: "#family"
+      assert_select ".Label", text: "#Talk Prep"
+      assert_select ".Label", text: "#Talk", count: 0
       assert_select ".lexxy-content h2", "My heading"
       assert_select ".lexxy-content li", "My point"
       assert_select "script", count: 0
@@ -560,7 +620,7 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { Tagging.count } do
       assert_no_difference -> { Tag.count } do
-        patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: stale, title: "Mine", color: "teal", tag_names: "brand-new" } }
+        patch household_personal_note_path(household_id: @home, id: @note), params: { personal_note: { base: stale, title: "Mine", color: "teal", tag_names: [ "brand-new" ] } }
       end
     end
 

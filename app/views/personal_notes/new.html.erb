@@ -12,10 +12,14 @@
 <% end %>
 
 <%# The note card a note's page draws, in the chosen color, so a new note shows its color while it's written and after a
-    refused save. Tags come once it's saved, on the note's page: the tag editor adds them to a saved note. %>
+    refused save. The tag editor sits under the form, as on Edit; until the note is saved it only changes the page, and
+    "Save note" sends its names (docs/design/notes.md, A note: Tags on a new note). %>
 <div class="container-md ml-0">
   <div class="note-card note-card--<%= @personal_note.drawn_color %> p-md-4">
     <%= render "personal_notes/color_name", personal_note: @personal_note %>
     <%= render "personal_notes/form", personal_note: @personal_note, url: household_personal_notes_path %>
+    <div class="mt-3">
+      <%= render TagEditorComponent.new(taggable: @personal_note, user: Current.user, household: Current.household, tag_names: Array(@tag_names)) %>
+    </div>
   </div>
 </div>

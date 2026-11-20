@@ -1,17 +1,27 @@
 <%= tag.div(id:, class: "d-flex flex-wrap flex-items-center mt-2",
-            data: { controller: "tag-editor", tag_editor_focus_value: focus?, tag_editor_current_value: tags.map(&:name).to_json, action: "auto-complete-change->tag-editor#commit" }) do %>
+            data: { controller: "tag-editor", tag_editor_focus_value: focus?, tag_editor_current_value: names.to_json, action: "auto-complete-change->tag-editor#commit" }) do %>
   <span class="color-fg-muted mr-2">Tags</span>
-  <% tags.each do |tag| %>
-    <span class="d-inline-flex flex-items-center mr-1">
-      <%= render(Primer::Beta::Label.new(tag: :a, href: tag_page_path(tag), scheme: :accent)) { "##{tag.name}" } %>
-      <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
-      <%= primer_form_with(url: tagging_path(tag), method: :delete) do %>
-        <%= render(Primer::Beta::IconButton.new(icon: :x, type: :submit, scheme: :invisible, size: :small, show_tooltip: false, "aria-label": "Remove tag #{tag.name}")) %>
-      <% end %>
-    </span>
-  <% end %>
-  <%= primer_form_with(url: taggings_path, namespace: id) do |f| %>
-    <%= render Taggings::AddForm.new(f, src: taggings_path, input_id: dom_id(taggable, :add_tag), error:) %>
+  <% if unsaved? %>
+    <%# Nothing to tag yet, so nothing is sent: the tag-editor controller adds and removes the Labels on the page, and
+        cancels the add form's submit. The form is only there so Enter adds; its harmless GET is never sent, like src. %>
+    <% names.each { |name| concat unsaved_tag(name) } %>
+    <%= primer_form_with(url: "#", method: :get, namespace: id, data: { action: "submit->tag-editor#add" }) do |f| %>
+      <%= render Taggings::AddForm.new(f, src: "#", input_id: dom_id(taggable, :add_tag), error:) %>
+    <% end %>
+    <template data-tag-editor-target="template"><%= unsaved_tag("") %></template>
+  <% else %>
+    <% tags.each do |tag| %>
+      <span class="d-inline-flex flex-items-center mr-1">
+        <%= render(Primer::Beta::Label.new(tag: :a, href: tag_page_path(tag), scheme: :accent)) { "##{tag.name}" } %>
+        <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
+        <%= primer_form_with(url: tagging_path(tag), method: :delete) do %>
+          <%= render(Primer::Beta::IconButton.new(icon: :x, type: :submit, scheme: :invisible, size: :small, show_tooltip: false, "aria-label": "Remove tag #{tag.name}")) %>
+        <% end %>
+      </span>
+    <% end %>
+    <%= primer_form_with(url: taggings_path, namespace: id) do |f| %>
+      <%= render Taggings::AddForm.new(f, src: taggings_path, input_id: dom_id(taggable, :add_tag), error:) %>
+    <% end %>
   <% end %>
   <%# The suggestions the tag-editor controller filters as the person types, and the "Create" option it fills in. %>
   <template data-tag-editor-target="suggestions">
