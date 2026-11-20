@@ -219,8 +219,10 @@ class Household < ApplicationRecord
     end.tap { reset_meeting_prep }
   end
 
+  # Under the same lock, so it can't delete the switch between an enable's failed insert and its lookup of the row it
+  # found, which would make that enable raise RecordNotFound.
   def disable_meeting_prep
-    Household::MeetingPrep.where(household: self).delete_all
+    with_lock { Household::MeetingPrep.where(household: self).delete_all }
     reset_meeting_prep
   end
 

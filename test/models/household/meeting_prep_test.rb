@@ -136,4 +136,23 @@ class Household::MeetingPrepConcurrencyTest < ActiveSupport::TestCase
     assert_not Household::MeetingPrep.exists?(household: @home)
     assert_not @home.reload.meeting_prep?
   end
+
+  # An enable holds the household's lock from its insert to its lookup of the row it found, so a Get ready disable
+  # waits for it rather than deleting that row in between.
+  test "a Get ready disable waits on the household's lock, then turns Get ready off and leaves the helper on" do
+    @home.enable_meeting_prep(by: users(:head))
+    disabler = nil
+
+    Household.transaction do
+      @home.lock!
+      disabler = Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection { Household.find(@home.id).disable_meeting_prep }
+      end
+      assert_nil disabler.join(0.5), "the disable waits for the household's lock"
+    end
+
+    disabler.join
+    assert_not Household::MeetingPrep.exists?(household: @home)
+    assert @home.reload.meeting_helper?
+  end
 end
