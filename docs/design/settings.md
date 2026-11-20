@@ -24,7 +24,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Offline | yes | yes | yes | Keep Aglowy available offline on this device: on or off, what's kept, notes waiting to save (`docs/design/offline.md`, OFFLINE-01). Lives in this browser, not on the server. Not on `/account` |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
-| | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
+| | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch and, while it's on, the Get ready check box (`docs/design/meeting-prep.md`); "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
 | | Members and roles | yes | no | no | Each member's role, and Remove |
 
 - The household group's heading is the household's name ("Rivera household"), because these settings belong to that household and nobody else's.

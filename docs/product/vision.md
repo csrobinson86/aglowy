@@ -61,6 +61,7 @@ Each epic is broken into small stories (GitHub issues labelled `story`). Order c
 | 21 | **OFFLINE-01** Offline: turned on per device in Settings; the pages for the meeting, the ministry, the morning and family study kept on the device; meeting notes and Notes written offline and saved when back online, never over a newer version; everything removed on sign out | Design done |
 | 22 | **GAME-01** Listening game: the meeting helper's Treasures, Spiritual Gems, Bible Reading and Congregation Bible Study steps as rounds of four cards found by a weekly AI research job, checked by a parent; a score for that meeting only; the child's own typed answer for the Bible Study | Design done |
 | 23 | **STUDYNOTE-01** One note per study: "Save to note" adds each answer to the study's note in Notes, shown beside the conversation and edited in place; notes open read-only with Edit | Design done |
+| 24 | **PREP-01** Get ready: a weekly AI job writes a few simple cards for each meeting for children using the meeting helper (what each part is about, a quality of Jehovah, one thing to do, the Bible reading as a story to draw), shown to her straight away and changeable by a parent; her own comment for the Watchtower Study and the Bible Study | Design done |
 
 Design docs live in `docs/design/`; briefs in `docs/briefs/`.
 

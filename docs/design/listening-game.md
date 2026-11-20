@@ -36,7 +36,7 @@ This builds on these docs:
 | The weekly research job and its AI purpose | The Watchtower Study and the Public Talk |
 | Rounds on the four midweek steps | Cards in other languages |
 | The parent's check and change | Picture cards (Aglowy can't use jw.org's artwork, so cards have icons for their kind) |
-| Her answer for the Congregation Bible Study | An answer for the Watchtower Study |
+| Her answer for the Congregation Bible Study | An answer for the Watchtower Study: Get ready, `docs/design/meeting-prep.md` |
 | The score on the end screen and in the shared note | |
 
 ## How it looks

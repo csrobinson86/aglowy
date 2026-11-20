@@ -250,7 +250,8 @@ households or roles. The non-negotiables:
   Storage direct upload, Stimulus, BEM Sass from primitives) and the Lexxy notes
   editor (`rich_text_area`), both in `docs/design/family-studies.md`; the
   meeting helper's child screens and drawing canvas (large touch targets in BEM
-  Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`;
+  Sass from primitives, Stimulus canvas), in `docs/design/meeting-helper.md`,
+  and Get ready's screens in the same layout (`docs/design/meeting-prep.md`);
   the scripture picker anchored at the caret in a notes editor (BEM Sass
   from primitives, Stimulus, a Lexxy extension), in
   `docs/design/scripture-links.md`; the color picker (a radio group drawn as
