@@ -20,6 +20,17 @@ module Household::MeetingPrepPreparable
     claimed.is_a?(Array) ? ask_for_meeting_prep(*claimed) : claimed
   end
 
+  # The cards still missing from this week, the Monday where the household lives (Trap 7), unless Get ready is off.
+  # A week with every card it can still use asks for nothing.
+  def prepare_this_weeks_meeting_prep
+    prepare_meeting_prep(today.beginning_of_week(:monday)) if meeting_prep?
+  end
+
+  # Nothing while meeting times aren't set: there's no meeting to get ready for.
+  def prepare_meeting_prep_later
+    PrepWeek::PrepareJob.perform_later(self) if meeting_times_set?
+  end
+
   # A week's cards and sources, or nil while it has none.
   def prep_week_for(week_of)
     prep_weeks.preloaded.find_by(week_of:)

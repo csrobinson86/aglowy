@@ -92,6 +92,28 @@ class Ai::AcceptanceTest < ActiveSupport::TestCase
     end
   end
 
+  # Accepting the AI terms prepares the week's Get ready cards too (docs/design/meeting-prep.md, The weekly AI job).
+  test "accepting enqueues Get ready's preparation for each household with it on, and not for one with it off" do
+    households(:other).memberships.create!(user: users(:head), role: :adult)
+    [ households(:home), households(:parents), households(:other) ].each { listening_game_week(it) }
+    households(:home).enable_meeting_prep(by: users(:head))
+    households(:parents).enable_meeting_prep(by: users(:grandparent))
+    clear_enqueued_jobs
+
+    travel_to(LISTENING_GAME_MONDAY) { users(:head).accept_ai_terms(understood: "1") }
+
+    assert_enqueued_jobs 2, only: PrepWeek::PrepareJob
+    assert_enqueued_with(job: PrepWeek::PrepareJob, args: [ households(:home) ])
+    assert_enqueued_with(job: PrepWeek::PrepareJob, args: [ households(:parents) ])
+  end
+
+  test "accepting enqueues no Get ready preparation where they're a child" do
+    listening_game_week(households(:home)).enable_meeting_prep(by: users(:head))
+    clear_enqueued_jobs
+
+    assert_no_enqueued_jobs(only: PrepWeek::PrepareJob) { users(:child).accept_ai_terms(understood: "1") }
+  end
+
   private
     # The helper on, meeting on Tuesdays, and nothing enqueued yet.
     def listening_game_week(household)
