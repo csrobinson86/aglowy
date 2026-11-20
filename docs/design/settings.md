@@ -106,7 +106,7 @@ The section boxes are today's boxes, moved as they are: the same Primer `BorderB
 ### The section nav
 
 `Settings::NavComponent`, a Primer `NavList` labelled "Settings" (`aria: { label: "Settings" }`), with two groups:
-- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`), then Offline once OFFLINE-01 adds it (`docs/design/offline.md`). On a phone the same list is the menu above the section
+- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`), then Offline once OFFLINE-01 adds it (`docs/design/offline.md`), then Study guide once PREP-02 adds it, for a head or adult in any household (`docs/design/study-guide.md`). On a phone the same list is the menu above the section
 - the household's name: the sections the person's role allows, in the table's order. No group at all for a child.
 
 The current section is selected (`aria-current="page"`, from Primer). Each section's controller passes its id (`:profile`, `:meetings`, …).

@@ -34,7 +34,7 @@ What follows from these, and needs Casey's OK in the PR:
 | The Get ready check box in Settings → Children | Cards for Spiritual Gems, the field ministry parts and the Public Talk |
 | The weekly AI job and its purpose | Reading a card aloud with the device's own voice |
 | Her Get ready page: the week's two meetings, one card at a time | Cards in other languages |
-| Her comment for the Congregation Bible Study (the listening game's answer) and the Watchtower Study (new) | A family version for heads and adults: a summary, Jehovah's qualities, the reading, ideas for Spiritual Gems comments and notes for the Bible Study |
+| Her comment for the Congregation Bible Study (the listening game's answer) and the Watchtower Study (new) | A family version for heads and adults: the study guide, `docs/design/study-guide.md` (PREP-02) |
 | Draw it! from the Bible Reading card | "I can…" coming back in "Talk about it" after the meeting |
 | The parent's page, and Change | Picture cards (Aglowy can't use jw.org's artwork) |
 
