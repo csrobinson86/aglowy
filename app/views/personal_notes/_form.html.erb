@@ -5,10 +5,12 @@
 <% if personal_note.errors.any? %>
   <%= render(Primer::Alpha::Banner.new(scheme: :danger, mb: 3)) { personal_note.errors.full_messages.to_sentence } %>
 <% end %>
-<% form_data = { controller: "note-tag-names", action: "submit->note-tag-names#fill", note_tag_names_editor_value: dom_id(personal_note, :tag_editor) } if personal_note.persisted? %>
+<%# As it's sent, the form takes the names the tag editor beside it shows, as personal_note[tag_names][] (A note: Tags
+    on a new note): New note saves them with the note, and Edit's "What you wrote" shows them. %>
+<% form_data = { controller: "note-tag-names", action: "submit->note-tag-names#fill", note_tag_names_editor_value: dom_id(personal_note, :tag_editor) } %>
 <%= primer_form_with(model: personal_note, url:, data: form_data) do |f| %>
   <% if personal_note.persisted? %>
-    <%= render PersonalNotes::VersionForm.new(f, tag_names: personal_note.tags_for(Current.user).map(&:name).sort) %>
+    <%= render PersonalNotes::VersionForm.new(f) %>
   <% end %>
   <%= render PersonalNotes::NoteForm.new(f) %>
   <div class="my-3"><%= render ColorPickerComponent.new(name: "personal_note[color]", selected: personal_note.drawn_color, colors: PersonalNote.colors.keys, legend: "Color", legend_beside: true) %></div>

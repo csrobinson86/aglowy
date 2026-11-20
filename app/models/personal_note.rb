@@ -90,6 +90,18 @@ class PersonalNote < ApplicationRecord
     end
   end
 
+  # Saves a new note with the tags its New note editor showed, as typed, all or nothing (docs/design/notes.md, A note:
+  # Tags on a new note). Names that normalize the same are one tag, added once. A refused tag (a name that normalizes
+  # to nothing, an 11th, the person's 201st) saves nothing and says why in errors; the rollback leaves the note unsaved
+  # for the form to show again.
+  def save_with_tags(tag_names)
+    transaction do
+      raise ActiveRecord::Rollback unless save && tag_names.uniq { Tag.normalize(it) }.all? { add_tag(it) }
+
+      true
+    end || false
+  end
+
   # The scriptures linked in the body, in order and once each, for "Scriptures in this note". Read from the
   # decrypted body, never the database (Traps).
   def scripture_references
@@ -97,6 +109,13 @@ class PersonalNote < ApplicationRecord
   end
 
   private
+
+  def add_tag(name)
+    tag_with(name, by: user)
+  rescue ActiveRecord::RecordInvalid => error
+    errors.add(:base, %(Couldn't add the tag "#{name}": #{error.record.errors.full_messages.to_sentence}))
+    false
+  end
 
   def personal_study_is_own
     errors.add(:personal_study, "must be your own study") unless personal_study.user_id == user_id

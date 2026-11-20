@@ -5,6 +5,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
   END_OF_TEXT = RUBY_PLATFORM.include?("darwin") ? [ :command, :down ] : [ :control, :end ]
   EDITOR = "lexxy-editor[name='personal_note[body]']"
   PICKER = "[data-controller='scripture-picker']"
+  NEW_TAG_EDITOR = "#tag_editor_personal_note"
 
   setup { sign_in identities(:head) }
 
@@ -129,6 +130,68 @@ class PersonalNotesTest < ApplicationSystemTestCase
     assert_selector "main h1", text: "Patience"
     assert_selector "main .note-card.note-card--red .note-dot--red + *", text: "Red"
     assert users(:head).personal_notes.find_by!(title: "Patience").color_red?
+  end
+
+  # docs/design/notes.md, A note: Tags on a new note; docs/design/tags.md, The tag editor, on a note that isn't saved yet.
+  test "on New note, add an existing tag from the suggestions and create a new one, remove one, Save note, then see the tags on the read view" do
+    visit new_household_personal_note_url(household_id: households(:home))
+    fill_in "Title", with: "Preparing my talk"
+
+    find_field("Add a tag").send_keys("minis")
+    find("[role=option]", text: "#ministry").click
+    within(NEW_TAG_EDITOR) { assert_selector "span.Label", text: "#ministry" }
+    assert_selector "#{NEW_TAG_EDITOR} input:focus"
+    find_field("Add a tag").send_keys("Talk Prep", :enter)
+    within(NEW_TAG_EDITOR) { assert_selector "span.Label", text: "#Talk Prep" }
+    find_field("Add a tag").send_keys("family")
+    find("[role=option]", text: 'Create "#family"').click
+    within(NEW_TAG_EDITOR) do
+      assert_selector "span.Label", text: "#family"
+      find("button[aria-label='Remove tag family']").click
+      assert_no_selector "span.Label", text: "#family"
+      assert_selector "span.Label", count: 2
+      assert_no_selector "a.Label"
+    end
+    assert_not users(:head).personal_notes.exists?(title: "Preparing my talk")
+    assert_accessible
+    capture_screens("note-new-tags", scroll_to: NEW_TAG_EDITOR)
+
+    click_on "Save note"
+    assert_text "Note saved."
+    assert_selector "main h1", text: "Preparing my talk"
+    within("main .note-card") do
+      assert_link "#ministry"
+      assert_link "#talk-prep"
+      assert_no_link "#family"
+    end
+    assert_equal %w[ ministry talk-prep ], users(:head).personal_notes.find_by!(title: "Preparing my talk").tags.map(&:name).sort
+    assert_accessible
+  end
+
+  test "on New note, a refused save keeps the tags as typed, and saving again saves them" do
+    visit new_household_personal_note_url(household_id: households(:home))
+    fill_in "Title", with: "Patience"
+    find_field("Add a tag").send_keys("Prayer", :enter)
+    within(NEW_TAG_EDITOR) { assert_selector "span.Label", text: "#Prayer" }
+    find_field("Add a tag").send_keys("###", :enter)
+    within(NEW_TAG_EDITOR) { assert_selector "span.Label", text: "####" }
+    click_on "Save note"
+
+    assert_text %(Couldn't add the tag "###": Name needs at least one letter or number)
+    assert_equal "Patience", find_field("Title").value
+    within(NEW_TAG_EDITOR) do
+      assert_selector "span.Label", text: "#Prayer"
+      assert_selector "span.Label", text: "####"
+    end
+    assert_not users(:head).personal_notes.exists?(title: "Patience")
+    assert_accessible
+    capture_screens("note-new-tags-refused")
+
+    find("#{NEW_TAG_EDITOR} button[aria-label='Remove tag ###']").click
+    click_on "Save note"
+    assert_text "Note saved."
+    within("main .note-card") { assert_link "#prayer" }
+    assert_equal [ "prayer" ], users(:head).personal_notes.find_by!(title: "Patience").tags.map(&:name)
   end
 
   test "on a saved yellow note, choosing Blue recolors the card at once; leaving without saving keeps it yellow" do
