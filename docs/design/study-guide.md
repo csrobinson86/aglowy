@@ -57,7 +57,7 @@ What follows from these, and needs Casey's OK in the PR:
 | `phone-guide.png` | The same page at phone width: the side column moves under the cards |
 | `phone-guide-settings.png` | Settings → You → Study guide: "Make me a study guide each week", its caption, and Save |
 
-**A part's card** has the part's name and length in small print with its tone dot (`MeetingNote::HelperSteps` tones), its title as an `h2`, a short summary, then labelled rows of points. Each point can end with a scripture link (`Bible::Linker`). The rows depend on the part:
+**A part's card** has the part's name and length in small print with its tone dot (`MeetingNote::HelperSteps` tones), its title as an `h2`, a short summary, then labelled rows of points. Each point can end with a scripture link: its `ref` was parsed with `Bible::Reference.parse` when saved, and the page renders that reference as a scripture link, a whole chapter ("Psalm 23") as well as verses. `Bible::Linker` isn't used here; its verse-only rule stays for text people type. The rows depend on the part:
 
 | Part | Rows |
 | --- | --- |
@@ -88,9 +88,10 @@ The page uses Primer components and utilities. The few app-specific styles (the 
 
 `StudyGuide::PrepareJob` follows Get ready's job (`docs/design/meeting-prep.md`, The weekly AI job) with these differences:
 
-- **Whose clock:** the person's (`User#limit_time_zone`, as personal study and the daily brief use). It runs hourly at minute 45 and takes the people with the setting on for whom it's now 4am (`User.at_local_hour(4)`, added alongside `Household.at_local_hour`).
+- **Whose clock:** the person's (`User#limit_time_zone`, as personal study and the daily brief use). It runs hourly at minute 15 and takes the people with the setting on for whom it's now 3am (`User.at_local_hour(3)`, added alongside `Household.at_local_hour`), so with the 5-minute request timeout the guide is there by 4am. Retries run at the same time each day.
+- **Only heads and adults.** The run takes only people with an active head or adult membership somewhere. Someone who loses their last one keeps the setting, but the job skips them and the Settings section is hidden. If they become a head or adult again, it resumes from the next run, as they left it.
 - **The week** is the Monday of the person's current week. The program is the same everywhere, so no household's meeting times are needed.
-- **Retries** run each day at 4am for a week still missing parts, until the week ends (Sunday night in the person's time zone).
+- **Retries** run each day at 3:15am for a week still missing parts, until the week ends (Sunday night in the person's time zone).
 - **Filling in, never replacing,** as Get ready does: a run asks only for the missing parts, and saves a part only where there's none. The unique (`study_guide_id`, `step`) index stops a second one.
 - **The claim** is a `StudyGuide::Preparation` (`user_id`, `week_of`, unique; `token`; `created_at`), with the same token, 15-minute takeover and 5-minute timeout rules, taken under the person's lock (`user.with_lock`).
 - **The owner** is the person. Without accepted AI terms nothing is asked (`:not_allowed`, no chat).
@@ -115,8 +116,8 @@ Instructions in `config/ai/study_guide.md`:
   A `title` is the part's title as the program gives it, at most 12 words. A `summary` is at most 50 words; each item's `text` at most 30.
 - **The instructions say:** find the week's program and each part's material; write for adults preparing for the meetings, in its own words, never quoting a page or a verse; give each point's scripture as a reference; make "About Jehovah" points about a quality the material really shows; make comment ideas short, in the first person, things a person could say; base notes on what the paragraphs cover, in order; return fewer parts rather than guess.
 - `daily_limit`: 2 a day per person. `keep_for`: 7 days (the chat; the guide has its own rule).
-- **Every safety measure in `docs/design/ai.md` applies.** Moderation is skipped because no person's text is sent. The copy check runs on every text field: a removed item goes; a part left without its `summary` (or an overview without its `glance`) is dropped, so that step stays missing for the next run. A reference that doesn't parse is dropped and its point kept. Every field is escaped when shown.
-- **Checks before saving:** each step at most once, only a step that was asked for and still has none; the word limits, counted as `text.split.size`; list lengths; Spiritual Gems with fewer than 2 comment ideas is dropped. A run with no new parts saves nothing and lets the claim go.
+- **Every safety measure in `docs/design/ai.md` applies.** Moderation is skipped because no person's text is sent. The copy check runs on every text field: a removed item goes; a part left without its `summary` (or a Bible Reading part without its `reading`, or an overview without its `glance`) is dropped, so that step stays missing for the next run. A reference that doesn't parse is dropped and its point kept. Every field is escaped when shown.
+- **Checks before saving:** each step at most once, only a step that was asked for and still has none; every `summary`, `glance` and Bible Reading `reading` present and at least 1 word; the word limits, counted as `text.split.size`; list lengths; Spiritual Gems with fewer than 2 comment ideas is dropped. A run with no new parts saves nothing and lets the claim go.
 - **Sources:** each source that passes `Ai::SourceLink` is kept as a `StudyGuide::Source`, title and URL only.
 
 ## Models
@@ -174,10 +175,10 @@ end
 | --- | --- | --- |
 | Study guide | `GET /:household_id/study_guides` (`StudyGuidesController#index`) | Redirects to this week's guide when there is one; otherwise the not-made-yet state, with the kept weeks listed |
 | A week | `GET /:household_id/study_guides/:week_of` (`#show`, `?meeting=weekend`) | Frames `desktop-guide-midweek.png`, `desktop-guide-weekend.png`, `phone-guide.png`. Another person's week, or a week the person has none for, is a 404 |
-| Keep in Notes | `POST …/study_guides/:week_of/note` (`StudyGuides::NotesController#create`) | Makes a `PersonalNote` titled "Study guide · Week of November 16", from our own partial: every field escaped, every reference a scripture link. The children's cards aren't included. Then the note's read view |
+| Keep in Notes | `POST …/study_guides/:week_of/note` (`StudyGuides::NotesController#create`) | Makes a `PersonalNote` titled "Study guide · Week of November 16", from our own partial: every field escaped, every `ref` attached as a scripture link from its parsed reference (whole chapters too, as on the page). The children's cards aren't included. Then the note's read view |
 | Settings | `GET`/`PATCH /:household_id/settings/study_guide` (`Settings::StudyGuidesController`) | Frame `phone-guide-settings.png` |
 
-- **Print** is the daily brief's `print` Stimulus controller and print styles that leave out the sidebar, the side column and the buttons. The children's cards print with the guide.
+- **Print** is the daily brief's `print` Stimulus controller and print styles that omit the sidebar, the side column and the buttons. The children's cards print with the guide. So that a printed guide can still be checked against its sources, a "Pages used" list is printed at the end, each page's title followed by its full URL (shown only in print).
 - **Where people find it**, for a head or adult with it on: the sidebar's Mine group gains "Study guide" (Octicon `book`) after Today's meeting; Home's Today's meeting card gains "Read this week's study guide"; and the meeting note edit page links to it beside the outline.
 - **`StudyGuidePolicy`:** a head or adult membership in this household, and the guide's `user` is `Current.user`.
 
@@ -201,7 +202,7 @@ end
 ## States each story checks
 
 - **The setting:** off; on; a head, an adult, a child only (no section); AI terms not accepted (disabled, with the link); turning on prepares this week
-- **The job:** first run; run twice; two at once (one request); a claim taken over; AI terms not accepted (no chat); a week with every part (no request); a week missing parts (asks for those only, keeps the rest); the copy check removing a summary (the part dropped) and an item (the item dropped); a bad reference (dropped, point kept); too few comment ideas; the week over (no retry); a person behind UTC (4am their time)
-- **The page:** a head and an adult with it on; a child membership (404); another person's week (404); not made yet; some parts missing; midweek and weekend; with and without Get ready on in this household; two children using the helper; desktop and phone; light and dark
+- **The job:** first run; run twice; two at once (one request); a claim taken over; AI terms not accepted (no chat); a week with every part (no request); a week missing parts (asks for those only, keeps the rest); the copy check removing a summary (the part dropped) and an item (the item dropped); a bad reference (dropped, point kept); too few comment ideas; the week over (no retry); a person behind UTC (3am their time); a person with no head or adult membership left (skipped, setting kept, resumes when they're one again)
+- **The page:** a chapter-only reference linked; the printed sources list; a head and an adult with it on; a child membership (404); another person's week (404); not made yet; some parts missing; midweek and weekend; with and without Get ready on in this household; two children using the helper; desktop and phone; light and dark
 - **Keep in Notes:** the note's title and body; escaped text; scripture links; no children's cards
 - **Print:** the guide alone, with the children's cards
