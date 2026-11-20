@@ -143,12 +143,12 @@ class PersonalNotesTest < ApplicationSystemTestCase
     assert_selector "#{NEW_TAG_EDITOR} input:focus"
     find_field("Add a tag").send_keys("Talk Prep", :enter)
     within(NEW_TAG_EDITOR) { assert_selector "span.Label", text: "#Talk Prep" }
-    find_field("Add a tag").send_keys("family")
-    find("[role=option]", text: 'Create "#family"').click
+    find_field("Add a tag").send_keys("Family Night")
+    find("[role=option]", text: 'Create "#family-night"').click
     within(NEW_TAG_EDITOR) do
-      assert_selector "span.Label", text: "#family"
-      find("button[aria-label='Remove tag family']").click
-      assert_no_selector "span.Label", text: "#family"
+      assert_selector "span.Label", exact_text: "#Family Night"
+      find("button[aria-label='Remove tag Family Night']").click
+      assert_no_selector "span.Label", text: "#Family Night"
       assert_selector "span.Label", count: 2
       assert_no_selector "a.Label"
     end
@@ -162,7 +162,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
     within("main .note-card") do
       assert_link "#ministry"
       assert_link "#talk-prep"
-      assert_no_link "#family"
+      assert_no_link "#family-night"
     end
     assert_equal %w[ ministry talk-prep ], users(:head).personal_notes.find_by!(title: "Preparing my talk").tags.map(&:name).sort
     assert_accessible

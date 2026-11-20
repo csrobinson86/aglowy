@@ -55,7 +55,7 @@ export default class extends Controller {
       if (name && value.includes(name) && !current.includes(value)) list.append(option.cloneNode(true))
     }
     const suggested = [ ...this.suggestionsTarget.content.querySelectorAll("[role=option]") ].map((option) => option.dataset.autocompleteValue)
-    if (name && !suggested.includes(name) && !current.includes(name)) list.append(this.createOption(name))
+    if (name && !suggested.includes(name) && !current.includes(name)) list.append(this.createOption(name, query))
     return list.innerHTML
   }
 
@@ -69,9 +69,10 @@ export default class extends Controller {
     return tag
   }
 
-  createOption(name) {
+  // Choosing it puts its value in the input: on an unsaved note that's the name as typed, which its Label shows.
+  createOption(name, query) {
     const option = this.createTarget.content.querySelector("[role=option]").cloneNode(true)
-    option.dataset.autocompleteValue = name
+    option.dataset.autocompleteValue = this.hasTemplateTarget ? query.trim() : name
     option.querySelector(".ActionListItem-label").textContent = `Create "#${name}"`
     return option
   }
