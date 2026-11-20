@@ -2,6 +2,9 @@
 <%# The person's bookmarks, read once for every bookmark button on the page (docs/design/bookmarks.md, The bookmark
     button). Only the owner reaches this page. %>
 <% bookmarked = Current.user.bookmarked %>
+<%# The study note's editor opens in its frame, and Turbo keeps only the frame from that response, so the picker its
+    Scripture button opens is here from the start (docs/design/scripture-links.md). %>
+<% content_for :scripture_picker, render(ScripturePickerComponent.new) %>
 
 <%# The study-layout controller arranges the header and the tabs for a phone or md up. %>
 <div data-controller="study-layout">
@@ -10,7 +13,7 @@
   <%= render "personal_studies/errors", personal_study: @personal_study %>
 
   <%# The conversation and the ask box, with the study's note and sources beside them (frame personal-study.png).
-      On a phone they're Conversation, Notes and Sources tabs, with the ask box at the bottom of Conversation (frame
+      On a phone they're Conversation, Note and Sources tabs, with the ask box at the bottom of Conversation (frame
       phone-personal-study.png); from md up the tabs are hidden and every panel shows (_personal_studies.scss). The
       study-ask controller fills the box from an answer's next questions, and "See sources" opens the Sources tab. %>
   <div data-controller="study-ask">
@@ -27,10 +30,12 @@
           <%= render "personal_studies/ask", personal_study: @personal_study, question: @question || PersonalStudy::Question.new %>
         <% end %>
       <% end %>
-      <% panels.with_tab(id: "study-tab-notes") do |tab| %>
-        <% tab.with_text { "Notes" } %>
+      <% panels.with_tab(id: "study-tab-note") do |tab| %>
+        <% tab.with_text { "Note" } %>
         <% tab.with_panel(classes: "personal-study-tabs__notes", data: { study_layout_target: "panel" }) do %>
-          <%= render "personal_studies/notes", personal_study: @personal_study %>
+          <%= turbo_frame_tag @personal_study, :note_panel do %>
+            <%= render "personal_studies/notes/note", personal_study: @personal_study %>
+          <% end %>
         <% end %>
       <% end %>
       <% panels.with_tab(id: "study-tab-sources", data: { study_ask_target: "sourcesTab" }) do |tab| %>

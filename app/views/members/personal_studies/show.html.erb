@@ -28,20 +28,7 @@
   <% end %>
 
   <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-study__sidebar") do %>
-    <section id="study-notes" aria-labelledby="study-notes-heading" class="mb-3">
-      <%= render(Primer::Beta::BorderBox.new) do |box| %>
-        <% box.with_header do %>
-          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-notes-heading")) { "Study note" } %>
-        <% end %>
-        <% box.with_body do %>
-          <% if @personal_study.note %>
-            <%= @personal_study.note.body %>
-          <% else %>
-            <p class="color-fg-muted mb-0">No note yet.</p>
-          <% end %>
-        <% end %>
-      <% end %>
-    </section>
+    <%= render "personal_studies/notes/note", personal_study: @personal_study, read_only: true %>
     <%= render "personal_studies/sources", personal_study: @personal_study %>
   <% end %>
 <% end %>

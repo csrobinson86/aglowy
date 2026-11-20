@@ -1,9 +1,9 @@
 <% content_for :title, @personal_note.title %>
 
-<%# The read view (frame note-read.png): the header with Edit, the note card in the note's color holding the title, the
-    line with its color, collection and tags, and the body as saved, with its scriptures and details beside it, or under
-    it on a phone. Nothing on it is a form field; the title, collection and tags are escaped, and the body is Action
-    Text, sanitized as it renders (Traps). %>
+<%# The read view (frames note-read.png, note-read-from-study.png): the header with Edit, the note card in the note's
+    color holding the title, the line with its color, collection and tags, "From your study" for a study's note, and the
+    body as saved, with its scriptures and details beside it, or under it on a phone. Nothing on it is a form field; the
+    title, collection, tags and study's title are escaped, and the body is Action Text, sanitized as it renders (Traps). %>
 <%= render "personal_notes/header", personal_note: @personal_note, edit_link: true %>
 
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>
@@ -12,6 +12,12 @@
       <h1 class="f2 mb-2 wb-break-word" id="note-title"><%= @personal_note.title %></h1>
       <%= render "personal_notes/line", color: @personal_note.drawn_color, collection: @personal_note.collection,
             tag_names: @personal_note.tags_for(Current.user).map(&:name).sort %>
+      <% if (study = @personal_note.personal_study) %>
+        <p class="d-flex flex-items-center f6 color-fg-muted mb-3">
+          <%= render(Primer::Beta::Octicon.new(:book, size: :xsmall, mr: 2)) %>From your study
+          <%= render(Primer::Beta::Link.new(href: household_personal_study_path(id: study), ml: 2)) { study.title } %>
+        </p>
+      <% end %>
       <%= @personal_note.body %>
     </article>
   <% end %>

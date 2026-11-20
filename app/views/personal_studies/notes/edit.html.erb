@@ -1,0 +1,34 @@
+<% content_for :title, @personal_study.title %>
+<%# The study's note open for editing in its panel's frame (frame personal-study-note-editing.png): the body only, with
+    the Scripture button, Save note and Cancel, which takes the frame back to the read view. A stale save shows the note
+    as it is now under a warning, and what the form sent beneath it (docs/design/notes.md, A note: the version check). %>
+<%= turbo_frame_tag @personal_study, :note_panel do %>
+  <section aria-labelledby="study-note" class="note-card note-card--<%= @note.drawn_color %> p-0 mb-3">
+    <div class="px-3 py-2 border-bottom">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-note")) { "Study note" } %>
+      <%= render "personal_notes/color_name", personal_note: @note %>
+    </div>
+    <div class="p-3">
+      <% if @written %>
+        <%= render(Primer::Alpha::Banner.new(scheme: :warning, mb: 3)) do %>
+          This note changed after you started editing, so your changes weren't saved. It's shown as it is now. What you wrote is below.
+        <% end %>
+      <% end %>
+      <%= primer_form_with(model: @note, scope: :personal_note, url: household_personal_study_note_path(personal_study_id: @personal_study), method: :patch) do |f| %>
+        <%= render PersonalStudies::NoteForm.new(f) %>
+        <div class="mb-3">
+          <%= render "meeting_notes/notes_field", form: f, attribute: :body, label: "Study note", visually_hidden: true,
+                placeholder: "What you want to come back to. Type a scripture, or use the Scripture button." %>
+        </div>
+        <div class="d-flex flex-wrap flex-items-center">
+          <%= render PersonalNotes::SaveForm.new(f) %>
+          <%= render(Primer::Beta::Button.new(tag: :a, href: household_personal_study_path(id: @personal_study), ml: 2)) { "Cancel" } %>
+          <span class="f6 color-fg-muted ml-3">Title, color and tags are in Notes.</span>
+        </div>
+      <% end %>
+      <% if @written %>
+        <%= render "personal_notes/written", note: @written, tag_names: [], body_only: true %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

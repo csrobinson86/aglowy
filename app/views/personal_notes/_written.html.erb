@@ -1,8 +1,9 @@
-<%# locals: (note:, tag_names:) %>
+<%# locals: (note:, tag_names:, body_only: false) %>
 <%# "What you wrote", under the form after a stale save (docs/design/notes.md, A note: the version check): everything
     the form sent, read-only. The title, collection and tag names are escaped; the body is the submitted Action Text,
     sanitized as the read view renders a note, so its formatting survives a copy and paste into the editor. "Copy text"
-    copies the body as plain text. note is unsaved: it only holds what was sent. %>
+    copies the body as plain text. note is unsaved: it only holds what was sent. body_only: the study page's editor, which
+    sends only the body (docs/design/personal-study.md, The study page: Study note). %>
 <section aria-labelledby="what-you-wrote" class="mt-4">
   <%= render(Primer::Beta::BorderBox.new) do |box| %>
     <% box.with_header(display: :flex, align_items: :center, justify_content: :space_between) do %>
@@ -13,8 +14,10 @@
       <% end %>
     <% end %>
     <% box.with_body do %>
-      <p class="f3 text-bold wb-break-word mb-2"><%= note.title %></p>
-      <%= render "personal_notes/line", color: note.drawn_color, collection: note.collection, tag_names:, linked: false %>
+      <% unless body_only %>
+        <p class="f3 text-bold wb-break-word mb-2"><%= note.title %></p>
+        <%= render "personal_notes/line", color: note.drawn_color, collection: note.collection, tag_names:, linked: false %>
+      <% end %>
       <%= note.body %>
     <% end %>
   <% end %>

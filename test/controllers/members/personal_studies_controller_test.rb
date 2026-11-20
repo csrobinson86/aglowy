@@ -29,7 +29,7 @@ class Members::PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: "Who made the animals?"
     assert_select "p", text: /Jehovah made them/
     assert_select "a[href=?]", "https://www.jw.org/en/bible-teachings/questions/creation/"
-    assert_select "#study-notes", text: /Ask about Genesis 1/
+    assert_select "section[aria-labelledby=study-note]", text: /Ask about Genesis 1/
     assert_select "main form", count: 0
     assert_select "main button", count: 0
     assert_select "[data-bookmark-key]", count: 0

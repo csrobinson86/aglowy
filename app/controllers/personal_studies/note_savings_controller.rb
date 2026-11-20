@@ -10,7 +10,7 @@ class PersonalStudies::NoteSavingsController < ApplicationController
     @question.save_to_note
     render turbo_stream: [
       turbo_stream.replace([ @question, :note_saving ], partial: "personal_studies/questions/note_saving", locals: { question: @question, household: Current.household }),
-      turbo_stream.replace([ @question.personal_study, :note ], partial: "personal_studies/notes", locals: { personal_study: @question.personal_study })
+      turbo_stream.replace([ @question.personal_study, :note ], partial: "personal_studies/notes/note", locals: { personal_study: @question.personal_study })
     ]
   rescue PersonalStudy::Question::NotAnswered
     head :unprocessable_content

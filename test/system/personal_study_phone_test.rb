@@ -29,16 +29,19 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
     assert_no_selector "section[aria-labelledby=study-note]"
 
     find("[role=tab]", text: "Conversation").send_keys(:right)
-    assert_selector "[role=tab][aria-selected=true]", text: "Notes"
-    assert_selector "section[aria-labelledby=study-note]"
+    assert_selector "[role=tab][aria-selected=true]", exact_text: "Note"
+    within("section[aria-labelledby=study-note]") do
+      assert_text "No note yet. Save an answer to start one, or write your own."
+      assert_button "Start a note"
+    end
     assert_no_selector "section[aria-labelledby=study-conversation]"
 
-    find("[role=tab]", text: "Notes").send_keys(:right)
+    find("[role=tab]", exact_text: "Note").send_keys(:right)
     assert_selector "[role=tab][aria-selected=true]", text: "Sources"
     assert_selector "section[aria-labelledby=study-sources]"
 
     find("[role=tab]", text: "Sources").send_keys(:left)
-    assert_selector "[role=tab][aria-selected=true]", text: "Notes"
+    assert_selector "[role=tab][aria-selected=true]", exact_text: "Note"
     assert_selector "section[aria-labelledby=study-note]"
   end
 

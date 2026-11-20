@@ -202,6 +202,8 @@ Rails.application.routes.draw do
     # The signed-in person's own studies, found through Current.user (docs/design/personal-study.md, Pages and routes).
     resources :personal_studies, only: %i[ index new create show update destroy ] do
       resources :taggings, only: %i[ create destroy ], module: :personal_studies
+      # The study's note: Start a note, and editing it in place beside the conversation.
+      resource :note, only: %i[ create edit update ], module: :personal_studies
       resources :questions, only: %i[ create destroy ], module: :personal_studies do
         # Save to note on an answer card: appends the answer to the study's one note, making it on the first save.
         resource :note_saving, only: :create
