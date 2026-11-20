@@ -29,6 +29,8 @@ class PrepWeek::Card < ApplicationRecord
   REPLY_WORDS = { about: 20, quality_line: 14, i_can: 14 }.freeze
   REPLY_STORY_SENTENCES = 2..4
   REPLY_SENTENCE_WORDS = 14
+  # A web address in card text: links come only from Ai::SourceLink (docs/design/ai.md, Traps).
+  LINK = %r{https?://|\bwww\.|\b[[:alnum:]-]+\.(?:org|com|net|info|io)\b}i
 
   belongs_to :prep_week
   belongs_to :changed_by, class_name: "User", optional: true
@@ -43,8 +45,8 @@ class PrepWeek::Card < ApplicationRecord
   # A card's attributes from a reply's { step, about, quality, quality_line, i_can, reading, story }, or nil when it
   # fails the checks before saving (docs/design/meeting-prep.md): a known step and quality; about, quality_line and
   # i_can each 1 word to the schema's limit and within its column; a reading and a story of 2 to 4 sentences on the
-  # Bible Reading card, and neither on any other; nothing the copy check removes, except a story sentence, which goes
-  # on its own, as long as 2 are left.
+  # Bible Reading card, and neither on any other; no web address; nothing the copy check removes, except a story
+  # sentence, which goes on its own, as long as 2 are left.
   def self.attributes_from_reply(card, copy_check:)
     return unless card.is_a?(Hash) && card["step"].in?(STEPS) && card["quality"].in?(QUALITIES)
 
@@ -64,10 +66,10 @@ class PrepWeek::Card < ApplicationRecord
   class << self
     private
       # The text squished, or nil unless it's a string of 1 to +words+ words (runs of non-whitespace), within +length+
-      # characters, that the copy check leaves alone.
+      # characters and with no web address, that the copy check leaves alone.
       def text_from_reply(text, length:, words: nil, copy_check:)
         text = text.squish if text.is_a?(String)
-        text if text.is_a?(String) && text.split.size.in?(1..words) && text.length <= length && !copy_check.clean(text).last
+        text if text.is_a?(String) && text.split.size.in?(1..words) && text.length <= length && !text.match?(LINK) && !copy_check.clean(text).last
       end
 
       def reading_from_reply(card, copy_check:)
@@ -80,15 +82,17 @@ class PrepWeek::Card < ApplicationRecord
         { reading: nil, story: nil } if card["reading"].blank? && card["story"].blank?
       end
 
-      # 2 to 4 sentences, each 1 to 14 words within its length, without those the copy check removes; nil when fewer
-      # than 2 are left.
+      # 2 to 4 sentences, each 1 to 14 words within its length and with no web address, without those the copy check
+      # removes; nil when fewer than 2 are left. The story is read as one passage, so what's left is checked again as a
+      # whole: a run copied across two sentences drops it.
       def story_from_reply(story, copy_check:)
         return unless story.is_a?(Array) && story.size.in?(REPLY_STORY_SENTENCES) && story.all?(String)
 
         sentences = story.map(&:squish)
-        return unless sentences.all? { it.split.size.in?(1..REPLY_SENTENCE_WORDS) && it.length <= SENTENCE_LENGTH }
+        return unless sentences.all? { it.split.size.in?(1..REPLY_SENTENCE_WORDS) && it.length <= SENTENCE_LENGTH && !it.match?(LINK) }
 
-        sentences.reject { copy_check.clean(it).last }.then { it if it.size >= REPLY_STORY_SENTENCES.min }
+        kept = sentences.reject { copy_check.clean(it).last }
+        kept if kept.size >= REPLY_STORY_SENTENCES.min && !copy_check.clean(kept.join(" ")).last
       end
   end
 

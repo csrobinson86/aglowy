@@ -379,6 +379,25 @@ class Household::MeetingPrepPreparableTest < ActiveSupport::TestCase
     assert_equal STEPS - %w[ bible_reading ], week.cards.map(&:step)
   end
 
+  test "a copied run across two story sentences drops the Bible Reading card" do
+    accept users(:head)
+    week = prepare(reply(citations: [ "So the people stopped listening to Jehovah. An army came and broke the city walls." ]))
+
+    assert_equal STEPS - %w[ bible_reading ], week.cards.map(&:step)
+    assert_equal [ "bible_reading" ], @household.missing_prep_steps(WEEK, MONDAY)
+  end
+
+  test "a link in a card's text or a story sentence drops the card" do
+    accept users(:head)
+    week = prepare(reply do |parsed|
+      card(parsed, "talk")["about"] = "Read more at https://example.com today."
+      card(parsed, "living")["i_can"] = "Visit www.example.com with Mom."
+      card(parsed, "bible_reading")["story"][2] = "See wol.jw.org/en for the city."
+    end)
+
+    assert_equal %w[ congregation_bible_study watchtower_study ], week.cards.map(&:step)
+  end
+
   test "nothing usable saves nothing and lets the claim go" do
     accept users(:head)
 
