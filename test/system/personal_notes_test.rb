@@ -37,14 +37,16 @@ class PersonalNotesTest < ApplicationSystemTestCase
     click_on "Save note"
 
     assert_text "Note saved."
-    assert_selector "#{EDITOR} .scripture-link", text: "Philippians 4:6"
-    assert_selector "#{EDITOR} .scripture-link", text: "Matthew 6:9"
+    assert_selector "main h1", text: "Prayer: what I learned this week"
+    assert_selector "main .lexxy-content .scripture-link", text: "Philippians 4:6"
+    assert_selector "main .lexxy-content .scripture-link", text: "Matthew 6:9"
     within("section[aria-labelledby=note-scriptures]") do
       assert_link "Philippians 4:6"
       assert_link "Matthew 6:9"
     end
     within("nav[aria-label=Breadcrumb]") { assert_link "Bible questions" }
 
+    click_on "Edit"
     find_field("Add a tag").send_keys("Prayer", :enter)
     within("[id^=tag_editor_personal_note]") { assert_selector "a.Label", text: "#prayer" }
     assert_accessible
@@ -67,7 +69,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
   end
 
   test "pick Yellow with the keyboard, save, see a yellow card and filter by it, in light and dark" do
-    visit household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
+    visit edit_household_personal_note_url(household_id: households(:home), id: personal_notes(:head_family_worship))
 
     within("fieldset", text: "Color") do
       assert_selector ".color-picker__chosen", text: "None"
@@ -78,8 +80,7 @@ class PersonalNotesTest < ApplicationSystemTestCase
     click_on "Save note"
 
     assert_text "Note saved."
-    assert_selector "main .note-card.note-card--yellow", text: "Yellow note"
-    assert find_field("Yellow", visible: :all).checked?
+    assert_selector "main .note-card.note-card--yellow .note-dot--yellow + *", text: "Yellow"
     assert_accessible
 
     visit household_personal_notes_url(household_id: households(:home))
@@ -125,14 +126,15 @@ class PersonalNotesTest < ApplicationSystemTestCase
 
     click_on "Save note"
     assert_text "Note saved."
-    assert_selector "main .note-card.note-card--red", text: "Red note"
+    assert_selector "main h1", text: "Patience"
+    assert_selector "main .note-card.note-card--red .note-dot--red + *", text: "Red"
     assert users(:head).personal_notes.find_by!(title: "Patience").color_red?
   end
 
   test "on a saved yellow note, choosing Blue recolors the card at once; leaving without saving keeps it yellow" do
     note = personal_notes(:head_family_worship)
     note.update!(color: "yellow")
-    visit household_personal_note_url(household_id: households(:home), id: note)
+    visit edit_household_personal_note_url(household_id: households(:home), id: note)
     assert_selector "main .note-card.note-card--yellow", text: "Yellow note"
 
     find("label[for=personal_note_color_blue]").click
@@ -156,6 +158,8 @@ class PersonalNotesTest < ApplicationSystemTestCase
 
     visit household_personal_notes_url(household_id: households(:home))
     click_on "Ideas for family worship"
+    assert_selector "main .note-card.note-card--yellow h1", text: "Ideas for family worship"
+    click_on "Edit"
     within("fieldset", text: "Color") { assert_selector ".color-picker__chosen", text: "Yellow" }
     assert_selector "main .note-card.note-card--yellow"
     assert_no_selector "main .note-card.note-card--blue"
@@ -249,6 +253,126 @@ class PersonalNotesTest < ApplicationSystemTestCase
     assert_no_text "Ideas for family worship"
   ensure
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
+  # docs/design/notes.md, A note: the read view, then Edit, which saves or cancels back to it (frames note-read.png and
+  # note-editing.png).
+  test "open a note to read it, Edit, change the title, Save note and come back to it; Edit then Cancel changes nothing" do
+    note = personal_notes(:head_daniel)
+    note.body = "<p>Head of gold. Read Daniel 2:44</p>"
+    note.link_scriptures
+    note.save!
+    note.tag_with("ministry", by: users(:head))
+    visit household_personal_notes_url(household_id: households(:home))
+
+    click_on "Daniel 2 image: quick reference"
+    assert_selector "main .note-card.note-card--orange h1", text: "Daniel 2 image: quick reference"
+    within("main .note-card") do
+      assert_text "Orange"
+      assert_link "Quick references"
+      assert_link "#ministry"
+      assert_text "Head of gold."
+      assert_link "Daniel 2:44"
+    end
+    assert_no_selector "main input:not([type=hidden]), main select, main lexxy-editor"
+    assert_accessible
+    capture_screens("note-read")
+
+    click_on "Edit"
+    assert_selector EDITOR
+    assert_turbo_idle
+    assert_accessible
+    capture_screens("note-editing")
+    fill_in "Title", with: "Daniel 2: the image"
+    click_on "Save note"
+
+    assert_text "Note saved."
+    assert_selector "main h1", text: "Daniel 2: the image"
+    assert_no_selector EDITOR
+    assert_equal "Daniel 2: the image", note.reload.title
+
+    click_on "Edit"
+    fill_in "Title", with: "Not kept"
+    find("label[for=personal_note_color_blue]").click
+    click_on "Cancel"
+
+    assert_selector "main .note-card.note-card--orange h1", text: "Daniel 2: the image"
+    assert_no_selector EDITOR
+    assert_equal "Daniel 2: the image", note.reload.title
+    assert note.color_orange?
+  end
+
+  test "a title with <b> shows as text on the read view" do
+    note = personal_notes(:head_family_worship)
+    note.update!(title: "<b>Bold</b> plans")
+
+    visit household_personal_note_url(household_id: households(:home), id: note)
+
+    assert_selector "main h1", text: "<b>Bold</b> plans"
+    assert_no_selector "main h1 b"
+  end
+
+  test "Edit in two windows: the second save, with a new color and tag, is refused, shows what it wrote, and the tag is on the note anyway" do
+    note = personal_notes(:head_daniel)
+    edit_url = edit_household_personal_note_url(household_id: households(:home), id: note)
+    visit edit_url
+    assert_selector EDITOR
+
+    other = open_new_window
+    within_window(other) do
+      visit edit_url
+      fill_in "Title", with: "Saved in the other window", fill_options: { clear: :backspace }
+      click_on "Save note"
+      assert_text "Note saved."
+    end
+    other.close
+
+    fill_in "Title", with: "My title"
+    find("label[for=personal_note_color_blue]").click
+    find_field("Add a tag").send_keys("family", :enter)
+    within("[id^=tag_editor_personal_note]") { assert_selector "a.Label", text: "#family" }
+    editable = find("#{EDITOR} [contenteditable='true']")
+    editable.click
+    find("lexxy-toolbar button[name=bold]").click
+    editable.send_keys("My bold point")
+    click_on "Save note"
+
+    assert_text "This note changed after you started editing, so your changes weren't saved. It's shown as it is now. What you wrote is below."
+    assert_equal "Saved in the other window", find_field("Title").value
+    assert_selector "main .note-card.note-card--orange"
+    within("section[aria-labelledby=what-you-wrote]") do
+      assert_text "My title"
+      assert_selector ".note-dot--blue + *", text: "Blue"
+      assert_selector ".Label", text: "#family"
+      assert_selector ".lexxy-content strong", text: "My bold point"
+      assert_selector "clipboard-copy[aria-label='Copy text']"
+    end
+    within("[id^=tag_editor_personal_note]") { assert_selector "a.Label", text: "#family" }
+    note.reload
+    assert_equal "Saved in the other window", note.title
+    assert note.color_orange?
+    assert_equal [ "family" ], note.tags.map(&:name)
+    assert_accessible
+    capture_screens("note-refused", scroll_to: "section[aria-labelledby=what-you-wrote]")
+
+    click_on "Save note"
+    assert_text "Note saved."
+    assert_selector "main h1", text: "Saved in the other window"
+  end
+
+  test "in one window, adding a tag then Save note isn't refused" do
+    note = personal_notes(:head_daniel)
+    visit edit_household_personal_note_url(household_id: households(:home), id: note)
+
+    find_field("Add a tag").send_keys("prayer", :enter)
+    within("[id^=tag_editor_personal_note]") { assert_selector "a.Label", text: "#prayer" }
+    fill_in "Title", with: "Daniel 2, tagged"
+    click_on "Save note"
+
+    assert_text "Note saved."
+    assert_selector "main h1", text: "Daniel 2, tagged"
+    within("main .note-card") { assert_link "#prayer" }
+    assert_equal "Daniel 2, tagged", note.reload.title
   end
 
   test "an empty Notes page" do

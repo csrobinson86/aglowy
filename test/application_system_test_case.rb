@@ -10,10 +10,15 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
 
   # Fixture passwords are in breach lists, so after a real sign-in Chrome's
   # password manager opens a leak warning that swallows every later click.
+  # Capybara's reset leaves the page for about:blank, then clears the cookies.
+  # With the back-forward cache on, the page left keeps its requests running (a
+  # Turbo pre-load of the link the pointer rests on), and one that answers after
+  # the clear sets the session cookie again, so the next test starts signed in.
   driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ] do |options|
     options.add_preference("credentials_enable_service", false)
     options.add_preference("profile.password_manager_enabled", false)
     options.add_preference("profile.password_manager_leak_detection", false)
+    options.add_argument("--disable-features=BackForwardCache")
   end
 
   # The full suite runs in parallel workers, so pages can take longer than the 2s default.

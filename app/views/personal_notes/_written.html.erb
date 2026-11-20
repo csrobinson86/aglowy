@@ -1,0 +1,21 @@
+<%# locals: (note:, tag_names:) %>
+<%# "What you wrote", under the form after a stale save (docs/design/notes.md, A note: the version check): everything
+    the form sent, read-only. The title, collection and tag names are escaped; the body is the submitted Action Text,
+    sanitized as the read view renders a note, so its formatting survives a copy and paste into the editor. "Copy text"
+    copies the body as plain text. note is unsaved: it only holds what was sent. %>
+<section aria-labelledby="what-you-wrote" class="mt-4">
+  <%= render(Primer::Beta::BorderBox.new) do |box| %>
+    <% box.with_header(display: :flex, align_items: :center, justify_content: :space_between) do %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "what-you-wrote")) { "What you wrote" } %>
+      <%# The pinned ClipboardCopyButton draws only its copy icon, so "Copy text" is its label. With no body, nothing to copy. %>
+      <% if (text = note.body.to_plain_text).present? %>
+        <%= render(Primer::Beta::ClipboardCopyButton.new(value: text, size: :small, "aria-label": "Copy text")) %>
+      <% end %>
+    <% end %>
+    <% box.with_body do %>
+      <p class="f3 text-bold wb-break-word mb-2"><%= note.title %></p>
+      <%= render "personal_notes/line", color: note.drawn_color, collection: note.collection, tag_names:, linked: false %>
+      <%= note.body %>
+    <% end %>
+  <% end %>
+</section>

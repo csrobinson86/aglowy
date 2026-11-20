@@ -167,9 +167,9 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     within(question_card("Why does Jehovah allow suffering?")) { click_on "Save as a note" }
 
     assert_text "Saved as a note."
-    assert_field "Title", with: "Why does Jehovah allow suffering?"
+    assert_selector "main h1", text: "Why does Jehovah allow suffering?"
     within("nav[aria-label=Breadcrumb]") { assert_link "Bible questions" }
-    within("lexxy-editor[name='personal_note[body]']") do
+    within("main .note-card .lexxy-content") do
       assert_text "Jehovah never causes suffering"
       assert_selector ".scripture-link", text: "James 1:13"
       assert_text "Pages:"

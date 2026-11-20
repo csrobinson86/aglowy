@@ -1,0 +1,21 @@
+<%# locals: (personal_note:, edit_link: false) %>
+<%# A note's header on both views (frame note-read.png): the breadcrumb, then Edit on the read view and the Pinned
+    toggle. It names the saved collection, so a refused save doesn't show its collection as saved. %>
+<% collection = Current.user.collections.find_by(id: personal_note.collection_id_in_database) %>
+<div class="d-flex flex-items-center flex-justify-between mb-3">
+  <%= render(Primer::Beta::Breadcrumbs.new(mr: 3)) do |breadcrumbs| %>
+    <% breadcrumbs.with_item(href: household_personal_notes_path) { "Notes" } %>
+    <% if collection %>
+      <% breadcrumbs.with_item(href: household_personal_notes_path(collection: collection.id)) { collection.name } %>
+    <% end %>
+  <% end %>
+  <div class="d-flex flex-items-center">
+    <% if edit_link %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_personal_note_path(id: personal_note), mr: 2)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :pencil) %>
+        Edit
+      <% end %>
+    <% end %>
+    <%= render "personal_notes/pin", personal_note: %>
+  </div>
+</div>

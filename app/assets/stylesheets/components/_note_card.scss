@@ -23,10 +23,13 @@
 
 // A modifier per note color (components/_note_colors.scss; docs/design/notes.md, Colors). none keeps the defaults
 // above. Over a color, muted text is drawn in the default text color: in dark mode the color is lighter than the
-// theme's background, and muted text on it falls below 4.5:1.
+// theme's background, and muted text on it falls below 4.5:1. Accent text (links, tags, the read view's scripture
+// links) is too: the accent blue falls below 4.5:1 on orange and brown in light mode, and on every color in dark mode.
+// Links keep their underline.
 @each $color in $note-colors {
   .note-card--#{$color} {
     --fgColor-muted: var(--fgColor-default);
+    --fgColor-accent: var(--fgColor-default);
     --note-card-bgColor: var(--note-color-#{$color});
     --note-card-borderColor: var(--note-color-#{$color}-strong);
     --note-card-barColor: var(--note-color-#{$color}-strong);

@@ -385,7 +385,7 @@ class DailyBriefSystemTest < ApplicationSystemTestCase
     click_on "Keep in Notes"
 
     assert_text "Kept in Notes."
-    assert_field "Title", with: "Daily brief · Tuesday, November 17"
+    assert_selector "main h1", text: "Daily brief · Tuesday, November 17"
     within(".personal-note") do
       assert_text written.result["thread"]
       assert_text "One thing in each role"
