@@ -33,7 +33,7 @@ This builds on these docs:
 | In KIDS-01 | Later |
 | --- | --- |
 | Meeting times in Household settings, for heads and adults | Weeks with no meetings (assemblies, conventions) and circuit overseer visit weeks |
-| Today's meeting for everyone: sidebar item, Home card on meeting days, the right note | Preparing a Watchtower comment with a parent beforehand ("Your paragraph is 7"); the Congregation Bible Study answer is in `docs/design/listening-game.md` |
+| Today's meeting for everyone: sidebar item, Home card on meeting days, the right note | Preparing a Watchtower comment with a parent beforehand: Get ready, `docs/design/meeting-prep.md`; the Congregation Bible Study answer is in `docs/design/listening-game.md` |
 | The helper switch, for heads and adults | Prompts written for that week's program: the listening game, `docs/design/listening-game.md` |
 | The helper: one part at a time, "I heard it!" marks, drawing | A child mode on a parent's phone, for children without a login |
 | The helper's end screen and "Show my family" | Light theme for the helper |
@@ -111,6 +111,8 @@ A helper note follows a fixed list of steps per meeting kind, defined in code li
 | `public_talk` | Public Talk | Listen for a story from the Bible. | Draw the story you heard. | I heard it! / Heard it | weekend | Which Bible story did you hear? |
 | `watchtower_study` | Watchtower Study | Look at the pictures. Raise your hand if you know an answer. | Draw a picture from the study. | I watched! / Watched it | weekend | Which picture did you like? |
 | `closing_song` | Song and prayer | Sing the last song together. | Draw something you sang about. | We sang! / Sang it | song | What was the last song about? |
+
+Since PREP-01, the Watchtower Study step, like the Congregation Bible Study step, shows her own comment above its prompt with "I gave my answer!" when she has written one (`docs/design/meeting-prep.md`, Her comment for the Watchtower Study).
 
 Tones map to the meeting-note section dots: `treasures` → muted, `ministry` and `weekend` → attention, `living` → danger, `song` → accent. When a step has a drawing, its "Talk about it" question becomes "Tell me about your drawing" followed by the step's short title.
 

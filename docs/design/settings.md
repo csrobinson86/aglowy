@@ -24,7 +24,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Offline | yes | yes | yes | Keep Aglowy available offline on this device: on or off, what's kept, notes waiting to save (`docs/design/offline.md`, OFFLINE-01). Lives in this browser, not on the server. Not on `/account` |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
-| | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch; "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
+| | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch and, while it's on, the Get ready check box (`docs/design/meeting-prep.md`); "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
 | | Members and roles | yes | no | no | Each member's role, and Remove |
 
 - The household group's heading is the household's name ("Rivera household"), because these settings belong to that household and nobody else's.
@@ -106,7 +106,7 @@ The section boxes are today's boxes, moved as they are: the same Primer `BorderB
 ### The section nav
 
 `Settings::NavComponent`, a Primer `NavList` labelled "Settings" (`aria: { label: "Settings" }`), with two groups:
-- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`), then Offline once OFFLINE-01 adds it (`docs/design/offline.md`). On a phone the same list is the menu above the section
+- "You": Profile, Appearance, Signing in, My households, Tags and collections, then Calendar once CAL-01 adds it (`docs/design/calendar.md`, Settings → Calendar, which has its routes), then Notifications once NOTIFY-01 adds it (`docs/design/notifications.md`), then Offline once OFFLINE-01 adds it (`docs/design/offline.md`), then Study guide once PREP-02 adds it, for a head or adult in any household (`docs/design/study-guide.md`). On a phone the same list is the menu above the section
 - the household's name: the sections the person's role allows, in the table's order. No group at all for a child.
 
 The current section is selected (`aria-current="page"`, from Primer). Each section's controller passes its id (`:profile`, `:meetings`, …).
