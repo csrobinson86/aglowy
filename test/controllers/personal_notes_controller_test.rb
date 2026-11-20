@@ -388,6 +388,23 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "dialog#delete-personal-note"
   end
 
+  # docs/design/notes.md, A note: the read view (frame note-read-from-study.png).
+  test "show says which study a study's note is from, linking to it, and an ordinary note says nothing" do
+    study = personal_studies(:head_suffering)
+    note = study.with_lock { study.start_note }
+    sign_in identities(:head)
+
+    get household_personal_note_path(household_id: @home, id: note)
+
+    assert_select "main .note-card", text: /From your study/ do
+      assert_select "a[href=?]", household_personal_study_path(household_id: @home, id: study), text: study.title
+    end
+
+    get household_personal_note_path(household_id: @home, id: @note)
+
+    assert_select "main", text: /From your study/, count: 0
+  end
+
   test "show escapes the title, collection and tags, and a note with no color or collection shows neither" do
     note = personal_notes(:head_family_worship)
     note.update!(title: "<b>Bold</b> plans")

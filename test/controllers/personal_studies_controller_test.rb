@@ -280,9 +280,10 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".Banner--error", text: /Collection is only used in Notes/
   end
 
-  test "show has the header with the tag editor, and the study's note linked beside the conversation" do
+  test "show has the header with the tag editor, and the study's note read-only in its frame, with Open in Notes and Edit" do
     @study.tag_with("ministry", by: users(:head))
     note = @study.with_lock { @study.start_note }
+    note.update!(body: "<p>Start with Job.</p>")
     sign_in identities(:head)
 
     get household_personal_study_path(household_id: @home, id: @study)
@@ -294,9 +295,12 @@ class PersonalStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", @study.title
     assert_select "#tag_editor_personal_study_#{@study.id} a.Label", "#ministry"
     assert_select "nav[aria-label='Main'] a[aria-current='page']", "Personal study"
-    assert_select "#note_personal_study_#{@study.id}" do
+    assert_select "turbo-frame#note_panel_personal_study_#{@study.id} #note_personal_study_#{@study.id}.note-card--none" do
       assert_select "h2", "Study note"
-      assert_select "a[href=?]", household_personal_note_path(household_id: @home, id: note), text: note.title
+      assert_select ".lexxy-content", text: /Start with Job./
+      assert_select "a[href=?][data-turbo-frame=_top]", household_personal_note_path(household_id: @home, id: note), text: "Open in Notes"
+      assert_select "a[href=?]", edit_household_personal_study_note_path(household_id: @home, personal_study_id: @study), text: "Edit"
+      assert_select "*", text: /In Notes · Edited/
     end
     assert_select "lexxy-editor", false
     assert_select "dialog#delete-personal-study"

@@ -24,7 +24,8 @@ class PersonalStudies::NoteSavingsControllerTest < ActionDispatch::IntegrationTe
       assert_select "button", false
     end
     assert_select "turbo-stream[action=replace][target=note_personal_study_#{@study.id}] template" do
-      assert_select "a[href=?]", household_personal_note_path(household_id: @home, id: note), text: note.title
+      assert_select "a[href=?]", household_personal_note_path(household_id: @home, id: note), text: "Open in Notes"
+      assert_select ".lexxy-content", text: /Jehovah never causes suffering/
     end
     assert_includes note.body.to_plain_text, "Jehovah never causes suffering."
     assert_equal [ Bible::Reference.find("59:1:13") ], note.body.body.attachables

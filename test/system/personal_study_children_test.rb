@@ -65,12 +65,28 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
     assert_selector "h1", text: "How did life begin?"
     assert_selector ".study-question p", text: "Who made the animals?"
     assert_text "The publications explain that suffering didn't start with God."
-    within("#study-notes") { assert_text "Ask about Genesis 1." }
+    within("section[aria-labelledby=study-note]") { assert_text "Ask about Genesis 1." }
     assert_selector ".Label", text: "#creation"
     assert_no_button "Save to note"
     assert_no_field "Ask a follow-up"
     assert_accessible
     capture_screens("child-personal-study-read-by-head")
+  end
+
+  test "a head reading a child's study sees its note read-only, without Edit or Open in Notes" do
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+    sign_in identities(:head)
+
+    visit household_member_personal_study_url(household_id: households(:home), member_id: memberships(:eli_in_home), id: @study)
+
+    within("section[aria-labelledby=study-note]") do
+      assert_text "Study note"
+      assert_text "Ask about Genesis 1."
+      assert_no_link "Edit"
+      assert_no_link "Open in Notes"
+      assert_no_selector "form, button"
+    end
+    assert_accessible
   end
 
   test "an adult sees the state and that only a head can turn it on" do
@@ -110,7 +126,7 @@ class PersonalStudyChildrenTest < ApplicationSystemTestCase
     assert_field "Ask a question", disabled: true
     assert_text "Ask a head to turn on AI for your personal study."
     assert_no_text "Your parents can read your personal study"
-    within("section[aria-labelledby=study-note]") { assert_link "How did life begin?" }
+    within("section[aria-labelledby=study-note]") { assert_text "Ask about Genesis 1." }
   end
 
   private
