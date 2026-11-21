@@ -3,13 +3,21 @@ require "test_helper"
 class AppShell::HouseholdSwitcherComponentTest < ViewComponent::TestCase
   include Rails.application.routes.url_helpers
 
+  test "two households list only the households, with no \"New household\" and no divider" do
+    render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:head_in_home)))
+
+    assert_equal [ "The Grandparent Family", "The Head Family" ], page.all("action-menu .ActionListItem-label").map { it.text.strip }
+    assert_no_text "New household"
+    assert_no_selector "action-menu a[href='#{new_household_path}']"
+    assert_no_selector "action-menu .ActionList-sectionDivider"
+  end
+
   test "lists only the person's active households" do
-    memberships(:head_in_parents).update_column(:active, false)
+    Membership.create!(user: users(:head), household: households(:other), role: :adult, active: false)
 
     render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:head_in_home)))
 
-    assert_equal [ "The Head Family", "New household" ], page.all("action-menu .ActionListItem-label").map { it.text.strip }
-    assert_no_text "The Grandparent Family"
+    assert_equal [ "The Grandparent Family", "The Head Family" ], page.all("action-menu .ActionListItem-label").map { it.text.strip }
     assert_no_text "The Outsider Family"
   end
 
@@ -28,38 +36,44 @@ class AppShell::HouseholdSwitcherComponentTest < ViewComponent::TestCase
     assert_selector "button", text: /The Head Family\s*Head/
   end
 
-  test "shows \"New household\" when the policy allows it" do
-    assert HouseholdPolicy.new(memberships(:spouse_in_home), users(:spouse)).create?
-
+  test "one household renders its name and role as text with no action-menu and no button" do
     render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:spouse_in_home)))
 
-    assert_selector "action-menu .ActionList-sectionDivider"
-    assert_selector "action-menu a[href='#{new_household_path}']", text: "New household"
-  end
-
-  test "no \"New household\" item for Eli" do
-    render_inline(AppShell::HouseholdSwitcherComponent.new(membership: memberships(:eli_in_home)))
-
-    assert_selector "action-menu [role='menuitemradio']", text: "The Head Family"
-    assert_no_selector "action-menu a[href='#{new_household_path}']"
+    assert_selector ".Truncate-text.text-bold", text: "The Head Family"
+    assert_selector ".f6.color-fg-muted", text: "Adult"
+    assert_no_selector "action-menu"
+    assert_no_selector "button"
+    assert_no_selector "a"
+    assert_no_selector "svg.octicon-chevron-down"
     assert_no_text "New household"
-    assert_no_selector "action-menu .ActionList-sectionDivider"
   end
 
-  test "the child preview has no \"New household\" item; the others do" do
-    render_preview(:child)
-    assert_no_text "New household"
+  test "a long name truncates, with one household and with several" do
+    %i[ long_name long_name_one_household ].each do |preview|
+      render_preview(preview)
 
-    render_preview(:one_household)
-    assert_text "New household"
+      assert_selector ".min-width-0 .Truncate .Truncate-text", text: "The Extraordinarily Long-Named Rivera-Montgomery Household of Springfield"
+    end
   end
 
-  test "the previews render" do
-    %i[ one_household several_households long_name child ].each do |preview|
+  test "the previews for one household render as text" do
+    %i[ one_household long_name_one_household ].each do |preview|
+      render_preview(preview)
+
+      assert_text(/Rivera.*Head/m)
+      assert_no_selector "action-menu"
+      assert_no_selector "button"
+    end
+  end
+
+  test "the previews for two households render a menu" do
+    %i[ several_households long_name child ].each do |preview|
       render_preview(preview)
 
       assert_selector "action-menu"
+      assert_selector "[role='menuitemradio']", count: 2
       assert_selector "[role='menuitemradio'][aria-checked='true']", count: 1
+      assert_no_text "New household"
     end
   end
 end

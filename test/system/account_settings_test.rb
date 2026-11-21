@@ -53,6 +53,18 @@ class AccountSettingsTest < ApplicationSystemTestCase
     capture_screens("account-settings-dark")
   end
 
+  test "a person with no household, allowed to start one, sees \"New household\" in My households" do
+    assert users(:former).can_start_household?
+    sign_in identities(:former)
+    visit edit_account_url
+
+    within(".Box", text: "My households") do
+      assert_selector ".Box-header h2", text: "My households"
+      within(".Box-header") { click_on "New household" }
+    end
+    assert_selector "h1", text: "New household"
+  end
+
   test "with a household, /account opens Settings" do
     sign_in identities(:spouse)
     visit edit_account_url

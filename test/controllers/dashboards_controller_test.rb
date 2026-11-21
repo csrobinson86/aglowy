@@ -18,7 +18,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".Subhead-description", /\AThe Head Family · /
     assert_select ".blankslate h2", "Welcome to The Head Family"
     assert_select "main", text: /Sam Spouse/, count: 0
-    assert_select "header a[href='#{new_household_path}']"
+    assert_select "header a[href='#{new_household_path}']", count: 0
   end
 
   test "the page title is Home · <household> · Aglowy" do
