@@ -1,0 +1,27 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// Home's New menu (docs/design/app-shell.md, Home's New menu). Primer's coarse-pointer menu items are 40px tall, so
+// they're raised to the 44px touch target, as the calendar's Add menu's are.
+.home-new-menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
+}
+
+// On a phone the button goes full width under the title and description, as primary page actions do (Phone), and the
+// menu opens under it. Primer's own coarse-pointer target for .Button never applies, so the button is 44px itself.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .Subhead-actions:has(> .home-new-menu) {
+    flex: 1 100%;
+    order: 3;
+    margin: var(--base-size-16) 0 0;
+  }
+
+  .home-new-menu {
+    display: block;
+  }
+
+  .home-new-menu__button {
+    width: 100%;
+    height: var(--base-size-44);
+  }
+}

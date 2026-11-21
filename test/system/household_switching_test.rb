@@ -24,7 +24,7 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
 
     open_household_switcher
     assert_equal [ "The Grandparent Family Adult", "The Head Family Head" ], all("aside action-menu [role=menu] li").map { it.text.squish }
-    within("action-menu") do
+    within("aside action-menu") do
       assert_selector "a[aria-checked='true']", text: "The Head Family"
       assert_no_text "New household"
       click_on "The Grandparent Family"
