@@ -3,10 +3,10 @@
 
 <%= primer_form_with(model: @answer, scope: :answer, url: household_meeting_note_step_answer_path(meeting_note_id: @meeting_note, step_id: @step.key), method: :patch, class: "meeting-helper__answer-form") do |f| %>
   <p class="meeting-helper__part"><%= meeting_note_dot(@step.color) %><%= @step.title %> · before the meeting</p>
-  <h1 class="meeting-helper__heading">My answer for Bible study</h1>
+  <h1 class="meeting-helper__heading">My <%= @step.answer_name %></h1>
   <p class="meeting-helper__lead">Pick a paragraph with your family. Then write what you'll say.</p>
-  <%= render MeetingNotes::Steps::AnswerForm.new(f) %>
-  <%= render Primer::Beta::Button.new(tag: :a, href: household_meeting_note_step_path(meeting_note_id: @meeting_note, id: @step.key), size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-helper__answer-back") do |button| %>
+  <%= render MeetingNotes::Steps::AnswerForm.new(f, from_prep: from_prep?) %>
+  <%= render Primer::Beta::Button.new(tag: :a, href: back_to_step_path(@step), size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-helper__answer-back") do |button| %>
     <% button.with_leading_visual_icon(icon: :"arrow-left") %>
     Back
   <% end %>

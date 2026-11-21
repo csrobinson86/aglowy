@@ -4,7 +4,8 @@
 <% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@card.meeting) %>
 <% content_for :helper_progress, render("meeting_preps/cards/dots", cards: @cards, card: @card, step: @step) %>
 
-<%# One card (frames tablet-prep-card.png, tablet-prep-reading.png). Its text is the AI's or a parent's: escaped, never
+<%# One card (frames tablet-prep-card.png, tablet-prep-reading.png, and on the studies tablet-prep-study-comment.png and
+    tablet-prep-watchtower.png). Its text is the AI's or a parent's: escaped, never
     html_safe (Trap 4). The quality's words and icon are ours (Trap 3). %>
 <div class="meeting-prep__card">
   <p class="meeting-helper__part meeting-prep__part"><%= meeting_note_dot(@step.color) %><%= @step.title %> · Card <%= position + 1 %> of <%= @cards.size %></p>
@@ -41,13 +42,21 @@
       </div>
     </section>
   </div>
+
+  <%= render "meeting_preps/cards/comment", card: @card, meeting_note: @meeting_note if @step.answerable? %>
 </div>
 
-<%# Back on the first card, and All done on the last, go to her Get ready page. %>
+<%# Back on the first card, and All done on the last, go to her Get ready page. Draw it! on the Bible Reading card
+    starts her note and opens its drawing (frame tablet-prep-reading.png). %>
 <nav class="meeting-helper__steps" aria-label="Cards">
   <%= render Primer::Beta::Button.new(tag: :a, href: previous_card ? household_meeting_prep_card_path(meeting_prep_meeting: @card.meeting, id: previous_card.step) : household_meeting_preps_path, size: :large, classes: "meeting-helper__button meeting-helper__button--step") do |button| %>
     <% button.with_leading_visual_icon(icon: :"arrow-left") %>
     Back
+  <% end %>
+  <% if @card.step == "bible_reading" %>
+    <%= primer_form_with(url: household_meeting_prep_note_path(meeting_prep_meeting: @card.meeting)) do |f| %>
+      <%= render MeetingPreps::NoteForm.new(f, to: "drawing") %>
+    <% end %>
   <% end %>
   <%= render Primer::Beta::Button.new(tag: :a, href: next_card ? household_meeting_prep_card_path(meeting_prep_meeting: @card.meeting, id: next_card.step) : household_meeting_preps_path, scheme: :primary, size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-prep__go") do |button| %>
     <% button.with_trailing_visual_icon(icon: :"arrow-right") %>

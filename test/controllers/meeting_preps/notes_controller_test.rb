@@ -53,10 +53,16 @@ class MeetingPreps::NotesControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { MeetingNote.count } do
       post note_path("midweek"), params: { to: "https://example.com" }
-      assert_response :not_found
-      post note_path("midweek")
-      assert_response :not_found
     end
+    assert_response :not_found
+  end
+
+  test "no to is a 404" do
+    sign_in identities(:eli)
+
+    post note_path("midweek")
+
+    assert_response :not_found
   end
 
   test "a drawing on the weekend is a 404: it has no Bible Reading card" do

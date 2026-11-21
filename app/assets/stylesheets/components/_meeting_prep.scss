@@ -212,3 +212,11 @@
 .meeting-prep__go.Button--primary:hover:not(:disabled) {
   background-color: var(--button-primary-bgColor-rest);
 }
+
+// Her comment on the Bible Study and Watchtower cards (frames tablet-prep-study-comment.png, tablet-prep-watchtower.png):
+// the helper's answer box, with Get my comment ready or Change at its end.
+.meeting-prep__comment-line {
+  margin: 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-title-size-medium);
+}

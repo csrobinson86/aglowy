@@ -1,0 +1,29 @@
+<%# locals: (card:, meeting_note:) %>
+<%# Her comment on the Bible Study or Watchtower card (frames tablet-prep-study-comment.png, tablet-prep-watchtower.png):
+    her meeting note's answer, the one the helper shows at the meeting (docs/design/meeting-prep.md, Her comment for the
+    Watchtower Study). Before she has one, Get my comment ready starts her note; after, Change opens it. Her words are
+    escaped, like all her text (Trap 5). %>
+<% answer = meeting_note&.answer %>
+<section class="meeting-helper__answer meeting-prep__comment" aria-labelledby="meeting-prep-comment">
+  <%= meeting_helper_icon(icon: "hand", color: :accent, size: :small) %>
+  <div class="meeting-helper__answer-text">
+    <% if answer %>
+      <h2 class="meeting-helper__answer-label" id="meeting-prep-comment">My comment · paragraph <%= answer.paragraph %></h2>
+      <p class="meeting-helper__answer-body"><%= answer.body %></p>
+    <% else %>
+      <h2 class="meeting-prep__box-title" id="meeting-prep-comment">My comment</h2>
+      <p class="meeting-prep__comment-line">Pick a paragraph with your family. Then say it your own way.</p>
+    <% end %>
+  </div>
+  <% if answer %>
+    <%= render Primer::Beta::Button.new(tag: :a, href: edit_household_meeting_note_step_answer_path(meeting_note_id: meeting_note, step_id: card.step, from: "prep"),
+                                        size: :large, classes: "meeting-helper__button meeting-helper__button--step") do |button| %>
+      <% button.with_leading_visual_icon(icon: :pencil) %>
+      Change
+    <% end %>
+  <% else %>
+    <%= primer_form_with(url: household_meeting_prep_note_path(meeting_prep_meeting: card.meeting)) do |f| %>
+      <%= render MeetingPreps::NoteForm.new(f, to: "answer") %>
+    <% end %>
+  <% end %>
+</section>

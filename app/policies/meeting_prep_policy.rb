@@ -7,4 +7,7 @@ class MeetingPrepPolicy < ApplicationPolicy
   end
 
   def show? = index?
+
+  # Starting her note from a card, for her comment or Draw it!.
+  def create? = index?
 end

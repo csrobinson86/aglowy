@@ -1,6 +1,7 @@
 # A step's drawing (docs/design/meeting-helper.md, Pages, Draw and A drawing's image). Editing and saving are helper
-# pages, on the child's own note. The image itself isn't (Trap 1): anyone who may read the note gets it, the
-# author or a member it's shared with, even after the helper is turned off.
+# pages, on the child's own note; from Get ready's Draw it!, All done goes back to the card. The image itself isn't
+# (Trap 1): anyone who may read the note gets it, the author or a member it's shared with, even after the helper is
+# turned off.
 class MeetingNotes::Steps::DrawingsController < ApplicationController
   include MeetingHelperScoped
   include ActiveStorage::SetCurrent
@@ -26,7 +27,7 @@ class MeetingNotes::Steps::DrawingsController < ApplicationController
     @drawing = @meeting_note.draw(@step.key, params.expect(drawing: [ :image ])[:image])
 
     if @drawing.errors.none?
-      redirect_to household_meeting_note_step_path(meeting_note_id: @meeting_note, id: @step.key)
+      redirect_to back_to_step_path(@step)
     else
       render :edit, status: :unprocessable_content
     end
