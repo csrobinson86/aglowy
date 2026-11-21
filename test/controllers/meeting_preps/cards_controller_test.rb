@@ -201,7 +201,7 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "turbo-frame#meeting_prep_card_dialog dialog[open]" do
       assert_select "h1", "Treasures From God's Word"
-      assert_select "form[action=?]", card_path("talk") do
+      assert_select "form[action=?]", card_path("talk", week_of: "2026-11-09") do
         assert_select "textarea[name='prep_week_card_change[about]'][maxlength='160']", "Jeremiah felt very sad. But he remembered that Jehovah never stops caring."
         assert_select "select[name='prep_week_card_change[quality]'] option", count: 10
         assert_select "select[name='prep_week_card_change[quality]'] option[selected][value=caring]", "Jehovah cares"
@@ -231,7 +231,7 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
   test "update, for a head: the card changes, changed_by is set, and the row is redrawn" do
     sign_in identities(:head)
 
-    patch card_path("talk"), as: :turbo_stream, params: { prep_week_card_change: {
+    patch card_path("talk", week_of: "2026-11-09"), as: :turbo_stream, params: { prep_week_card_change: {
       about: " Jeremiah  was sad. ", quality: "loving", quality_line: "He stayed close.", i_can: "Hug my sister." } }
 
     assert_response :success
@@ -246,7 +246,7 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
   test "update, without Turbo, goes back to Get ready" do
     sign_in identities(:spouse)
 
-    patch card_path("talk"), params: { prep_week_card_change: {
+    patch card_path("talk", week_of: "2026-11-09"), params: { prep_week_card_change: {
       about: "Jeremiah was sad.", quality: "caring", quality_line: "He stayed close.", i_can: "Hug my sister." } }
 
     assert_redirected_to household_meeting_preps_path(household_id: @home)
@@ -257,13 +257,13 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
   test "update, the Bible Reading card: blank sentences go, and a cleared reading and story are kept cleared" do
     sign_in identities(:head)
 
-    patch card_path("bible_reading"), params: { prep_week_card_change: { about: "A sad song.", quality: "fair", quality_line: "He warned them.",
+    patch card_path("bible_reading", week_of: "2026-11-09"), params: { prep_week_card_change: { about: "A sad song.", quality: "fair", quality_line: "He warned them.",
       i_can: "Listen.", reading: "Lamentations 1", story_1: "", story_2: " Jerusalem was sad. ", story_3: " ", story_4: "Jehovah still cared." } }
 
     card = prep_week_cards(:home_nov_9_bible_reading).reload
     assert_equal [ "Lamentations 1", [ "Jerusalem was sad.", "Jehovah still cared." ] ], [ card.reading, card.story ]
 
-    patch card_path("bible_reading"), params: { prep_week_card_change: { about: "A sad song.", quality: "fair", quality_line: "He warned them.",
+    patch card_path("bible_reading", week_of: "2026-11-09"), params: { prep_week_card_change: { about: "A sad song.", quality: "fair", quality_line: "He warned them.",
       i_can: "Listen.", reading: " ", story_1: "", story_2: "", story_3: "", story_4: "" } }
 
     assert_equal [ nil, nil ], card.reload.slice(:reading, :story).values
@@ -272,7 +272,7 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
   test "update with an unknown quality and a too-long field re-renders the dialog with each error by its field" do
     sign_in identities(:head)
 
-    patch card_path("talk"), params: { prep_week_card_change: {
+    patch card_path("talk", week_of: "2026-11-09"), params: { prep_week_card_change: {
       about: "Jeremiah was sad.", quality: "brave", quality_line: "a" * 121, i_can: "Hug my sister." } }
 
     assert_response :unprocessable_content
@@ -287,7 +287,7 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
   test "update with a blank I can… or a story sentence over 120 characters is refused" do
     sign_in identities(:head)
 
-    patch card_path("bible_reading"), params: { prep_week_card_change: {
+    patch card_path("bible_reading", week_of: "2026-11-09"), params: { prep_week_card_change: {
       about: "A sad song.", quality: "fair", quality_line: "He warned them.", i_can: " ", reading: "Lamentations 1–2", story_1: "a" * 121 } }
 
     assert_response :unprocessable_content
@@ -314,13 +314,24 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "a save from a dialog opened in another week, or naming no week, is a 404 and changes nothing" do
+    [ card_path("talk", week_of: "2026-11-02"), card_path("talk") ].each do |path|
+      sign_in identities(:head)
+
+      patch path, params: { prep_week_card_change: { about: "Last week.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
+
+      assert_response :not_found, "expected a 404 at #{path}"
+    end
+    assert_nil prep_week_cards(:home_nov_9_talk).reload.changed_by
+  end
+
   test "a child gets a 404 on edit and update" do
     sign_in identities(:eli)
     get edit_card_path("talk")
     assert_response :not_found
 
     sign_in identities(:eli) # A 404 from an exception sets no session cookie, so the test sign-in doesn't last.
-    patch card_path("talk"), params: { prep_week_card_change: { about: "Changed.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
+    patch card_path("talk", week_of: "2026-11-09"), params: { prep_week_card_change: { about: "Changed.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
     assert_response :not_found
     assert_equal "Tell Jehovah when I feel sad.", prep_week_cards(:home_nov_9_talk).reload.i_can
   end
@@ -332,7 +343,7 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
 
     sign_in identities(:head)
-    patch card_path("talk"), params: { prep_week_card_change: { about: "Changed.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
+    patch card_path("talk", week_of: "2026-11-09"), params: { prep_week_card_change: { about: "Changed.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
     assert_response :not_found
     assert_nil prep_week_cards(:home_nov_9_talk).reload.changed_by
   end
@@ -342,8 +353,8 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
       edit_household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: step)
     end
 
-    def card_path(step)
-      household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: step)
+    def card_path(step, **params)
+      household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: step, **params)
     end
 
     def note_path(meeting)

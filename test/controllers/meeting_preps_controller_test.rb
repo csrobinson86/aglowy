@@ -150,6 +150,15 @@ class MeetingPrepsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main b", count: 0
   end
 
+  test "index, for a head, is kept out of Turbo's snapshot cache and the browser's, so Back can't show it to the next person to sign in" do
+    sign_in identities(:head)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_select "meta[name=turbo-cache-control][content=no-cache]"
+    assert_equal "no-store", response.headers["Cache-Control"]
+  end
+
   test "index, for a head, with no cards this week: Cards aren't ready yet" do
     users(:head).accept_ai_terms(understood: true)
     travel_to Time.utc(2026, 11, 17, 12)

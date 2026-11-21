@@ -9,6 +9,7 @@ class MeetingPrepsController < ApplicationController
       @meetings = Current.household.this_weeks_meetings
       @commented = Current.user.meeting_notes.where(week_of: @week_of).joins(:answer).pluck(:kind)
     else
+      no_store # It names the household's children: Back can't show it to the next person to sign in, as on the brief's page.
       render :check
     end
   end
