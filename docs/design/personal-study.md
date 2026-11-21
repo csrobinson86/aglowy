@@ -148,7 +148,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 
 ### The study page
 
-- **Header.** Breadcrumb (Personal study / the collection), the title, "Started … · N questions · N pages linked", the tag editor, "Plan a family study from this" (heads and adults, in a household with family studies), and a menu with Rename, Move to collection and Delete.
+- **Header.** Breadcrumb (Personal study / the collection), the title, "Started … · N questions · N pages linked", the tag editor, and the "…" menu: "Create family study" (heads and adults, in a household with family studies), then Rename, Move to collection and Delete. The header has no other button (Casey, 21 Nov; Create family study, below).
 - **Conversation.** Each question, then its answer card:
   - "From jw.org and wol.jw.org"
   - the paragraphs with linked references
@@ -186,9 +186,9 @@ The person can edit the note like any other. It's their record now, so it's kept
 | `personal_note_id` | uuid | FK → personal_notes, not null, cascade | Deleting the note clears its savings, so each answer shows "Save to note" again and the next save makes a new note |
 | `created_at` | datetime | | |
 
-### Plan a family study from this
+### Create family study
 
-It links to the household's Schedule a family study page with `?from_study=:id`. The AI panel opens on Describe with the study's title and its last question filled in (`docs/design/family-studies.md`, AI helper). Nothing is sent until the person chooses "Draft outline", and it counts toward the household's drafts, not the person's questions.
+The first item in the study's "…" menu, on every screen size, with the `book` icon and a divider under it, since it leaves the study while the items below change it. It was a header button, "Plan a family study from this", until Casey moved it into the menu on 21 Nov to keep the header clean. It links to the household's Schedule a family study page with `?from_study=:id`. The AI panel opens on Describe with the study's title and its last question filled in (`docs/design/family-studies.md`, AI helper). Nothing is sent until the person chooses "Draft outline", and it counts toward the household's drafts, not the person's questions.
 
 ## Changes to `docs/design/ai.md`
 
