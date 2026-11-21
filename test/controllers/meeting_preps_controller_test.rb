@@ -115,7 +115,7 @@ class MeetingPrepsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "body[data-color-mode=dark]", count: 0
-    assert_select "nav[aria-label='Sidebar']"
+    assert_select "nav[aria-label='Main']"
     assert_select "main h1", "This week's Get ready cards"
     assert_select "main", text: /Week of November 9–15, 2026/
     assert_select "main", text: /AI wrote these from this week's program. Eli can see them now. Change anything that isn't right./

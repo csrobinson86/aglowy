@@ -1,0 +1,16 @@
+<% content_for :title, "Change a card" %>
+<%= turbo_frame_tag "meeting_prep_card_dialog" do %>
+  <%# Change a card (docs/design/meeting-prep.md, Pages and routes; frame phone-prep-change.png), open as soon as the
+      parent's page's frame loads it. Saving empties the frame with the dialog still open, so dialog-removal lets the page
+      scroll again. %>
+  <div data-controller="dialog-removal">
+    <% dialog_id = "meeting-prep-card-dialog" %>
+    <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: MeetingNote::HelperSteps.for(@card.meeting).fetch(@card.step).title, size: :medium_portrait, position_narrow: :bottom, open: true)) do |dialog| %>
+      <% dialog.with_body(pb: 3) do %>
+        <%= primer_form_with(model: @change, url: household_meeting_prep_card_path(meeting_prep_meeting: @card.meeting, id: @card.step), method: :patch) do |f| %>
+          <%= render MeetingPreps::CardForm.new(f, dialog_id:) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

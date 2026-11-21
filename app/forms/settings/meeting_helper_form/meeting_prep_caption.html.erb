@@ -1,0 +1,5 @@
+<%# The Get ready check box's caption, with the link to this week's cards while it's on (frame phone-prep-settings.png). %>
+Each week, AI writes a few simple cards about both meetings, from this week's program on jw.org: what each part is about, something about Jehovah, and one thing to do. Children see them as soon as they're ready. You can read and change them.<%= turned_on(@meeting_prep) %>
+<% if @meeting_prep %>
+  <span class="d-block mt-1"><%= render(Primer::Beta::Link.new(href: @cards_path, underline: true)) { "This week's cards" } %></span>
+<% end %>

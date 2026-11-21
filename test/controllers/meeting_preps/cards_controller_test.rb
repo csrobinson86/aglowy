@@ -192,7 +192,156 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # Change a card, for heads and adults (docs/design/meeting-prep.md, Pages and routes; frame phone-prep-change.png).
+  test "edit, for a head: a dialog with what it's about, Jehovah is… as a select of the ten, How it shows and I can…" do
+    sign_in identities(:head)
+
+    get edit_card_path("talk")
+
+    assert_response :success
+    assert_select "turbo-frame#meeting_prep_card_dialog dialog[open]" do
+      assert_select "h1", "Treasures From God's Word"
+      assert_select "form[action=?]", card_path("talk") do
+        assert_select "textarea[name='prep_week_card_change[about]'][maxlength='160']", "Jeremiah felt very sad. But he remembered that Jehovah never stops caring."
+        assert_select "select[name='prep_week_card_change[quality]'] option", count: 10
+        assert_select "select[name='prep_week_card_change[quality]'] option[selected][value=caring]", "Jehovah cares"
+        assert_select "input[name='prep_week_card_change[quality_line]'][value=?][maxlength='120']", "His kindness is new every morning."
+        assert_select "input[name='prep_week_card_change[i_can]'][value=?][maxlength='120']", "Tell Jehovah when I feel sad."
+        assert_select "input[name='prep_week_card_change[reading]']", count: 0
+        assert_select "input[name^='prep_week_card_change[story_']", count: 0
+        assert_select "button[type=submit]", "Save"
+      end
+    end
+  end
+
+  test "edit, the Bible Reading card: the reading and four story sentences" do
+    sign_in identities(:spouse)
+
+    get edit_card_path("bible_reading")
+
+    assert_select "dialog[open] form" do
+      assert_select "input[name='prep_week_card_change[reading]'][value=?][maxlength='40']", "Lamentations 1–2"
+      assert_select "input[name='prep_week_card_change[story_1]'][value=?]", "Jerusalem was the city where Jehovah’s people lived."
+      assert_select "input[name='prep_week_card_change[story_2]'][value=?]", "The people stopped listening to Jehovah."
+      assert_select "input[name='prep_week_card_change[story_3]'][value='']"
+      assert_select "input[name='prep_week_card_change[story_4]'][maxlength='120']"
+    end
+  end
+
+  test "update, for a head: the card changes, changed_by is set, and the row is redrawn" do
+    sign_in identities(:head)
+
+    patch card_path("talk"), as: :turbo_stream, params: { prep_week_card_change: {
+      about: " Jeremiah  was sad. ", quality: "loving", quality_line: "He stayed close.", i_can: "Hug my sister." } }
+
+    assert_response :success
+    card = prep_week_cards(:home_nov_9_talk).reload
+    assert_equal [ "Jeremiah was sad.", "loving", "He stayed close.", "Hug my sister.", users(:head) ],
+                 [ card.about, card.quality, card.quality_line, card.i_can, card.changed_by ]
+    assert_nil card.reading
+    assert_select "turbo-stream[action=update][target=meeting_prep_card_dialog]"
+    assert_select "turbo-stream[action=update][target=prep_week_card_#{card.id}] template", text: /Jehovah is loving · I can: Hug my sister./
+  end
+
+  test "update, without Turbo, goes back to Get ready" do
+    sign_in identities(:spouse)
+
+    patch card_path("talk"), params: { prep_week_card_change: {
+      about: "Jeremiah was sad.", quality: "caring", quality_line: "He stayed close.", i_can: "Hug my sister." } }
+
+    assert_redirected_to household_meeting_preps_path(household_id: @home)
+    assert_equal "Card saved.", flash[:notice]
+    assert_equal users(:spouse), prep_week_cards(:home_nov_9_talk).reload.changed_by
+  end
+
+  test "update, the Bible Reading card: blank sentences go, and a cleared reading and story are kept cleared" do
+    sign_in identities(:head)
+
+    patch card_path("bible_reading"), params: { prep_week_card_change: { about: "A sad song.", quality: "fair", quality_line: "He warned them.",
+      i_can: "Listen.", reading: "Lamentations 1", story_1: "", story_2: " Jerusalem was sad. ", story_3: " ", story_4: "Jehovah still cared." } }
+
+    card = prep_week_cards(:home_nov_9_bible_reading).reload
+    assert_equal [ "Lamentations 1", [ "Jerusalem was sad.", "Jehovah still cared." ] ], [ card.reading, card.story ]
+
+    patch card_path("bible_reading"), params: { prep_week_card_change: { about: "A sad song.", quality: "fair", quality_line: "He warned them.",
+      i_can: "Listen.", reading: " ", story_1: "", story_2: "", story_3: "", story_4: "" } }
+
+    assert_equal [ nil, nil ], card.reload.slice(:reading, :story).values
+  end
+
+  test "update with an unknown quality and a too-long field re-renders the dialog with each error by its field" do
+    sign_in identities(:head)
+
+    patch card_path("talk"), params: { prep_week_card_change: {
+      about: "Jeremiah was sad.", quality: "brave", quality_line: "a" * 121, i_can: "Hug my sister." } }
+
+    assert_response :unprocessable_content
+    assert_select "dialog[open] select[name='prep_week_card_change[quality]'][aria-invalid=true]"
+    assert_select "dialog[open] input[name='prep_week_card_change[quality_line]'][aria-invalid=true]"
+    assert_select "dialog[open]", text: /is too long \(maximum is 120 characters\)/
+    assert_select "dialog[open] [aria-invalid=true]", count: 2
+    card = prep_week_cards(:home_nov_9_talk).reload
+    assert_equal [ "caring", "Tell Jehovah when I feel sad.", nil ], [ card.quality, card.i_can, card.changed_by ]
+  end
+
+  test "update with a blank I can… or a story sentence over 120 characters is refused" do
+    sign_in identities(:head)
+
+    patch card_path("bible_reading"), params: { prep_week_card_change: {
+      about: "A sad song.", quality: "fair", quality_line: "He warned them.", i_can: " ", reading: "Lamentations 1–2", story_1: "a" * 121 } }
+
+    assert_response :unprocessable_content
+    assert_select "dialog[open] input[name='prep_week_card_change[i_can]'][aria-invalid=true]"
+    assert_select "dialog[open] input[name='prep_week_card_change[story_1]'][aria-invalid=true]"
+    assert_equal "Listen when Mom and Dad warn me.", prep_week_cards(:home_nov_9_bible_reading).reload.i_can
+  end
+
+  test "card text is escaped in the dialog" do
+    prep_week_cards(:home_nov_9_talk).update!(about: "<b>Bold</b> words")
+    sign_in identities(:head)
+
+    get edit_card_path("talk")
+
+    assert_select "dialog textarea", "<b>Bold</b> words"
+    assert_select "dialog b", count: 0
+  end
+
+  test "edit for a step with no card this week is a 404" do
+    sign_in identities(:head)
+
+    get edit_card_path("living")
+
+    assert_response :not_found
+  end
+
+  test "a child gets a 404 on edit and update" do
+    sign_in identities(:eli)
+    get edit_card_path("talk")
+    assert_response :not_found
+
+    sign_in identities(:eli) # A 404 from an exception sets no session cookie, so the test sign-in doesn't last.
+    patch card_path("talk"), params: { prep_week_card_change: { about: "Changed.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
+    assert_response :not_found
+    assert_equal "Tell Jehovah when I feel sad.", prep_week_cards(:home_nov_9_talk).reload.i_can
+  end
+
+  test "a head with Get ready off gets a 404 on edit and update" do
+    @home.disable_meeting_prep
+    sign_in identities(:head)
+    get edit_card_path("talk")
+    assert_response :not_found
+
+    sign_in identities(:head)
+    patch card_path("talk"), params: { prep_week_card_change: { about: "Changed.", quality: "caring", quality_line: "Yes.", i_can: "Yes." } }
+    assert_response :not_found
+    assert_nil prep_week_cards(:home_nov_9_talk).reload.changed_by
+  end
+
   private
+    def edit_card_path(step)
+      edit_household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: step)
+    end
+
     def card_path(step)
       household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: step)
     end

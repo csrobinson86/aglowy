@@ -1,0 +1,68 @@
+<% content_for :title, "This week's Get ready cards" %>
+
+<%# This week's Get ready cards for a head or adult (docs/design/meeting-prep.md, On a parent's phone; frame
+    phone-prep-check.png): who can see them, the pages the AI used, then a box per meeting with each card and Change,
+    which loads the dialog into the frame at the bottom. Card text is AI or parent text, always escaped (Trap 4). %>
+<%= render(Primer::Beta::Link.new(href: household_root_path, display: :inline_block, mb: 3)) do |link| %>
+  <% link.with_leading_visual_icon(icon: :"arrow-left") %>
+  Home
+<% end %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "This week's Get ready cards" } %>
+  <% subhead.with_description { "Week of #{listening_game_week(@week_of)}" } %>
+<% end %>
+
+<% if @prep_week %>
+  <% readers = Current.household.prep_card_readers.map(&:first_name) %>
+  <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 4)) do %>
+    <p class="mb-2">
+      AI wrote these from this week's program.
+      <%= readers.any? ? "#{readers.to_sentence} can see them now." : "Children who sign in see them as soon as they're ready." %>
+      Change anything that isn't right.
+    </p>
+    <ul class="list-style-none">
+      <% @prep_week.sources.each do |source| %>
+        <li>
+          <%= render(Primer::Beta::Link.new(href: source.url, target: "_blank", rel: "noopener noreferrer", underline: true, classes: "wb-break-word")) do %>
+            <%= source.title %><%= render(Primer::Beta::Octicon.new(:"link-external", size: :xsmall, ml: 1)) %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% Household::MEETING_KINDS.each do |meeting| %>
+    <% cards = cards_for(meeting) %>
+    <section id="meeting-prep-<%= meeting %>" aria-labelledby="meeting-prep-<%= meeting %>-title" class="mb-4">
+      <%= render Primer::Beta::BorderBox.new do |box| %>
+        <% box.with_header(display: :flex, align_items: :center) do %>
+          <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, id: "meeting-prep-#{meeting}-title", flex: 1)) { Household::Meeting::TITLES.fetch(meeting) } %>
+          <span class="color-fg-muted text-small"><%= pluralize(cards.size, "card") %></span>
+        <% end %>
+        <% cards.each do |card| %>
+          <% box.with_row(id: dom_id(card), display: :flex, align_items: :center) do %>
+            <%= render "meeting_preps/cards/row", card: %>
+          <% end %>
+        <% end %>
+        <% if cards.none? %>
+          <% box.with_row(color: :muted) { "Cards aren't ready yet" } %>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%= turbo_frame_tag "meeting_prep_card_dialog" %>
+<% elsif Current.household.meeting_prep_owner? %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :clock) %>
+    <% blankslate.with_heading(tag: :h2) { "Cards aren't ready yet" } %>
+    <% blankslate.with_description { "AI writes this week's cards early each morning until the weekend meeting. Children see them as soon as they're ready." } %>
+  <% end %>
+<% else %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :"light-bulb") %>
+    <% blankslate.with_heading(tag: :h2) { "Cards need a head or adult who has turned on AI features" } %>
+    <% blankslate.with_description { "Turn them on from Draft with AI when you schedule a family study. This week's cards follow soon after." } %>
+    <% blankslate.with_primary_action(href: new_household_family_study_path) { "Schedule a family study" } %>
+  <% end %>
+<% end %>

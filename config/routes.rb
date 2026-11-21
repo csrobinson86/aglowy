@@ -174,10 +174,10 @@ Rails.application.routes.draw do
       resource :summary, only: :show, module: :meeting_notes
     end
     resources :shared_meeting_notes, only: :index
-    # Get ready: this week's cards for a child, a meeting at a time; :meeting is midweek or weekend, and a card's :id is
-    # its step key (docs/design/meeting-prep.md, Pages and routes).
+    # Get ready: this week's cards for a child, a meeting at a time, and for heads and adults to read and change; :meeting
+    # is midweek or weekend, and a card's :id is its step key (docs/design/meeting-prep.md, Pages and routes).
     resources :meeting_preps, only: %i[ index show ], param: :meeting do
-      resources :cards, only: :show, module: :meeting_preps
+      resources :cards, only: %i[ show edit update ], module: :meeting_preps
       # Starts her note for the meeting, then opens her comment or the Bible Reading drawing.
       resource :note, only: :create, module: :meeting_preps
     end

@@ -42,6 +42,17 @@ module Household::MeetingPrepPreparable
     prep_weeks.where(week_of: today.beginning_of_week(:monday)).joins(:cards).exists?
   end
 
+  # Someone can make the cards: the parent's page says so when nobody can (docs/design/meeting-prep.md, The weekly AI job).
+  def meeting_prep_owner?
+    meeting_prep_owner.present?
+  end
+
+  # The children who see the cards as soon as they're made: those of this household who sign in, by name (frame
+  # phone-prep-check.png).
+  def prep_card_readers
+    users.merge(Membership.active.child).joins(:identity).order(:name)
+  end
+
   # The parts of a week with no card whose meeting hasn't passed by +now+, in step order: none before meeting times are
   # set. A week with no PrepWeek misses all five.
   def missing_prep_steps(week_of, now = Time.current)

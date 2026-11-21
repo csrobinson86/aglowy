@@ -54,12 +54,13 @@ class HomeTest < ApplicationSystemTestCase
     assert_no_link "Get ready"
   end
 
-  test "neither for a head" do
+  test "neither for a head, who has This week's Get ready cards instead" do
     travel_to Time.utc(2026, 11, 12, 16)
     sign_in identities(:head)
     visit household_root_url(household_id: @home)
 
     assert_selector ".todays-meeting-card"
-    assert_no_link "Get ready"
+    assert_no_link "Get ready", exact: true
+    within(".todays-meeting-card") { assert_link "This week's Get ready cards", href: household_meeting_preps_path(household_id: @home) }
   end
 end
