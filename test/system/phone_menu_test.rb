@@ -78,9 +78,9 @@ class PhoneMenuTest < ApplicationSystemTestCase
 
     bar, logo = find("header.app-shell__top-bar"), find("header.app-shell__top-bar a:has(img[alt='Aglowy'])")
     # var(--base-size-4) between the menu button and the mark, give or take 2px.
-    assert_includes 0..(4 + 2), logo.rect.x - right_edge(menu_button)
+    assert_in_delta 4, logo.rect.x - right_edge(menu_button), 2
     assert_in_delta centre_y(bar), centre_y(logo), 2
-    assert_operator right_edge(bar) - right_edge(bell), :<=, padding_right(bar)
+    assert_includes 0..padding_right(bar), right_edge(bar) - right_edge(bell)
     [ menu_button, logo, bell ].each { assert_touch_target it }
     assert_operator menu_button.rect.x, :<, logo.rect.x
     assert_operator logo.rect.x, :<, bell.rect.x
