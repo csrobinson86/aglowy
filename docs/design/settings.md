@@ -17,7 +17,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Profile | yes | yes | yes | Avatar (photo, or your initial's color; `docs/design/avatars.md`, AVATAR-01), name, your time zone |
 | You | Appearance | yes | yes | yes | Theme: Match my device, Light, Dark (`docs/design/app-shell.md`, Theming and appearance) |
 | You | Signing in | yes | yes | password only, username read-only | Email, new password, current password (`docs/design/invitations.md`) |
-| You | My households | yes | yes | yes, without Leave or New household | Each household with the person's role, and Leave; a "New household" button for whoever `HouseholdPolicy#create?` allows (Casey, 21 Nov; it was in the household switcher) |
+| You | My households | yes | yes | yes, without Leave; New household as the policy allows | Each household with the person's role, and Leave; a "New household" button for whoever `HouseholdPolicy#create?` allows (Casey, 21 Nov; it was in the household switcher). The policy reads the person, not this seat: someone who is a child in every household they're in doesn't see it, but a child here who is an adult or head in another household does |
 | You | Tags and collections | yes | yes | yes | Rename and delete tags; edit and delete collections |
 | You | Calendar | yes | yes | yes | Share my times with a household; the phone calendar link (`docs/design/calendar.md`, CAL-01) |
 | You | Notifications | yes | yes | yes, without email | What comes by email and to your phone, quiet hours, your devices (`docs/design/notifications.md`, NOTIFY-01). Not on `/account`: people with no household get no notifications |

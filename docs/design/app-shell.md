@@ -212,7 +212,7 @@ System tests can save screenshots of a page at both viewports and in both themes
 | Decision | Choice |
 | --- | --- |
 | Personal content on the household home | Shown as drawn: a "Mine" column with my goals, pinned notes (NOTES-01, `docs/design/notes.md`, frame `docs/design/notes/home-pinned-notes.png`) and recent meeting notes, once those features exist (the meeting notes and goals epics). Until then Home has no Mine column |
-| Who sees "New household" | Whoever `HouseholdPolicy#create?` allows. Children may not (decided 14 Nov, `docs/design/invitations.md`). It's a button in Settings → My households, not a switcher item (Casey, 21 Nov) |
+| Who sees "New household" | Whoever `HouseholdPolicy#create?` allows (`User#can_start_household?`): a person who is a child in every household they're in may not (decided 14 Nov, `docs/design/invitations.md`), whatever their role in the household in the URL. It's a button in Settings → My households, not a switcher item (Casey, 21 Nov) |
 | Household home before family studies exist | The Welcome empty state shows only when there is nothing at all to show: no upcoming session, no active family goal, and none of the person's own active goals, meeting notes or pinned notes (story #142; pinned notes added by NOTES-01). Otherwise Home shows its two columns, with "No family study scheduled." in Next family study when nothing is scheduled. Heads and adults see "Schedule a study" as the empty state's action and "Add a member" beside it; elsewhere "Schedule a study" sits in the page header |
 | Phone navigation | A left-side `Primer::Alpha::Dialog` (0.53.5 supports `position: :left` and `position_narrow: :left`) |
 | Icons in the mockup | Hand-drawn stand-ins; the build uses the Octicons listed above |
