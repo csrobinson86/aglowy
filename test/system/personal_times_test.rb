@@ -14,7 +14,7 @@ class PersonalTimesTest < ApplicationSystemTestCase
     visit household_calendar_url(household_id: households(:home))
     assert_text "Only you see your times."
 
-    click_on "Add my time"
+    choose_from_menu "New", "My time"
     within "dialog[open]" do
       assert_selector "h1", text: "Add my time"
       assert_checked_field "Bible reading"
@@ -51,7 +51,7 @@ class PersonalTimesTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_calendar_url(household_id: households(:home))
 
-    click_on "Add my time"
+    choose_from_menu "New", "My time"
     within "dialog[open]" do
       choose "Meeting prep"
       assert_field "Title", with: "Meeting prep"

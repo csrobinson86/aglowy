@@ -9,11 +9,11 @@ class CalendarEventsTest < ApplicationSystemTestCase
     households(:home).change_meeting_times(midweek_wday: 5, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
   end
 
-  test "a head adds a 6-day CO's visit and sees the band, then weekly field service on two Saturdays; a child sees both with no Add button" do
+  test "a head adds a 6-day CO's visit and sees the band, then weekly field service on two Saturdays; a child sees both with no Household event in New" do
     sign_in identities(:head)
     visit household_calendar_url(household_id: households(:home))
 
-    click_on "Add household event"
+    choose_from_menu "New", "Household event"
     within "dialog[open]" do
       assert_selector "h1", text: "Add a household event"
       select "Circuit overseer's visit", from: "Kind"
@@ -31,7 +31,7 @@ class CalendarEventsTest < ApplicationSystemTestCase
     assert_no_selector "dialog[open]"
     assert_selector ".calendar-band__item--start-2.calendar-band__item--span-6 a.calendar-item--co-visit", text: /Tue 17 – Sun 22\s+Circuit overseer's visit/
 
-    click_on "Add household event"
+    choose_from_menu "New", "Household event"
     within "dialog[open]" do
       select "Field service", from: "Kind"
       assert_field "Title", with: "Field service"
@@ -53,8 +53,13 @@ class CalendarEventsTest < ApplicationSystemTestCase
     sign_in identities(:eli)
     visit household_calendar_url(household_id: households(:home))
 
+    assert_turbo_idle
+    click_on "New"
+    assert_selector "[role=menuitem]", exact_text: "My time"
+    assert_no_selector "[role=menuitem]", text: "Household event"
     assert_no_link "Add household event"
-    assert_no_button "Add household event"
+    page.send_keys(:escape)
+    assert_no_selector "[role=menuitem]"
     assert_selector "div.calendar-item--co-visit", text: /Tue 17 – Sun 22\s+Circuit overseer's visit\s+Kingdom Hall/
     assert_selector "div.calendar-item--field-service", text: /9:30 AM\s+Field service\s+Meet at the Kingdom Hall/
     assert_no_selector "a.calendar-item--field-service"
@@ -68,7 +73,7 @@ class CalendarEventsTest < ApplicationSystemTestCase
   test "a Repeats choice made while the date reloads is kept" do
     sign_in identities(:head)
     visit household_calendar_url(household_id: households(:home))
-    click_on "Add household event"
+    choose_from_menu "New", "Household event"
     # Hold the Repeats frame's request until released, so the choice lands while it's in flight.
     execute_script(<<~JS)
       const fetch = window.fetch
@@ -111,7 +116,7 @@ class CalendarEventsTest < ApplicationSystemTestCase
     sign_in identities(:spouse)
     visit household_calendar_url(household_id: households(:home))
 
-    click_on "Add household event"
+    choose_from_menu "New", "Household event"
     within("dialog[open]") { click_on "Cancel" }
     assert_no_selector "dialog[open]"
 

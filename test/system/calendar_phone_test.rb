@@ -1,8 +1,8 @@
 require "application_system_test_case"
 
 # The calendar on a phone (docs/design/calendar.md, On a phone; frame phone-calendar.png): the week as a list of days,
-# the CO's visit once as a band above it, one Add menu, the Show choices in a dialog, no Month control, and every
-# target at least 44px. Tuesday 17 November 2026 in the home household (UTC).
+# the CO's visit once as a band above it, the New menu full width under the title, the Show choices in a dialog, no
+# Month control, and every target at least 44px. Tuesday 17 November 2026 in the home household (UTC).
 class CalendarPhoneTest < ApplicationSystemTestCase
   setup do
     travel_to Time.utc(2026, 11, 17, 15)
@@ -68,15 +68,22 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     assert_accessible
   end
 
-  test "Add → Add my time opens the dialog; a child's Add has only Add my time" do
+  test "New is full width under the title, its items are touch targets, and My time opens its dialog; a child's New has only My time" do
     visit calendar_url
-    assert_no_link "Add household event"
+    assert_turbo_idle
 
-    click_on "Add"
-    assert_selector "[role=menuitem]", text: "Add household event"
+    button = find("#calendar-new-menu-button")
+    width = "this.getBoundingClientRect().width"
+    assert_equal find("main .Subhead").evaluate_script(width), button.evaluate_script(width)
+    assert_operator button.rect.y, :>, find(".Subhead-description").rect.y
+    assert_touch_target button
+    button.click
+    assert_selector "[role=menuitem]", text: "Household event"
+    assert_equal [ "My time", "Household event" ], menu_entries("calendar-new-menu")
     wait_for_animations
-    all("[role=menuitem]").each { assert_touch_target it }
-    find("[role=menuitem]", text: "Add my time").click
+    all("#calendar-new-menu-list [role=menuitem]").each { assert_touch_target it }
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
+    find("[role=menuitem]", exact_text: "My time").click
 
     within "dialog[open]" do
       assert_selector "h1", text: "Add my time"
@@ -85,9 +92,24 @@ class CalendarPhoneTest < ApplicationSystemTestCase
 
     sign_in identities(:eli)
     visit calendar_url
-    click_on "Add"
-    assert_selector "[role=menuitem]", text: "Add my time"
-    assert_no_selector "[role=menuitem]", text: "Add household event"
+    choose_from_menu "New", "My time"
+    within("dialog[open]") { assert_selector "h1", text: "Add my time" }
+    visit calendar_url
+    assert_turbo_idle
+    click_on "New"
+    assert_equal [ "My time" ], menu_entries("calendar-new-menu")
+  end
+
+  test "the calendar with the New menu open passes assert_accessible" do
+    visit calendar_url
+    assert_turbo_idle
+
+    click_on "New"
+    assert_selector "[role=menuitem]", text: "Household event"
+    wait_for_animations
+    assert_accessible
+    execute_script("window.scrollTo(0, 0)")
+    capture_screens("calendar-new-menu")
   end
 
   test "\"Show on the calendar\" opens the Show choices; unticking Field service hides it" do
