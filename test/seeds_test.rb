@@ -160,7 +160,7 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal({ "talk" => 5, "spiritual_gems" => 2, "bible_reading" => 1, "congregation_bible_study" => 6 }, game.rounds.map(&:step).tally)
     assert_equal 3, game.sources.count
     # Lucia found its first Treasures round, so her Treasures step opens at the second.
-    assert_equal [ game.rounds.first.answer.label ], user("lucia.rivera").meeting_notes.find_by!(week_of: monday).finds_for("talk").map(&:label)
+    assert_equal [ game.rounds.first.answer.label ], user("lucia.rivera").meeting_notes.find_by!(kind: "midweek", week_of: monday).finds_for("talk").map(&:label)
     # Last week's shared helper note has her finds and the answer she gave.
     shared = user("lucia.rivera").meeting_notes.find_by!(week_of: monday - 1.week)
     assert_equal [ 3, 7 ], [ shared.found_count, shared.answer.paragraph ]
