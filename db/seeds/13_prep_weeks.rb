@@ -13,3 +13,10 @@ unless rivera.prep_weeks.exists?(week_of:)
   cards = PrepWeek.cards_from_reply(JSON.parse(body["content"].filter_map { it["text"] }.join), steps: PrepWeek::Card::STEPS.keys, copy_check:)
   rivera.prep_weeks.new(week_of:).fill_in(cards, pages: Ai::SourceLink.keep(results, search_results: results, allowed_hosts: purpose.allowed_hosts), chat: nil)
 end
+
+# Lucia has her comment ready for this weekend's Watchtower Study, so its Get ready card shows it with Change, the
+# weekend tile says "My comment is ready", and the weekend helper's Watchtower step shows it with "I gave my answer!"
+# (docs/design/meeting-prep.md, Her comment for the Watchtower Study). Her Bible Study answer is in
+# 12_listening_games.rb. A comment she has already written stays.
+weekend_note = seeded_person("lucia.rivera").start_meeting_note(kind: "weekend", week_of:)
+weekend_note.write_answer(paragraph: 7, body: "Jehovah gives us friends at the Kingdom Hall.") unless weekend_note.answer

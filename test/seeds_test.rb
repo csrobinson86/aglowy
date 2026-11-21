@@ -59,7 +59,8 @@ class SeedsTest < ActiveSupport::TestCase
     child_note = user("lucia.rivera").meeting_notes.find_by!(week_of: this_week - 1.week)
     assert child_note.marks.any?
     assert child_note.shared_with?(Household.find_by!(name: "The Rivera Family"))
-    assert_equal 17, MeetingNote.count
+    assert_equal 7, user("lucia.rivera").meeting_notes.find_by!(kind: "weekend", week_of: this_week).answer.paragraph
+    assert_equal 18, MeetingNote.count
 
     assert_equal [ 1, 1, 1 ], [ demo.goals.active.count, demo.goals.completed.count, demo.goals.archived.count ]
     steps = demo.goals.active.sole.steps
