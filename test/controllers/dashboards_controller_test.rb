@@ -479,6 +479,30 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # Where parents find Get ready's cards (docs/design/meeting-prep.md, Where parents find it).
+  test "with Get ready on, heads and adults see This week's Get ready cards on the Today's meeting card; a child and Get ready off don't" do
+    set_meeting_times
+    households(:home).enable_meeting_helper(by: users(:head))
+    households(:home).enable_meeting_prep(by: users(:head))
+
+    %i[ head spouse ].each do |identity|
+      sign_in identities(identity)
+      travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+
+      assert_select ".todays-meeting-card a[href=?]", household_meeting_preps_path(household_id: households(:home)), "This week's Get ready cards"
+    end
+
+    sign_in identities(:eli)
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card a", text: "This week's Get ready cards", count: 0
+
+    households(:home).disable_meeting_prep
+    sign_in identities(:head)
+    travel_to(Time.utc(2026, 11, 19, 18)) { get household_root_path(household_id: households(:home)) }
+    assert_select ".todays-meeting-card"
+    assert_select "main", text: /This week's Get ready cards/, count: 0
+  end
+
   test "Check this week's listening game isn't on the card for a child, with the helper off, or once the meeting has started" do
     set_meeting_times
     households(:home).enable_meeting_helper(by: users(:head))

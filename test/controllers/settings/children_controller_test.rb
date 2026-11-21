@@ -87,7 +87,7 @@ class Settings::ChildrenControllerTest < ActionDispatch::IntegrationTest
     get household_settings_children_path(household_id: @home)
 
     assert_select "input[type=checkbox][name=?][checked]", "meeting_helper[meeting_prep]"
-    assert_select ".FormControl-checkbox-wrap:has(input[name='meeting_helper[meeting_prep]']) .FormControl-caption", text: /You can read and change them\. Turned on by Sam Spouse on November 15\.\z/
+    assert_select ".FormControl-checkbox-wrap:has(input[name='meeting_helper[meeting_prep]']) .FormControl-caption", text: /You can read and change them\. Turned on by Sam Spouse on November 15\.\s*This week's cards\z/
   end
 
   test "with the helper on, the box links to this week's listening game; with it off, it doesn't" do
@@ -99,6 +99,19 @@ class Settings::ChildrenControllerTest < ActionDispatch::IntegrationTest
     @home.enable_meeting_helper(by: users(:head))
     get household_settings_children_path(household_id: @home)
     assert_select "main a[href=?]", household_listening_game_path(household_id: @home), "Check this week's listening game"
+  end
+
+  test "with Get ready on, its box links to this week's cards; with it off, it doesn't" do
+    @home.enable_meeting_helper(by: users(:head))
+    sign_in identities(:spouse)
+
+    get household_settings_children_path(household_id: @home)
+    assert_select "main a", text: "This week's cards", count: 0
+
+    @home.enable_meeting_prep(by: users(:head))
+    get household_settings_children_path(household_id: @home)
+    assert_select ".FormControl-checkbox-wrap:has(input[name='meeting_helper[meeting_prep]']) .FormControl-caption a[href=?]",
+                  household_meeting_preps_path(household_id: @home), "This week's cards"
   end
 
   test "a child is refused" do

@@ -7,7 +7,7 @@
       <% box.with_header { |header| header.with_title(tag: :h3) { "Children" } } %>
       <% box.with_body do %>
         <%= primer_form_with(scope: :meeting_helper, url: household_settings_meeting_helper_path, method: :patch) do |f| %>
-          <%= render Settings::MeetingHelperForm.new(f, meeting_helper: Current.household.meeting_helper, meeting_prep: Current.household.meeting_prep) %>
+          <%= render Settings::MeetingHelperForm.new(f, meeting_helper: Current.household.meeting_helper, meeting_prep: Current.household.meeting_prep, cards_path: household_meeting_preps_path) %>
         <% end %>
         <% if Current.household.meeting_helper? %>
           <p class="mt-3 mb-0">

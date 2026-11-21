@@ -1,13 +1,14 @@
-# Get ready's pages for a child (docs/design/meeting-prep.md, Pages and routes): this week's cards, the Monday where the
-# household lives (Trap 7), in the meeting helper's layout. Anyone MeetingPrepPolicy turns away gets a 404, not the
-# usual redirect, as on the helper's own pages.
+# Get ready's pages (docs/design/meeting-prep.md, Pages and routes): this week's cards, the Monday where the household
+# lives (Trap 7), in the meeting helper's layout for a child and the household layout for a head or adult. Anyone
+# MeetingPrepPolicy turns away gets a 404, not the usual redirect, as on the helper's own pages.
 module MeetingPrepScoped
   extend ActiveSupport::Concern
 
   included do
     include HouseholdScoped
 
-    layout "meeting_helper"
+    # Rails' layout takes no if:, so a block picks it.
+    layout -> { Current.membership.child? ? "meeting_helper" : "household" }
 
     rescue_from(Pundit::NotAuthorizedError) { raise ActiveRecord::RecordNotFound }
 
