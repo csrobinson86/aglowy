@@ -35,6 +35,20 @@ class MeetingPrepsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "index, once the meeting's note has her comment: My comment is ready" do
+    users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9)).write_answer(paragraph: 7, body: "Jehovah helps us.")
+    users(:eli).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:eli)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_select "main .meeting-prep__tile:first-of-type" do
+      assert_select "*", text: /My comment is ready/
+      assert_select "*", text: /2 cards/, count: 0
+    end
+    assert_select "main .meeting-prep__tile:last-of-type", text: /My comment is ready/, count: 0
+  end
+
   test "index, once the midweek meeting has passed: the weekend first, and Look again on the midweek" do
     travel_to Time.utc(2026, 11, 13, 12)
     sign_in identities(:eli)

@@ -70,4 +70,110 @@ class MeetingPrepTest < ApplicationSystemTestCase
 
     assert_selector "h1", text: "Get ready for the meetings"
   end
+
+  test "Get my comment ready on the Bible Study card, write it, and back on the card with it; Change" do
+    sign_in identities(:eli)
+    visit card_url("midweek", "congregation_bible_study")
+
+    within(".meeting-prep__comment") do
+      assert_selector "h2", text: "My comment"
+      assert_text "Pick a paragraph with your family. Then say it your own way."
+    end
+    assert_accessible
+    capture_screens("prep-study-comment", viewports: TABLET)
+    click_on "Get my comment ready"
+
+    assert_selector "h1", text: "My answer for Bible study"
+    fill_in "Paragraph", with: "7"
+    fill_in "What I'll say", with: "Jehovah helps us when we are sad."
+    click_on "Save my answer"
+
+    assert_selector "h1", text: "Jesus loved little children."
+    within(".meeting-prep__comment") do
+      assert_selector "h2", text: "My comment · paragraph 7"
+      assert_text "Jehovah helps us when we are sad."
+    end
+    assert_accessible
+    click_on "Change"
+
+    assert_field "Paragraph", with: "7"
+    click_on "Back"
+
+    assert_selector "h1", text: "Jesus loved little children."
+    click_on "Change"
+    fill_in "What I'll say", with: "Jesus was kind to children."
+    click_on "Save my answer"
+
+    within(".meeting-prep__comment") { assert_text "Jesus was kind to children." }
+    click_on "All done"
+
+    within(".meeting-prep__tile", text: "Midweek meeting") { assert_text "My comment is ready" }
+  end
+
+  test "Draw it! on the Bible Reading card, All done back on the card, and the same drawing in the helper" do
+    sign_in identities(:eli)
+    visit card_url("midweek", "bible_reading")
+    click_on "Draw it!"
+
+    assert_selector "h1", text: "Draw something from the reading."
+    click_on "All done" # nothing drawn: back to the card, saving nothing
+
+    assert_selector "h1", text: "A sad song about Jerusalem."
+    click_on "Draw it!"
+    canvas = find("canvas[aria-label='Drawing space. Draw with your finger.']")
+    page.driver.browser.action.move_to(canvas.native, -200, 0).pointer_down.move_by(400, 0).pointer_up.perform
+    click_on "All done"
+
+    assert_selector "h1", text: "A sad song about Jerusalem."
+    note = users(:eli).meeting_notes.find_by!(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    assert note.drawn?("bible_reading")
+    visit household_meeting_note_step_url(household_id: @home, meeting_note_id: note, id: "bible_reading")
+
+    assert_link "My drawing"
+  end
+
+  test "her Watchtower comment from Get ready, I gave my answer! at the weekend meeting, and a parent reads it shared" do
+    prep_weeks(:home_nov_9).cards.create!(meeting: "weekend", step: "watchtower_study", about: "Jehovah gives us friends.", quality: "loving",
+                                          quality_line: "He gives us a family at the meetings.", i_can: "Say hello to someone new.")
+    sign_in identities(:eli)
+    visit card_url("weekend", "watchtower_study")
+    click_on "Get my comment ready"
+
+    assert_selector "h1", text: "My comment for the Watchtower"
+    fill_in "Paragraph", with: "7"
+    fill_in "What I'll say", with: "Jehovah gives us friends at the Kingdom Hall."
+    click_on "Save my answer"
+
+    within(".meeting-prep__comment") do
+      assert_selector "h2", text: "My comment · paragraph 7"
+      assert_text "Jehovah gives us friends at the Kingdom Hall."
+    end
+    assert_accessible
+    capture_screens("prep-watchtower", viewports: TABLET)
+
+    note = users(:eli).meeting_notes.find_by!(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    visit household_meeting_note_step_url(household_id: @home, meeting_note_id: note, id: "watchtower_study")
+
+    within(".meeting-helper__answer") do
+      assert_text "My answer · paragraph 7"
+      assert_text "Jehovah gives us friends at the Kingdom Hall."
+    end
+    assert_accessible
+    capture_screens("prep-watchtower-step", viewports: TABLET)
+    click_on "I gave my answer!"
+
+    assert_selector "button[aria-pressed=true]", text: "Gave my answer"
+    note.share_with(@home)
+    sign_in identities(:head)
+    visit household_meeting_note_url(household_id: @home, id: note)
+
+    assert_text "Tell me about your answer for paragraph 7."
+    within("#helper-note-answer") { assert_text "Eli's comment for the Watchtower" }
+    assert_accessible
+  end
+
+  private
+    def card_url(meeting, step)
+      household_meeting_prep_card_url(household_id: @home, meeting_prep_meeting: meeting, id: step)
+    end
 end

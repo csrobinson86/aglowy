@@ -61,6 +61,69 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main a", text: "Next card", count: 0
   end
 
+  test "the Bible Reading card's Draw it! posts to her note with to=drawing, between Back and Next" do
+    sign_in identities(:eli)
+
+    get card_path("bible_reading")
+
+    assert_select "main nav form[action='#{note_path("midweek")}'][method=post]" do
+      assert_select "input[type=hidden][name=to][value=drawing]"
+      assert_select "button[type=submit]", text: "Draw it!"
+    end
+  end
+
+  test "a card that isn't the Bible Reading or a study has no Draw it! and no comment box" do
+    sign_in identities(:eli)
+
+    get card_path("talk")
+
+    assert_select "main form", count: 0
+    assert_select "main .meeting-prep__comment", count: 0
+  end
+
+  test "the Bible Study card before she has a comment: My comment, the line, and Get my comment ready" do
+    add_study_card
+    sign_in identities(:eli)
+
+    get card_path("congregation_bible_study")
+
+    assert_select "main .meeting-prep__comment" do
+      assert_select "h2", "My comment"
+      assert_select "p", "Pick a paragraph with your family. Then say it your own way."
+      assert_select "form[action='#{note_path("midweek")}'][method=post]" do
+        assert_select "input[type=hidden][name=to][value=answer]"
+        assert_select "button[type=submit]", text: "Get my comment ready"
+      end
+    end
+  end
+
+  test "the Bible Study card once she has a comment: the paragraph, her words escaped, and Change" do
+    add_study_card
+    note = users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    note.write_answer(paragraph: 7, body: "<b>Jehovah</b> helps us when we are sad.")
+    sign_in identities(:eli)
+
+    get card_path("congregation_bible_study")
+
+    assert_select "main .meeting-prep__comment" do
+      assert_select "h2", "My comment · paragraph 7"
+      assert_select "p", "<b>Jehovah</b> helps us when we are sad."
+      assert_select "b", count: 0
+      assert_select "a[href='#{edit_household_meeting_note_step_answer_path(household_id: @home, meeting_note_id: note, step_id: "congregation_bible_study", from: "prep")}']", text: "Change"
+      assert_select "form", count: 0
+    end
+  end
+
+  test "another week's comment isn't this week's" do
+    add_study_card
+    users(:eli).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 2)).write_answer(paragraph: 3, body: "Last week.")
+    sign_in identities(:eli)
+
+    get card_path("congregation_bible_study")
+
+    assert_select "main .meeting-prep__comment h2", "My comment"
+  end
+
   test "the Bible Reading card without a story (a parent cleared it) has no story box" do
     prep_week_cards(:home_nov_9_bible_reading).update!(story: nil, reading: nil)
     sign_in identities(:eli)
@@ -132,5 +195,14 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
   private
     def card_path(step)
       household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: step)
+    end
+
+    def note_path(meeting)
+      household_meeting_prep_note_path(household_id: @home, meeting_prep_meeting: meeting)
+    end
+
+    def add_study_card
+      prep_weeks(:home_nov_9).cards.create!(meeting: "midweek", step: "congregation_bible_study", about: "Jesus loved little children.",
+                                            quality: "loving", quality_line: "Jesus showed us how Jehovah loves.", i_can: "Smile at the people.")
     end
 end

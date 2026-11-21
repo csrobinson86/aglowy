@@ -50,6 +50,31 @@ class MeetingNotes::Steps::DrawingsControllerTest < ActionDispatch::IntegrationT
     assert_equal file_fixture("photo.png").binread, drawing.image.download
   end
 
+  test "from Get ready, the page carries from=prep, All done with nothing drawn goes to the card, and saving returns to it" do
+    sign_in identities(:eli)
+    get edit_household_meeting_note_step_drawing_path(household_id: households(:home), meeting_note_id: @note, step_id: "bible_reading", from: "prep")
+
+    assert_select "main form input[type=hidden][name=from][value=prep]"
+    assert_select "[data-meeting-helper--drawing-step-url-value='#{card_path("bible_reading")}']"
+
+    patch drawing_path("bible_reading"), params: { from: "prep", drawing: { image: fixture_file_upload("photo.png", "image/png") } }
+
+    assert_redirected_to card_path("bible_reading")
+    assert @note.drawn?("bible_reading")
+  end
+
+  test "any other from returns to the step, never to a value from params" do
+    sign_in identities(:eli)
+    get edit_household_meeting_note_step_drawing_path(household_id: households(:home), meeting_note_id: @note, step_id: "bible_reading", from: "//example.com")
+
+    assert_select "input[name=from]", count: 0
+    assert_select "[data-meeting-helper--drawing-step-url-value='#{step_path("bible_reading")}']"
+
+    patch drawing_path("bible_reading"), params: { from: "//example.com", drawing: { image: fixture_file_upload("photo.png", "image/png") } }
+
+    assert_redirected_to step_path("bible_reading")
+  end
+
   test "saving again replaces it, so there's still one" do
     @note.draw("talk", fixture_file_upload("photo.png", "image/png"))
     old_blob = @note.drawings.sole.image.blob
@@ -208,5 +233,9 @@ class MeetingNotes::Steps::DrawingsControllerTest < ActionDispatch::IntegrationT
 
     def step_path(key)
       household_meeting_note_step_path(household_id: households(:home), meeting_note_id: @note, id: key)
+    end
+
+    def card_path(key)
+      household_meeting_prep_card_path(household_id: households(:home), meeting_prep_meeting: "midweek", id: key)
     end
 end

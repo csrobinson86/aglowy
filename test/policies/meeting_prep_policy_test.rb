@@ -11,6 +11,7 @@ class MeetingPrepPolicyTest < ActiveSupport::TestCase
 
     assert policy.index?
     assert policy.show?
+    assert policy.create?
   end
 
   test "the helper off: no" do
@@ -30,6 +31,7 @@ class MeetingPrepPolicyTest < ActiveSupport::TestCase
 
     assert_not policy.index?
     assert_not policy.show?
+    assert_not policy.create?
   end
 
   test "an adult: no, Get ready too until the parent's page" do
@@ -37,6 +39,7 @@ class MeetingPrepPolicyTest < ActiveSupport::TestCase
 
     assert_not policy.index?
     assert_not policy.show?
+    assert_not policy.create?
   end
 
   test "a non-member: no" do
@@ -45,6 +48,7 @@ class MeetingPrepPolicyTest < ActiveSupport::TestCase
     memberships(:eli_in_home).update!(active: false)
 
     assert_not MeetingPrepPolicy.new(nil, households(:home)).show?
+    assert_not MeetingPrepPolicy.new(nil, households(:home)).create?
     assert_not MeetingPrepPolicy.new(memberships(:eli_in_home), households(:home)).show?
     assert_not MeetingPrepPolicy.new(memberships(:child_in_home), households(:other)).show?
   end
