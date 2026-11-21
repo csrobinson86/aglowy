@@ -45,15 +45,16 @@ Frames are in `docs/design/phone/` (README there), from the "Tidier phone pages 
   - An `h2` "Steps", then a bordered list.
   - Each row has the tick box, the step's title (struck through when done), and one muted line: "Done Nov 18" or "Due Dec 18". On a family goal the line starts with who it's for ("Eli and Sofia · Eli done, waiting on Sofia").
   - Each row ends with "›", and tapping the row opens the step panel.
-  - The tick box stays in the row, so ticking needs no panel. On a step for named people, the row's box is for the person viewing when they're one of them. Otherwise it opens the panel.
+  - The tick box stays in the row, so ticking needs no panel, but only for someone who may tick it (`docs/design/goals.md`, Who can do what). On an "Everyone" step, heads and adults see it. On a step for named people, the box is the viewer's own part when they're named; anyone else ticks from the panel, so the row has no box for them.
+- **A read-only goal** is a completed or archived goal, or a personal goal shared with the household and read by someone other than its owner. It has no tick boxes and no "+ Add step" (as in `docs/design/goals.md`). Its rows still open the panel, which then shows only the step's facts and who's done it, as text.
 - **"+ Add step"** is the list's last row for those who can edit. It opens the add-step form in place (New step, For on a family goal, Due), with "Add step" and "Cancel".
 - **The step panel** (frame `phone-family-goal-step.png`) is a Primer `Dialog` with `position_narrow: :bottom`:
   - the step's title as its heading, and "For <names> · Due <date>"
-  - "Who's done it", with a tick box per assignee, for a step for named people
+  - "Who's done it", for a step for named people: a tick box for each assignee the viewer may tick (heads and adults: everyone named; a child: only their own part). The other assignees are listed as text ("Sofia · not done yet")
   - "Schedule as a family study" (family goals, heads and adults)
-  - "Edit step" and "Remove step"
+  - "Edit step" and "Remove step" (family goals: heads and adults; personal goals: the owner)
 
-  A personal goal's panel has the title, due date, Edit step and Remove step. Edit step swaps the panel's body for the step's form.
+  The panel offers only what the viewer's policy allows, so a child's panel has at most their own tick box. A personal goal's panel has the title, due date, Edit step and Remove step. Edit step swaps the panel's body for the step's form.
 
 ### Members (frames `phone-members.png`, `phone-members-menu.png`)
 
@@ -71,7 +72,7 @@ On a phone only:
   - The title row has "+ New ▾" with Note and Collection. Collection opens the existing "New collection" dialog, which leaves the "All notes ▾" menu on a phone.
   - "Only you can see these." sits under the title.
   - One row under it holds "All notes ▾" (the collection and tag picker, as today) and a search `IconButton` that opens the search field.
-  - Each note is a row: its color dot, the title, a one-line preview and one muted line (collection · tags · date).
+  - Each note is a two-line row (rule 6): its color dot and title, then one muted line "<collection> · <date> · <preview>", cut with an ellipsis. Tags aren't shown in rows on a phone; "All notes ▾" filters by tag.
 - **A note:**
   - The back row is "‹ Notes" (or the collection) with the note's "…": Edit note, Pin to Home or Unpin from Home, Move to collection…, then a divider and Delete note….
   - The Edit button and the Pinned toggle leave the header on a phone.
