@@ -188,7 +188,7 @@ class User < ApplicationRecord
 
   # Children can't start a household (docs/design/invitations.md, Traps). Seats count active or not, so an adult
   # who left every household still can, and someone who only ever had child seats still can't. Someone with no
-  # seats yet can. Read from the loaded seats, so the switcher's previews of unsaved people answer it too.
+  # seats yet can. Read from the loaded seats, so it answers for unsaved people too.
   def can_start_household?
     seats = memberships.to_a
     seats.none? || !seats.all?(&:child?)

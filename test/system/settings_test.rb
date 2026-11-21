@@ -220,7 +220,58 @@ class SettingsTest < ApplicationSystemTestCase
     assert PersonalStudy.exists?(personal_studies(:head_kindness).id)
   end
 
+  test "a head sees \"New household\" in My households and it opens the new household page" do
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+
+    within("aside") { click_on "Settings" }
+    within("nav[aria-label='Settings']") { click_on "My households" }
+    assert_selector "h2", text: "My households"
+    within(".Box-header") { assert_link "New household", href: new_household_path }
+    assert_accessible
+    capture_screens("settings-my-households")
+
+    click_on "New household"
+    assert_selector "h1", text: "New household"
+    assert_current_path new_household_path
+  end
+
+  test "an adult sees \"New household\" in My households" do
+    assert_new_household_in_my_households identities(:spouse)
+  end
+
+  test "a person who has only ever been a child sees no \"New household\"" do
+    sign_in identities(:eli)
+    visit household_settings_memberships_url(household_id: households(:home))
+
+    assert_selector "h2", text: "My households"
+    assert_no_link "New household"
+    assert_accessible
+    capture_screens("settings-my-households-child")
+  end
+
+  test "a child here who is an adult in another household sees \"New household\"" do
+    Membership.create!(user: users(:eli), household: households(:other), role: :adult)
+
+    assert_new_household_in_my_households identities(:eli)
+  end
+
+  test "a child here who left an adult seat elsewhere sees \"New household\"" do
+    Membership.create!(user: users(:eli), household: households(:other), role: :adult, active: false)
+
+    assert_new_household_in_my_households identities(:eli)
+  end
+
   private
+    def assert_new_household_in_my_households(identity)
+      sign_in identity
+      visit household_settings_memberships_url(household_id: households(:home))
+
+      assert_selector "h2", text: "My households"
+      within(".Box-header") { assert_link "New household", href: new_household_path }
+      assert_accessible
+    end
+
     def set_meeting_times
       assert_selector "h2", text: "Meetings"
       select "Friday", from: "Midweek day"

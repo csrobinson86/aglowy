@@ -23,8 +23,10 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     assert_turbo_idle
 
     open_household_switcher
+    assert_equal [ "The Grandparent Family Adult", "The Head Family Head" ], all("aside action-menu [role=menu] li").map { it.text.squish }
     within("action-menu") do
       assert_selector "a[aria-checked='true']", text: "The Head Family"
+      assert_no_text "New household"
       click_on "The Grandparent Family"
     end
 
@@ -62,16 +64,30 @@ class HouseholdSwitchingTest < ApplicationSystemTestCase
     capture_screens("switcher-open")
   end
 
-  test "a child's open switcher has no New household and passes assert_accessible" do
+  test "a child's open switcher passes assert_accessible" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :child)
     sign_in identities(:eli)
     visit household_root_url(household_id: households(:home))
     assert_turbo_idle
 
     open_household_switcher
     assert_selector "action-menu a[aria-checked='true']", text: "The Head Family"
-    assert_no_selector "action-menu a", text: "New household"
     assert_accessible
     capture_screens("switcher-open-child")
+  end
+
+  test "a person with one household has no switcher menu to open" do
+    sign_in identities(:spouse)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    within("aside") do
+      assert_text(/The Head Family\s*Adult/)
+      assert_no_selector "action-menu"
+      assert_no_selector "button[aria-haspopup='true']"
+    end
+    assert_accessible
+    capture_screens("switcher-one-household")
   end
 
   test "every page on the way passes assert_accessible" do

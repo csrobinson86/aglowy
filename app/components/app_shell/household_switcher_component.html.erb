@@ -1,26 +1,28 @@
-<%= render(Primer::Alpha::ActionMenu.new(menu_id:, select_variant: :single, anchor_align: :start, display: :block,
-      data: { controller: "household-switcher", action: "turbo:before-cache@document->household-switcher#reset" })) do |menu| %>
-  <%# min-width-0 lets a long household name truncate instead of widening the sidebar. %>
-  <% menu.with_show_button(block: true, align_content: :start, label_wrap: true, classes: "min-width-0") do |button| %>
-    <% button.with_trailing_action_icon(icon: :"chevron-down") %>
-    <span class="d-block text-left">
-      <span class="Truncate"><span class="Truncate-text text-bold"><%= household.name %></span></span>
-      <span class="d-block f6 color-fg-muted"><%= membership.role.humanize %></span>
-    </span>
-  <% end %>
+<% name_and_role = capture do %>
+  <span class="d-block text-left">
+    <span class="Truncate"><span class="Truncate-text text-bold"><%= household.name %></span></span>
+    <span class="d-block f6 color-fg-muted"><%= membership.role.humanize %></span>
+  </span>
+<% end %>
 
-  <%# Not prefetched on hover: each opens that household's Home, which marks the daily brief seen (docs/design/daily-brief.md, Trap 5). %>
-  <% memberships.each do |other| %>
-    <% menu.with_item(label: other.household.name, href: household_root_path(household_id: other.household_id), active: current?(other), description_scheme: :inline,
-          content_arguments: { data: { turbo_prefetch: false } }) do |item| %>
-      <% item.with_description { other.role.humanize } %>
+<% if menu? %>
+  <%= render(Primer::Alpha::ActionMenu.new(menu_id:, select_variant: :single, anchor_align: :start, display: :block,
+        data: { controller: "household-switcher", action: "turbo:before-cache@document->household-switcher#reset" })) do |menu| %>
+    <%# min-width-0 lets a long household name truncate instead of widening the sidebar. %>
+    <% menu.with_show_button(block: true, align_content: :start, label_wrap: true, classes: "min-width-0") do |button| %>
+      <% button.with_trailing_action_icon(icon: :"chevron-down") %>
+      <%= name_and_role %>
+    <% end %>
+
+    <%# Not prefetched on hover: each opens that household's Home, which marks the daily brief seen (docs/design/daily-brief.md, Trap 5). %>
+    <% memberships.each do |other| %>
+      <% menu.with_item(label: other.household.name, href: household_root_path(household_id: other.household_id), active: current?(other), description_scheme: :inline,
+            content_arguments: { data: { turbo_prefetch: false } }) do |item| %>
+        <% item.with_description { other.role.humanize } %>
+      <% end %>
     <% end %>
   <% end %>
-
-  <% if show_new_household? %>
-    <% menu.with_divider %>
-    <% menu.with_item(label: "New household", href: new_household_path(household_id: nil)) do |item| %>
-      <% item.with_leading_visual_icon(icon: :plus) %>
-    <% end %>
-  <% end %>
+<% else %>
+  <%# One household: nothing to choose, so no button and no chevron. px-2 lines it up with the navigation's items. %>
+  <div class="min-width-0 px-2 py-1"><%= name_and_role %></div>
 <% end %>

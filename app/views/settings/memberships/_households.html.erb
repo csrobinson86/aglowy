@@ -2,9 +2,19 @@
 <%# My households, in Settings and on /account (frames account-settings.png, leave-household.png). Leave deletes the
     seat under namespace: [:household, :settings] or [:account]. Leave asks first in a Primer Dialog, never a
     browser confirm. The last head's Dialog explains why they can't, and the controller refuses them too. Children
-    don't see Leave; a head or adult removes them. %>
+    don't see Leave; a head or adult removes them. "New household" reads the person, not this seat, so a child here who
+    is or was an adult elsewhere sees it (docs/design/settings.md, Sections and who sees them); HouseholdsController
+    authorizes the same record. %>
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
-  <% box.with_header { |header| header.with_title(tag: heading) { "My households" } } %>
+  <% box.with_header(display: :flex, align_items: :center) do |header| %>
+    <% header.with_title(tag: heading, flex: :auto) { "My households" } %>
+    <% if HouseholdPolicy.new(nil, Current.user).create? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_path(household_id: nil), size: :small, ml: 2)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        New household
+      <% end %>
+    <% end %>
+  <% end %>
   <% memberships.each do |membership| %>
     <% household = membership.household %>
     <% box.with_row(display: :flex, align_items: :center) do %>
