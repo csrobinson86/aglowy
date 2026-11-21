@@ -71,8 +71,8 @@ class PersonalStudy < ApplicationRecord
     conversation.select(&:answered?).flat_map(&:scripture_references).uniq
   end
 
-  # What "Plan a family study from this" puts in the AI panel's Describe box: "<title>: <last question>", cut to the
-  # box's length (docs/design/personal-study.md, Plan a family study from this).
+  # What "Create family study" puts in the AI panel's Describe box: "<title>: <last question>", cut to the box's
+  # length (docs/design/personal-study.md, Create family study).
   def family_study_prompt
     [ title, questions.last&.prompt ].compact.join(": ").truncate(FamilyStudy::Draft::PROMPT_MAX, separator: " ")
   end

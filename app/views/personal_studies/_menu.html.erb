@@ -1,12 +1,15 @@
 <%# locals: (personal_study:) %>
-<%# The study header's "…" menu. Each item opens a Primer Dialog; Delete asks first, never a browser confirm. On a
-    phone it also holds the plan link and Tags, which sit in the header from md up (frame phone-personal-study.png). %>
-<%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-study-menu", anchor_align: :end)) do |menu| %>
+<%# The study header's "…" menu. First, for heads and adults here, "Create family study", a link out of the study
+    with a divider under it (docs/design/personal-study.md, Create family study). Each item below opens a Primer Dialog;
+    Delete asks first, never a browser confirm. On a phone it also holds Tags, which sits in the header from md up
+    (frame phone-personal-study.png). %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-study-menu", anchor_align: :end, classes: "personal-study__menu")) do |menu| %>
   <% menu.with_show_button(icon: :"kebab-horizontal", "aria-label": "Study actions", show_tooltip: false) %>
   <% if policy(FamilyStudy).create? %>
-    <% menu.with_item(label: "Plan a family study from this", href: new_household_family_study_path(from_study: personal_study.id), classes: "d-md-none", data: { study_layout_target: "phoneOnly" }) do |item| %>
+    <% menu.with_item(label: "Create family study", href: new_household_family_study_path(from_study: personal_study.id)) do |item| %>
       <% item.with_leading_visual_icon(icon: :book) %>
     <% end %>
+    <% menu.with_divider %>
   <% end %>
   <% menu.with_item(label: "Tags…", tag: :button, classes: "d-md-none", data: { study_layout_target: "phoneOnly" }, content_arguments: { "data-show-dialog-id": "personal-study-tags" }) do |item| %>
     <% item.with_leading_visual_icon(icon: :tag) %>

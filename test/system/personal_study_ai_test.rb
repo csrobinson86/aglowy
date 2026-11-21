@@ -134,9 +134,12 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
   test "plan a family study and see the prefilled box" do
     personal_study_question(@study, prompt: "How does the ransom fit in?")
     visit household_personal_study_url(household_id: households(:home), id: @study)
-    capture_screens("personal-study-plan-button")
+    assert_turbo_idle
 
-    click_on "Plan a family study from this"
+    find("button[aria-label='Study actions']").click
+    assert_selector "[role=menuitem]", text: "Create family study"
+    capture_screens("personal-study-menu-family-study")
+    find("[role=menuitem]", text: "Create family study").click
 
     assert_selector "h1", text: "Schedule a family study"
     within("turbo-frame#ai_panel") do
@@ -148,7 +151,7 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     capture_screens("plan-family-study-from-study", scroll_to: "turbo-frame#ai_panel")
   end
 
-  test "a child sees no plan button" do
+  test "a child sees no Create family study" do
     child = Identity.create!(user: users(:child), email: "child@example.com", password: "password123", confirmed_at: Time.current)
     study = users(:child).personal_studies.create!(title: "Why do we pray?")
     sign_out :identity
@@ -157,6 +160,6 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
     visit household_personal_study_url(household_id: households(:home), id: study)
 
     assert_selector "h1", text: "Why do we pray?"
-    assert_no_link "Plan a family study from this"
+    assert_no_selector "[role=menuitem]", text: "Create family study", visible: :all
   end
 end

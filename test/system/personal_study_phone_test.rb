@@ -112,10 +112,10 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
     assert_link "Back to Bible questions", href: household_personal_studies_path(household_id: households(:home), collection: collections(:head_bible_questions).id)
     assert_no_selector "nav[aria-label=Breadcrumb]"
     assert_no_field "Add a tag"
-    assert_no_link "Plan a family study from this"
+    assert_no_text :all, "Plan a family study from this"
 
     find("button[aria-label='Study actions']").click
-    assert_selector "[role=menuitem]", text: "Plan a family study from this"
+    assert_selector "[role=menuitem]", text: "Create family study"
     find("[role=menuitem]", text: "Tags…").click
     within("dialog", text: "Tags") do
       fill_in "Add a tag", with: "comfort"
@@ -124,6 +124,19 @@ class PersonalStudyPhoneTest < ApplicationSystemTestCase
     end
     assert_equal [ "comfort" ], @study.tags_for(users(:head)).pluck(:name)
     assert_accessible
+  end
+
+  test "the \"…\" menu lists Create family study first, then Tags, each big enough to touch" do
+    visit study_url
+    assert_turbo_idle
+
+    find("button[aria-label='Study actions']").click
+    assert_selector "[role=menuitem]", text: "Create family study"
+    wait_for_animations
+    assert_equal [ "Create family study", "—", "Tags…", "Rename…", "Move to collection…", "—", "Delete study…" ], menu_entries("personal-study-menu")
+    all("[role=menuitem]").each { assert_touch_target it }
+    assert_accessible
+    capture_screens("phone-personal-study-menu", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
   end
 
   test "the studies list puts collections and tags above the list, behind a disclosure" do
