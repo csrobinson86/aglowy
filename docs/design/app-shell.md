@@ -142,7 +142,7 @@ changes when it does.
 **Sidebar, top to bottom**
 
 1. **Aglowy mark:** `LogoComponent`, the Two flames mark then "Aglowy" (`docs/design/brand.md`). Links to the household home.
-2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. Opens a menu of their active households, the current one checked, each with its role. Below a divider, "New household" appears when `HouseholdPolicy#create?` allows it.
+2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. With two or more active households it opens a menu of them, the current one checked, each with its role. With one, it isn't a menu: the same two lines as plain text, with no chevron and nothing to press. "New household" isn't in the switcher; it's in Settings → My households (`docs/design/settings.md`; Casey, 21 Nov).
 3. **Household group:** Home, Calendar (`docs/design/calendar.md`, once CAL-01 builds it), Family studies, Members, Family goals.
 4. **Mine group:** Daily brief (`docs/design/daily-brief.md`, heads and adults), Today's meeting, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`, whose tabs hold notes, meeting notes and bookmarks), Meeting parts (`docs/design/meeting-parts.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
 5. **Footer:** Notifications with its unread counter, once NOTIFY-01 adds it (`docs/design/notifications.md`, The sidebar), then Settings, for everyone (`docs/design/settings.md`; it replaced Household settings and the link on the person's name in SETTINGS-01), then the person's initial and name with a Sign out button.
@@ -159,7 +159,7 @@ changes when it does.
 | --- | --- |
 | Shell | `Primer::Alpha::Layout` with `stacking_breakpoint: :md`. `with_sidebar(width: :default, col_placement: :start, row_placement: :none)` hides the sidebar below `md`, where the phone menu takes over. `with_main(tag: :main, width: :xl)` |
 | Navigation | `Primer::Beta::NavList` with `selected_item_id:`. It renders its own `<nav>`; give it `aria: { label: "Main" }` (it raises without a heading or label). Two `with_group` blocks, each `with_heading(title: "Household")` / `"Mine"`. Items: `with_item(label:, href:, selected_by_ids: :dashboards)` and `with_leading_visual_icon(icon: :home)`. A selected item gets `aria-current="page"` from Primer |
-| Switcher | `Primer::Alpha::ActionMenu` with `select_variant: :single`. Each household is `with_item(label:, href:, active: current)` with `with_description` for the role. "New household" goes after `with_divider` |
+| Switcher | With two or more households, `Primer::Alpha::ActionMenu` with `select_variant: :single`. Each household is `with_item(label:, href:, active: current)` with `with_description` for the role. With one, the name and role as text in the same two-line layout, no button |
 | Phone menu button | `Primer::Beta::IconButton` with `icon: :"three-bars"` and `"aria-label": "Open menu"`, in a top bar shown only below `md` (`d-md-none`) |
 | Phone menu | `Primer::Alpha::Dialog` with `position: :left`, `position_narrow: :left` and `title: "Menu"`. Its body renders the same sidebar content as the desktop sidebar |
 | Page header | `Primer::Beta::Subhead`. Pass `with_heading(tag: :h1)`: the default tag is a `div` |
@@ -183,7 +183,11 @@ example the switcher button's two-line label), with BEM names and primitives
 
 ## Phone (below `md`, 768px)
 
-- The sidebar is hidden. A 56px top bar holds the menu button, then the household switcher.
+- The sidebar is hidden. A 56px top bar holds three things (Casey, 21 Nov):
+  - on the left, the menu button
+  - in the middle, the Aglowy mark alone (`LogoComponent` `size: :small`, `docs/design/brand.md`), linking to the household's Home
+  - on the right, the bell with its counter (`docs/design/notifications.md`, The sidebar)
+- The household switcher isn't in the top bar. It's at the top of the menu, as in the desktop sidebar, since the menu is the same sidebar content.
 - The menu button opens the left-side dialog with the full sidebar content.
 - Touch targets are at least 44px. Primer's coarse-pointer sizes should provide this; the screenshots confirm it.
 - Primary page actions go full width under the page title.
@@ -208,7 +212,7 @@ System tests can save screenshots of a page at both viewports and in both themes
 | Decision | Choice |
 | --- | --- |
 | Personal content on the household home | Shown as drawn: a "Mine" column with my goals, pinned notes (NOTES-01, `docs/design/notes.md`, frame `docs/design/notes/home-pinned-notes.png`) and recent meeting notes, once those features exist (the meeting notes and goals epics). Until then Home has no Mine column |
-| Who sees "New household" | Whoever `HouseholdPolicy#create?` allows. Children may not (decided 14 Nov, `docs/design/invitations.md`); the menu follows the policy |
+| Who sees "New household" | Whoever `HouseholdPolicy#create?` allows (`User#can_start_household?`): someone with no seats may, and so may anyone with at least one seat that isn't a child seat. It counts every seat the person has had, including ones they've left, so only someone who has only ever been a child may not (decided 14 Nov, `docs/design/invitations.md`). Their role in the household in the URL doesn't decide it. It's a button in Settings → My households, not a switcher item (Casey, 21 Nov) |
 | Household home before family studies exist | The Welcome empty state shows only when there is nothing at all to show: no upcoming session, no active family goal, and none of the person's own active goals, meeting notes or pinned notes (story #142; pinned notes added by NOTES-01). Otherwise Home shows its two columns, with "No family study scheduled." in Next family study when nothing is scheduled. Heads and adults see "Schedule a study" as the empty state's action and "Add a member" beside it; elsewhere "Schedule a study" sits in the page header |
 | Phone navigation | A left-side `Primer::Alpha::Dialog` (0.53.5 supports `position: :left` and `position_narrow: :left`) |
 | Icons in the mockup | Hand-drawn stand-ins; the build uses the Octicons listed above |

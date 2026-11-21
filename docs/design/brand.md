@@ -54,6 +54,7 @@ In `docs/design/brand/`. The story copies them to where the app serves them.
 | Place | Today | Becomes |
 | --- | --- | --- |
 | Sidebar, top (and the phone menu, which is the same sidebar) | Octicon `sun` + "Aglowy" | `LogoComponent` |
+| Phone top bar, in a household (`docs/design/app-shell.md`, Phone; Casey, 21 Nov) | The household switcher | `LogoComponent` `size: :small`: the mark alone, 24 px, in the middle of the bar |
 | `focused` layout, signed out: sign in, create an account, password reset, confirmation, accepting an invitation as someone new, a child choosing a password | Octicon `sun` + "Aglowy" at the top left | `LogoComponent` `size: :large`: the mark alone, 48 px, centred above the page's heading (frames `app-shell/sign-in.png`, `app-shell/phone-sign-in.png`, `invitations/accept-new-account.png`) |
 | `focused` layout, signed in: the household chooser, new household, account settings, accepting an invitation with an account | Octicon `sun` + "Aglowy" at the top left | `LogoComponent` at the top left, as now (frame `invitations/accept-existing-account.png`) |
 | `shared/_header` (the `application` layout) | "Aglowy" | `LogoComponent` |
@@ -61,9 +62,10 @@ In `docs/design/brand/`. The story copies them to where the app serves them.
 | iPhone Home Screen | The red circle | `public/apple-touch-icon.png` |
 | Web app manifest (`app/views/pwa/manifest.json.erb`) | The red circle, `theme_color: "red"` | `icon-192.png` and `icon-512.png`, both colours `#1F2328`, the description from `docs/product/vision.md` |
 
-**`LogoComponent.new(href:, size: :medium)`** has two sizes:
+**`LogoComponent.new(href:, size: :medium)`** has three sizes:
 
 - **`:medium`** (the default): a Primer `Link` (`scheme: :primary`, bold, `font_size: 3`, no underline) holding `image_tag("aglowy-mark.svg", alt: "", width: 24, height: 24)` and the text "Aglowy". The image's `alt` is empty because the word beside it already names the link.
+- **`:small`**: the same link holding only the mark at 24 × 24, with `alt: "Aglowy"`, because the image is the link's whole name. For the phone top bar, where the word wouldn't fit beside the menu button and the bell. The link is at least 44 px square, for touch, with the mark centred in it and its clear space kept.
 - **`:large`**: the same link holding only the mark at 48 × 48, with `alt: "Aglowy"`, because the image is now the link's whole name. The page's own heading follows it ("Sign in to Aglowy", "Create your account"), so the word isn't repeated beside the mark.
 
 **The `focused` layout picks by sign-in state,** not by page: `identity_signed_in?` shows the `:medium` logo in a top-left `<header>`; otherwise the `<header>` centres the `:large` logo above the column, 48 px from the top of the page and 24 px above the heading, on a phone as on a desktop. It's one `<header>` either way, so every page keeps its landmarks.

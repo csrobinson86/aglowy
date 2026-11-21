@@ -174,7 +174,7 @@ Notifications are reached through `Current.user.notifications.visible`, so someo
 - **"Notifications"** (Octicon `bell`) in the sidebar footer, above Settings, for everyone. It's selected on the inbox.
 - It shows a Primer `Counter` with the unread count (`99+` past 99). The link's accessible name is "Notifications, 3 unread", or just "Notifications" when there are none.
 - **Live:** creating or reading a notification broadcasts a Turbo Stream that replaces the counter (`turbo_stream_from [Current.user, :notifications]` in the shell). It's the person's own stream, never a household's.
-- **On a phone,** the top bar gets a bell `IconButton` with the counter, beside the menu button. The menu keeps the same footer item.
+- **On a phone,** the top bar gets a bell `IconButton` with the counter, at its right-hand end (`docs/design/app-shell.md`, Phone). The menu keeps the same footer item.
 
 ### The inbox
 
