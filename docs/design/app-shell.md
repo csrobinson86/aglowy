@@ -185,7 +185,7 @@ example the switcher button's two-line label), with BEM names and primitives
 
 - The sidebar is hidden. A 56px top bar holds three things (Casey, 21 Nov):
   - on the left, the menu button
-  - in the middle, the Aglowy mark alone (`LogoComponent` `size: :small`, `docs/design/brand.md`), linking to the household's Home
+  - beside it, left-aligned, the Aglowy mark alone (`LogoComponent` `size: :small`, `docs/design/brand.md`), linking to the household's Home. It sits right after the menu button, as a logo does beside a menu icon, rather than centred (Casey, 21 Nov)
   - on the right, the bell with its counter (`docs/design/notifications.md`, The sidebar)
 - The household switcher isn't in the top bar. It's at the top of the menu, as in the desktop sidebar, since the menu is the same sidebar content.
 - The menu button opens the left-side dialog with the full sidebar content.
