@@ -1,0 +1,56 @@
+<% position = @cards.index(@card) %>
+<% previous_card, next_card = (@cards[position - 1] unless position.zero?), @cards[position + 1] %>
+<% content_for :helper_title, "Get ready" %>
+<% content_for :helper_meeting, Household::Meeting::TITLES.fetch(@card.meeting) %>
+<% content_for :helper_progress, render("meeting_preps/cards/dots", cards: @cards, card: @card, step: @step) %>
+
+<%# One card (frames tablet-prep-card.png, tablet-prep-reading.png). Its text is the AI's or a parent's: escaped, never
+    html_safe (Trap 4). The quality's words and icon are ours (Trap 3). %>
+<div class="meeting-prep__card">
+  <p class="meeting-helper__part meeting-prep__part"><%= meeting_note_dot(@step.color) %><%= @step.title %> · Card <%= position + 1 %> of <%= @cards.size %></p>
+  <div class="meeting-prep__about">
+    <%= meeting_helper_icon(icon: @step.icon, color: @step.color) %>
+    <%= tag.h1 @card.about, class: [ "meeting-helper__heading", "meeting-prep__heading", { "meeting-prep__heading--reading": @card.story.present? } ] %>
+  </div>
+
+  <%# The Bible Reading card's story; gone if a parent cleared it. %>
+  <% if @card.story.present? %>
+    <section class="meeting-prep__story" aria-labelledby="meeting-prep-story">
+      <h2 class="meeting-prep__story-title" id="meeting-prep-story">The story<%= " · #{@card.reading}" if @card.reading.present? %></h2>
+      <ol class="meeting-prep__sentences">
+        <% @card.story.each do |sentence| %>
+          <li class="meeting-prep__sentence"><%= sentence %></li>
+        <% end %>
+      </ol>
+    </section>
+  <% end %>
+
+  <div class="meeting-prep__boxes">
+    <section class="meeting-prep__box meeting-prep__quality" aria-labelledby="meeting-prep-quality">
+      <%= meeting_prep_quality_icon(@card) %>
+      <div class="meeting-prep__box-text">
+        <h2 class="meeting-prep__box-title" id="meeting-prep-quality"><%= @card.quality_words %></h2>
+        <p class="meeting-prep__box-line"><%= @card.quality_line %></p>
+      </div>
+    </section>
+    <section class="meeting-prep__box meeting-prep__i-can" aria-labelledby="meeting-prep-i-can">
+      <%= meeting_prep_i_can_icon %>
+      <div class="meeting-prep__box-text">
+        <h2 class="meeting-prep__box-title" id="meeting-prep-i-can">I can…</h2>
+        <p class="meeting-prep__box-line"><%= @card.i_can %></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<%# Back on the first card, and All done on the last, go to her Get ready page. %>
+<nav class="meeting-helper__steps" aria-label="Cards">
+  <%= render Primer::Beta::Button.new(tag: :a, href: previous_card ? household_meeting_prep_card_path(meeting_prep_meeting: @card.meeting, id: previous_card.step) : household_meeting_preps_path, size: :large, classes: "meeting-helper__button meeting-helper__button--step") do |button| %>
+    <% button.with_leading_visual_icon(icon: :"arrow-left") %>
+    Back
+  <% end %>
+  <%= render Primer::Beta::Button.new(tag: :a, href: next_card ? household_meeting_prep_card_path(meeting_prep_meeting: @card.meeting, id: next_card.step) : household_meeting_preps_path, scheme: :primary, size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-prep__go") do |button| %>
+    <% button.with_trailing_visual_icon(icon: :"arrow-right") %>
+    <%= next_card ? "Next card" : "All done" %>
+  <% end %>
+</nav>

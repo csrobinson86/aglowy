@@ -37,6 +37,11 @@
       <% group.with_item(label: "Today's meeting", href: todays_meeting_path, selected_by_ids: :todays_meetings) do |item| %>
         <% item.with_leading_visual_icon(icon: :sun) %>
       <% end %>
+      <% if get_ready? %>
+        <% group.with_item(label: "Get ready", href: meeting_preps_path, selected_by_ids: :meeting_preps) do |item| %>
+          <% item.with_leading_visual_icon(icon: :"light-bulb") %>
+        <% end %>
+      <% end %>
       <% group.with_item(label: "Personal study", href: personal_studies_path, selected_by_ids: :personal_studies) do |item| %>
         <% item.with_leading_visual_icon(icon: :search) %>
       <% end %>

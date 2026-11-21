@@ -1,0 +1,214 @@
+// Get ready's pages for children (docs/design/meeting-prep.md, On her tablet), in the meeting helper's layout and on
+// its sizes. From primitives only; nothing moves (no transitions or animations of our own).
+.meeting-prep__heading {
+  font-size: calc(var(--base-size-40) + var(--base-size-2));
+}
+
+// The Bible Reading card's heading is smaller, to leave room for the story.
+.meeting-prep__heading--reading {
+  font-size: var(--base-size-36);
+}
+
+// Get ready (frame tablet-prep-week.png): a tile for each meeting, side by side on a tablet.
+.meeting-prep__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--base-size-128) * 3)), 1fr));
+  gap: var(--base-size-24);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: start;
+}
+
+.meeting-prep__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-24);
+  padding: var(--base-size-24);
+  border: var(--borderWidth-thick) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  background-color: var(--bgColor-muted);
+}
+
+// The next meeting, with cards to start.
+.meeting-prep__tile--next {
+  border-color: var(--borderColor-accent-emphasis);
+}
+
+.meeting-prep__tile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-24);
+}
+
+.meeting-prep__tile-title {
+  margin: 0;
+  font-size: var(--text-title-size-large);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+.meeting-prep__tile-time,
+.meeting-prep__tile-status {
+  margin: 0;
+  color: var(--fgColor-muted);
+  font-size: var(--text-title-size-medium);
+}
+
+.meeting-prep__tile-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--base-size-16);
+  margin-top: auto;
+}
+
+// A card (frames tablet-prep-card.png, tablet-prep-reading.png): the part, the step's icon beside what it's about, the
+// story on the Bible Reading card, then the quality and "I can…" side by side.
+.meeting-prep__card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--base-size-24);
+  padding-block-end: var(--base-size-24);
+}
+
+.meeting-prep__part {
+  justify-content: center;
+}
+
+.meeting-prep__about {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-32);
+
+  .meeting-helper__icon {
+    flex-shrink: 0;
+  }
+}
+
+.meeting-prep__story {
+  padding: var(--base-size-16) var(--base-size-32);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-large);
+  background-color: var(--bgColor-muted);
+}
+
+.meeting-prep__story-title {
+  margin: 0 0 var(--base-size-8);
+  color: var(--fgColor-muted);
+  font-size: var(--text-body-size-large);
+  font-weight: var(--base-text-weight-medium);
+}
+
+// Each sentence after its number in a circle.
+.meeting-prep__sentences {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-8);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  counter-reset: meeting-prep-sentence;
+}
+
+.meeting-prep__sentence {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-16);
+  font-size: var(--text-title-size-medium);
+  font-weight: var(--base-text-weight-semibold);
+  line-height: var(--text-title-lineHeight-medium);
+  overflow-wrap: anywhere;
+  counter-increment: meeting-prep-sentence;
+
+  &::before {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--base-size-28);
+    height: var(--base-size-28);
+    border-radius: var(--borderRadius-full);
+    color: var(--fgColor-muted);
+    background-color: var(--bgColor-neutral-muted);
+    font-size: var(--text-body-size-medium);
+    content: counter(meeting-prep-sentence);
+  }
+}
+
+.meeting-prep__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--base-size-128) * 3)), 1fr));
+  gap: var(--base-size-24);
+}
+
+.meeting-prep__box {
+  display: flex;
+  align-items: center;
+  gap: var(--base-size-24);
+  padding: var(--base-size-24) var(--base-size-32);
+  border: var(--borderWidth-thick) solid;
+  border-radius: var(--borderRadius-large);
+}
+
+.meeting-prep__quality {
+  border-color: var(--borderColor-attention-emphasis);
+  background-color: var(--bgColor-attention-muted);
+}
+
+.meeting-prep__i-can {
+  border-color: var(--borderColor-success-emphasis);
+  background-color: var(--bgColor-success-muted);
+}
+
+// The quality's icon, or "I can…"'s rays, in a dark circle.
+.meeting-prep__box-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-64);
+  height: var(--base-size-64);
+  border-radius: var(--borderRadius-full);
+  background-color: var(--bgColor-default);
+
+  svg {
+    width: var(--base-size-32);
+    height: var(--base-size-32);
+  }
+}
+
+.meeting-prep__box-icon--attention {
+  color: var(--fgColor-attention);
+}
+
+.meeting-prep__box-icon--success {
+  color: var(--fgColor-success);
+}
+
+.meeting-prep__box-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-4);
+  min-width: 0;
+}
+
+.meeting-prep__box-title {
+  margin: 0;
+  font-size: var(--text-title-size-large);
+  font-weight: var(--base-text-weight-semibold);
+}
+
+.meeting-prep__box-line {
+  margin: 0;
+  font-size: var(--text-title-size-medium);
+  overflow-wrap: anywhere;
+}
+
+// Start and Next card are Primer's primary (green) button. A tap leaves the hover behind on a tablet, and Primer's
+// lighter hover green is too pale for the white words, so the button keeps its resting colour.
+.meeting-prep__go.Button--primary:hover:not(:disabled) {
+  background-color: var(--button-primary-bgColor-rest);
+}

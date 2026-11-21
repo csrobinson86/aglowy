@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+  <%# Get ready's pages share the layout under their own name (docs/design/meeting-prep.md, On her tablet). %>
+  <% helper_title = content_for(:helper_title).presence || "Today's meeting" %>
   <head>
-    <%= render "layouts/head", title: safe_join([ "Today's meeting", Current.household.name, "Aglowy" ], " · ") %>
+    <%= render "layouts/head", title: safe_join([ helper_title, Current.household.name, "Aglowy" ], " · ") %>
   </head>
 
   <%# Full screen for a child with the meeting helper, and always dark: a bright screen glows in a meeting hall
@@ -11,7 +13,7 @@
     <header class="meeting-helper__header">
       <%= render Primer::Beta::IconButton.new(icon: :home, tag: :a, href: household_root_path, size: :large, show_tooltip: false, "aria-label": "Back to Aglowy", classes: "meeting-helper__home") %>
       <div class="meeting-helper__progress">
-        <%= content_for(:helper_progress).presence || tag.p("Today's meeting", class: "meeting-helper__title") %>
+        <%= content_for(:helper_progress).presence || tag.p(helper_title, class: "meeting-helper__title") %>
       </div>
       <p class="meeting-helper__meeting"><%= content_for(:helper_meeting) %></p>
     </header>

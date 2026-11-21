@@ -1,4 +1,4 @@
-<%# locals: (meeting:, meeting_helper:, listening_game: false) -%>
+<%# locals: (meeting:, meeting_helper:, listening_game: false, get_ready: false) -%>
 <%# Only on a meeting day (frames adult-home-meeting.png, child-home.png). The button goes through Today's meeting's
     create, which checks the meeting itself, so hiding the card is never the authorization. %>
 <%= render(Primer::Box.new(border: true, border_radius: 2, bg: :subtle, p: 4, mb: 4, display: :flex, direction: [ :column, nil, :row ], align_items: [ nil, nil, :center ], classes: "todays-meeting-card")) do %>
@@ -21,8 +21,17 @@
       <% end %>
     </div>
   </div>
-  <%# The forms DSL takes size: as the field's size and drops it, so the large button is Primer's own modifier class. %>
-  <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path, class: "flex-shrink-0 mt-3 mt-md-0 ml-md-3") do |f| %>
-    <%= render TodaysMeetings::StartForm.new(f, kind: meeting.kind, week_of: meeting.week_of, label: meeting_helper ? "Start" : "Open my notes", scheme: :primary, block: true, classes: "Button--large width-md-auto") %>
-  <% end %>
+  <%# Get ready beside Start, for a child with this week's cards (docs/design/meeting-prep.md, Where she finds it). %>
+  <div class="d-flex flex-column flex-md-row flex-shrink-0 mt-3 mt-md-0 ml-md-3">
+    <% if get_ready %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_preps_path, size: :large, block: true, classes: "width-md-auto mb-2 mb-md-0 mr-md-2")) do |button| %>
+        <% button.with_leading_visual_icon(icon: :"light-bulb") %>
+        Get ready
+      <% end %>
+    <% end %>
+    <%# The forms DSL takes size: as the field's size and drops it, so the large button is Primer's own modifier class. %>
+    <%= primer_form_with(scope: :meeting_note, url: household_todays_meeting_path) do |f| %>
+      <%= render TodaysMeetings::StartForm.new(f, kind: meeting.kind, week_of: meeting.week_of, label: meeting_helper ? "Start" : "Open my notes", scheme: :primary, block: true, classes: "Button--large width-md-auto") %>
+    <% end %>
+  </div>
 <% end %>

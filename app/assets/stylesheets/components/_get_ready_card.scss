@@ -1,0 +1,11 @@
+// Home's "Get ready" card for a child, on days with no meeting: the light bulb in an attention-coloured circle, like
+// the Today's meeting card's sun (docs/design/meeting-prep.md, Where she finds it). Primer has no icon-in-a-circle.
+.get-ready-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--base-size-48);
+  height: var(--base-size-48);
+  border-radius: var(--borderRadius-full);
+  background-color: var(--bgColor-attention-muted);
+}

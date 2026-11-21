@@ -36,13 +36,19 @@ module Household::MeetingPrepPreparable
     prep_weeks.preloaded.find_by(week_of:)
   end
 
+  # This week's cards are ready, the Monday where the household lives: Home and the sidebar offer Get ready only then
+  # (docs/design/meeting-prep.md, Where she finds it).
+  def prep_cards_this_week?
+    prep_weeks.where(week_of: today.beginning_of_week(:monday)).joins(:cards).exists?
+  end
+
   # The parts of a week with no card whose meeting hasn't passed by +now+, in step order: none before meeting times are
   # set. A week with no PrepWeek misses all five.
   def missing_prep_steps(week_of, now = Time.current)
     return [] unless meeting_times_set?
 
     carded = PrepWeek::Card.where(prep_week: prep_weeks.where(week_of:)).pluck(:step)
-    PrepWeek::Card::STEPS.filter_map { |step, meeting| step unless step.in?(carded) || meeting_in(week_of, meeting).ends_at <= now }
+    PrepWeek::Card::STEPS.filter_map { |step, meeting| step unless step.in?(carded) || meeting_in(week_of, meeting).passed?(now) }
   end
 
   private
