@@ -207,12 +207,32 @@ A story names the ones that apply; its screenshots or ViewComponent previews sho
 
 System tests can save screenshots of a page at both viewports and in both themes (UI-01, "Screenshots of every page"). They go to `tmp/screenshots/ui/<page>-<viewport>-<theme>.png`. CI uploads them as a build artifact, and UI pull requests attach the desktop and phone light screenshots, plus dark when colours change.
 
+## Home's New menu
+
+Casey, 21 Nov: Home's header has one menu of quick actions instead of the "Schedule a study" button, so the things people start most often are a click away from Home.
+
+- **The button:** a Primer `ActionMenu` whose show button is a primary `Button` with the `plus` leading icon, the label "New" and the `triangle-down` trailing action. It's a plus, not the "…" a study page uses: "…" means "more about this thing", and Home's menu starts new things. Its accessible name is "New".
+- **The items, in this order,** each with the same icon as its sidebar item, and each shown only when that page's own policy allows it:
+
+| Item | Icon | Goes to | Shown when |
+| --- | --- | --- | --- |
+| Family study | `book` | `new_household_family_study_path` | `policy(FamilyStudy).create?` (heads and adults) |
+| Personal study | `search` | `new_household_personal_study_path` | everyone (`PersonalStudyPolicy#create?` for their own new study) |
+| Note | `pencil` | `new_household_personal_note_path` | everyone |
+| Family goal | `goal` | `new_household_goal_path` | `GoalPolicy#create?` for a family goal (heads and adults) |
+| Member | `people` | `new_household_member_path`, after a divider | `policy(Membership).create?` (heads and adults) |
+
+- The labels are nouns because the button already says "New": the menu reads "New › Family study".
+- A child sees Personal study and Note. Nothing else changes for them: no item leads anywhere they couldn't already go.
+- On a phone the button goes full width under the title, as primary page actions do (Phone, above), and the menu opens under it.
+- Everything else on Home stays as it is, including the Welcome Blankslate's own actions.
+
 ## Decisions
 
 | Decision | Choice |
 | --- | --- |
 | Personal content on the household home | Shown as drawn: a "Mine" column with my goals, pinned notes (NOTES-01, `docs/design/notes.md`, frame `docs/design/notes/home-pinned-notes.png`) and recent meeting notes, once those features exist (the meeting notes and goals epics). Until then Home has no Mine column |
 | Who sees "New household" | Whoever `HouseholdPolicy#create?` allows (`User#can_start_household?`): someone with no seats may, and so may anyone with at least one seat that isn't a child seat. It counts every seat the person has had, including ones they've left, so only someone who has only ever been a child may not (decided 14 Nov, `docs/design/invitations.md`). Their role in the household in the URL doesn't decide it. It's a button in Settings → My households, not a switcher item (Casey, 21 Nov) |
-| Household home before family studies exist | The Welcome empty state shows only when there is nothing at all to show: no upcoming session, no active family goal, and none of the person's own active goals, meeting notes or pinned notes (story #142; pinned notes added by NOTES-01). Otherwise Home shows its two columns, with "No family study scheduled." in Next family study when nothing is scheduled. Heads and adults see "Schedule a study" as the empty state's action and "Add a member" beside it; elsewhere "Schedule a study" sits in the page header |
+| Household home before family studies exist | The Welcome empty state shows only when there is nothing at all to show: no upcoming session, no active family goal, and none of the person's own active goals, meeting notes or pinned notes (story #142; pinned notes added by NOTES-01). Otherwise Home shows its two columns, with "No family study scheduled." in Next family study when nothing is scheduled. Heads and adults see "Schedule a study" as the empty state's action and "Add a member" beside it. The page header holds the New menu instead of a "Schedule a study" button, on the Welcome state too (Home's New menu, above) |
 | Phone navigation | A left-side `Primer::Alpha::Dialog` (0.53.5 supports `position: :left` and `position_narrow: :left`) |
 | Icons in the mockup | Hand-drawn stand-ins; the build uses the Octicons listed above |
