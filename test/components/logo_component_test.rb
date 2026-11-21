@@ -17,7 +17,22 @@ class LogoComponentTest < ViewComponent::TestCase
     assert_equal "", page.find("a[href='/somewhere']").text.strip
   end
 
+  test "small: the mark alone at 24 px, named Aglowy, with no other text, for the phone top bar" do
+    render_inline(LogoComponent.new(href: "/somewhere", size: :small))
+
+    assert_selector "a[href='/somewhere'] img[src*='aglowy-mark'][src$='.svg'][alt='Aglowy'][width='24'][height='24']", count: 1
+    assert_equal "", page.find("a[href='/somewhere']").text.strip
+  end
+
   test "an unknown size raises" do
-    assert_raises(ArgumentError) { LogoComponent.new(href: "/somewhere", size: :small) }
+    assert_raises(ArgumentError) { LogoComponent.new(href: "/somewhere", size: :huge) }
+  end
+
+  test "the previews render" do
+    %i[ small medium large ].each do |preview|
+      render_preview(preview)
+
+      assert_selector "a img[alt][src*='aglowy-mark']", count: 1
+    end
   end
 end
