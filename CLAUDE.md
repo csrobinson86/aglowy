@@ -214,6 +214,7 @@ households or roles. The non-negotiables:
 - Read `docs/design/app-shell.md` before touching a layout, the sidebar,
   navigation, a page header or an empty state.
 - Read `docs/design/brand.md` before touching the logo, favicon or app icons.
+- Read `docs/design/phone.md` before touching how a page looks on a phone.
 - Read `docs/design/settings.md` before touching Settings. Every setting a
   person or a household has is a section there; don't add a separate settings page.
 - Household pages use the `household` layout (sidebar + main, via

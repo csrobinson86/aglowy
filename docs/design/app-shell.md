@@ -190,7 +190,7 @@ example the switcher button's two-line label), with BEM names and primitives
 - The household switcher isn't in the top bar. It's at the top of the menu, as in the desktop sidebar, since the menu is the same sidebar content.
 - The menu button opens the left-side dialog with the full sidebar content.
 - Touch targets are at least 44px. Primer's coarse-pointer sizes should provide this; the screenshots confirm it.
-- Primary page actions go full width under the page title.
+- A page's primary action sits beside its title, and an inner page's "…" sits on its back-link row. Every page's phone layout follows `docs/design/phone.md` (Casey, 21 Nov).
 
 ## States every UI story checks
 
@@ -224,7 +224,7 @@ Casey, 21 Nov: Home's header has one menu of quick actions instead of the "Sched
 
 - The labels are nouns because the button already says "New": the menu reads "New › Family study".
 - A child sees Personal study and Note. Nothing else changes for them: no item leads anywhere they couldn't already go.
-- On a phone the button goes full width under the title, as primary page actions do (Phone, above), and the menu opens under it.
+- On a phone the button sits beside the title, not full width (`docs/design/phone.md`, rule 1), and the menu opens under it.
 - Everything else on Home stays as it is, including the Welcome Blankslate's own actions.
 - **Other pages use the same button** when they start more than one kind of thing. The Calendar's "New" menu has My time and Household event (`docs/design/calendar.md`).
 

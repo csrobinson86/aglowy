@@ -53,7 +53,7 @@ Everything household-scoped is reached through `Current.household`; anything fro
 
 ## Invitations
 
-**Inviting** (`GET/POST /:household_id/invitations`, `InvitationsController#new/create`; resend `PATCH`, cancel `DELETE`): frame `invite.png`. Email and "Their role" (Adult; Head only for heads), the line "To add a child, use Add without a login, then give them a login with a username", and what happens next. The Members page lists open invitations under "Invited, not joined yet" with Resend (Send again when expired) and Cancel (frame `members.png`). The Members page shows "Invite by email" and "Add without a login" to heads and adults (frame `members-adult.png` is the adult's view).
+**Inviting** (`GET/POST /:household_id/invitations`, `InvitationsController#new/create`; resend `PATCH`, cancel `DELETE`): frame `invite.png`. Email and "Their role" (Adult; Head only for heads), the line "To add a child, use Add without a login, then give them a login with a username", and what happens next. The Members page lists open invitations under "Invited, not joined yet" with Resend (Send again when expired) and Cancel (frame `members.png`). The Members page shows "Invite by email" and "Add without a login" to heads and adults (frame `members-adult.png` is the adult's view), in a "+ New ▾" menu since 21 Nov; its phone layout is in `docs/design/phone.md` (Members).
 
 ### `Invitation`
 

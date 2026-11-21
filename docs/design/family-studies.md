@@ -221,4 +221,4 @@ A Primer `Label` "From an AI draft" sits beside the Notes heading until the pers
 - A session with no topic; a long topic; a cancelled session
 - Notes empty and filled; resources none, links, files, both
 - Quota under 80%, over 80%, full
-- Desktop and phone; light and dark
+- Desktop and phone; light and dark. On a phone the list and a session follow `docs/design/phone.md` (Family studies)
