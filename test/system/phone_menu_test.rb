@@ -70,15 +70,17 @@ class PhoneMenuTest < ApplicationSystemTestCase
     capture_screens("phone-menu")
   end
 
-  test "the top bar: the menu button, the mark centred, and the bell, each a touch target" do
+  test "the top bar: the menu button, the mark beside it, and the bell at the end, each a touch target" do
     emulate_touch(true)
     visit household_members_url(household_id: households(:home))
     assert_selector "h1", text: "Members"
     assert_turbo_idle
 
     bar, logo = find("header.app-shell__top-bar"), find("header.app-shell__top-bar a:has(img[alt='Aglowy'])")
-    assert_in_delta centre_x(bar), centre_x(logo), 2
+    # var(--base-size-4) between the menu button and the mark, give or take 2px.
+    assert_in_delta 4, logo.rect.x - right_edge(menu_button), 2
     assert_in_delta centre_y(bar), centre_y(logo), 2
+    assert_includes 0..padding_right(bar), right_edge(bar) - right_edge(bell)
     [ menu_button, logo, bell ].each { assert_touch_target it }
     assert_operator menu_button.rect.x, :<, logo.rect.x
     assert_operator logo.rect.x, :<, bell.rect.x
@@ -109,8 +111,9 @@ class PhoneMenuTest < ApplicationSystemTestCase
       find("header.app-shell__top-bar a[href='#{household_notifications_path(household_id: households(:home))}']")
     end
 
-    def centre_x(element) = element.rect.x + element.rect.width / 2.0
     def centre_y(element) = element.rect.y + element.rect.height / 2.0
+    def right_edge(element) = element.rect.x + element.rect.width
+    def padding_right(element) = evaluate_script("getComputedStyle(arguments[0]).paddingRight", element).to_f
 
     # Primer's IconButton takes its name from a label tooltip (aria-labelledby).
     def menu_button

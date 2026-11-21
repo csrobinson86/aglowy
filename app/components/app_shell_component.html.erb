@@ -1,5 +1,5 @@
-<%# Below md the sidebar is hidden and this top bar takes its place: the menu button, the mark, then the bell
-    (docs/design/app-shell.md, Phone). The household switcher is in the menu. %>
+<%# Below md the sidebar is hidden and this top bar takes its place: the menu button with the mark beside it, then
+    the bell at the right-hand end (docs/design/app-shell.md, Phone). The household switcher is in the menu. %>
 <header class="app-shell__top-bar d-md-none px-2 color-bg-subtle border-bottom">
   <div class="d-flex">
     <%= render Primer::Beta::IconButton.new(icon: :"three-bars", "aria-label": "Open menu", scheme: :invisible, data: { show_dialog_id: MENU_ID }) %>
