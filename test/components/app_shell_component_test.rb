@@ -112,7 +112,7 @@ class AppShellComponentTest < ViewComponent::TestCase
     render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards))
 
     ids = page.all("action-menu button[aria-haspopup='true']", visible: :all).map { it[:id] }
-    assert_equal 3, ids.size
+    assert_equal 2, ids.size
     assert_equal ids.uniq, ids
   end
 
@@ -136,5 +136,26 @@ class AppShellComponentTest < ViewComponent::TestCase
     assert_selector "header #app-shell-bell-name[hidden]", visible: :all, exact_text: "Notifications, 3 unread", normalize_ws: true
     assert_selector "header .Counter[aria-hidden='true']", text: "3"
     assert_selector "turbo-cable-stream-source", visible: :all, count: 1
+  end
+
+  test "the top bar holds the menu button, the logo linking to the household's Home, then the bell" do
+    render_inline(AppShellComponent.new(membership: memberships(:head_in_home), selected_item: :members))
+
+    home = "/#{households(:home).id}"
+    targets = page.all("header a, header button").map { it[:href] || it[:"data-show-dialog-id"] }
+    assert_equal [ AppShellComponent::MENU_ID, home, "#{home}/notifications" ], targets
+    assert_selector "header a[href='#{home}'] img[src*='aglowy-mark'][alt='Aglowy'][width='24'][height='24']", count: 1
+    assert_equal "", page.find("header a[href='#{home}']").text.strip
+  end
+
+  test "the top bar has no household switcher: it's in the menu" do
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      render_inline(AppShellComponent.new(membership: memberships(membership), selected_item: :dashboards))
+
+      assert_no_selector "header action-menu", visible: :all
+      assert_no_selector "header", text: households(:home).name, visible: :all
+      assert_selector "dialog nav[aria-label='Menu']", visible: :all
+      assert_selector "dialog##{AppShellComponent::MENU_ID}", text: households(:home).name, visible: :all
+    end
   end
 end

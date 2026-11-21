@@ -9,7 +9,10 @@ class PhoneMenuTest < ApplicationSystemTestCase
     assert_turbo_idle
   end
 
-  teardown { cdp("Emulation.clearDeviceMetricsOverride") }
+  teardown do
+    cdp("Emulation.clearDeviceMetricsOverride")
+    cdp("Emulation.setTouchEmulationEnabled", enabled: false)
+  end
 
   test "the sidebar isn't visible" do
     assert_selector "h1", text: "Home"
@@ -67,7 +70,48 @@ class PhoneMenuTest < ApplicationSystemTestCase
     capture_screens("phone-menu")
   end
 
+  test "the top bar: the menu button, the mark centred, and the bell, each a touch target" do
+    emulate_touch(true)
+    visit household_members_url(household_id: households(:home))
+    assert_selector "h1", text: "Members"
+    assert_turbo_idle
+
+    bar, logo = find("header.app-shell__top-bar"), find("header.app-shell__top-bar a:has(img[alt='Aglowy'])")
+    assert_in_delta centre_x(bar), centre_x(logo), 2
+    assert_in_delta centre_y(bar), centre_y(logo), 2
+    [ menu_button, logo, bell ].each { assert_touch_target it }
+    assert_operator menu_button.rect.x, :<, logo.rect.x
+    assert_operator logo.rect.x, :<, bell.rect.x
+
+    logo.click
+    assert_selector "h1", text: "Home"
+    assert_current_path household_root_path(household_id: households(:home))
+    assert_accessible
+    capture_screens("phone-top-bar")
+  end
+
+  test "the household switcher is in the open menu, not the top bar" do
+    within("header.app-shell__top-bar") do
+      assert_no_selector "action-menu", visible: :all
+      assert_no_text "The Head Family"
+    end
+
+    open_menu
+    within("dialog[open]") { find("button[aria-haspopup='true']", text: "The Head Family").click }
+    within("dialog[open] action-menu [role='menu']") { click_on "The Grandparent Family" }
+
+    assert_title "Home · The Grandparent Family · Aglowy"
+    assert_current_path household_root_path(household_id: households(:parents))
+  end
+
   private
+    def bell
+      find("header.app-shell__top-bar a[href='#{household_notifications_path(household_id: households(:home))}']")
+    end
+
+    def centre_x(element) = element.rect.x + element.rect.width / 2.0
+    def centre_y(element) = element.rect.y + element.rect.height / 2.0
+
     # Primer's IconButton takes its name from a label tooltip (aria-labelledby).
     def menu_button
       find(:xpath, "//button[@aria-labelledby = //tool-tip[normalize-space() = 'Open menu']/@id]")

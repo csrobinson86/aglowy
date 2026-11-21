@@ -1,0 +1,11 @@
+// The logo link (LogoComponent, docs/design/brand.md).
+.logo {
+  // The mark alone, centred in a link at least 44px square for touch; the
+  // top bar around it keeps the mark's clear space. Doubled so the top bar's
+  // own min-height for its links can't shrink it.
+  &.logo--small {
+    min-width: var(--base-size-44);
+    min-height: var(--base-size-44);
+    justify-content: center;
+  }
+}

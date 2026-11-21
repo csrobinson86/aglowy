@@ -1,7 +1,9 @@
 <%# Not prefetched on hover: it leads to Home, directly or by redirect, and Home marks the daily brief seen
     (docs/design/daily-brief.md, Trap 5). %>
-<%= render(Primer::Beta::Link.new(href:, scheme: :primary, font_weight: :bold, font_size: 3, display: :inline_flex, align_items: :center, classes: "no-underline", data: { turbo_prefetch: false })) do %>
-  <% if large? %>
+<%= render(Primer::Beta::Link.new(href:, scheme: :primary, font_weight: :bold, font_size: 3, display: :inline_flex, align_items: :center, classes: class_names("logo no-underline", "logo--small" => small?), data: { turbo_prefetch: false })) do %>
+  <% if small? %>
+    <%= image_tag("aglowy-mark.svg", alt: "Aglowy", width: 24, height: 24) %>
+  <% elsif large? %>
     <%= image_tag("aglowy-mark.svg", alt: "Aglowy", width: 48, height: 48) %>
   <% else %>
     <%= image_tag("aglowy-mark.svg", alt: "", width: 24, height: 24, class: "mr-2") %>

@@ -103,7 +103,7 @@
 // columns they leave become one. The print controller prints in light colours, whatever the person's appearance.
 @media print {
   body:has(.daily-brief-page) {
-    // The top bar and the header's actions carry Primer's display utilities (d-flex), which are !important.
+    // The top bar (d-md-none) and the header's actions (d-flex) carry Primer's display utilities, which are !important.
     .app-shell__top-bar,
     main .Subhead-actions {
       display: none !important;

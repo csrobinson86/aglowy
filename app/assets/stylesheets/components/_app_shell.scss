@@ -9,8 +9,13 @@
   }
 }
 
-// The phone top bar: 56px, the menu button then the household switcher.
+// The phone top bar: 56px, the menu button, the mark, then the bell. Equal
+// side columns keep the mark centred in the bar whatever sits either side.
 .app-shell__top-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: var(--base-size-8);
   min-height: calc(var(--base-size-48) + var(--base-size-8));
 }
 
