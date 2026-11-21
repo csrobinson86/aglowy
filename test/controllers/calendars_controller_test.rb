@@ -168,7 +168,7 @@ class CalendarsControllerTest < ActionDispatch::IntegrationTest
     assert_select "p.color-fg-muted", "Times are in Central Time, the household's time zone."
   end
 
-  test "household events: heads and adults get Add household event and an edit link; a child sees the location and note, with no link" do
+  test "household events: heads and adults get Household event in the New menu and an edit link; a child sees the location and note, with no link" do
     households(:home).events.create!(kind: "field_service", title: "Field service", starts_on: Date.new(2026, 11, 21), time_of_day: "09:30",
                                      duration_minutes: 90, location: "Kingdom Hall", note: "Bring tracts", created_by: users(:head))
 
