@@ -54,7 +54,7 @@ In `docs/design/brand/`. The story copies them to where the app serves them.
 | Place | Today | Becomes |
 | --- | --- | --- |
 | Sidebar, top (and the phone menu, which is the same sidebar) | Octicon `sun` + "Aglowy" | `LogoComponent` |
-| Phone top bar, in a household (`docs/design/app-shell.md`, Phone; Casey, 21 Nov) | The household switcher | `LogoComponent` `size: :small`: the mark alone, 24 px, in the middle of the bar |
+| Phone top bar, in a household (`docs/design/app-shell.md`, Phone; Casey, 21 Nov) | The household switcher | `LogoComponent` `size: :small`: the mark alone, 24 px, left-aligned right after the menu button |
 | `focused` layout, signed out: sign in, create an account, password reset, confirmation, accepting an invitation as someone new, a child choosing a password | Octicon `sun` + "Aglowy" at the top left | `LogoComponent` `size: :large`: the mark alone, 48 px, centred above the page's heading (frames `app-shell/sign-in.png`, `app-shell/phone-sign-in.png`, `invitations/accept-new-account.png`) |
 | `focused` layout, signed in: the household chooser, new household, account settings, accepting an invitation with an account | Octicon `sun` + "Aglowy" at the top left | `LogoComponent` at the top left, as now (frame `invitations/accept-existing-account.png`) |
 | `shared/_header` (the `application` layout) | "Aglowy" | `LogoComponent` |
