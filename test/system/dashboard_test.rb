@@ -45,7 +45,7 @@ class DashboardTest < ApplicationSystemTestCase
 
     visit household_root_url(household_id: households(:home))
 
-    assert_link "Schedule a study"
+    assert_button "New"
     assert_selector "h2", text: "Next family study"
     assert_selector "h2", text: "Family goals"
     assert_selector "h2", text: "Mine · follows you to every household"
@@ -120,6 +120,56 @@ class DashboardTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Sing along with everyone."
     note = users(:eli).meeting_notes.find_by!(kind: "midweek", week_of: Date.new(2026, 11, 16))
     assert_current_path household_meeting_note_step_path(household_id: households(:home), meeting_note_id: note, id: "opening_song")
+  end
+
+  test "open New from the keyboard, focus lands on Family study, choose Note and land on New note" do
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    find("#home-new-menu-button").send_keys(:enter)
+    assert_selector "[role=menuitem]:focus", text: "Family study"
+    assert_equal [ "Family study", "Personal study", "Note", "Family goal", "—", "Member" ], menu_entries("home-new-menu")
+    page.send_keys(:down, :down)
+    assert_selector "[role=menuitem]:focus", text: "Note"
+    page.send_keys(:enter)
+
+    assert_selector "h1", text: "New note"
+    assert_current_path new_household_personal_note_path(household_id: households(:home))
+  end
+
+  test "the household home with the New menu open passes assert_accessible" do
+    sign_in identities(:head)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    click_on "New"
+    assert_selector "[role=menuitem]", text: "Member"
+    wait_for_animations
+    assert_accessible
+    capture_screens("home-new-menu")
+  end
+
+  test "on a phone the New button is full width under the title, and its items meet the touch target size" do
+    sign_in identities(:head)
+    emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)
+    emulate_touch(true)
+    visit household_root_url(household_id: households(:home))
+    assert_turbo_idle
+
+    button = find("#home-new-menu-button")
+    width = "this.getBoundingClientRect().width"
+    assert_equal find("main .Subhead").evaluate_script(width), button.evaluate_script(width)
+    assert_operator button.rect.y, :>, find(".Subhead-description").rect.y
+    assert_touch_target button
+    button.click
+    assert_selector "[role=menuitem]", text: "Member"
+    wait_for_animations
+    all("#home-new-menu-list [role=menuitem]").each { assert_touch_target it }
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
+  ensure
+    cdp("Emulation.clearDeviceMetricsOverride")
+    cdp("Emulation.setTouchEmulationEnabled", enabled: false)
   end
 
   private

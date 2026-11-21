@@ -151,17 +151,50 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Coming up/, count: 0
   end
 
-  test "a head and an adult can schedule a study from the header once sessions exist; a child can't" do
+  test "a head's and an adult's Home has the New menu with all five items in order, a divider before Member" do
     [ identities(:head), identities(:spouse) ].each do |identity|
       sign_in identity
       get household_root_path(household_id: households(:home))
-      assert_select ".Subhead a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
-    end
 
+      assert_select ".Subhead-actions action-menu button#home-new-menu-button.Button--primary", text: "New" do
+        assert_select "svg.octicon-plus"
+        assert_select "svg.octicon-triangle-down"
+      end
+      assert_equal [
+        [ "Family study", "book", new_household_family_study_path(household_id: households(:home)) ],
+        [ "Personal study", "search", new_household_personal_study_path(household_id: households(:home)) ],
+        [ "Note", "pencil", new_household_personal_note_path(household_id: households(:home)) ],
+        [ "Family goal", "goal", new_household_goal_path(household_id: households(:home)) ],
+        "—",
+        [ "Member", "people", new_household_member_path(household_id: households(:home)) ]
+      ], new_menu_entries
+    end
+  end
+
+  test "a child's New menu has only Personal study and Note, with no divider" do
     sign_in child_identity
+
     get household_root_path(household_id: households(:home))
-    assert_select "a", { text: "Schedule a study", count: 0 }
+
     assert_select "a", "Open study"
+    assert_equal [
+      [ "Personal study", "search", new_household_personal_study_path(household_id: households(:home)) ],
+      [ "Note", "pencil", new_household_personal_note_path(household_id: households(:home)) ]
+    ], new_menu_entries
+  end
+
+  test "the header has no Schedule a study button, on the Welcome state too, where the Blankslate keeps its actions" do
+    sign_in identities(:head)
+    get household_root_path(household_id: households(:home))
+    assert_select ".Subhead a", { text: "Schedule a study", count: 0 }
+
+    with_nothing_to_show
+    get household_root_path(household_id: households(:home))
+    assert_select ".blankslate h2", "Welcome to The Head Family"
+    assert_select ".Subhead a", { text: "Schedule a study", count: 0 }
+    assert_equal 6, new_menu_entries.size
+    assert_select ".blankslate a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+    assert_select ".blankslate a[href='#{new_household_member_path(household_id: households(:home))}']", "Add a member"
   end
 
   test "the description shows the household's name and today's date in its time zone" do
@@ -215,7 +248,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".blankslate h2", "Welcome to The Head Family"
     assert_select "main .Layout", count: 0
-    assert_select ".Subhead a", count: 0
+    assert_select ".Subhead a", { text: "Schedule a study", count: 0 }
   end
 
   test "with no session but other content, Next family study says none is scheduled" do
@@ -227,7 +260,7 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".Box", text: /Next family study/ do
       assert_select ".color-fg-muted", "No family study scheduled."
     end
-    assert_select ".Subhead a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+    assert_select ".Subhead a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Family study"
   end
 
   test "family goals: at most 3 active ones are listed, set by whom and since when; completed or archived ones are not" do
@@ -862,6 +895,16 @@ class DashboardsControllerTest < ActionDispatch::IntegrationTest
         assert_select "h2", "Mine · follows you to every household"
         assert_select "h3", "My goals"
         assert_select "h3", "Recent meeting notes"
+      end
+    end
+
+    # Home's New menu, top to bottom: each item's label, icon and link, and "—" for a divider.
+    def new_menu_entries
+      css_select(".Subhead-actions #home-new-menu-list > li").map do |entry|
+        next "—" if entry["role"] == "presentation"
+
+        link = entry.at_css("a")
+        [ link.at_css(".ActionListItem-label").text.strip, link.at_css("svg")["class"][/octicon-([\w-]+)/, 1], link["href"] ]
       end
     end
 
