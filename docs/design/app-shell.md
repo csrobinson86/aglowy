@@ -226,6 +226,7 @@ Casey, 21 Nov: Home's header has one menu of quick actions instead of the "Sched
 - A child sees Personal study and Note. Nothing else changes for them: no item leads anywhere they couldn't already go.
 - On a phone the button goes full width under the title, as primary page actions do (Phone, above), and the menu opens under it.
 - Everything else on Home stays as it is, including the Welcome Blankslate's own actions.
+- **Other pages use the same button** when they start more than one kind of thing. The Calendar's "New" menu has My time and Household event (`docs/design/calendar.md`).
 
 ## Decisions
 
