@@ -5,6 +5,7 @@ class MeetingPrepsController < ApplicationController
 
   def index
     @meetings = Current.household.this_weeks_meetings
+    @commented = Current.user.meeting_notes.where(week_of: @week_of).joins(:answer).pluck(:kind)
   end
 
   # A meeting with no cards goes back to Get ready, which says they aren't ready yet.

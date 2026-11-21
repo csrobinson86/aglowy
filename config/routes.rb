@@ -178,6 +178,8 @@ Rails.application.routes.draw do
     # its step key (docs/design/meeting-prep.md, Pages and routes).
     resources :meeting_preps, only: %i[ index show ], param: :meeting do
       resources :cards, only: :show, module: :meeting_preps
+      # Starts her note for the meeting, then opens her comment or the Bible Reading drawing.
+      resource :note, only: :create, module: :meeting_preps
     end
     # This week's listening game for heads and adults, and changing a round in a dialog (docs/design/listening-game.md,
     # Pages).

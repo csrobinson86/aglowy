@@ -35,4 +35,9 @@ module MeetingPrepScoped
 
     Array(@prep_week&.cards_for(meeting))
   end
+
+  # A meeting's card for a step this week. A step with no card is a 404.
+  def card_for(meeting, step)
+    cards_for(meeting).find { it.step == step } or raise ActiveRecord::RecordNotFound, "No card for #{step.inspect}"
+  end
 end

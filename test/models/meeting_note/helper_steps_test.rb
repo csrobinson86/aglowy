@@ -29,6 +29,14 @@ class MeetingNote::HelperStepsTest < ActiveSupport::TestCase
     assert_equal "Which picture did you like?", step.talk_question
   end
 
+  test "she writes her own answer on the Congregation Bible Study and the Watchtower Study, and no other step" do
+    answerable = (MeetingNote::HelperSteps.for("midweek").to_a + MeetingNote::HelperSteps.for("weekend").to_a).select(&:answerable?)
+
+    assert_equal %w[ congregation_bible_study watchtower_study ], answerable.map(&:key)
+    assert_equal "congregation_bible_study", MeetingNote::HelperSteps.for("midweek").answerable.key
+    assert_equal "watchtower_study", MeetingNote::HelperSteps.for("weekend").answerable.key
+  end
+
   test "each tone has its meeting-note section colour" do
     colors = MeetingNote::HelperSteps.for("midweek").to_h { [ it.tone, it.color ] }
 

@@ -1,9 +1,9 @@
 <%# locals: (meeting_note:, author:) %>
 <%# What a child did in Today's meeting (frames phone-parent.png, phone-game-shared.png): questions to ask them, her
-    Bible Study answer, what she found in the listening game, then each step with its mark or drawing. Read-only, for
-    the author and for members it's shared with. Finds are read from the note, never the game, so a changed or purged
-    round still reads the same (docs/design/listening-game.md, Trap 5). Drawings come through the authorizing drawing
-    route, never an Active Storage URL (docs/design/meeting-helper.md, Trap 9). %>
+    Bible Study answer or Watchtower comment, what she found in the listening game, then each step with its mark or
+    drawing. Read-only, for the author and for members it's shared with. Finds are read from the note, never the game,
+    so a changed or purged round still reads the same (docs/design/listening-game.md, Trap 5). Drawings come through
+    the authorizing drawing route, never an Active Storage URL (docs/design/meeting-helper.md, Trap 9). %>
 <% first_name = meeting_note.user.first_name %>
 <section aria-labelledby="helper-note-heading" class="mb-4">
   <h2 id="helper-note-heading" class="sr-only">From Today's meeting</h2>
@@ -20,13 +20,14 @@
   <% end %>
 
   <% if (answer = meeting_note.answer) %>
+    <% answer_step = meeting_note.helper_steps.answerable %>
     <%= render(Primer::Box.new(id: "helper-note-answer", border: true, border_radius: 2, p: 3, mb: 3)) do %>
       <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 4, mb: 1)) do %>
-        <%= author ? "Your answer for Bible study" : "#{first_name}'s answer for Bible study" %>
+        <%= author ? "Your #{answer_step.answer_name}" : "#{first_name}'s #{answer_step.answer_name}" %>
       <% end %>
       <p class="color-fg-muted mb-1">Paragraph <%= answer.paragraph %></p>
       <p class="f3 wb-break-word mb-1"><%= answer.body %></p>
-      <% if meeting_note.marked?("congregation_bible_study") %>
+      <% if meeting_note.marked?(answer_step.key) %>
         <p class="color-fg-success mb-0"><span aria-hidden="true">✓</span> Gave it at the meeting</p>
       <% end %>
     <% end %>

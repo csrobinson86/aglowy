@@ -84,6 +84,31 @@ class MeetingNotes::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_select "header .meeting-helper__dot--marked", count: 1
   end
 
+  test "the weekend's Watchtower Study: Write my answer, then her comment with I gave my answer! / Gave my answer" do
+    note = users(:eli).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 16))
+    path = household_meeting_note_step_path(household_id: households(:home), meeting_note_id: note, id: "watchtower_study")
+    sign_in identities(:eli)
+
+    get path
+
+    assert_select "main a[href='#{edit_household_meeting_note_step_answer_path(household_id: households(:home), meeting_note_id: note, step_id: "watchtower_study")}']", text: "Write my answer"
+    assert_select "main .meeting-helper__answer", count: 0
+
+    note.write_answer(paragraph: 7, body: "Jehovah gives us friends at the Kingdom Hall.")
+    get path
+
+    assert_select "main .meeting-helper__answer" do
+      assert_select "h2", "My answer · paragraph 7"
+      assert_select "p", "Jehovah gives us friends at the Kingdom Hall."
+      assert_select "button[type=submit]", text: /I gave my answer!/
+    end
+
+    note.mark("watchtower_study")
+    get path
+
+    assert_select "main .meeting-helper__answer button[aria-pressed=true]", text: /Gave my answer/
+  end
+
   test "an unknown step key is 404" do
     sign_in identities(:eli)
 

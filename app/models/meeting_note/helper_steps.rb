@@ -7,14 +7,23 @@ class MeetingNote::HelperSteps
   # Each tone is a meeting-note section dot, as a Primer functional colour (fgColor-*).
   TONE_COLORS = { "song" => :accent, "treasures" => :muted, "ministry" => :attention, "weekend" => :attention, "living" => :danger }.freeze
 
+  # The steps she writes her own answer for, and what it's called on each.
+  ANSWER_NAMES = { "congregation_bible_study" => "answer for Bible study", "watchtower_study" => "comment for the Watchtower" }.freeze
+
   Step = Data.define(:key, :title, :short_title, :prompt, :draw_prompt, :mark_label, :marked_label, :icon, :tone, :talk_question) do
     def color
       TONE_COLORS.fetch(tone)
     end
 
-    # The step she writes her own answer for (docs/design/listening-game.md, Her answer).
+    # The steps she writes her own answer for: the Bible Study (docs/design/listening-game.md, Her answer) and the
+    # Watchtower Study (docs/design/meeting-prep.md, Her comment for the Watchtower Study).
     def answerable?
-      key == "congregation_bible_study"
+      key.in?(ANSWER_NAMES)
+    end
+
+    # "answer for Bible study" or "comment for the Watchtower", after "My", "Your" or a first name.
+    def answer_name
+      ANSWER_NAMES.fetch(key)
     end
   end
 
@@ -84,6 +93,11 @@ class MeetingNote::HelperSteps
   # A key that isn't one of this kind's steps is a 404, never a 500 (Trap 2).
   def fetch(key)
     find { it.key == key } or raise ActiveRecord::RecordNotFound, "No helper step #{key.inspect}"
+  end
+
+  # The one step of this kind she writes her own answer for.
+  def answerable
+    find(&:answerable?)
   end
 
   # 1 for the first step.

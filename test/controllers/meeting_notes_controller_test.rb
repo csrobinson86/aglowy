@@ -985,6 +985,24 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main b", count: 0
   end
 
+  test "a head reads a shared weekend note with her Watchtower comment" do
+    note = users(:eli).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 16))
+    note.write_answer(paragraph: 7, body: "Jehovah gives us friends at the Kingdom Hall.")
+    note.mark("watchtower_study")
+    note.share_with(households(:home))
+    sign_in identities(:head)
+
+    get note_path(note)
+
+    assert_select "main ul[aria-labelledby=helper-note-talk-heading] li", text: "Tell me about your answer for paragraph 7."
+    assert_select "main #helper-note-answer" do
+      assert_select "h3", "Eli's comment for the Watchtower"
+      assert_select "p", text: "Jehovah gives us friends at the Kingdom Hall."
+      assert_select "p", text: /Gave it at the meeting/
+    end
+    assert_select "main .Box-row", text: /Watchtower Study\s+✓ Gave my answer/
+  end
+
   test "a note without marks or drawings has no helper section" do
     meeting_notes(:head_midweek).share_with(households(:home))
     sign_in identities(:spouse)

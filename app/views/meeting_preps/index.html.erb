@@ -20,7 +20,7 @@
         </div>
         <div class="meeting-prep__tile-footer">
           <% if cards.any? %>
-            <p class="meeting-prep__tile-status"><%= pluralize(cards.size, "card") %></p>
+            <p class="meeting-prep__tile-status"><%= @commented.include?(meeting.kind) ? "My comment is ready" : pluralize(cards.size, "card") %></p>
             <%= render Primer::Beta::Button.new(tag: :a, href: household_meeting_prep_path(meeting: meeting.kind), scheme: next_meeting ? :primary : :default, size: :large, classes: "meeting-helper__button meeting-helper__button--step meeting-prep__go") do |button| %>
               <% button.with_trailing_visual_icon(icon: :"arrow-right") %>
               <%= meeting.passed? ? "Look again" : "Start" %>

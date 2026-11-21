@@ -62,9 +62,9 @@ class MeetingNote::AnswerTest < ActiveSupport::TestCase
     assert_equal [ "I heard it!", "Heard it" ], [ @note.mark_label(talk), @note.marked_label(talk) ]
   end
 
-  test "only the Congregation Bible Study takes an answer" do
+  test "only the Congregation Bible Study, and on the weekend the Watchtower Study, takes an answer" do
     assert_equal [ "congregation_bible_study" ], @note.helper_steps.select(&:answerable?).map(&:key)
-    assert_empty MeetingNote::HelperSteps.for("weekend").select(&:answerable?)
+    assert_equal [ "watchtower_study" ], MeetingNote::HelperSteps.for("weekend").select(&:answerable?).map(&:key)
   end
 
   test "database: deleting a note deletes its answer" do
