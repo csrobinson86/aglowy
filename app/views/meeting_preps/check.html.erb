@@ -2,7 +2,8 @@
 
 <%# This week's Get ready cards for a head or adult (docs/design/meeting-prep.md, On a parent's phone; frame
     phone-prep-check.png): who can see them, the pages the AI used, then a box per meeting with each card and Change,
-    which loads the dialog into the frame at the bottom. Card text is AI or parent text, always escaped (Trap 4). %>
+    which loads the dialog into the frame at the bottom. Card text is AI or parent text, always escaped (Trap 4). Unlike
+    the listening game's page, it stays in Turbo's snapshot cache: the children see these cards anyway. %>
 <%= render(Primer::Beta::Link.new(href: household_root_path, display: :inline_block, mb: 3)) do |link| %>
   <% link.with_leading_visual_icon(icon: :"arrow-left") %>
   Home
@@ -17,7 +18,7 @@
   <%= render(Primer::Alpha::Banner.new(icon: :info, mb: 4)) do %>
     <p class="mb-2">
       AI wrote these from this week's program.
-      <%= readers.any? ? "#{readers.to_sentence} can see them now." : "Children who sign in see them as soon as they're ready." %>
+      <% if readers.any? %><%= readers.to_sentence %> can see them now.<% end %>
       Change anything that isn't right.
     </p>
     <ul class="list-style-none">
