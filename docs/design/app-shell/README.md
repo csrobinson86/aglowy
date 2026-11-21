@@ -7,3 +7,5 @@ When you compare your screenshots with these frames, match the layout, the order
 - **Icons** are hand-drawn stand-ins. Build with the Octicons listed in the design doc.
 - **Names, dates, studies, goals and notes** are sample data.
 - **Colours** approximate Primer's light and dark themes. Use Primer's components and primitives, not the exact pixels.
+
+**Home's header (Casey, 21 Nov):** `desktop-light.png`, `desktop-dark.png`, `desktop-child.png` and the phone frames show "Schedule a study" in Home's header. It's now the New menu (`docs/design/app-shell.md`, Home's New menu). The design doc wins.
