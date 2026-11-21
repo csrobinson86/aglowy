@@ -287,7 +287,7 @@ end
 
 Below Primer's `md` breakpoint (frame `phone-calendar.png`):
 - the week becomes a list, one day after another, each with its date as a heading ("Today · Tuesday, November 17"); multi-day events show once, as a band above the list
-- the header's New menu is the same one, full width under the title (it replaces the phone-only "Add" menu)
+- the header's New menu is the same one, beside the title (it replaces the phone-only "Add" menu); the toolbar is one row: Today, ‹, the range, ›, and the Show filter (`docs/design/phone.md`, Calendar)
 - the Show checkboxes move into a `Dialog` opened by an `IconButton` labelled "Show on the calendar"
 - the month view isn't offered; `?view=month` on a phone shows that month's weeks as the list
 - every target is at least 44 px

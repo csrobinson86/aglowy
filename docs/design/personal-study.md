@@ -144,7 +144,7 @@ Under `/:household_id` for the household layout. The data is always found throug
 | Start the study's note | `POST /:household_id/personal_studies/:id/note` (`resource :note, only: %i[ create edit update ]`, `PersonalStudies::NotesController`), which calls `personal_study.start_note` (below) and opens the note for editing in place | `personal-study-no-note.png` |
 | Edit the study's note in place | `GET …/personal_studies/:id/note/edit` and `PATCH …/personal_studies/:id/note`, in the panel's Turbo Frame | `personal-study-note-editing.png` |
 | Tags | `docs/design/tags.md` | |
-| On a phone | the same page, with Conversation, Note and Sources tabs | `phone-personal-study.png` |
+| On a phone | the same page, with Conversation, Note and Sources tabs; its header and pages used follow `docs/design/phone.md` (A personal study) | `docs/design/phone/phone-personal-study.png` |
 
 ### The study page
 

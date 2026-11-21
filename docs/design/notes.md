@@ -123,7 +123,7 @@ Under `/:household_id` for the household layout. Always found through `Current.u
 | Delete | `DELETE /:household_id/notes/:id`, after a Primer dialog | |
 | Pin and unpin | `resource :pin, only: %i[ create destroy ]` under the note (`PersonalNotes::PinsController`) | |
 | Collections | `resources :collections` (shared; `docs/design/personal-study.md`) | `notes-new-collection.png` |
-| On a phone | the list as stacked cards, and a collection picker behind "All notes ▾" | `phone-notes.png` |
+| On a phone | `docs/design/phone.md` (Notes): the list as rows, a collection picker behind "All notes ▾", and a note's actions in its "…" | `docs/design/phone/phone-notes.png`, `phone-note.png`, `phone-note-menu.png` |
 
 ### The list
 
