@@ -5,25 +5,18 @@
 class MeetingPreps::NotesController < ApplicationController
   include MeetingPrepScoped
 
+  # For each to, the step it opens and the page.
+  PAGES = {
+    "answer" => [ ->(meeting) { MeetingNote::HelperSteps.for(meeting).answerable.key }, :edit_household_meeting_note_step_answer_path ],
+    "drawing" => [ ->(_meeting) { "bible_reading" }, :edit_household_meeting_note_step_drawing_path ]
+  }.freeze
+
   def create
     meeting = params[:meeting_prep_meeting].presence_in(Household::MEETING_KINDS) or raise ActiveRecord::RecordNotFound
-    card = card_for(meeting, step_key(meeting))
+    step_key, page = PAGES.fetch(params[:to]) { raise ActiveRecord::RecordNotFound, "No note page #{params[:to].inspect}" }
+    card = card_for(meeting, step_key.call(meeting))
     meeting_note = Current.user.start_meeting_note(kind: meeting, week_of: @week_of)
 
-    if params[:to] == "answer"
-      redirect_to edit_household_meeting_note_step_answer_path(meeting_note_id: meeting_note, step_id: card.step, from: "prep")
-    else
-      redirect_to edit_household_meeting_note_step_drawing_path(meeting_note_id: meeting_note, step_id: card.step, from: "prep")
-    end
-  end
-
-  private
-
-  def step_key(meeting)
-    case params[:to]
-    when "answer" then MeetingNote::HelperSteps.for(meeting).answerable.key
-    when "drawing" then "bible_reading"
-    else raise ActiveRecord::RecordNotFound, "No note page #{params[:to].inspect}"
-    end
+    redirect_to public_send(page, meeting_note_id: meeting_note, step_id: card.step, from: "prep")
   end
 end

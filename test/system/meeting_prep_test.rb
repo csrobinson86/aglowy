@@ -97,14 +97,15 @@ class MeetingPrepTest < ApplicationSystemTestCase
     click_on "Change"
 
     assert_field "Paragraph", with: "7"
-    click_on "Back"
-
-    assert_selector "h1", text: "Jesus loved little children."
-    click_on "Change"
     fill_in "What I'll say", with: "Jesus was kind to children."
     click_on "Save my answer"
 
     within(".meeting-prep__comment") { assert_text "Jesus was kind to children." }
+    # Typing goes on the first visit: on a second, Turbo shows the page it cached first.
+    click_on "Change"
+    click_on "Back"
+
+    assert_selector "h1", text: "Jesus loved little children."
     click_on "All done"
 
     within(".meeting-prep__tile", text: "Midweek meeting") { assert_text "My comment is ready" }
