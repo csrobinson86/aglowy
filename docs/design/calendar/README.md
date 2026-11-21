@@ -15,3 +15,5 @@ Rendered at 2× from the approved mockup. `docs/design/calendar.md` says what ea
 | `phone-calendar.png` | The calendar on a phone, day by day | CAL-01 |
 
 The days are drawn as toggle buttons in `calendar-new-time.png`; build them as a Primer check box group. `home-today.png` uses the older Home with "Coming up"; only the Today box is new.
+
+**Changed since the frames (Casey, 21 Nov):** `calendar-week.png`, `calendar-dark.png`, `calendar-month.png`, `calendar-child.png` and `phone-calendar.png` show "Add my time" and "Add household event" (or the phone's "Add" menu) in the header. It's now one "New" menu with My time and Household event (`docs/design/calendar.md`, The page). The dialogs keep their titles, "Add my time" and "Add household event". The design doc wins.
