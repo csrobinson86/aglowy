@@ -286,7 +286,7 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='family_study_scheduling[goal_step_id]']", count: 0
   end
 
-  # Plan a family study from this (docs/design/personal-study.md): the AI panel opens on Describe, nothing sent yet.
+  # Create family study (docs/design/personal-study.md): the AI panel opens on Describe, nothing sent yet.
   test "from_study prefills the Describe box for the owner" do
     study = personal_studies(:head_suffering)
     personal_study_question(study, prompt: "What did Job learn?")

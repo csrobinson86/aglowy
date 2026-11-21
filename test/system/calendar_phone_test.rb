@@ -144,28 +144,4 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     def rect(element, side)
       element.evaluate_script("this.getBoundingClientRect().#{side}")
     end
-
-    # A dialog or menu grows in as it opens, so measure once it has.
-    def wait_for_animations
-      page.evaluate_async_script(<<~JS)
-        const done = arguments[arguments.length - 1]
-        Promise.allSettled(document.getAnimations().map(animation => animation.finished)).then(() => done())
-      JS
-    end
-
-    # At least 44px each way, or, for a smaller control, touching anywhere within 22px of its middle, across and down,
-    # lands on it or its label: a pseudo-element reaching past it.
-    def assert_touch_target(element)
-      missed = element.evaluate_script(<<~JS)
-        (() => {
-          this.scrollIntoView({ block: "center", inline: "center", behavior: "instant" })
-          const { left, top, width, height } = this.getBoundingClientRect()
-          if (width >= 44 && height >= 44) return 0
-          const x = left + width / 2, y = top + height / 2
-          const lands = hit => hit && (this.contains(hit) || hit.closest("label")?.htmlFor === this.id)
-          return [ [ x - 21.5, y ], [ x + 21.5, y ], [ x, y - 21.5 ], [ x, y + 21.5 ] ].filter(([ px, py ]) => !lands(document.elementFromPoint(px, py))).length
-        })()
-      JS
-      assert_equal 0, missed, "#{element.tag_name} “#{element[:"aria-label"] || element.text.presence || element[:name]}” is less than 44px to touch"
-    end
 end

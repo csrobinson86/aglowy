@@ -13,6 +13,12 @@
   display: block;
 }
 
+// Primer's coarse-pointer menu items are 40px tall, so the study's "…" menu raises them to the 44px touch target, as
+// Notes' are.
+.personal-study__menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
+}
+
 // A study's Conversation, Notes and Sources (Primer UnderlinePanels). On a phone they're tabs (frame
 // phone-personal-study.png). From md up the tabs are hidden and every panel shows, the conversation with notes and
 // sources beside it as a wide Primer Layout sidebar would be (frame personal-study.png).
