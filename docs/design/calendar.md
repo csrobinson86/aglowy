@@ -205,7 +205,7 @@ get "calendar/:token", to: "calendar_feeds#show", as: :calendar_feed, format: :i
 
 ### The page
 
-- **Header:** `h1` "Calendar" and the line "Rivera household's meetings, studies and events, with your own times." On the right: "Add my time" (secondary), and "Add household event" (primary), which only heads and adults see.
+- **Header:** `h1` "Calendar" and the line "Rivera household's meetings, studies and events, with your own times." On the right, on every screen size, a "New" menu, the same button as Home's (`docs/design/app-shell.md`, Home's New menu): a primary `Button` with the `plus` icon, "New" and a dropdown arrow. Its items open the same dialogs the two buttons did: "My time" (`clock`), for everyone, and "Household event" (`calendar`), for heads and adults only. It replaces the "Add my time" and "Add household event" buttons (Casey, 21 Nov).
 - **Toolbar:** "Today", previous and next (`IconButton`s labelled "Previous week" / "Next week", or "month"), the range as an `h2` ("November 16 – 22, 2026" or "November 2026"), and a Primer `SegmentedControl` labelled "View": Week, Month. Each is a link carrying `view`, `date` and `hide`, so the URL is the whole state.
 - **Left column:**
   - "Show" checkboxes in two groups, the household's name and "Times", each with its color swatch (frame `calendar-week.png`). A Primer form class (`Calendars::ShowForm`) with `method: :get`, auto-submitted by a small Stimulus controller, with a "Show" submit button inside `<noscript>`. Unchecked kinds go in `hide[]`. "<Name>'s times" has one checkbox per member who shares.
@@ -287,7 +287,7 @@ end
 
 Below Primer's `md` breakpoint (frame `phone-calendar.png`):
 - the week becomes a list, one day after another, each with its date as a heading ("Today · Tuesday, November 17"); multi-day events show once, as a band above the list
-- the header's two buttons become one Primer `ActionMenu` "Add", with "Add my time" and "Add household event" (heads and adults)
+- the header's New menu is the same one, full width under the title (it replaces the phone-only "Add" menu)
 - the Show checkboxes move into a `Dialog` opened by an `IconButton` labelled "Show on the calendar"
 - the month view isn't offered; `?view=month` on a phone shows that month's weeks as the list
 - every target is at least 44 px
