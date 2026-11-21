@@ -26,9 +26,9 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
   gap: var(--base-size-8);
 }
 
-// Primer's coarse-pointer menu items are 40px tall, so the Add menu's are raised to the 44px touch target, as Bookmarks'
+// Primer's coarse-pointer menu items are 40px tall, so the New menu's are raised to the 44px touch target, as Bookmarks'
 // are.
-.calendar-add-menu .ActionListContent {
+.calendar-new-menu .ActionListContent {
   min-height: var(--control-minTarget-auto);
 }
 
@@ -241,14 +241,30 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
   }
 
   // Primer's own coarse-pointer target for .Button never applies (its selector puts ::before inside :is()), so the
-  // toolbar's and the Add menu's buttons are 44px themselves.
+  // toolbar's and the New menu's buttons are 44px themselves.
   .calendar-toolbar .Button,
-  .calendar-add-menu .Button {
+  .calendar-new-menu .Button {
     height: var(--base-size-44);
   }
 
   .calendar-toolbar .Button--iconOnly {
     width: var(--base-size-44);
+  }
+
+  // The New menu's button goes full width under the title and description, as Home's does (docs/design/calendar.md,
+  // On a phone), and the menu opens under it.
+  .Subhead-actions:has(> .calendar-new-menu) {
+    flex: 1 100%;
+    order: 3;
+    margin: var(--base-size-16) 0 0;
+  }
+
+  .calendar-new-menu {
+    display: block;
+
+    .Button {
+      width: 100%;
+    }
   }
 
   // The Show dialog's check boxes, a 44px row each, a little apart so their touch areas don't meet.

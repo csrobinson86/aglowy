@@ -96,6 +96,14 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     JS
   end
 
+  # Opens a Primer ActionMenu by its button's label and chooses one of its items, as a person would. Waits for Turbo
+  # first, since a visit finishing moves focus and closes the menu.
+  def choose_from_menu(button, item)
+    assert_turbo_idle
+    click_on button
+    find("[role=menuitem]", exact_text: item).click
+  end
+
   # The color an element is drawn in, as the browser computed it ("rgba(255, 118, 118, 0.3)").
   def background_color(selector)
     find(selector, visible: :all).evaluate_script("getComputedStyle(this).backgroundColor")

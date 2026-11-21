@@ -7,21 +7,16 @@
   <% subhead.with_heading(tag: :h1) { "Calendar" } %>
   <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
   <% subhead.with_actions do %>
-    <div class="d-none d-md-flex flex-wrap">
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_time_path, mr: 2, data: { turbo_frame: "personal_time_dialog" })) { "Add my time" } %>
-      <% if manage_events %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_calendar_event_path, scheme: :primary, data: { turbo_frame: "calendar_event_dialog" })) { "Add household event" } %>
-      <% end %>
-    </div>
-    <%# On a phone the two buttons are one Add menu, opening the same dialogs (docs/design/calendar.md, On a phone). %>
-    <%= render(Primer::Alpha::ActionMenu.new(menu_id: "calendar-add-menu", anchor_align: :end, display: [ nil, nil, :none ], classes: "calendar-add-menu")) do |menu| %>
+    <%# The New menu, the same button as Home's, at every size; each item opens its dialog (docs/design/calendar.md, The page). %>
+    <%= render(Primer::Alpha::ActionMenu.new(menu_id: "calendar-new-menu", anchor_align: :end, classes: "calendar-new-menu")) do |menu| %>
       <% menu.with_show_button(scheme: :primary) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
         <% button.with_trailing_action_icon(icon: :"triangle-down") %>
-        Add
+        New
       <% end %>
-      <% menu.with_item(label: "Add my time", href: new_household_personal_time_path, content_arguments: { data: { turbo_frame: "personal_time_dialog" } }) %>
+      <% menu.with_item(label: "My time", href: new_household_personal_time_path, content_arguments: { data: { turbo_frame: "personal_time_dialog" } }) { it.with_leading_visual_icon(icon: :clock) } %>
       <% if manage_events %>
-        <% menu.with_item(label: "Add household event", href: new_household_calendar_event_path, content_arguments: { data: { turbo_frame: "calendar_event_dialog" } }) %>
+        <% menu.with_item(label: "Household event", href: new_household_calendar_event_path, content_arguments: { data: { turbo_frame: "calendar_event_dialog" } }) { it.with_leading_visual_icon(icon: :calendar) } %>
       <% end %>
     <% end %>
   <% end %>

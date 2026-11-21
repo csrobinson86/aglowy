@@ -2,7 +2,7 @@
 @use "@primer/css/support/variables/layout" as primer;
 
 // Home's New menu (docs/design/app-shell.md, Home's New menu). Primer's coarse-pointer menu items are 40px tall, so
-// they're raised to the 44px touch target, as the calendar's Add menu's are.
+// they're raised to the 44px touch target, as the calendar's New menu's are.
 .home-new-menu .ActionListContent {
   min-height: var(--control-minTarget-auto);
 }
