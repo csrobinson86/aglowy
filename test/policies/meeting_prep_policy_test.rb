@@ -26,20 +26,45 @@ class MeetingPrepPolicyTest < ActiveSupport::TestCase
     assert_not MeetingPrepPolicy.new(memberships(:eli_in_home), households(:home)).show?
   end
 
-  test "a head: no, Get ready too until the parent's page" do
+  test "a child: not the parent's page's edit and update" do
+    policy = MeetingPrepPolicy.new(memberships(:eli_in_home), households(:home))
+
+    assert_not policy.edit?
+    assert_not policy.update?
+  end
+
+  test "a head: the parent's page, edit and update, but not her cards or her note" do
     policy = MeetingPrepPolicy.new(memberships(:head_in_home), households(:home))
 
-    assert_not policy.index?
+    assert policy.index?
+    assert policy.edit?
+    assert policy.update?
     assert_not policy.show?
     assert_not policy.create?
   end
 
-  test "an adult: no, Get ready too until the parent's page" do
+  test "an adult: the parent's page, edit and update, but not her cards or her note" do
     policy = MeetingPrepPolicy.new(memberships(:spouse_in_home), households(:home))
 
-    assert_not policy.index?
+    assert policy.index?
+    assert policy.edit?
+    assert policy.update?
     assert_not policy.show?
     assert_not policy.create?
+  end
+
+  test "a head with Get ready off, or the helper off: no" do
+    households(:home).disable_meeting_prep
+    policy = MeetingPrepPolicy.new(memberships(:head_in_home), households(:home))
+
+    assert_not policy.index?
+    assert_not policy.edit?
+    assert_not policy.update?
+
+    households(:home).enable_meeting_prep(by: users(:head))
+    households(:home).disable_meeting_helper
+
+    assert_not MeetingPrepPolicy.new(memberships(:spouse_in_home), households(:home)).update?
   end
 
   test "a non-member: no" do
@@ -49,7 +74,9 @@ class MeetingPrepPolicyTest < ActiveSupport::TestCase
 
     assert_not MeetingPrepPolicy.new(nil, households(:home)).show?
     assert_not MeetingPrepPolicy.new(nil, households(:home)).create?
+    assert_not MeetingPrepPolicy.new(nil, households(:home)).update?
     assert_not MeetingPrepPolicy.new(memberships(:eli_in_home), households(:home)).show?
     assert_not MeetingPrepPolicy.new(memberships(:child_in_home), households(:other)).show?
+    assert_not MeetingPrepPolicy.new(memberships(:head_in_home), households(:other)).update?
   end
 end

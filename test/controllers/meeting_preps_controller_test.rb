@@ -97,15 +97,88 @@ class MeetingPrepsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "index and show are a 404 for a head or an adult" do
-    %i[ head spouse ].product([ household_meeting_preps_path(household_id: @home),
-                                household_meeting_prep_path(household_id: @home, meeting: "midweek") ]).each do |identity, path|
+  test "show is a 404 for a head or an adult" do
+    %i[ head spouse ].each do |identity|
       sign_in identities(identity)
 
-      get path
+      get household_meeting_prep_path(household_id: @home, meeting: "midweek")
 
-      assert_response :not_found, "expected #{identity} to get a 404 at #{path}"
+      assert_response :not_found, "expected #{identity} to get a 404"
     end
+  end
+
+  test "index, for a head: the week, who can see them, the sources, and a box per meeting with each card and Change" do
+    prep_weeks(:home_nov_9).sources.create!(position: 1, title: "Life and Ministry Meeting Workbook, November 9-15", url: "https://wol.jw.org/en/wol/d/r1/lp-e/202026401")
+    sign_in identities(:head)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_response :success
+    assert_select "body[data-color-mode=dark]", count: 0
+    assert_select "nav[aria-label='Sidebar']"
+    assert_select "main h1", "This week's Get ready cards"
+    assert_select "main", text: /Week of November 9–15, 2026/
+    assert_select "main", text: /AI wrote these from this week's program. Eli can see them now. Change anything that isn't right./
+    assert_select "main a[href='https://wol.jw.org/en/wol/d/r1/lp-e/202026401'][target=_blank]", text: /Life and Ministry Meeting Workbook, November 9-15/
+    assert_select "#meeting-prep-midweek" do
+      assert_select "h2", "Midweek meeting"
+      assert_select "*", text: /2 cards/
+      assert_select "#prep_week_card_#{prep_week_cards(:home_nov_9_talk).id}" do
+        assert_select "*", text: /Treasures From God's Word/
+        assert_select "*", text: /Jeremiah felt very sad. But he remembered that Jehovah never stops caring./
+        assert_select "*", text: /Jehovah cares · I can: Tell Jehovah when I feel sad./
+        assert_select "a[href='#{edit_household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: "talk")}']", "Change"
+      end
+      assert_select "#prep_week_card_#{prep_week_cards(:home_nov_9_bible_reading).id}", text: /Bible Reading · Lamentations 1–2/
+    end
+    assert_select "#meeting-prep-weekend" do
+      assert_select "h2", "Weekend meeting"
+      assert_select "*", text: /Cards aren't ready yet/
+    end
+  end
+
+  test "index, for an adult, with two children who sign in: names them both, and escapes card text" do
+    users(:child).create_identity!(username: "charlie", password: "password123", confirmed_at: Time.current)
+    prep_week_cards(:home_nov_9_talk).update!(about: "<b>Bold</b> words")
+    sign_in identities(:spouse)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_response :success
+    assert_select "main", text: /Charlie and Eli can see them now./
+    assert_select "main", text: /<b>Bold<\/b> words/
+    assert_select "main b", count: 0
+  end
+
+  test "index, for a head, with no cards this week: Cards aren't ready yet" do
+    users(:head).accept_ai_terms(understood: true)
+    travel_to Time.utc(2026, 11, 17, 12)
+    sign_in identities(:head)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_response :success
+    assert_select "main h2", "Cards aren't ready yet"
+    assert_select "main a", text: "Change", count: 0
+  end
+
+  test "index, for a head, when nobody has accepted the AI terms: a link to where they're accepted" do
+    travel_to Time.utc(2026, 11, 17, 12)
+    sign_in identities(:head)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_select "main h2", "Cards need a head or adult who has turned on AI features"
+    assert_select "main a[href='#{new_household_family_study_path(household_id: @home)}']"
+  end
+
+  test "index is a 404 for a head with Get ready off" do
+    @home.disable_meeting_prep
+    sign_in identities(:head)
+
+    get household_meeting_preps_path(household_id: @home)
+
+    assert_response :not_found
   end
 
   test "index is a 404 for a child with Get ready off" do
