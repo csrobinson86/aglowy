@@ -42,6 +42,15 @@ class User < ApplicationRecord
   # validate: true makes an unknown value a validation error rather than an ArgumentError.
   enum :appearance, { auto: "auto", light: "light", dark: "dark" }, prefix: true, validate: true
 
+  # The people for whom it's now that hour in limit_time_zone's zone: their own, else their oldest active membership's
+  # household's, else UTC. The hourly study guide job asks for theirs (docs/design/study-guide.md, The weekly job).
+  scope :at_local_hour, ->(hour, now: Time.current) do
+    zones = ActiveSupport::TimeZone.all.map { now.in_time_zone(it) }.select { it.hour == hour }.map { it.time_zone.name }
+    household_zone = Household.joins(:memberships).merge(Membership.active).where(Membership.arel_table[:user_id].eq(arel_table[:id]))
+      .order("memberships.created_at", "memberships.id").limit(1).select(:time_zone)
+    where(Arel::Nodes::NamedFunction.new("COALESCE", [ arel_table[:time_zone], household_zone.arel, Arel::Nodes.build_quoted("UTC") ]).in(zones))
+  end
+
   validates :name, presence: true
   # The database checks it too (users_avatar_color_check); this gives a refused color a message.
   validates :avatar_color, inclusion: { in: Avatar::Palette::COLORS }

@@ -3,6 +3,8 @@ require "test_helper"
 # The study guide setting, as a record: it exists while the person's study guide is on (docs/design/study-guide.md,
 # Models, User::WeeklyStudyGuide). Hannah is a head in home and an adult in parents, Sam an adult in home, Eli a child.
 class User::WeeklyStudyGuideTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   setup do
     @head = users(:head)
     @head.accept_ai_terms(understood: "1")
@@ -15,6 +17,23 @@ class User::WeeklyStudyGuideTest < ActiveSupport::TestCase
 
     assert @head.study_guide_on?
     assert User::WeeklyStudyGuide.exists?(user: @head)
+  end
+
+  # Turning it on prepares this week straight away (docs/design/study-guide.md, The Settings section), once committed so
+  # the job's worker sees the setting.
+  test "turning it on enqueues this week's study guide after commit" do
+    User.transaction do
+      @head.turn_on_study_guide
+      assert_no_enqueued_jobs only: StudyGuide::PrepareJob
+    end
+
+    assert_enqueued_with job: StudyGuide::PrepareJob, args: [ @head ]
+  end
+
+  test "turning it on while it's on enqueues nothing more" do
+    @head.turn_on_study_guide
+
+    assert_no_enqueued_jobs(only: StudyGuide::PrepareJob) { @head.turn_on_study_guide }
   end
 
   test "turning it on twice makes one" do
