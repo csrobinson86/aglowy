@@ -1,6 +1,7 @@
 # Pinning a note to the top of Notes and onto Home, and unpinning it (docs/design/notes.md, PersonalNote::Pin).
-# Answers with a Turbo Stream: the note page's toggle swaps in place, keeping what hasn't been saved, and the list,
-# which alone knows its filters, refreshes. Without Turbo, back to where the person was.
+# Answers with a Turbo Stream: the note page's toggle swaps in place, keeping what hasn't been saved. The list, which
+# alone knows its filters, refreshes, and so does the read view after its phone "…" pins, so the menu names the new
+# state. Without Turbo, back to where the person was.
 class PersonalNotes::PinsController < ApplicationController
   include HouseholdScoped
 
@@ -27,7 +28,7 @@ class PersonalNotes::PinsController < ApplicationController
   def respond_with_pin
     respond_to do |format|
       format.turbo_stream do
-        @refresh_list = params[:from] == "list"
+        @refresh = params[:from].in?(%w[ list menu ])
         render :pin
       end
       format.html { redirect_back_or_to household_personal_note_path(id: @personal_note), status: :see_other }

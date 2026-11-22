@@ -1,0 +1,19 @@
+<%# locals: (personal_note:) %>
+<%# A note's "…" on a phone, in its back row (docs/design/phone.md, Notes; frame phone-note-menu.png): Edit note, Pin to
+    Home or Unpin from Home, Move to collection…, then Delete note…, which asks first in the details' Dialog. Pinning
+    posts to the note's pin, which refreshes the page so the menu names the new state. The Move dialog is on the page,
+    outside the back row, which is hidden from md up. %>
+<% pinned = personal_note.pinned? %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-note-menu", anchor_align: :end)) do |menu| %>
+  <% menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "Note actions", show_tooltip: false) %>
+  <% menu.with_item(label: "Edit note", href: edit_household_personal_note_path(id: personal_note)) { it.with_leading_visual_icon(icon: :pencil) } %>
+  <% menu.with_item(label: pinned ? "Unpin from Home" : "Pin to Home", href: household_personal_note_pin_path(personal_note_id: personal_note),
+                    form_arguments: { method: pinned ? :delete : :post, name: :from, value: "menu" }) { it.with_leading_visual_icon(icon: :pin) } %>
+  <% menu.with_item(label: "Move to collection…", tag: :button, content_arguments: { "data-show-dialog-id": "move-personal-note" }) do |item| %>
+    <% item.with_leading_visual_icon(icon: :"file-directory") %>
+  <% end %>
+  <% menu.with_divider %>
+  <% menu.with_item(label: "Delete note…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": "delete-personal-note" }) do |item| %>
+    <% item.with_leading_visual_icon(icon: :trash) %>
+  <% end %>
+<% end %>

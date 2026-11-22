@@ -1,5 +1,5 @@
 <%= turbo_stream.replace dom_id(@personal_note, :pin), partial: "personal_notes/pin", locals: { personal_note: @personal_note } %>
 <%# Without a request id: with this request's, Turbo would skip the refresh as an echo of its own. %>
-<% if @refresh_list %>
+<% if @refresh %>
   <%= turbo_stream.refresh(request_id: nil) %>
 <% end %>

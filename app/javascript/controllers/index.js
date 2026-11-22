@@ -70,6 +70,9 @@ application.register("push-subscription", PushSubscriptionController)
 import ResourceLinksController from "./resource_links_controller"
 application.register("resource-links", ResourceLinksController)
 
+import RevealController from "./reveal_controller"
+application.register("reveal", RevealController)
+
 import SpokenLengthController from "./spoken_length_controller"
 application.register("spoken-length", SpokenLengthController)
 

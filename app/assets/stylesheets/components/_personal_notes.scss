@@ -1,16 +1,57 @@
 @use "sass:map";
 @use "@primer/css/support/variables/layout" as primer;
 
-// The cards, one per row below md (frame phone-notes.png), then as many across as fit: three on a desktop (frame
-// notes.png).
+// The cards from md up, as many across as fit: three on a desktop (frame notes.png). Below md the notes are rows
+// instead (personal_notes/_rows, frame phone-notes.png).
 .personal-notes__cards {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: none;
   gap: var(--base-size-16);
 
   @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--base-size-128) * 2)), 1fr));
   }
+}
+
+// A note's row on a phone (docs/design/phone.md, The rules: 6): the dot, then the title and one muted line, each cut
+// with an ellipsis. The title's link covers the whole row, so tapping anywhere on it opens the note.
+.personal-notes__row {
+  position: relative;
+  display: flex;
+  gap: var(--base-size-12);
+  align-items: baseline;
+}
+
+.personal-notes__row-dot {
+  flex-shrink: 0;
+}
+
+.personal-notes__row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.personal-notes__row-title,
+.personal-notes__row-line {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personal-notes__row-title {
+  font-weight: var(--base-text-weight-semibold);
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
+}
+
+.personal-notes__row-line {
+  font-size: var(--text-body-size-small);
+  color: var(--fgColor-muted);
 }
 
 // Search, then the color filter beside it (frame notes.png), or under it when there isn't room.
@@ -22,12 +63,46 @@
   margin-bottom: var(--base-size-16);
 }
 
+// Below md, hidden behind the search button until it's opened (the reveal controller), or while it holds a search.
 .personal-notes__search {
   flex: 1 1 calc(var(--base-size-128) * 2);
+
+  @media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+    &:not(.personal-notes__search--open) {
+      display: none;
+    }
+  }
 }
 
-// The "All notes ▾" menu (below md only), "Color" (from sm up) and the swatches, wrapping onto a second row when a
-// phone's is too narrow for all of them (frame phone-notes.png).
+// Below md, "All notes ▾" and the search button share a row (frame phone-notes.png). The menu takes the room left
+// over, its button as wide as that (block: true), and both are 44px targets.
+.personal-notes__picker {
+  display: flex;
+  flex: 1 1 100%;
+  gap: var(--base-size-12);
+  align-items: center;
+
+  .personal-notes__menu {
+    flex: 1;
+    min-width: 0;
+
+    > focus-group {
+      display: block;
+    }
+
+    .Button--labelWrap {
+      min-height: var(--control-minTarget-auto);
+    }
+  }
+}
+
+.personal-notes__search-button {
+  flex-shrink: 0;
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}
+
+// "Color" (from sm up) and the swatches, wrapping onto a second row when a phone's is too narrow for all of them.
 .personal-notes__color-filter {
   display: flex;
   flex-wrap: wrap;

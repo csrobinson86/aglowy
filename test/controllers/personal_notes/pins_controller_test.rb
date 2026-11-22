@@ -61,6 +61,21 @@ class PersonalNotes::PinsControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-stream[action=refresh]:not([request-id])"
   end
 
+  # The read view's phone "…" names Pin to Home or Unpin from Home, so the page refreshes to show the new one.
+  test "pin and unpin from the note's phone menu refreshes the note" do
+    sign_in identities(:head)
+
+    post pin_path(@note), params: { from: "menu" }, as: :turbo_stream
+    assert_response :success
+    assert @note.reload.pinned?
+    assert_select "turbo-stream[action=refresh]:not([request-id])"
+
+    delete pin_path(@note), params: { from: "menu" }, as: :turbo_stream
+    assert_response :success
+    assert_not @note.reload.pinned?
+    assert_select "turbo-stream[action=refresh]:not([request-id])"
+  end
+
   test "without Turbo, back to where the person was, or the note" do
     sign_in identities(:head)
 
