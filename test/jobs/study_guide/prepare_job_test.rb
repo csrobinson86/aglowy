@@ -139,6 +139,21 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
     assert_empty StudyGuide::Preparation.all
   end
 
+  test "skips a person who turns it off while the run is preparing someone else's" do
+    grandparent = users(:grandparent)
+    turn_on(grandparent)
+    # During the first person's request, both turn it off: the second, loaded with the batch, must not be asked for.
+    stub_request(:post, PROVIDER).to_return do
+      [ @head, grandparent ].each(&:turn_off_study_guide)
+      recorded_reply
+    end
+
+    travel_to(MONDAY) { StudyGuide::PrepareJob.perform_now }
+
+    assert_requested :post, PROVIDER, times: 1
+    assert_equal 1, StudyGuide.where(week_of: WEEK).count
+  end
+
   test "with a person, it prepares only theirs, at any hour" do
     turn_on(users(:grandparent))
     stub_provider

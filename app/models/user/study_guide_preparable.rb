@@ -11,8 +11,9 @@ module User::StudyGuidePreparable
     has_many :study_guides, dependent: :delete_all
     has_many :study_guide_preparations, class_name: "StudyGuide::Preparation", dependent: :delete_all
 
-    # StudyGuide::PrepareJob runs for people in both: the setting on, and a head or adult in an active household.
-    scope :with_study_guide_on, -> { joins(:weekly_study_guide).includes(:weekly_study_guide) }
+    # StudyGuide::PrepareJob runs for people in both: the setting on, and a head or adult in an active household. Not
+    # preloaded, so study_guide_on? reads the setting at each person's turn, not when their batch was loaded.
+    scope :with_study_guide_on, -> { joins(:weekly_study_guide) }
     scope :head_or_adult_somewhere, -> { where(id: Membership.active.where(role: %w[ head adult ]).select(:user_id)) }
   end
 
