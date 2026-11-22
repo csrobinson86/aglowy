@@ -63,14 +63,16 @@ class Goals::StepsController < ApplicationController
   end
 
   # A failed edit shows the people the user ticked; a stale one shows the step as it is now. The form opens again only
-  # where it came from, the row or the phone panel (panel: true), and the other shows the step. The panel morphs, so
-  # it stays open.
+  # where it came from, the row or the phone panel (panel: true), and the other shows the step as saved, as does the
+  # panel's title. The panel morphs, so it stays open.
   def render_step(status:, stale: false, checked_ids: nil)
+    saved = @goal.steps.find(@step.id)
     editing = { step: @step, editable: true, editing: true, stale:, checked_ids: }
-    shown = { step: @step, editable: true }
+    shown = { step: saved, editable: true }
     row, panel = params[:panel] ? [ shown, editing ] : [ editing, shown ]
     render turbo_stream: [ turbo_stream.replace(@step, partial: "goals/steps/step", locals: row),
-                           turbo_stream.replace(helpers.dom_id(@step, :panel_body), method: :morph, partial: "goals/steps/panel", locals: panel) ],
+                           turbo_stream.replace(helpers.dom_id(@step, :panel_body), method: :morph, partial: "goals/steps/panel", locals: panel),
+                           turbo_stream.update("#{helpers.dom_id(@step, :panel)}-title", saved.title) ],
            status: status
   end
 end

@@ -410,6 +410,8 @@ class GoalsPhoneTest < ApplicationSystemTestCase
 
     assert_no_selector "dialog[open]"
     assert_selector ".goal-step__title", exact_text: "Read Luke 1 to 12 together"
+    # Its redrawn "›" has focus, not the body.
+    assert_selector step_row("Read Luke 1 to 12 together", "button[aria-label='Open step: Read Luke 1 to 12 together']:focus")
   end
 
   test "a refused or stale edit shows the form again in the open panel, with focus on Title, and the row stays a row" do
@@ -423,12 +425,14 @@ class GoalsPhoneTest < ApplicationSystemTestCase
       click_on "Save"
       assert_selector ".FormControl-inlineValidation", text: "can't be blank"
       assert_field "Title", focused: true
+      assert_selector "h1", exact_text: "Read Luke together"
 
       goal_steps(:read_luke).update!(title: "Read Luke, changed by Hannah")
       fill_in "Title", with: "Read Luke 1 to 12"
       click_on "Save"
       assert_text "Someone else changed this step. Here's the latest."
       assert_field "Title", with: "Read Luke, changed by Hannah", focused: true
+      assert_selector "h1", exact_text: "Read Luke, changed by Hannah"
       find("button[aria-label='Close']").click
     end
 
@@ -464,6 +468,24 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_no_selector ".goal-step__title", text: "Read John together"
     assert_selector "#goal-progress-card h2", exact_text: "3 of 6 steps done"
     assert_no_selector "body.has-modal", visible: :all
+    # Focus goes to the next step's "›", not the body.
+    assert_selector step_row("Share what each of us learned", "button[aria-label='Open step: Share what each of us learned']:focus")
+  end
+
+  test "removing the last step from its panel puts focus on the Steps heading" do
+    @goal.add_step(title: "Joshua to Esther")
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: @goal)
+
+    open_step "Joshua to Esther"
+    within("dialog[open]") do
+      click_on "Remove step"
+      click_on "Remove step"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_no_selector ".goal-step__title"
+    assert_selector "h2#goal-steps-heading:focus", exact_text: "Steps"
   end
 
   test "a personal step's panel has its due date, Edit step and Remove step, and no Who's done it or Schedule" do
@@ -522,6 +544,19 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
 
     open_step "Find three parables and explain one"
+    find("dialog[open]").send_keys(:escape)
+
+    assert_no_selector "dialog[open]"
+    assert_selector step_row("Find three parables and explain one", "button[aria-label='Open step: Find three parables and explain one']:focus")
+  end
+
+  test "after a tick in the panel, which redraws the row, Escape still gives focus back to the row's ›" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    within("dialog[open]") { check "Sofia" }
+    assert_step_line "Find three parables and explain one", "Eli and Sofia · done Jan 25"
     find("dialog[open]").send_keys(:escape)
 
     assert_no_selector "dialog[open]"

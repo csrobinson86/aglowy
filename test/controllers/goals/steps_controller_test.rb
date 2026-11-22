@@ -103,7 +103,25 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_select "#{panel} input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
     assert_select "#{panel} form[action$='?panel=true']"
     assert_select "turbo-stream[target='#{dom_id(step)}'] [data-goal-step-target=form][hidden]"
+    # The row and the panel's title show the step as saved, not the refused title.
+    assert_select "turbo-stream[target='#{dom_id(step)}'] .goal-step__title", text: "Find three parables and explain one"
+    assert_select "turbo-stream[action=update][target='#{dom_id(step, :panel)}-title']", text: "Find three parables and explain one"
     assert_equal "Find three parables and explain one", step.reload.title
+  end
+
+  test "a stale edit shows the form again with the step as it is now, and the panel's title follows" do
+    step = goal_steps(:parables)
+    step.update!(title: "Find two parables")
+    sign_in identities(:spouse)
+
+    patch step_path(step, panel: true), params: { goal_step: { title: "Find four parables", assignee_ids: [ "" ], lock_version: 0 } }, as: :turbo_stream
+
+    assert_response :conflict
+    panel = "turbo-stream[action=replace][method=morph][target='#{dom_id(step, :panel_body)}']"
+    assert_select "#{panel} input[name='goal_step[title]'][value='Find two parables']"
+    assert_select "turbo-stream[target='#{dom_id(step)}'] .goal-step__title", text: "Find two parables"
+    assert_select "turbo-stream[action=update][target='#{dom_id(step, :panel)}-title']", text: "Find two parables"
+    assert_equal "Find two parables", step.reload.title
   end
 
   test "removes it" do
