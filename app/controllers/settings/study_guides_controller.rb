@@ -24,6 +24,15 @@ class Settings::StudyGuidesController < ApplicationController
   end
 
   private
+    # Where the line without accepted AI terms sends them to schedule a family study: this household, or for a child here
+    # one where they're a head or an adult, since a child can't schedule one. The terms are the person's, so either counts.
+    def family_study_household
+      return Current.household unless Current.membership.child?
+
+      @user.memberships.active.where(role: %w[ head adult ]).order(:created_at).first.household
+    end
+    helper_method :family_study_household
+
     # A check box sends "1", and its hidden field "0" when it's unticked.
     def ticked?
       params.expect(study_guide: [ :enabled ])[:enabled] == "1"

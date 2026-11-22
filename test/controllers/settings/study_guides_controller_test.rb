@@ -94,6 +94,21 @@ class Settings::StudyGuidesControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[type=submit]", text: "Save", count: 0
   end
 
+  # A child can't schedule a family study here (FamilyStudyPolicy#create?), so the link goes where they're an adult.
+  test "without accepted AI terms, a child here who is an adult elsewhere is linked to scheduling there" do
+    parents = households(:parents)
+    users(:eli).memberships.create!(household: parents, role: "adult")
+    sign_in identities(:eli)
+
+    get household_settings_study_guide_path(household_id: @home)
+
+    assert_select "main a[href=?]", new_household_family_study_path(household_id: parents), text: "Schedule a family study"
+
+    get new_household_family_study_path(household_id: parents)
+
+    assert_response :success
+  end
+
   test "without accepted AI terms the update saves nothing" do
     sign_in identities(:spouse)
 

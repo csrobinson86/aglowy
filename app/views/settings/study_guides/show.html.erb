@@ -13,7 +13,7 @@
           <%# Where AI terms are accepted, as Get ready's and the listening game's pages say (docs/design/ai.md, First use). %>
           <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, mt: 3, mb: 0)) do %>
             Turn on AI features first. You can do it from Draft with AI when you schedule a family study.
-            <%= render(Primer::Beta::Link.new(href: new_household_family_study_path, underline: true)) { "Schedule a family study" } %>
+            <%= render(Primer::Beta::Link.new(href: new_household_family_study_path(household_id: family_study_household), underline: true)) { "Schedule a family study" } %>
           <% end %>
         <% end %>
       <% end %>
