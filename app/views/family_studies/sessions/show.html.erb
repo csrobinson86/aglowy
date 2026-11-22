@@ -46,7 +46,7 @@
         Edit notes
       <% end %>
       <%# A plain link on a phone (docs/design/phone.md, Family studies). %>
-      <%= render(Primer::Beta::Link.new(href: notes_path, classes: "family-study-session__edit-notes d-md-none")) do %>
+      <%= render(Primer::Beta::Link.new(href: notes_path, "aria-label": "Edit notes", classes: "family-study-session__edit-notes d-md-none")) do %>
         <%= render(Primer::Beta::Octicon.new(icon: :pencil, mr: 1)) %>Edit
       <% end %>
     <% end %>
