@@ -1,29 +1,30 @@
 <%# locals: (personal_study:) %>
 <%# The study's header (frame personal-study.png): the breadcrumb, the title, when it started, the tag editor, and the
-    "…" menu, its only action (docs/design/personal-study.md, The study page). On a phone it keeps a back link and the
-    title, and the tag editor moves into the menu (frame phone-personal-study.png); the page's study-layout controller
-    moves the one tag editor between its two places. Names come from the database, so a refused rename doesn't show
-    its title as saved. %>
+    "…" menu, its only action (docs/design/personal-study.md, The study page). On a phone the back row to the same
+    collection or Personal study holds the "…", and the title and the meta line follow at full width (docs/design/
+    phone.md, A personal study; frame phone-personal-study.png). The tag editor is in the phone menu's Tags dialog
+    there; the page's study-layout controller moves the one tag editor between its two places. Names come from the
+    database, so a refused rename doesn't show its title as saved. %>
 <% collection = personal_study.collection %>
+<%= render BackRowComponent.new(href: household_personal_studies_path(collection: collection&.id), label: collection&.name || "Personal study") do |row| %>
+  <% row.with_menu { render "personal_studies/menu", personal_study:, phone: true } %>
+<% end %>
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
   <% breadcrumbs.with_item(href: household_personal_studies_path) { "Personal study" } %>
   <% if collection %>
     <% breadcrumbs.with_item(href: household_personal_studies_path(collection: collection.id)) { collection.name } %>
   <% end %>
 <% end %>
-<%= render(Primer::Beta::Link.new(href: household_personal_studies_path(collection: collection&.id), display: [ :inline_flex, nil, :none ], align_items: :center, mb: 2)) do %>
-  <%= render Primer::Beta::Octicon.new(:"chevron-left", mr: 1) %>
-  Back to <%= collection&.name || "Personal study" %>
-<% end %>
-<%= render Primer::Beta::Subhead.new do |subhead| %>
-  <% subhead.with_heading(tag: :h1, flex: 1, classes: "wb-break-word min-width-0") { personal_study.title_in_database } %>
-  <% subhead.with_actions(display: :flex, align_items: :center) do %>
+<%= render Primer::Beta::Subhead.new(classes: "personal-study__header") do |subhead| %>
+  <% subhead.with_heading(tag: :h1, flex: [ nil, nil, 1 ], classes: "wb-break-word min-width-0") { personal_study.title_in_database } %>
+  <% subhead.with_actions(display: [ :none, nil, :flex ], align_items: :center) do %>
     <%= render "personal_studies/menu", personal_study: %>
   <% end %>
-  <% subhead.with_description(display: [ :none, nil, :block ]) do %>
+  <% subhead.with_description do %>
     Started <%= l(personal_study.created_at.to_date, format: :long) %><%= render "personal_studies/counts", personal_study: %>
-    <div data-study-layout-target="inline">
+    <div class="d-none d-md-block" data-study-layout-target="inline">
       <%= render TagEditorComponent.new(taggable: personal_study, user: Current.user, household: Current.household) %>
     </div>
   <% end %>
 <% end %>
+<%= render "personal_studies/dialogs", personal_study: %>

@@ -1,0 +1,36 @@
+<%# locals: (personal_study:) %>
+<%# The dialogs the study's "…" menus open, once on the page for both menus. %>
+<%# The study-layout controller puts the tag editor here on a phone. %>
+<%= render(Primer::Alpha::Dialog.new(id: "personal-study-tags", title: "Tags")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <div data-study-layout-target="dialog"></div>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Alpha::Dialog.new(id: "rename-personal-study", title: "Rename study")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= primer_form_with(model: personal_study, url: household_personal_study_path(id: personal_study), method: :patch, namespace: "rename") do |f| %>
+      <%= render PersonalStudies::StudyForm.new(f, submit_label: "Rename", fields: %i[ title ]) %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Alpha::Dialog.new(id: "move-personal-study", title: "Move to collection")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= primer_form_with(model: personal_study, url: household_personal_study_path(id: personal_study), method: :patch, namespace: "move") do |f| %>
+      <%= render PersonalStudies::StudyForm.new(f, submit_label: "Move", fields: %i[ collection ], collections: Current.user.collections.for_studies.positioned) %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Alpha::Dialog.new(id: "delete-personal-study", title: "Delete this study?")) do |dialog| %>
+  <% dialog.with_body do %>
+    Its notes and tags are deleted too. This can't be undone.
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-personal-study" })) { "Cancel" } %>
+    <%= primer_form_with(url: household_personal_study_path(id: personal_study), method: :delete) do |f| %>
+      <%= render PersonalStudies::DeleteForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>

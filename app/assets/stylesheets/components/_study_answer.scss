@@ -14,3 +14,14 @@
 .study-answer__chip {
   border-radius: var(--borderRadius-full);
 }
+
+// "N pages used ›" on a phone (frame phone-personal-study.png): a full-width row with the count on the left and the
+// chevron at its right end, 44px on a touch screen. It's hidden from md up, where the pages show open.
+.study-answer__pages > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--control-minTarget-auto);
+  font-weight: var(--base-text-weight-normal);
+  text-align: start;
+}

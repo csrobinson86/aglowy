@@ -4,11 +4,10 @@ import { Controller } from "@hotwired/stimulus"
 const catchUpObservers = new WeakMap()
 
 // A study page's ask box and the answers above it (docs/design/personal-study.md, The study page). "Keep digging"
-// and "Ask it again" put a question in the box for the person to send, and on a phone "See sources" opens the
-// Sources tab. While a question is answered, its card listens on the question's stream for progress and the checked
-// result, which the page's own card then replaces.
+// and "Ask it again" put a question in the box for the person to send. While a question is answered, its card listens
+// on the question's stream for progress and the checked result, which the page's own card then replaces.
 export default class extends Controller {
-  static targets = [ "prompt", "stream", "unscoped", "sourcesTab" ]
+  static targets = [ "prompt", "stream", "unscoped" ]
 
   // The input event lets Primer's character counter catch up. A disabled box (the day's limit) stays empty.
   fill({ params: { text } }) {
@@ -16,11 +15,6 @@ export default class extends Controller {
     this.promptTarget.value = text
     this.promptTarget.dispatchEvent(new Event("input", { bubbles: true }))
     this.promptTarget.focus()
-  }
-
-  // Primer's tab container selects the tab it's clicked, and moves focus to it.
-  seeSources() {
-    this.sourcesTabTarget.click()
   }
 
   // Action Cable only delivers what's broadcast while the card is subscribed, and a quick result (a flagged question,

@@ -1,18 +1,21 @@
-<%# locals: (personal_study:) %>
-<%# The study header's "…" menu. First, for heads and adults here, "Create family study", a link out of the study
-    with a divider under it (docs/design/personal-study.md, Create family study). Each item below opens a Primer Dialog;
-    Delete asks first, never a browser confirm. On a phone it also holds Tags, which sits in the header from md up
-    (frame phone-personal-study.png). %>
-<%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-study-menu", anchor_align: :end, classes: "personal-study__menu")) do |menu| %>
-  <% menu.with_show_button(icon: :"kebab-horizontal", "aria-label": "Study actions", show_tooltip: false) %>
+<%# locals: (personal_study:, phone: false) %>
+<%# The study's "…" menu: in the header from md up, and in the back row on a phone (docs/design/phone.md, A personal
+    study), where it's a plain icon with its own menu_id. First, for heads and adults here, "Create family study", a
+    link out of the study with a divider under it (docs/design/personal-study.md, Create family study). Each item below
+    opens one of the page's dialogs (personal_studies/_dialogs); Delete asks first, never a browser confirm. On a phone
+    it also holds Tags, which sits in the header from md up (frame phone-personal-study.png). %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: phone ? "personal-study-phone-menu" : "personal-study-menu", anchor_align: :end, classes: "personal-study__menu")) do |menu| %>
+  <% menu.with_show_button(icon: :"kebab-horizontal", scheme: phone ? :invisible : :default, "aria-label": "Study actions", show_tooltip: false) %>
   <% if policy(FamilyStudy).create? %>
     <% menu.with_item(label: "Create family study", href: new_household_family_study_path(from_study: personal_study.id)) do |item| %>
       <% item.with_leading_visual_icon(icon: :book) %>
     <% end %>
     <% menu.with_divider %>
   <% end %>
-  <% menu.with_item(label: "Tags…", tag: :button, classes: "d-md-none", data: { study_layout_target: "phoneOnly" }, content_arguments: { "data-show-dialog-id": "personal-study-tags" }) do |item| %>
-    <% item.with_leading_visual_icon(icon: :tag) %>
+  <% if phone %>
+    <% menu.with_item(label: "Tags…", tag: :button, content_arguments: { "data-show-dialog-id": "personal-study-tags" }) do |item| %>
+      <% item.with_leading_visual_icon(icon: :tag) %>
+    <% end %>
   <% end %>
   <% menu.with_item(label: "Rename…", tag: :button, content_arguments: { "data-show-dialog-id": "rename-personal-study" }) do |item| %>
     <% item.with_leading_visual_icon(icon: :pencil) %>
@@ -23,40 +26,5 @@
   <% menu.with_divider %>
   <% menu.with_item(label: "Delete study…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": "delete-personal-study" }) do |item| %>
     <% item.with_leading_visual_icon(icon: :trash) %>
-  <% end %>
-<% end %>
-
-<%# The study-layout controller puts the tag editor here on a phone. %>
-<%= render(Primer::Alpha::Dialog.new(id: "personal-study-tags", title: "Tags")) do |dialog| %>
-  <% dialog.with_body(pb: 3) do %>
-    <div data-study-layout-target="dialog"></div>
-  <% end %>
-<% end %>
-
-<%= render(Primer::Alpha::Dialog.new(id: "rename-personal-study", title: "Rename study")) do |dialog| %>
-  <% dialog.with_body(pb: 3) do %>
-    <%= primer_form_with(model: personal_study, url: household_personal_study_path(id: personal_study), method: :patch, namespace: "rename") do |f| %>
-      <%= render PersonalStudies::StudyForm.new(f, submit_label: "Rename", fields: %i[ title ]) %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= render(Primer::Alpha::Dialog.new(id: "move-personal-study", title: "Move to collection")) do |dialog| %>
-  <% dialog.with_body(pb: 3) do %>
-    <%= primer_form_with(model: personal_study, url: household_personal_study_path(id: personal_study), method: :patch, namespace: "move") do |f| %>
-      <%= render PersonalStudies::StudyForm.new(f, submit_label: "Move", fields: %i[ collection ], collections: Current.user.collections.for_studies.positioned) %>
-    <% end %>
-  <% end %>
-<% end %>
-
-<%= render(Primer::Alpha::Dialog.new(id: "delete-personal-study", title: "Delete this study?")) do |dialog| %>
-  <% dialog.with_body do %>
-    Its notes and tags are deleted too. This can't be undone.
-  <% end %>
-  <% dialog.with_footer do %>
-    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-personal-study" })) { "Cancel" } %>
-    <%= primer_form_with(url: household_personal_study_path(id: personal_study), method: :delete) do |f| %>
-      <%= render PersonalStudies::DeleteForm.new(f) %>
-    <% end %>
   <% end %>
 <% end %>

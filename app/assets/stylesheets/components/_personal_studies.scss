@@ -13,6 +13,14 @@
   display: block;
 }
 
+// A study's header on a phone (docs/design/phone.md, A personal study; frame phone-personal-study.png). Below md the
+// Subhead has no line under it, since the tabs draw their own, and desktop keeps Primer's.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .personal-study__header {
+    border-bottom: 0;
+  }
+}
+
 // Primer's coarse-pointer menu items are 40px tall, so the study's "…" menu raises them to the 44px touch target, as
 // Notes' are.
 .personal-study__menu .ActionListContent {

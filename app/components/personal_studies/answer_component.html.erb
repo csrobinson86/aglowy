@@ -25,28 +25,29 @@
       <% linked_paragraphs.each do |paragraph| %>
         <p class="mb-2"><%= paragraph %></p>
       <% end %>
-      <% if question.sources.any? && !read_only? %>
-        <%# On a phone the study's Sources tab lists the pages, and this opens it (frame phone-personal-study.png). %>
-        <p class="d-md-none text-small color-fg-muted mt-3 mb-0">
-          <%= pluralize(question.sources.size, "page") %> used ·
-          <%= render(Primer::Beta::Button.new(scheme: :link, font_size: :small, data: { action: "study-ask#seeSources" })) { "See sources" } %>
-        </p>
-      <% end %>
       <% if question.sources.any? %>
-        <div class="<%= class_names("border-top pt-3 mt-3", "d-none d-md-block": !read_only?) %>">
-          <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mb: 2)) { "Pages used" } %>
-          <ul class="list-style-none" aria-label="Pages used">
-            <% question.sources.each do |source| %>
-              <li class="d-flex flex-items-baseline mb-1">
-                <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
-                <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || helpers.source_host(source["url"]) } %> <span class="color-fg-muted">· <%= helpers.source_host(source["url"]) %></span></span>
-                <% if (button = bookmark_button(source)) %>
-                  <%= render button %>
-                <% end %>
-              </li>
-            <% end %>
-          </ul>
-        </div>
+        <%# On a phone the pages fold behind "N pages used ›", closed until tapped (docs/design/phone.md, A personal study;
+            frame phone-personal-study.png). From md up the open-from-md controller keeps them open, with the summary
+            hidden. %>
+        <%= render(Primer::Beta::Details.new(mt: 3, classes: "study-answer__pages", data: { controller: "open-from-md" })) do |details| %>
+          <% details.with_summary(block: true, display: [ nil, nil, :none ]) do %>
+            <%= pluralize(question.sources.size, "page") %> used<%= render(Primer::Beta::Octicon.new(:"chevron-right", color: :muted)) %>
+          <% end %>
+          <% details.with_body(tag: :div, classes: "pt-2 pt-md-3 border-md-top") do %>
+            <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mb: 2, display: [ :none, nil, :block ])) { "Pages used" } %>
+            <ul class="list-style-none" aria-label="Pages used">
+              <% question.sources.each do |source| %>
+                <li class="d-flex flex-items-baseline mb-1">
+                  <%= render(Primer::Beta::Octicon.new(:link, color: :muted, mr: 2, flex_shrink: 0)) %>
+                  <span><%= render(Primer::Beta::Link.new(href: source["url"], target: "_blank", rel: "noopener")) { source["title"].presence || helpers.source_host(source["url"]) } %> <span class="color-fg-muted">· <%= helpers.source_host(source["url"]) %></span></span>
+                  <% if (button = bookmark_button(source)) %>
+                    <%= render button %>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        <% end %>
       <% end %>
       <% if next_questions.any? && !read_only? %>
         <%= render(Primer::Beta::Heading.new(tag: :h3, font_size: 6, color: :muted, mt: 3, mb: 2, id: dom_id(question, :next))) { "Keep digging" } %>
