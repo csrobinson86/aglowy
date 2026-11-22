@@ -1,0 +1,12 @@
+// The Members page (docs/design/phone.md, Members). Primer's coarse-pointer menu items are 40px tall, so the New
+// menu's and each row's are raised to the 44px touch target, as Home's are. A row's plain "…" is 44px too; with a mouse
+// --control-minTarget-auto is small enough to change nothing.
+.members__new-menu .ActionListContent,
+.members__row-menu .ActionListContent {
+  min-height: var(--control-minTarget-auto);
+}
+
+.members__row-menu .Button--iconOnly {
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}

@@ -5,7 +5,7 @@ class AddMemberTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_members_url(household_id: households(:home))
 
-    click_on "Add without a login"
+    choose_from_menu "New", "Add without a login"
     assert_selector "h1", text: "Add a member"
     assert_accessible
     capture_screens("new-member")
@@ -20,13 +20,15 @@ class AddMemberTest < ApplicationSystemTestCase
     capture_screens("members-member-added")
   end
 
-  test "an adult sees Invite by email and Add without a login" do
+  test "an adult sees Invite by email and Add without a login in the New menu" do
     sign_in identities(:spouse)
     visit household_members_url(household_id: households(:home))
 
     assert_selector "h1", text: "Members"
-    assert_link "Invite by email"
-    assert_link "Add without a login"
+    assert_turbo_idle
+    click_on "New"
+    assert_selector "[role=menuitem]", exact_text: "Invite by email"
+    assert_selector "[role=menuitem]", exact_text: "Add without a login"
     assert_accessible
     capture_screens("members-adult")
   end
