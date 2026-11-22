@@ -21,6 +21,25 @@ module GoalsHelper
     end
   end
 
+  # Who can read a personal goal, as an Octicon and words: "Private" or "Shared with <households>" to its owner, and
+  # "Shared by <owner>" to a member it's shared with (docs/design/goals.md, Pages). Nil for a family goal.
+  def goal_audience(goal)
+    return unless goal.personal?
+
+    if policy(goal).share?
+      households = goal.shared_households
+      households.any? ? [ :people, "Shared with #{households.map(&:name).to_sentence}" ] : [ :lock, "Private" ]
+    else
+      [ :people, "Shared by #{goal.user.name}" ]
+    end
+  end
+
+  # The goal's facts on one muted line under its title on a phone (docs/design/phone.md, A goal), after the audience's
+  # Octicon: "Private · Milestone · Target Dec 31, 2026", or "Milestone · Target Dec 31, 2026 · Set by Maria".
+  def goal_meta_line(goal)
+    [ goal_audience(goal)&.last, "Milestone", "Target #{goal.target_on.strftime("%b %-d, %Y")}", ("Set by #{goal.set_by.name}" if goal.family?) ].compact.join(" · ")
+  end
+
   # A personal goal's pages select My goals in the sidebar, not Family goals.
   def goal_nav_item(goal)
     content_for :nav_item, "personal_goals" if goal.personal?

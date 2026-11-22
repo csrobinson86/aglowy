@@ -1,28 +1,14 @@
 <%# locals: (goal:, household:) %>
 <%# Shares a personal goal into the household in the URL only, like a meeting note (meeting_notes/_sharing).
-    Sharing asks first in a Primer Dialog, never a browser confirm; stopping is one click and can be shared again. %>
-<% sharing_path = household_goal_sharing_path(goal_id: goal) %>
-
+    Sharing asks first in the Primer Dialog in goals/_dialogs, never a browser confirm; stopping is one click and can be
+    shared again. %>
 <% if goal.shared_with?(household) %>
-  <%= primer_form_with(url: sharing_path, method: :delete, class: "mr-2") do |f| %>
+  <%= primer_form_with(url: household_goal_sharing_path(goal_id: goal), method: :delete, class: "mr-2") do |f| %>
     <%= render Goals::LifecycleForm.new(f, label: "Stop sharing") %>
   <% end %>
 <% else %>
-  <% left_out = goal.households_not_shared_with_besides(household).to_a %>
-  <%= render(Primer::Alpha::Dialog.new(id: "share-goal", title: "Share with #{household.name}?")) do |dialog| %>
-    <% dialog.with_show_button(mr: 2) do |button| %>
-      <% button.with_leading_visual_icon(icon: :people) %>
-      Share with household
-    <% end %>
-    <% dialog.with_body do %>
-      <p>Members of <strong><%= household.name %></strong> will be able to read this goal and its steps. They can't change it.</p>
-      <p class="color-fg-muted mb-0"><%= "#{left_out.map(&:name).to_sentence} won't see it. " if left_out.any? %>You can stop sharing at any time, and if you leave <%= household.name %> it stops automatically.</p>
-    <% end %>
-    <% dialog.with_footer do %>
-      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "share-goal" })) { "Cancel" } %>
-      <%= primer_form_with(url: sharing_path) do |f| %>
-        <%= render Goals::LifecycleForm.new(f, label: "Share goal", scheme: :primary, dialog_id: "share-goal") %>
-      <% end %>
-    <% end %>
+  <%= render(Primer::Beta::Button.new(mr: 2, data: { show_dialog_id: "share-goal" })) do |button| %>
+    <% button.with_leading_visual_icon(icon: :people) %>
+    Share with household
   <% end %>
 <% end %>

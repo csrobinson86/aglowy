@@ -1,8 +1,31 @@
-<%# locals: (goal:) %>
+<%# locals: (goal:, phone: false) %>
 <%# The goal header's "…" menu (frame milestone-goal-menu.png). An archived goal is restored before it's completed or
-    reopened, so it offers Restore only. Delete asks first in a Primer Dialog, never a browser confirm. %>
-<%= render(Primer::Alpha::ActionMenu.new(menu_id: "goal-menu", anchor_align: :end)) do |menu| %>
-  <% menu.with_show_button(icon: :"kebab-horizontal", "aria-label": "Goal actions", show_tooltip: false) %>
+    reopened, so it offers Restore only. Delete asks first in a Primer Dialog, never a browser confirm.
+    On a phone it's the back row's plain "…" with its own menu_id, and it also holds what sits in the header from md up:
+    Edit goal, then Share and Tags on a personal goal (docs/design/phone.md, A goal; frame phone-goal-menu.png). The
+    dialogs it opens are in goals/_dialogs, once for both menus. %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: phone ? "goal-phone-menu" : "goal-menu", anchor_align: :end)) do |menu| %>
+  <% menu.with_show_button(icon: :"kebab-horizontal", scheme: phone ? :invisible : :default, "aria-label": "Goal actions", show_tooltip: false) %>
+  <% if phone %>
+    <% menu.with_item(label: "Edit goal", href: edit_household_goal_path(id: goal)) do |item| %>
+      <% item.with_leading_visual_icon(icon: :pencil) %>
+    <% end %>
+    <% if goal.personal? %>
+      <% if goal.shared_with?(Current.household) %>
+        <% menu.with_item(label: "Stop sharing", href: household_goal_sharing_path(goal_id: goal), form_arguments: { method: :delete }) do |item| %>
+          <% item.with_leading_visual_icon(icon: :lock) %>
+        <% end %>
+      <% else %>
+        <% menu.with_item(label: "Share with household…", tag: :button, content_arguments: { "data-show-dialog-id": "share-goal" }) do |item| %>
+          <% item.with_leading_visual_icon(icon: :people) %>
+        <% end %>
+      <% end %>
+      <% menu.with_item(label: "Tags…", tag: :button, content_arguments: { "data-show-dialog-id": "goal-tags" }) do |item| %>
+        <% item.with_leading_visual_icon(icon: :tag) %>
+      <% end %>
+    <% end %>
+    <% menu.with_divider %>
+  <% end %>
   <% unless goal.archived? %>
     <% if goal.completed? %>
       <% menu.with_item(label: "Reopen goal", href: household_goal_completion_path(goal_id: goal), form_arguments: { method: :delete }) do |item| %>
@@ -26,17 +49,5 @@
   <% menu.with_divider %>
   <% menu.with_item(label: "Delete goal…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": "delete-goal" }) do |item| %>
     <% item.with_leading_visual_icon(icon: :trash) %>
-  <% end %>
-<% end %>
-
-<%= render(Primer::Alpha::Dialog.new(id: "delete-goal", title: "Delete this goal?")) do |dialog| %>
-  <% dialog.with_body do %>
-    Its steps and progress are deleted too. Archive it instead to keep it for looking back.
-  <% end %>
-  <% dialog.with_footer do %>
-    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-goal" })) { "Cancel" } %>
-    <%= primer_form_with(url: household_goal_path(id: goal), method: :delete) do |f| %>
-      <%= render Goals::LifecycleForm.new(f, label: "Delete goal", scheme: :danger) %>
-    <% end %>
   <% end %>
 <% end %>

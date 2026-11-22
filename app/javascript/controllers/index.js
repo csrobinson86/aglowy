@@ -55,6 +55,9 @@ application.register("open-from-md", OpenFromMdController)
 import RepeatFieldController from "./repeat_field_controller"
 application.register("repeat-field", RepeatFieldController)
 
+import PhoneTagsController from "./phone_tags_controller"
+application.register("phone-tags", PhoneTagsController)
+
 import PrintController from "./print_controller"
 application.register("print", PrintController)
 

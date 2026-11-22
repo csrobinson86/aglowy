@@ -1,49 +1,67 @@
 <% content_for :title, @goal.title %>
 <% goal_nav_item(@goal) %>
+<% audience_icon, audience = goal_audience(@goal) %>
 
-<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
-  <% breadcrumbs.with_item(href: goal_list_path(@goal)) { goal_list_name(@goal) } %>
-  <% breadcrumbs.with_item(href: household_goal_path(id: @goal)) { @goal.title } %>
-<% end %>
+<%# On a phone the breadcrumbs give way to a back row with the goal's "…", the Labels and the tag editor become a meta
+    line and chips, and Edit, Share and Tags move into the "…" (docs/design/phone.md, A goal). The phone-tags controller
+    moves the one tag editor between the header and the Tags dialog. %>
+<div data-controller="phone-tags">
+  <%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
+    <% breadcrumbs.with_item(href: goal_list_path(@goal)) { goal_list_name(@goal) } %>
+    <% breadcrumbs.with_item(href: household_goal_path(id: @goal)) { @goal.title } %>
+  <% end %>
+  <%= render BackRowComponent.new(href: goal_list_path(@goal), label: goal_list_name(@goal)) do |row| %>
+    <% if policy(@goal).edit? %>
+      <% row.with_menu { render "goals/menu", goal: @goal, phone: true } %>
+    <% end %>
+  <% end %>
 
-<%= render Primer::Beta::Subhead.new(mb: 3) do |subhead| %>
-  <%# Wraps, so the Milestone Label drops below a long title instead of squeezing it (frame phone-goal.png). %>
-  <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
-    <span class="mr-2 wb-break-word min-width-0"><%= @goal.title %></span>
-    <%= render(Primer::Beta::Label.new(mr: 2)) { "Milestone" } %>
-    <%# The owner sees who can read it; a member it's shared with sees whose it is (docs/design/goals.md, Pages). %>
-    <% if @goal.personal? %>
-      <% if policy(@goal).share? %>
-        <% label = @goal.shared_households.any? ? "Shared with #{@goal.shared_households.map(&:name).to_sentence}" : "Private" %>
-        <%= render(Primer::Beta::Label.new(scheme: :secondary, title: label, classes: "css-truncate css-truncate-overflow min-width-0")) do %>
-          <%= render(Primer::Beta::Octicon.new(@goal.shared_households.any? ? :people : :lock, mr: 1)) %><%= label %>
-        <% end %>
-      <% else %>
-        <%= render(Primer::Beta::Label.new(scheme: :accent, title: "Shared by #{@goal.user.name}", classes: "css-truncate css-truncate-overflow min-width-0")) do %>
-          <%= render(Primer::Beta::Octicon.new(:people, mr: 1)) %>Shared by <%= @goal.user.name %>
+  <%= render Primer::Beta::Subhead.new(mb: 3, classes: "goal-header") do |subhead| %>
+    <%# Wraps, so the Milestone Label drops below a long title instead of squeezing it. %>
+    <% subhead.with_heading(tag: :h1, display: :flex, flex_wrap: :wrap, align_items: :center, classes: "min-width-0") do %>
+      <span class="mr-2 wb-break-word min-width-0"><%= @goal.title %></span>
+      <%= render(Primer::Beta::Label.new(mr: 2, display: [ :none, nil, :inline_block ])) { "Milestone" } %>
+      <%# The owner sees who can read it; a member it's shared with sees whose it is (docs/design/goals.md, Pages). %>
+      <% if audience %>
+        <%= render(Primer::Beta::Label.new(scheme: policy(@goal).share? ? :secondary : :accent, title: audience, display: [ :none, nil, :inline_block ], classes: "css-truncate css-truncate-overflow min-width-0")) do %>
+          <%= render(Primer::Beta::Octicon.new(audience_icon, mr: 1)) %><%= audience %>
         <% end %>
       <% end %>
     <% end %>
+    <% if policy(@goal).edit? %>
+      <% subhead.with_actions(display: [ :none, nil, :flex ]) do %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal), mr: 2)) { "Edit" } %>
+        <% if @goal.personal? %>
+          <%= render "goals/sharing", goal: @goal, household: Current.household %>
+        <% end %>
+        <%= render "goals/menu", goal: @goal %>
+      <% end %>
+    <% end %>
+    <% subhead.with_description do %>
+      <%# A personal goal is always set by its owner, so it doesn't say so. %>
+      <span class="d-none d-md-inline"><%= [ "Target #{@goal.target_on.strftime("%B %-d, %Y")}", ("Set by #{@goal.set_by.name}" if @goal.family?) ].compact.join(" · ") %></span>
+      <span id="goal-meta" class="d-md-none">
+        <% if audience_icon %><%= render(Primer::Beta::Octicon.new(audience_icon, mr: 1)) %><% end %><%= goal_meta_line(@goal) %>
+      </span>
+      <%# The owner's own tags on a personal goal; nothing on a family goal or for a member reading it shared. %>
+      <%# Hidden on a phone, so the editor doesn't show there before the controller moves it into the dialog. %>
+      <div class="d-none d-md-block" data-phone-tags-target="inline">
+        <%= render TagEditorComponent.new(taggable: @goal, user: Current.user, household: Current.household) %>
+      </div>
+    <% end %>
   <% end %>
+  <% if @goal.body.present? %>
+    <%= simple_format(@goal.body, class: "mb-4") %>
+  <% end %>
+  <%# On a phone the owner's tags are read-only chips here, changed from the "…" menu's Tags…. %>
+  <% if @goal.taggable_by?(Current.user) %>
+    <div id="<%= dom_id(@goal, :tags) %>" class="goal-header__tags d-md-none"><%= render "tags/labels", taggable: @goal %></div>
+  <% end %>
+
   <% if policy(@goal).edit? %>
-    <% subhead.with_actions(display: :flex) do %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_goal_path(id: @goal), mr: 2)) { "Edit" } %>
-      <% if @goal.personal? %>
-        <%= render "goals/sharing", goal: @goal, household: Current.household %>
-      <% end %>
-      <%= render "goals/menu", goal: @goal %>
-    <% end %>
+    <%= render "goals/dialogs", goal: @goal, household: Current.household %>
   <% end %>
-  <% subhead.with_description do %>
-    <%# A personal goal is always set by its owner, so it doesn't say so. %>
-    <%= [ "Target #{@goal.target_on.strftime("%B %-d, %Y")}", ("Set by #{@goal.set_by.name}" if @goal.family?) ].compact.join(" · ") %>
-    <%# The owner's own tags on a personal goal; nothing on a family goal or for a member reading it shared. %>
-    <%= render TagEditorComponent.new(taggable: @goal, user: Current.user, household: Current.household) %>
-  <% end %>
-<% end %>
-<% if @goal.body.present? %>
-  <%= simple_format(@goal.body, class: "mb-4") %>
-<% end %>
+</div>
 
 <% unless @goal.open? %>
   <%= render "goals/finished", goal: @goal %>
