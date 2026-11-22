@@ -8,7 +8,7 @@
 <% member = policy(Membership).create? %>
 <% if family_study || personal_study || note || family_goal || member %>
   <%= render(Primer::Alpha::ActionMenu.new(menu_id: "home-new-menu", anchor_align: :end, classes: "home-new-menu")) do |menu| %>
-    <% menu.with_show_button(scheme: :primary, classes: "home-new-menu__button") do |button| %>
+    <% menu.with_show_button(scheme: :primary) do |button| %>
       <% button.with_leading_visual_icon(icon: :plus) %>
       <% button.with_trailing_action_icon(icon: :"triangle-down") %>
       New

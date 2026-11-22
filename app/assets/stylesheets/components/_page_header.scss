@@ -1,0 +1,26 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// A top-level page's title row on a phone (docs/design/phone.md, rule 1): the h1, and at its right the one primary
+// button, as wide as its label, never under the title and centred on it. A long title wraps beside the button instead
+// of pushing it down. Primer's own coarse-pointer target for .Button never applies (its selector puts ::before inside :is()), so
+// the button is 44px tall itself.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .page-header--phone-inline {
+    align-items: center;
+
+    .Subhead-heading {
+      flex-basis: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .Subhead-actions {
+      flex-shrink: 0;
+    }
+
+    .Subhead-actions .Button {
+      height: var(--base-size-44);
+    }
+  }
+}

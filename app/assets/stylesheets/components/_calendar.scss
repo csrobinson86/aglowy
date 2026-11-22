@@ -26,6 +26,10 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
   gap: var(--base-size-8);
 }
 
+.calendar-toolbar__range {
+  font-size: var(--text-title-size-medium);
+}
+
 // Primer's coarse-pointer menu items are 40px tall, so the New menu's are raised to the 44px touch target, as Bookmarks'
 // are.
 .calendar-new-menu .ActionListContent {
@@ -241,9 +245,8 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
   }
 
   // Primer's own coarse-pointer target for .Button never applies (its selector puts ::before inside :is()), so the
-  // toolbar's and the New menu's buttons are 44px themselves.
-  .calendar-toolbar .Button,
-  .calendar-new-menu .Button {
+  // toolbar's buttons are 44px themselves. The New menu's button sits beside the title (.page-header--phone-inline).
+  .calendar-toolbar .Button {
     height: var(--base-size-44);
   }
 
@@ -251,20 +254,33 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
     width: var(--base-size-44);
   }
 
-  // The New menu's button goes full width under the title and description, as Home's does (docs/design/calendar.md,
-  // On a phone), and the menu opens under it.
-  .Subhead-actions:has(> .calendar-new-menu) {
-    flex: 1 100%;
-    order: 3;
-    margin: var(--base-size-16) 0 0;
+  // One row (docs/design/phone.md, Calendar): Today, previous, the range centred, next, then Show. The range comes
+  // after next in the page, for desktop, so it's moved between them here.
+  .calendar-toolbar {
+    flex-wrap: nowrap;
+    gap: var(--base-size-4);
   }
 
-  .calendar-new-menu {
-    display: block;
+  .calendar-toolbar__nav {
+    flex: 1;
+    gap: var(--base-size-4);
+    min-width: 0;
+  }
 
-    .Button {
-      width: 100%;
-    }
+  .calendar-toolbar__range {
+    display: flex;
+    flex: 1;
+    order: 1;
+    align-items: center;
+    align-self: stretch;
+    justify-content: center;
+    min-width: 0;
+    font-size: var(--text-title-size-small);
+    white-space: nowrap;
+  }
+
+  .calendar-toolbar__next {
+    order: 2;
   }
 
   // The Show dialog's check boxes, a 44px row each, a little apart so their touch areas don't meet.

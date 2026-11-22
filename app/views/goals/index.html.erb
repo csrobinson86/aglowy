@@ -1,9 +1,11 @@
 <% content_for :title, "Family goals" %>
 <% can_create = policy(Goal.new(household: Current.household)).create? %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%# On a phone New goal stays beside the title, and the description, which only explains the page, is hidden
+    (docs/design/phone.md, rules 1 and 3). %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Family goals" } %>
-  <% subhead.with_description { "Goals the whole household works toward together." } %>
+  <% subhead.with_description(display: [ :none, nil, :block ]) { "Goals the whole household works toward together." } %>
   <% if can_create %>
     <% subhead.with_actions do %>
       <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_goal_path, scheme: :primary)) { "New goal" } %>

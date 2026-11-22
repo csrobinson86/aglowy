@@ -3,9 +3,10 @@
 <% turbo_refreshes_with method: :replace, scroll: :preserve %>
 <% manage_events = policy(Household::Event).create? %>
 
-<%= render Primer::Beta::Subhead.new(hide_border: true, mb: 0) do |subhead| %>
+<%# On a phone New stays beside the title and the description, which only explains the page, is hidden (docs/design/phone.md, Calendar). %>
+<%= render Primer::Beta::Subhead.new(hide_border: true, mb: 0, classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Calendar" } %>
-  <% subhead.with_description { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
+  <% subhead.with_description(display: [ :none, nil, :block ]) { "#{Current.household.name}'s meetings, studies and events, with your own times." } %>
   <% subhead.with_actions do %>
     <%# The New menu, the same button as Home's, at every size; each item opens its dialog (docs/design/calendar.md, The page). %>
     <%= render(Primer::Alpha::ActionMenu.new(menu_id: "calendar-new-menu", anchor_align: :end, classes: "calendar-new-menu")) do |menu| %>
@@ -26,14 +27,15 @@
 <% end %>
 
 <%# Today, previous and next, the range, and Week or Month; each a link keeping view, date and hide (frame calendar-week.png).
-    On a phone the range is shorter, Month isn't offered, and Show opens its dialog (frame phone-calendar.png). %>
+    On a phone it's one row with the range, shorter, between previous and next; Month isn't offered, and Show opens its
+    dialog (frame phone-calendar.png). %>
 <div class="calendar-toolbar">
   <div class="calendar-toolbar__nav">
     <%= render(Primer::Beta::Button.new(tag: :a, href: calendar_page_path(@period.view, Current.household.today, hide: @hide))) { "Today" } %>
     <% unit = @period.month? ? "month" : "week" %>
     <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.previous_date, hide: @hide), icon: :"chevron-left", "aria-label": "Previous #{unit}", show_tooltip: false) %>
-    <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.next_date, hide: @hide), icon: :"chevron-right", "aria-label": "Next #{unit}", show_tooltip: false) %>
-    <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 3, ml: 2)) do %>
+    <%= render Primer::Beta::IconButton.new(tag: :a, href: calendar_page_path(@period.view, @period.next_date, hide: @hide), icon: :"chevron-right", "aria-label": "Next #{unit}", show_tooltip: false, classes: "calendar-toolbar__next") %>
+    <%= render(Primer::Beta::Heading.new(tag: :h2, ml: [ 0, nil, 2 ], classes: "calendar-toolbar__range")) do %>
       <% if @period.short_title == @period.title %>
         <%= @period.title %>
       <% else %>
