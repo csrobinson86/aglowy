@@ -5,8 +5,12 @@ class FamilyStudiesController < ApplicationController
   before_action -> { set_goal_step(params[:goal_step_id]) }, only: :new
   before_action -> { set_goal_step(scheduling_params[:goal_step_id]) }, only: :create
 
+  # On a phone the first session not cancelled is the Next card, and the rest are Coming up (docs/design/phone.md,
+  # Family studies). Next is looked for past the ten, so ten cancelled ones in a row still leave a Next card.
   def index
     @sessions = Current.household.family_study_sessions.ahead.preloaded.limit(10)
+    @next_session = Current.household.family_study_sessions.upcoming.preloaded.first
+    @coming_up = @sessions.to_a.excluding(@next_session)
   end
 
   # Also reloads the Repeat field's Turbo Frame when the date changes, so the choices come from the server.

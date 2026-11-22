@@ -34,6 +34,7 @@ en:
       session: "%a, %b %-d · %-l:%M %p"
       session_day: "%A, %B %-d, %Y"
       next_session: "%A, %B %-d"
+      next_card: "%A, %b %-d"
       session_breadcrumb: "%b %-d, %Y"
       step_study: "%a, %b %-d"
       clock: "%-l:%M"

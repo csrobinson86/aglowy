@@ -1,0 +1,28 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// A family study session on a phone (docs/design/phone.md, Family studies; frame phone-family-study-session.png).
+// Below md the Subhead has no line under it, as a goal's, and Notes' plain Edit link is a 44px touch target; with a
+// mouse --control-minTarget-auto is small enough to change nothing. Desktop keeps Primer's own.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .family-study-session__header {
+    border-bottom: 0;
+  }
+}
+
+.family-study-session__edit-notes {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-minTarget-auto);
+}
+
+// A resource's title on a phone is one line, cut with an ellipsis, so its row stays two lines (docs/design/phone.md,
+// rule 6). From md up it wraps beside its host or size, as before.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .family-study-session__resource-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

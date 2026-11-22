@@ -1,28 +1,15 @@
 <%# locals: (family_study:, study_session:) %>
-<%# "This session only" changes (scheduling rules 6 and 7). Cancelling asks first in a Primer Dialog, never a browser confirm. %>
-<% cancellation_path = household_family_study_session_cancellation_path(family_study_id: family_study, session_id: study_session) %>
-
+<%# "This session only" changes (scheduling rules 6 and 7), in the header from md up. Cancelling asks first in the
+    Primer Dialog in family_studies/sessions/_cancel_dialog, never a browser confirm. %>
 <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_family_study_session_path(family_study_id: family_study, id: study_session), mr: 2)) do |button| %>
   <% button.with_leading_visual_icon(icon: :pencil) %>
   Edit this session
 <% end %>
 
 <% if study_session.canceled? %>
-  <%= primer_form_with(url: cancellation_path, method: :delete) do |f| %>
+  <%= primer_form_with(url: household_family_study_session_cancellation_path(family_study_id: family_study, session_id: study_session), method: :delete) do |f| %>
     <%= render FamilyStudies::Sessions::CancellationForm.new(f, label: "Restore this session") %>
   <% end %>
 <% else %>
-  <%= render(Primer::Alpha::Dialog.new(id: "cancel-session", title: "Cancel this session?")) do |dialog| %>
-    <% dialog.with_show_button(scheme: :danger) { "Cancel this session" } %>
-    <% dialog.with_body do %>
-      Only <%= l(study_session.local_scheduled_at, format: :session_day) %> is cancelled; the rest of the series isn't touched.
-      You can restore it later.
-    <% end %>
-    <% dialog.with_footer do %>
-      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "cancel-session" })) { "Keep it" } %>
-      <%= primer_form_with(url: cancellation_path) do |f| %>
-        <%= render FamilyStudies::Sessions::CancellationForm.new(f, label: "Cancel this session", scheme: :danger) %>
-      <% end %>
-    <% end %>
-  <% end %>
+  <%= render(Primer::Beta::Button.new(scheme: :danger, data: { show_dialog_id: "cancel-session" })) { "Cancel this session" } %>
 <% end %>

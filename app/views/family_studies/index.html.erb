@@ -14,7 +14,21 @@
 <% end %>
 
 <% if @sessions.any? %>
-  <%= render Primer::Beta::BorderBox.new do |box| %>
+  <%# On a phone, the Next card and a row per coming session (docs/design/phone.md, Family studies); from md up, as before. %>
+  <div class="d-md-none">
+    <% if @next_session %>
+      <%= render "family_studies/next", study_session: @next_session %>
+    <% end %>
+    <% if @coming_up.any? %>
+      <h2 class="f5 text-semibold color-fg-muted mb-2">Coming up</h2>
+      <%= render Primer::Beta::BorderBox.new do |box| %>
+        <% @coming_up.each do |study_session| %>
+          <% box.with_row(p: 0) { render "family_study/sessions/row", study_session: } %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+  <%= render Primer::Beta::BorderBox.new(id: "coming-up", display: [ :none, nil, :block ]) do |box| %>
     <% box.with_header { |header| header.with_title(tag: :h2) { "Coming up" } } %>
     <% @sessions.each do |study_session| %>
       <% box.with_row { render "family_study/sessions/session", study_session: } %>

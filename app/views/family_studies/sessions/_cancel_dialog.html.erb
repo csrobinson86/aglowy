@@ -1,0 +1,15 @@
+<%# locals: (family_study:, study_session:) %>
+<%# Asks before cancelling one session (scheduling rule 6). Outside the header and the back row, so the desktop button
+    and the phone menu's "Cancel this session…" each open it at their own screen size. %>
+<%= render(Primer::Alpha::Dialog.new(id: "cancel-session", title: "Cancel this session?")) do |dialog| %>
+  <% dialog.with_body do %>
+    Only <%= l(study_session.local_scheduled_at, format: :session_day) %> is cancelled; the rest of the series isn't touched.
+    You can restore it later.
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "cancel-session" })) { "Keep it" } %>
+    <%= primer_form_with(url: household_family_study_session_cancellation_path(family_study_id: family_study, session_id: study_session)) do |f| %>
+      <%= render FamilyStudies::Sessions::CancellationForm.new(f, label: "Cancel this session", scheme: :danger) %>
+    <% end %>
+  <% end %>
+<% end %>

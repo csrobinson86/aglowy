@@ -9,12 +9,12 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "title", "Family studies · The Head Family · Aglowy"
     assert_select "h1", "Family studies"
-    assert_select "main .Box-header h2", "Coming up"
-    assert_select "main .Box-row", count: 4
+    assert_select "#coming-up .Box-header h2", "Coming up"
+    assert_select "#coming-up .Box-row", count: 4
     assert_select "main", text: /Topic not chosen yet.*Draw Close to Jehovah, chapter 1.*Topic not chosen yet/m
-    assert_select "main .Box-row .color-fg-muted", text: "Topic not chosen yet"
-    assert_select "main .Box-row .Label", text: "Once", count: 1
-    assert_select "main .Box-row .Label", text: "Weekly", count: 3
+    assert_select "#coming-up .Box-row .color-fg-muted", text: "Topic not chosen yet"
+    assert_select "#coming-up .Box-row .Label", text: "Once", count: 1
+    assert_select "#coming-up .Box-row .Label", text: "Weekly", count: 3
     assert_not_includes response.body, "Lessons From the Life of Ruth", "a past session isn't coming up"
   end
 
@@ -23,10 +23,10 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
 
     get household_family_studies_path(household_id: households(:home))
 
-    assert_select "main .Box-row", text: /Cancelled/, count: 1
-    assert_select "main .Box-row:nth-of-type(3) s"
-    assert_select "main .Box-row:nth-of-type(3) .Label", text: "Cancelled"
-    assert_select "main .Box-row:not(:nth-of-type(3)) s", count: 0
+    assert_select "#coming-up .Box-row", text: /Cancelled/, count: 1
+    assert_select "#coming-up .Box-row:nth-of-type(3) s"
+    assert_select "#coming-up .Box-row:nth-of-type(3) .Label", text: "Cancelled"
+    assert_select "#coming-up .Box-row:not(:nth-of-type(3)) s", count: 0
   end
 
   test "each row links to its session" do
@@ -36,9 +36,9 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
 
     family_study_sessions(:one_off_first, :weekly_next, :weekly_cancelled, :weekly_later).each do |study_session|
       path = household_family_study_session_path(household_id: households(:home), family_study_id: study_session.family_study, id: study_session)
-      assert_select "main .Box-row a[href='#{path}']", count: 1
+      assert_select "#coming-up .Box-row a[href='#{path}']", count: 1
     end
-    assert_select "main .Box-row a", text: /Draw Close to Jehovah, chapter 1/
+    assert_select "#coming-up .Box-row a", text: /Draw Close to Jehovah, chapter 1/
   end
 
   test "another household's studies aren't shown" do
@@ -48,7 +48,7 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
 
     get household_family_studies_path(household_id: households(:home))
 
-    assert_select "main .Box-row", count: 4
+    assert_select "#coming-up .Box-row", count: 4
     assert_select "main", text: /The Outsiders' study/, count: 0
   end
 
@@ -67,7 +67,9 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     get household_family_studies_path(household_id: households(:home))
 
     # Every fixture session is 19:00 UTC, which is 4:00 the next morning in Tokyo.
-    assert_select "main .Box-row", text: /4:00 AM/, count: 4
+    assert_select "#coming-up .Box-row", text: /4:00 AM/, count: 4
+    assert_select ".family-studies-next", text: /4:00 AM/
+    assert_select ".family-study-row", text: /4:00 AM/, count: 3
     assert_not_includes response.body, "7:00 PM"
   end
 
@@ -77,7 +79,24 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
 
     get household_family_studies_path(household_id: households(:home))
 
-    assert_select "main .Box-row", count: 10
+    assert_select "#coming-up .Box-row", count: 10
+    # On a phone, the Next card and the other nine.
+    assert_select ".family-studies-next", count: 1
+    assert_select ".family-study-row", count: 9
+  end
+
+  test "with the next 10 sessions all cancelled, the Next card is the first one after them" do
+    family_studies(:weekly).extend_sessions
+    ahead = households(:home).family_study_sessions.ahead.to_a
+    ahead.first(10).each(&:cancel)
+    sign_in identities(:head)
+
+    get household_family_studies_path(household_id: households(:home))
+
+    path = household_family_study_session_path(household_id: households(:home), family_study_id: ahead[10].family_study, id: ahead[10])
+    assert_select "a.family-studies-next[href='#{path}']"
+    assert_select ".family-study-row", count: 10
+    assert_select ".family-study-row s", text: "Topic not chosen yet", minimum: 1
   end
 
   test "with no sessions, heads and adults are told to schedule the first study" do

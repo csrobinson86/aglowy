@@ -1,0 +1,19 @@
+<%# locals: (study_session:) -%>
+<%# A coming session on a phone (docs/design/phone.md, rule 6 and Family studies): the month and day, the topic (one
+    line, cut with an ellipsis), then "<weekday> · <time>", and "›". The whole row opens it. Struck through when cancelled, and its second line says so,
+    in words rather than a Label (scheduling rule 6). %>
+<% local = study_session.local_scheduled_at %>
+<% text_tag = study_session.canceled? ? :s : :span %>
+<%= render(Primer::Beta::Link.new(href: household_family_study_session_path(family_study_id: study_session.family_study, id: study_session), classes: "family-study-row d-flex flex-items-center gap-3 px-3 py-2 color-fg-default no-underline")) do %>
+  <span class="family-study-row__date flex-shrink-0 text-center">
+    <span class="family-study-row__month d-block text-small text-semibold text-uppercase color-fg-muted"><%= l(local, format: "%b") %></span>
+    <span class="family-study-row__day d-block f3 lh-condensed"><%= local.day %></span>
+  </span>
+  <span class="flex-1 min-width-0">
+    <%= content_tag text_tag, study_session.topic.presence || "Topic not chosen yet", class: [ "family-study-row__topic", ("color-fg-muted" if study_session.topic.blank?) ] %>
+    <span class="family-study-row__when d-block text-small color-fg-muted">
+      <%= content_tag text_tag, "#{l(local, format: "%A")} · #{l(local, format: :clock_with_meridiem)}" %><% if study_session.canceled? %> · <span class="color-fg-danger">Cancelled</span><% end %>
+    </span>
+  </span>
+  <%= render(Primer::Beta::Octicon.new(icon: :"chevron-right", color: :muted, flex_shrink: 0)) %>
+<% end %>
