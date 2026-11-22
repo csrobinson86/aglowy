@@ -20,7 +20,7 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_selector "ul[aria-live] strong", text: "Searching jw.org and wol.jw.org…"
     assert_button "Stop"
     assert_no_text "From jw.org and wol.jw.org"
-    assert_no_text "Pages used"
+    assert_no_text :all, "Pages used"
   end
 
   test "answered: the source line, escaped paragraphs, the pages used and the check" do
@@ -28,8 +28,9 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
 
     assert_text "From jw.org and wol.jw.org"
     assert_selector "p", text: "Jehovah never causes suffering (James 1:13)."
-    assert_selector "h3", text: "Pages used"
-    assert_link "Why Does God Allow Suffering?", href: SUFFERING
+    # The pages are in a closed <details> until the page opens it from md up (open-from-md), so visible: :all.
+    assert_selector "h3", text: "Pages used", visible: :all
+    assert_link "Why Does God Allow Suffering?", href: SUFFERING, visible: :all
     assert_text "Check each point against its page."
     assert_selector "form[action$='/note_saving'] button", text: "Save to note"
     assert_no_button "Save as a note"
@@ -39,12 +40,14 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_no_selector "turbo-cable-stream-source", visible: :all
   end
 
-  test "answered: on a phone, how many pages with See sources, which opens the Sources tab, in place of the list" do
+  test "answered: the pages fold behind \"N pages used\" on a phone, kept open from md up" do
     render_answered
 
-    assert_selector "p.d-md-none", text: "1 page used ·"
-    assert_selector "p.d-md-none button[data-action='study-ask#seeSources']", text: "See sources"
-    assert_selector "div.d-none.d-md-block h3", text: "Pages used"
+    assert_selector "details.study-answer__pages[data-controller=open-from-md]:not([open])"
+    assert_selector "details summary.d-md-none[aria-expanded=false]", text: "1 page used"
+    assert_selector "details summary svg.octicon-chevron-right"
+    assert_selector "details h3.d-none.d-md-block", text: "Pages used", visible: :all
+    assert_selector "details ul[aria-label='Pages used'] li", count: 1, visible: :all
   end
 
   test "a <script> in a paragraph renders as text" do
@@ -68,12 +71,12 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
                                { "url" => END_OF_SUFFERING, "title" => "The End of Suffering" } ])
 
     pages = "ul[aria-label='Pages used']"
-    assert_selector "#{pages} li", count: 2
-    assert_selector "#{pages} li", text: /\A\s*Why Does God Allow Suffering\? · jw\.org\s*\z/
-    assert_selector "#{pages} li", text: /\A\s*The End of Suffering · wol\.jw\.org\s*\z/
-    assert_selector "#{pages} a[href='#{SUFFERING}'][target=_blank][rel=noopener]", text: "Why Does God Allow Suffering?"
-    assert_selector "#{pages} a[href='#{END_OF_SUFFERING}'][target=_blank][rel=noopener]", text: "The End of Suffering"
-    assert_no_text "An excerpt never shown."
+    assert_selector "#{pages} li", count: 2, visible: :all
+    assert_selector "#{pages} li", text: /\A\s*Why Does God Allow Suffering\? · jw\.org\s*\z/, visible: :all
+    assert_selector "#{pages} li", text: /\A\s*The End of Suffering · wol\.jw\.org\s*\z/, visible: :all
+    assert_selector "#{pages} a[href='#{SUFFERING}'][target=_blank][rel=noopener]", text: "Why Does God Allow Suffering?", visible: :all
+    assert_selector "#{pages} a[href='#{END_OF_SUFFERING}'][target=_blank][rel=noopener]", text: "The End of Suffering", visible: :all
+    assert_no_text :all, "An excerpt never shown."
   end
 
   test "Keep digging: each next question is a chip that fills the ask box" do
@@ -97,7 +100,7 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     render_answered(not_found: true, not_found_note: "I couldn't find jw.org or wol.jw.org pages that answer this.", paragraphs: [], sources: [], next_questions: [])
 
     assert_text "I couldn't find jw.org or wol.jw.org pages that answer this."
-    assert_no_text "Pages used"
+    assert_no_text :all, "Pages used"
     assert_no_text "Keep digging"
   end
 
@@ -154,7 +157,7 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     render_inline(PersonalStudies::AnswerComponent.new(question:, household: nil, read_only: true))
 
     assert_selector "p", text: "Jehovah never causes suffering"
-    assert_link "Why Does God Allow Suffering?", href: SUFFERING
+    assert_link "Why Does God Allow Suffering?", href: SUFFERING, visible: :all
     assert_text "Check each point against its page."
     assert_no_text "Keep digging"
     assert_no_selector "button, form, [data-study-ask-target]"

@@ -1,10 +1,26 @@
 <% content_for :title, "Personal study" %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%# On a phone "+ New ▾" sits beside the title with Study and Collection, and the description is shortened to who can
+    see the studies, when only the person can (docs/design/phone.md, A personal study). From md up, New study and the
+    sidebar's New collection, as before. %>
+<% read_by_heads = Current.user.personal_study_read_by_heads? %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Personal study" } %>
-  <% subhead.with_description { "Your own research, with notes, collections and tags.#{" Only you can see it." unless Current.user.personal_study_read_by_heads?}" } %>
+  <% subhead.with_description do %>
+    <% unless read_by_heads %><span class="d-md-none">Only you can see these.</span><% end %>
+    <span class="d-none d-md-inline">Your own research, with notes, collections and tags.<%= " Only you can see it." unless read_by_heads %></span>
+  <% end %>
   <% subhead.with_actions do %>
-    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_study_path(collection: @collection&.id), scheme: :primary)) { "New study" } %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_study_path(collection: @collection&.id), scheme: :primary, display: [ :none, nil, :inline_flex ])) { "New study" } %>
+    <%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-studies-new-menu", anchor_align: :end, display: [ nil, nil, :none ], classes: "personal-study__menu")) do |menu| %>
+      <% menu.with_show_button(scheme: :primary) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        <% button.with_trailing_action_icon(icon: :"triangle-down") %>
+        New
+      <% end %>
+      <% menu.with_item(label: "Study", href: new_household_personal_study_path(collection: @collection&.id)) { it.with_leading_visual_icon(icon: :search) } %>
+      <% menu.with_item(label: "Collection", tag: :button, content_arguments: { "data-show-dialog-id": "new-collection-dialog" }) { it.with_leading_visual_icon(icon: :"file-directory") } %>
+    <% end %>
   <% end %>
 <% end %>
 
@@ -56,5 +72,12 @@
         <% blankslate.with_secondary_action(href: household_personal_studies_path) { "All studies" } %>
       <% end %>
     <% end %>
+  <% end %>
+<% end %>
+
+<%# Opened by "New collection" in the sidebar, or by "+ New ▾" › Collection on a phone, where the sidebar starts closed. %>
+<%= render(Primer::Alpha::Dialog.new(id: "new-collection-dialog", title: "New collection")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= render "collections/new_form", collection: Collection.new %>
   <% end %>
 <% end %>
