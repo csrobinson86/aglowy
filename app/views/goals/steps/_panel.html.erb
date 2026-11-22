@@ -1,0 +1,13 @@
+<%# locals: (step:, editable:, editing: false, stale: false, checked_ids: nil) %>
+<%# The body of a step's phone panel (docs/design/phone.md, A goal, The step panel), with the edit form for whoever may
+    change the step. Its Dialog is in goals/_steps. %>
+<%= render GoalStepPanelComponent.new(step:, editing:, **goal_step_arguments(step)) do |component| %>
+  <% if editable %>
+    <% component.with_edit_form do %>
+      <% if stale %>
+        <%= render(Primer::Beta::Flash.new(scheme: :warning, icon: :alert, mb: 3)) { "Someone else changed this step. Here's the latest." } %>
+      <% end %>
+      <%= render "goals/steps/edit_form", step:, namespace: dom_id(step, :panel), checked_ids:, panel: true, stale: %>
+    <% end %>
+  <% end %>
+<% end %>

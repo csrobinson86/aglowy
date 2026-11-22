@@ -1,10 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
-// A goal's step (GoalStepComponent). Ticks the step when its checkbox changes, shows the edit form in place of
-// the row (from its pencil, or its "›" on a phone), and says how many ticks a change of people would clear before it's saved (docs/design/goals.md,
+// A goal's step, in its row (GoalStepComponent) or its phone panel (GoalStepPanelComponent). Ticks the step when a
+// checkbox changes, shows the edit form in place of the row or the panel's facts, asks before the panel removes the
+// step, and says how many ticks a change of people would clear before it's saved (docs/design/goals.md,
 // "Changing who a step is for").
 export default class extends Controller {
-  static targets = [ "view", "form", "checkbox", "editButton", "warning" ]
+  static targets = [ "view", "form", "confirm", "checkbox", "editButton", "removeButton", "warning" ]
   static values = { mixed: Boolean, ticks: Array }
 
   // Only script can make a checkbox indeterminate.
@@ -44,6 +45,19 @@ export default class extends Controller {
     this.formTarget.hidden = true
     this.viewTarget.hidden = false
     this.editButtonTargets.find(button => button.checkVisibility())?.focus()
+  }
+
+  // The panel's Remove step asks first, in place of its facts; Cancel (keep) goes back to them.
+  askToRemove() {
+    this.viewTarget.hidden = true
+    this.confirmTarget.hidden = false
+    this.confirmTarget.querySelector("button").focus()
+  }
+
+  keep() {
+    this.confirmTarget.hidden = true
+    this.viewTarget.hidden = false
+    this.removeButtonTarget.focus()
   }
 
   // Ticks that still fit stay: no one ticked means Everyone, which keeps only a done-together tick;

@@ -1,4 +1,12 @@
 module GoalsHelper
+  # What the viewer may do with a step, for its row and its phone panel (GoalStepComponent): the parts they may tick,
+  # whether they may schedule it, whether it's a goal shared with them to read, and whether to highlight a child's own.
+  def goal_step_arguments(step)
+    tickable = step.parts.select { policy(step.new_tick(it)).create? }
+    { household: Current.household, viewer: Current.user, tickable:, read_only: step.goal.personal? && !policy(step.goal).update?,
+      schedulable: policy(step).update? && policy(FamilyStudy).create?, highlighted: tickable.any? && !policy(step.goal).update? }
+  end
+
   # "Completed on October 4 by Maria. Archived on August 30 by Daniel." for a finished goal's Banner.
   def goal_finished_text(goal)
     [ ("Completed on #{goal_long_date(goal, goal.completion.created_at)} by #{goal.completion.completed_by.name}." if goal.completed?),

@@ -5,7 +5,8 @@
 <div id="goal-steps">
   <%= render(Primer::Beta::BorderBox.new) do |box| %>
     <% box.with_header(display: :flex, flex_wrap: :wrap, align_items: :center) do %>
-      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, mr: 2)) { "Steps" } %>
+      <%# Focusable, for dialog-opener when the last step's panel removes it. %>
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, mr: 2, id: "goal-steps-heading", tabindex: -1)) { "Steps" } %>
       <%# Someone who may tick only their own parts (a child), on a goal still taking ticks (frame milestone-goal-child.png). %>
       <% if goal.family? && goal.open? && !policy(goal).update? %>
         <span class="color-fg-muted f6 ml-auto">You can tick the steps that are yours</span>
@@ -30,4 +31,15 @@
       <% end %>
     <% end %>
   <% end %>
+  <%# Each step's phone panel, opened by its row's "›" (docs/design/phone.md, A goal, The step panel). Outside the steps'
+      Turbo Frames, so a tick redraws only the panel's body and it stays open. Saving or removing a step redraws all of
+      this with the panel open, so dialog-removal lets the page scroll again. dialog-opener puts focus back on the
+      step's "›", which a tick, Save or Remove has replaced. %>
+  <div data-controller="dialog-removal dialog-opener" data-dialog-opener-fallback-value="goal-steps-heading" data-action="close->dialog-opener#refocus:capture">
+    <% goal.steps.each do |step| %>
+      <%= render(Primer::Alpha::Dialog.new(id: dom_id(step, :panel), title: step.title, position: :center, position_narrow: :bottom)) do |dialog| %>
+        <% dialog.with_body(pb: 3) { render "goals/steps/panel", step:, editable: } %>
+      <% end %>
+    <% end %>
+  </div>
 </div>

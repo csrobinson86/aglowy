@@ -28,6 +28,9 @@ application.register("personal-time", PersonalTimeController)
 import ClipboardController from "./clipboard_controller"
 application.register("clipboard", ClipboardController)
 
+import DialogOpenerController from "./dialog_opener_controller"
+application.register("dialog-opener", DialogOpenerController)
+
 import DialogRemovalController from "./dialog_removal_controller"
 application.register("dialog-removal", DialogRemovalController)
 

@@ -4,17 +4,19 @@
 class Goals::Steps::StepForm < ApplicationForm
   # section: :fields or :actions. members: who the step can be for (none on a personal goal).
   # checked_ids: the people ticked in a submission that came back with an error, instead of the step's own.
-  def initialize(section:, members: [], editing: false, checked_ids: nil)
+  # autofocus: Title takes focus, as when a stale save shows the form again.
+  def initialize(section:, members: [], editing: false, checked_ids: nil, autofocus: false)
     @section = section
     @members = members
     @editing = editing
     @checked_ids = checked_ids
+    @autofocus = autofocus
   end
 
   form do |f|
     case @section
     when :fields
-      f.text_field(name: :title, label: @editing ? "Title" : "New step", required: true, full_width: true,
+      f.text_field(name: :title, label: @editing ? "Title" : "New step", required: true, full_width: true, autofocus: (true if @autofocus),
                    placeholder: ("Something small that moves the goal forward" unless @editing))
       f.group(layout: :horizontal) do |row|
         if @members.any?

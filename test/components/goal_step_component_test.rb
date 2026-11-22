@@ -10,7 +10,7 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_text "Everyone · Due Feb 15"
     assert_selector ".sr-only", text: "With Hannah Head, Sam Spouse, Charlie Child, Eli Child, and Sofia Child"
     assert_selector ".avatar", count: 5
-    assert_no_selector "button"
+    assert_no_selector "button:not(.goal-step__open)"
   end
 
   test "done together" do
@@ -148,7 +148,7 @@ class GoalStepComponentTest < ViewComponent::TestCase
 
     render_inline(GoalStepComponent.new(step: preloaded(:parables)))
     assert_no_selector "input[type=checkbox]"
-    assert_no_selector "button"
+    assert_no_selector "button:not(.goal-step__open)"
     assert_selector "svg.octicon-circle.color-fg-muted[role=img][aria-label='Not done']"
     assert_text "Eli Child done · waiting on Sofia Child"
   end
@@ -229,7 +229,7 @@ class GoalStepComponentTest < ViewComponent::TestCase
     Goal.preloaded.find(goal.id).steps.each do |step|
       render_inline(GoalStepComponent.new(step:, household: households(:home), read_only: true))
 
-      assert_no_selector "input, button, form"
+      assert_no_selector "input, button:not(.goal-step__open), form"
       assert_selector "svg[aria-label='#{step.done? ? "Done" : "Not done"}']"
     end
   end
@@ -284,19 +284,21 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_selector ".goal-step__no-box"
   end
 
-  test "the pencil shows from md up, and a phone has the row's › instead" do
+  test "the pencil shows from md up, and a phone's › opens the step's panel instead" do
     render_inline(GoalStepComponent.new(step: preloaded(:read_luke))) { |component| component.with_edit_form { "The form" } }
 
     assert_selector "button.d-none.d-md-flex[data-action='goal-step#edit'] svg.octicon-pencil"
-    assert_selector "button.d-md-none[aria-label='Edit step: Read Luke together'][data-action='goal-step#edit'] svg.octicon-chevron-right"
+    assert_selector "button.d-md-none.goal-step__open[aria-label='Open step: Read Luke together'] svg.octicon-chevron-right"
+    assert_selector "button[data-show-dialog-id='#{ActionView::RecordIdentifier.dom_id(goal_steps(:read_luke), :panel)}']"
+    assert_selector "button[data-action='goal-step#edit']", count: 1
   end
 
-  test "a phone row ends in › for someone who may not edit the step, marking the row without a control" do
+  test "a phone row's › opens the panel for someone who may not edit the step too" do
     render_inline(GoalStepComponent.new(step: preloaded(:read_luke)))
 
-    assert_selector ".goal-step__open.d-md-none[aria-hidden=true] svg.octicon-chevron-right"
-    assert_no_selector "button svg.octicon-chevron-right"
+    assert_selector "button.d-md-none[aria-label='Open step: Read Luke together'] svg.octicon-chevron-right"
     assert_no_selector "svg.octicon-pencil"
+    assert_selector "button.goal-step__open[data-show-dialog-id]:not([data-action])"
   end
 
   private

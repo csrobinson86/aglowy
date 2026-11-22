@@ -70,20 +70,13 @@
       <% end %>
     </div>
     <% if edit_form? %>
-      <%# show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. On a phone the row's "›" opens the
-          edit form until the step panel replaces it (story #412). %>
+      <%# show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
       <%= render(Primer::Beta::IconButton.new(icon: :pencil, scheme: :invisible, show_tooltip: false, ml: 2, display: [ :none, nil, :flex ], "aria-label": "Edit step: #{step.title}",
                                               data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
-      <%= render(Primer::Beta::IconButton.new(icon: :"chevron-right", scheme: :invisible, show_tooltip: false, ml: 2, display: [ nil, nil, :none ], align_self: :center,
-                                              "aria-label": "Edit step: #{step.title}", classes: "goal-step__open",
-                                              data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
-    <% else %>
-      <%# Every phone row ends in "›", read-only ones too (story #411). Someone who may not edit the step has nothing to
-          open until the step panel (story #412), so theirs marks the row's end and isn't a control. %>
-      <span class="goal-step__open d-flex flex-items-center flex-justify-center flex-self-center ml-2 d-md-none" aria-hidden="true">
-        <%= render(Primer::Beta::Octicon.new(:"chevron-right", color: :muted)) %>
-      </span>
     <% end %>
+    <%# On a phone every row ends in "›", read-only ones too, and it opens the step's panel (docs/design/phone.md, A goal). %>
+    <%= render(Primer::Beta::IconButton.new(icon: :"chevron-right", scheme: :invisible, show_tooltip: false, ml: 2, display: [ nil, nil, :none ], align_self: :center,
+                                            "aria-label": "Open step: #{step.title}", classes: "goal-step__open", data: { show_dialog_id: panel_id })) %>
   <% end %>
   <% if edit_form? %>
     <%= tag.div edit_form, class: "p-3", hidden: !editing?, data: { goal_step_target: "form" } %>

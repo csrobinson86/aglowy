@@ -162,8 +162,8 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_step_line "Joshua to Esther", "Due Dec 18"
     assert_selector ".goal-step__title--done", text: "Genesis to Deuteronomy"
     assert_no_selector "svg.octicon-pencil"
-    assert_selector "button[aria-label='Edit step: Joshua to Esther'] svg.octicon-chevron-right"
-    assert_touch_target find(step_row("Joshua to Esther", "button[aria-label='Edit step: Joshua to Esther']"))
+    assert_selector "button[aria-label='Open step: Joshua to Esther'] svg.octicon-chevron-right"
+    assert_touch_target find(step_row("Joshua to Esther", "button[aria-label='Open step: Joshua to Esther']"))
     assert_touch_target find(step_row("Joshua to Esther", "input[type=checkbox]"))
     assert_equal page.evaluate_script("document.documentElement.clientWidth"), page.evaluate_script("document.documentElement.scrollWidth")
   end
@@ -334,6 +334,256 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_no_selector ".goal-header__tags"
   end
 
+  # Story #412: the step panel (docs/design/phone.md, A goal, The step panel; frame phone-family-goal-step.png).
+  test "tapping a family step opens the panel from the bottom with its title and For … · Due …" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+
+    panel = find("dialog[open]")
+    assert_in_delta page.evaluate_script("window.innerHeight"), rect(panel, "bottom"), 1, "the panel isn't at the bottom"
+    assert_in_delta page.evaluate_script("document.documentElement.clientWidth"), rect(panel, "width"), 1, "the panel isn't full width"
+    within(panel) do
+      assert_selector "h1", exact_text: "Find three parables and explain one"
+      assert_selector ".goal-step-panel__meta", exact_text: "For Eli and Sofia · Due Feb 28"
+      within("fieldset", text: "Who's done it") do
+        assert_selector "legend", exact_text: "Who's done it"
+        assert_checked_field "Eli"
+        assert_unchecked_field "Sofia"
+        assert_selector ".avatar", count: 2
+      end
+      assert_link "Schedule as a family study"
+      assert_button "Edit step"
+      assert_button "Remove step"
+      [ find_field("Sofia"), find_link("Schedule as a family study"), find_button("Edit step"), find_button("Remove step") ].each { assert_touch_target it }
+    end
+    assert_accessible
+    capture_screens("phone-family-goal-step", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
+  end
+
+  test "ticking Sofia's box in the panel completes the step and updates the row and progress" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    within("dialog[open]") { check "Sofia" }
+
+    # Done when the last part was ticked: Eli's fixture tick is dated Jan 25, after today.
+    assert_step_line "Find three parables and explain one", "Eli and Sofia · done Jan 25"
+    assert_selector "#goal-progress-card h2", exact_text: "4 of 7 steps done"
+    within("dialog[open]") { assert_checked_field "Sofia", focused: true }
+  end
+
+  test "Schedule as a family study opens the Schedule page prefilled" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Read Luke together"
+    within("dialog[open]") do
+      assert_selector ".goal-step-panel__meta", exact_text: "Everyone · Due Feb 15"
+      assert_no_selector "fieldset"
+      click_on "Schedule as a family study"
+    end
+
+    assert_selector "h1", text: "Schedule a family study"
+    assert_field "What will you study?", with: "Read Luke together"
+    assert_field "Date", with: "2027-02-15"
+  end
+
+  test "Edit step opens the step's form in the panel and saves a new title, and Cancel goes back" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Read Luke together"
+    within("dialog[open]") do
+      click_on "Edit step"
+      assert_field "Title", with: "Read Luke together", focused: true
+      click_on "Cancel"
+      assert_no_field "Title"
+      assert_button "Edit step", focused: true
+
+      click_on "Edit step"
+      fill_in "Title", with: "Read Luke 1 to 12 together"
+      click_on "Save"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_selector ".goal-step__title", exact_text: "Read Luke 1 to 12 together"
+    # Its redrawn "›" has focus, not the body.
+    assert_selector step_row("Read Luke 1 to 12 together", "button[aria-label='Open step: Read Luke 1 to 12 together']:focus")
+  end
+
+  test "a refused or stale edit shows the form again in the open panel, with focus on Title, and the row stays a row" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Read Luke together"
+    within("dialog[open]") do
+      click_on "Edit step"
+      fill_in "Title", with: "   "
+      click_on "Save"
+      assert_selector ".FormControl-inlineValidation", text: "can't be blank"
+      assert_field "Title", focused: true
+      assert_selector "h1", exact_text: "Read Luke together"
+
+      goal_steps(:read_luke).update!(title: "Read Luke, changed by Hannah")
+      fill_in "Title", with: "Read Luke 1 to 12"
+      click_on "Save"
+      assert_text "Someone else changed this step. Here's the latest."
+      assert_field "Title", with: "Read Luke, changed by Hannah", focused: true
+      assert_selector "h1", exact_text: "Read Luke, changed by Hannah"
+      find("button[aria-label='Close']").click
+    end
+
+    assert_no_selector "dialog[open]"
+    # The row shows the step as it is now, as a row with its "›".
+    assert_selector step_row("Read Luke, changed by Hannah", "button[aria-label='Open step: Read Luke, changed by Hannah']")
+    assert_no_field "Title"
+  end
+
+  test "Remove step asks in the panel, then removes" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Read John together"
+    within("dialog[open]") do
+      click_on "Remove step"
+      assert_text "Remove this step?"
+      assert_no_button "Edit step"
+      click_on "Cancel"
+      assert_button "Remove step", focused: true
+
+      click_on "Remove step"
+      assert_button "Cancel", focused: true
+    end
+    # The question's Remove step lands under the pointer, so its hover colours fade in first.
+    wait_for_transitions
+    assert_accessible
+    within("dialog[open]") do
+      click_on "Remove step"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_no_selector ".goal-step__title", text: "Read John together"
+    assert_selector "#goal-progress-card h2", exact_text: "3 of 6 steps done"
+    assert_no_selector "body.has-modal", visible: :all
+    # Focus goes to the next step's "›", not the body.
+    assert_selector step_row("Share what each of us learned", "button[aria-label='Open step: Share what each of us learned']:focus")
+  end
+
+  test "removing the last step from its panel puts focus on the Steps heading" do
+    @goal.add_step(title: "Joshua to Esther")
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: @goal)
+
+    open_step "Joshua to Esther"
+    within("dialog[open]") do
+      click_on "Remove step"
+      click_on "Remove step"
+    end
+
+    assert_no_selector "dialog[open]"
+    assert_no_selector ".goal-step__title"
+    assert_selector "h2#goal-steps-heading:focus", exact_text: "Steps"
+  end
+
+  test "a personal step's panel has its due date, Edit step and Remove step, and no Who's done it or Schedule" do
+    add_bible_reading_steps
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: @goal)
+
+    open_step "Joshua to Esther"
+    within("dialog[open]") do
+      assert_selector "h1", exact_text: "Joshua to Esther"
+      assert_selector ".goal-step-panel__meta", exact_text: "Due Dec 18"
+      assert_no_text "Who's done it"
+      assert_no_link "Schedule as a family study"
+      assert_button "Edit step"
+      assert_button "Remove step"
+    end
+    assert_accessible
+  end
+
+  test "a child sees only their own box, the other assignees as text, and no Schedule, Edit or Remove" do
+    sign_in identities(:eli)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    within("dialog[open]") do
+      assert_checked_field "Eli"
+      assert_no_field "Sofia"
+      assert_selector "fieldset", text: "Sofia · not done yet"
+      assert_no_link "Schedule as a family study"
+      assert_no_button "Edit step"
+      assert_no_button "Remove step"
+      uncheck "Eli"
+    end
+    assert_step_line "Find three parables and explain one", "Eli and Sofia · due Feb 28"
+    assert_accessible
+  end
+
+  test "a completed goal's panel has no controls, only the step's facts and who's done it" do
+    goals(:gospels).complete(by: users(:spouse))
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    within("dialog[open]") do
+      assert_selector ".goal-step-panel__meta", exact_text: "For Eli and Sofia · Due Feb 28"
+      assert_selector "fieldset", text: "Eli · done"
+      assert_selector "fieldset", text: "Sofia · not done yet"
+      assert_no_selector "input[type=checkbox]"
+      assert_no_link "Schedule as a family study"
+      assert_equal [ "Close" ], all("button, a").map { it[:"aria-label"] || it.text }
+    end
+  end
+
+  test "Escape closes the panel and focus returns to the row" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    find("dialog[open]").send_keys(:escape)
+
+    assert_no_selector "dialog[open]"
+    assert_selector step_row("Find three parables and explain one", "button[aria-label='Open step: Find three parables and explain one']:focus")
+  end
+
+  test "after a tick in the panel, which redraws the row, Escape still gives focus back to the row's ›" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    within("dialog[open]") { check "Sofia" }
+    assert_step_line "Find three parables and explain one", "Eli and Sofia · done Jan 25"
+    find("dialog[open]").send_keys(:escape)
+
+    assert_no_selector "dialog[open]"
+    assert_selector step_row("Find three parables and explain one", "button[aria-label='Open step: Find three parables and explain one']:focus")
+  end
+
+  test "a panel opened on a phone and closed once the window is desktop width puts focus on the Steps heading, its › hidden" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    on_desktop
+    assert_no_selector "button[aria-label='Open step: Find three parables and explain one']"
+    find("dialog[open]").send_keys(:escape)
+
+    assert_no_selector "dialog[open]"
+    assert_selector "h2#goal-steps-heading:focus", exact_text: "Steps"
+  end
+
+  test "desktop has no way to the panel" do
+    sign_in identities(:spouse)
+    visit household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    assert_no_selector "button[aria-label^='Open step:']"
+    assert_no_selector "dialog[open]"
+  end
+
   private
     def visit_on_a_phone(url)
       on_a_phone
@@ -357,6 +607,12 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     def add_bible_reading_steps
       @goal.add_step(title: "Genesis to Deuteronomy").tick(for: nil, by: users(:spouse))
       @goal.add_step(title: "Joshua to Esther", due_on: Date.new(2026, 12, 18))
+    end
+
+    def open_step(title)
+      assert_turbo_idle
+      find("button[aria-label='Open step: #{title}']").click
+      wait_for_dialog
     end
 
     def step_row(title, selector)
