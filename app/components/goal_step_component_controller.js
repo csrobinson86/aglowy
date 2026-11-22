@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // A goal's step (GoalStepComponent). Ticks the step when its checkbox changes, shows the edit form in place of
-// the row, and says how many ticks a change of people would clear before it's saved (docs/design/goals.md,
+// the row (from its pencil, or its "›" on a phone), and says how many ticks a change of people would clear before it's saved (docs/design/goals.md,
 // "Changing who a step is for").
 export default class extends Controller {
   static targets = [ "view", "form", "checkbox", "editButton", "warning" ]
@@ -43,7 +43,7 @@ export default class extends Controller {
     this.warn()
     this.formTarget.hidden = true
     this.viewTarget.hidden = false
-    this.editButtonTarget.focus()
+    this.editButtonTargets.find(button => button.checkVisibility())?.focus()
   }
 
   // Ticks that still fit stay: no one ticked means Everyone, which keeps only a done-together tick;

@@ -5,6 +5,8 @@
 # Whoever may change the step passes the edit form, which the Edit button shows in place of the row.
 # An Everyone step, or a step for one person, ticks with its checkbox; a step for two or more people has a
 # toggle per person and a checkbox that only shows how far they've got (frame milestone-goal.png).
+# On a phone the row is two lines and a "›", with no pencil or buttons; its tick box is the one part the viewer may
+# tick from the row, or none (docs/design/phone.md, A goal; frames phone-goal.png and phone-family-goal.png).
 class GoalStepComponent < ApplicationComponent
   renders_one :edit_form
 
@@ -18,10 +20,12 @@ class GoalStepComponent < ApplicationComponent
   # highlighted: the step is the viewer's own, for someone who may tick only their own (frame milestone-goal-child.png).
   # schedulable: the viewer may schedule the step as a family study (heads and adults, frame milestone-goal.png).
   # read_only: a personal goal shared with the viewer, which shows its steps like a finished goal's, without controls.
+  # viewer: who's looking, whose own part of a named step their phone row ticks.
   # focused: whose toggle was just pressed. Turbo disables a pressed button while it submits, which drops its focus,
   # and focuses an autofocus element in the Turbo Stream that answers, so the redrawn toggle gets it back.
-  def initialize(step:, household: step.goal.household, editing: false, tickable: [], highlighted: false, schedulable: false, read_only: false, focused: nil)
+  def initialize(step:, household: step.goal.household, editing: false, tickable: [], highlighted: false, schedulable: false, read_only: false, viewer: nil, focused: nil)
     @step = step
+    @viewer = viewer
     @read_only = read_only
     @household = household
     @editing = editing
@@ -84,6 +88,21 @@ class GoalStepComponent < ApplicationComponent
     user_id.in?(@tickable)
   end
 
+  # The part a phone row ticks: done together on an Everyone step, or the viewer's own part of a named step. Anyone
+  # the policy doesn't let tick it gets no box in the row (docs/design/phone.md, A goal, Steps).
+  def phone_part
+    everyone? ? nil : @viewer&.id
+  end
+
+  def phone_tickable?
+    tickable?(phone_part)
+  end
+
+  # The one box serves both sizes when the desktop's box ticks the same part.
+  def shared_checkbox?
+    checkbox_tickable? && phone_tickable?
+  end
+
   def focused?(user_id)
     user_id == @focused
   end
@@ -116,6 +135,12 @@ class GoalStepComponent < ApplicationComponent
     [ (for_text if goal.family?), *status, ("Due #{step.due_on.strftime("%b %-d")}" if step.due_on && !done?) ].compact.join(" · ")
   end
 
+  # The phone's one muted line: "Done Nov 18", "Due Dec 18". A family goal's start with who it's for, by first name:
+  # "Everyone · done Jan 10", "Eli and Sofia · Eli done, waiting on Sofia".
+  def phone_meta_text
+    [ (phone_for_text if goal.family?), phone_status ].compact.join(" · ").upcase_first
+  end
+
   # Whose part is ticked: a user id, or "" for done together. The edit form counts the ticks a change of people clears.
   def ticks
     step.completions.map { it.user_id.to_s }
@@ -134,8 +159,27 @@ class GoalStepComponent < ApplicationComponent
       if done?
         [ done_text, short_date(step.completions.map(&:created_at).max) ]
       elsif mixed?
-        ticked, waiting = people.partition { step.done_for?(it) }
+        ticked, waiting = ticked_and_waiting
         [ "#{names(ticked)} done", "waiting on #{names(waiting)}" ]
+      end
+    end
+
+    def ticked_and_waiting
+      people.partition { step.done_for?(it) }
+    end
+
+    def phone_for_text
+      everyone? ? "Everyone" : first_names(people)
+    end
+
+    def phone_status
+      if done?
+        "done #{short_date(step.completions.map(&:created_at).max)}"
+      elsif mixed?
+        ticked, waiting = ticked_and_waiting
+        "#{first_names(ticked)} done, waiting on #{first_names(waiting)}"
+      elsif step.due_on
+        "due #{step.due_on.strftime("%b %-d")}"
       end
     end
 
@@ -151,6 +195,10 @@ class GoalStepComponent < ApplicationComponent
 
     def names(users)
       users.map(&:name).to_sentence
+    end
+
+    def first_names(users)
+      users.map(&:first_name).to_sentence
     end
 
     # "Dec 12", in the goal's time zone.

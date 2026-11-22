@@ -234,6 +234,71 @@ class GoalStepComponentTest < ViewComponent::TestCase
     end
   end
 
+  # On a phone (docs/design/phone.md, A goal; story #411).
+  test "a phone row's one muted line: who it's for by first name, then done, due, or who's waiting" do
+    {
+      read_matthew: "Everyone · done Dec 12",
+      draw_map: "Eli · done Jan 18",
+      parables: "Eli and Sofia · Eli done, waiting on Sofia",
+      read_luke: "Everyone · due Feb 15"
+    }.each do |name, line|
+      render_inline(GoalStepComponent.new(step: preloaded(name)))
+      assert_selector ".goal-step__phone-meta.d-md-none", exact_text: line
+      assert_selector ".goal-step__meta.d-none.d-md-block"
+    end
+  end
+
+  test "a personal goal's phone row says only Done or Due" do
+    goal = goals(:spouse_bible_reading)
+    goal.add_step(title: "Genesis", due_on: Date.new(2026, 12, 18))
+    render_inline(GoalStepComponent.new(step: Goal.preloaded.find(goal.id).steps.sole, household: households(:home)))
+    assert_selector ".goal-step__phone-meta", exact_text: "Due Dec 18"
+
+    goal.steps.sole.tick(for: nil, by: users(:spouse))
+    goal.steps.sole.completions.sole.update_column(:created_at, Time.utc(2026, 11, 18, 12))
+    render_inline(GoalStepComponent.new(step: Goal.preloaded.find(goal.id).steps.sole, household: households(:home)))
+    assert_selector ".goal-step__phone-meta", exact_text: "Done Nov 18"
+  end
+
+  test "a phone row's box is the viewer's own part of a named step, and no one else's" do
+    step = preloaded(:parables)
+    render_inline(GoalStepComponent.new(step:, tickable: [ users(:eli).id, users(:sofia).id ], viewer: users(:sofia)))
+
+    assert_selector ".d-none.d-md-block input[type=checkbox][disabled]"
+    assert_selector ".d-md-none form[method=post][action='#{completions_path(step)}?user_id=#{users(:sofia).id}'] input[type=checkbox]:not([checked])"
+    assert_selector "label.sr-only", text: "Mark your part of Find three parables and explain one done"
+    assert_no_selector ".goal-step__no-box"
+
+    render_inline(GoalStepComponent.new(step:, tickable: [ users(:eli).id, users(:sofia).id ], viewer: users(:spouse)))
+    assert_no_selector ".d-md-none input[type=checkbox]"
+    assert_selector ".goal-step__no-box.d-md-none"
+  end
+
+  test "a phone row shares the desktop's box when it ticks the same part, and has none for someone who can't tick it" do
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke), tickable: [ nil ], viewer: users(:spouse)))
+    assert_selector "input[type=checkbox]", count: 1
+    assert_no_selector ".d-none.d-md-block input[type=checkbox]"
+
+    render_inline(GoalStepComponent.new(step: preloaded(:draw_map), tickable: [ users(:eli).id ], viewer: users(:spouse)))
+    assert_selector ".d-none.d-md-block form input[type=checkbox]"
+    assert_selector ".goal-step__no-box"
+  end
+
+  test "the pencil shows from md up, and a phone has the row's › instead" do
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke))) { |component| component.with_edit_form { "The form" } }
+
+    assert_selector "button.d-none.d-md-flex[data-action='goal-step#edit'] svg.octicon-pencil"
+    assert_selector "button.d-md-none[aria-label='Edit step: Read Luke together'][data-action='goal-step#edit'] svg.octicon-chevron-right"
+  end
+
+  test "a phone row ends in › for someone who may not edit the step, marking the row without a control" do
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke)))
+
+    assert_selector ".goal-step__open.d-md-none[aria-hidden=true] svg.octicon-chevron-right"
+    assert_no_selector "button svg.octicon-chevron-right"
+    assert_no_selector "svg.octicon-pencil"
+  end
+
   private
     def completions_path(step)
       "/#{households(:home).id}/goals/#{goals(:gospels).id}/steps/#{step.id}/completions"

@@ -18,3 +18,26 @@
   background-color: var(--bgColor-success-muted);
   border-color: var(--borderColor-success-emphasis);
 }
+
+// On a phone, a row whose viewer may not tick it has no box, and this space in its place keeps the titles in line.
+.goal-step__no-box {
+  width: var(--base-size-16);
+}
+
+// A row's tick box stays 16px to the eye and takes a touch 44px across, and its "›" is 44px: a button, or the same
+// space for a mark when the viewer may not edit the step. Primer's coarse-pointer sizes don't reach 44px for either;
+// with a mouse --control-minTarget-auto is small enough to change nothing (docs/design/phone.md, rule 8).
+.goal-step__box .FormControl-checkbox::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--control-minTarget-auto);
+  height: var(--control-minTarget-auto);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.goal-step__open {
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}

@@ -1,21 +1,36 @@
 <%= tag.div class: { "goal-step--yours": highlighted? }, data: { controller: "goal-step", goal_step_mixed_value: mixed?, goal_step_ticks_value: ticks.to_json } do %>
   <%= tag.div class: "d-flex flex-items-start p-3", hidden: editing?, data: { goal_step_target: "view" } do %>
-    <%# Ticking it submits its form. A mixed step's checkbox is set indeterminate by its controller. %>
-    <div class="flex-shrink-0 mr-2">
+    <%# Ticking it submits its form. A mixed step's checkbox is set indeterminate by its controller. On a phone the row has
+        only the box for the part the viewer may tick from it, so the desktop's box is hidden there when it differs. %>
+    <div class="goal-step__box flex-shrink-0">
       <% if ticking? %>
         <% checkbox = render(Primer::Alpha::CheckBox.new(name: "#{dom_id(step)}_done", label: "Mark #{step.title} done", visually_hide_label: true,
                                                          disabled: !checkbox_tickable?, checked: done?,
                                                          data: { goal_step_target: "checkbox", action: "change->goal-step#tick" })) %>
-        <%= checkbox_tickable? ? primer_form_with(**tick_form_options(step.parts.first)) { checkbox } : checkbox %>
+        <%= tag.div class: [ "mr-2", { "d-none d-md-block": !shared_checkbox? } ] do %>
+          <%= checkbox_tickable? ? primer_form_with(**tick_form_options(step.parts.first)) { checkbox } : checkbox %>
+        <% end %>
+        <% if phone_tickable? && !shared_checkbox? %>
+          <div class="mr-2 d-md-none">
+            <%= primer_form_with(**tick_form_options(phone_part)) do %>
+              <%= render(Primer::Alpha::CheckBox.new(name: "#{dom_id(step)}_phone_done", label: "Mark your part of #{step.title} done", visually_hide_label: true,
+                                                     checked: step.tick_for(phone_part).present?, data: { action: "change->goal-step#tick" })) %>
+            <% end %>
+          </div>
+        <% elsif !phone_tickable? %>
+          <%# No box for this viewer: the space keeps the row's title in line with the others. %>
+          <div class="goal-step__no-box mr-2 d-md-none"></div>
+        <% end %>
       <% else %>
-        <%= render(Primer::Beta::Octicon.new(done? ? :"check-circle-fill" : :circle, color: done? ? :success : :muted, aria: { label: done? ? "Done" : "Not done" })) %>
+        <%= render(Primer::Beta::Octicon.new(done? ? :"check-circle-fill" : :circle, color: done? ? :success : :muted, mr: 2, aria: { label: done? ? "Done" : "Not done" })) %>
       <% end %>
     </div>
-    <%# Avatars sit beside the text from md up, and under it on a phone (frame phone-goal.png). %>
+    <%# Avatars, the toggles and Schedule sit beside or under the text from md up, and aren't in a phone's row. %>
     <div class="d-flex flex-column flex-md-row flex-auto min-width-0">
       <div class="flex-auto min-width-0">
         <%= tag.div step.title, class: [ "goal-step__title wb-break-word", { "goal-step__title--done": done? } ] %>
-        <div class="goal-step__meta color-fg-muted f6"><%= meta_text %></div>
+        <div class="goal-step__meta color-fg-muted f6 d-none d-md-block"><%= meta_text %></div>
+        <div class="goal-step__phone-meta color-fg-muted f6 d-md-none"><%= phone_meta_text %></div>
         <%# _top: the row sits in the step's Turbo Frame, and the session page replaces the whole page. %>
         <% if study %>
           <%= render(Primer::Beta::Label.new(tag: :a, href: first_session_path, scheme: :accent, size: :large, mt: 2, data: { turbo_frame: "_top" })) do %>
@@ -23,7 +38,7 @@
           <% end %>
         <% end %>
         <% if several? && ticking? %>
-          <div role="group" aria-label="Each person ticks their own part" class="d-flex flex-wrap mt-2">
+          <div role="group" aria-label="Each person ticks their own part" class="d-none d-md-flex flex-wrap mt-2">
             <% people.each do |person| %>
               <% done = step.done_for?(person) %>
               <% toggle = render(Primer::Beta::Button.new(type: :submit, disabled: !tickable?(person.id), autofocus: focused?(person.id), aria: { pressed: done.to_s }, mr: 2, mb: 1,
@@ -37,25 +52,37 @@
         <% end %>
       </div>
       <% if people.any? %>
-        <span class="sr-only">With <%= people.map(&:name).to_sentence %></span>
-        <span class="d-flex flex-shrink-0 mt-2 mt-md-0 ml-md-2" aria-hidden="true">
-          <% people.each do |person| %>
-            <%= render AvatarComponent.new(user: person, classes: "mr-1") %>
-          <% end %>
-        </span>
+        <div class="d-none d-md-flex flex-shrink-0 ml-2">
+          <span class="sr-only">With <%= people.map(&:name).to_sentence %></span>
+          <span class="d-flex" aria-hidden="true">
+            <% people.each do |person| %>
+              <%= render AvatarComponent.new(user: person, classes: "mr-1") %>
+            <% end %>
+          </span>
+        </div>
       <% end %>
-      <%# Beside the avatars from md up; on a phone it wraps under the step's title (frame milestone-goal.png). %>
+      <%# Beside the avatars (frame milestone-goal.png). %>
       <% if schedulable? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: schedule_path, size: :small, mt: 2, mt_md: 0, ml_md: 2, flex_shrink: 0, align_self: :start, data: { turbo_frame: "_top" })) do |button| %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: schedule_path, size: :small, display: [ :none, nil, :flex ], ml: 2, flex_shrink: 0, align_self: :start, data: { turbo_frame: "_top" })) do |button| %>
           <% button.with_leading_visual_icon(icon: :calendar) %>
           Schedule as a family study
         <% end %>
       <% end %>
     </div>
     <% if edit_form? %>
-      <%# show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
-      <%= render(Primer::Beta::IconButton.new(icon: :pencil, scheme: :invisible, show_tooltip: false, ml: 2, "aria-label": "Edit step: #{step.title}",
+      <%# show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. On a phone the row's "›" opens the
+          edit form until the step panel replaces it (story #412). %>
+      <%= render(Primer::Beta::IconButton.new(icon: :pencil, scheme: :invisible, show_tooltip: false, ml: 2, display: [ :none, nil, :flex ], "aria-label": "Edit step: #{step.title}",
                                               data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
+      <%= render(Primer::Beta::IconButton.new(icon: :"chevron-right", scheme: :invisible, show_tooltip: false, ml: 2, display: [ nil, nil, :none ], align_self: :center,
+                                              "aria-label": "Edit step: #{step.title}", classes: "goal-step__open",
+                                              data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
+    <% else %>
+      <%# Every phone row ends in "›", read-only ones too (story #411). Someone who may not edit the step has nothing to
+          open until the step panel (story #412), so theirs marks the row's end and isn't a control. %>
+      <span class="goal-step__open d-flex flex-items-center flex-justify-center flex-self-center ml-2 d-md-none" aria-hidden="true">
+        <%= render(Primer::Beta::Octicon.new(:"chevron-right", color: :muted)) %>
+      </span>
     <% end %>
   <% end %>
   <% if edit_form? %>

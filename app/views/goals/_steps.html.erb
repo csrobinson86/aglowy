@@ -14,8 +14,20 @@
     <% goal.steps.each do |step| %>
       <% box.with_row(p: 0) { render "goals/steps/step", step:, editable: } %>
     <% end %>
+    <%# On a phone the form waits behind "+ Add step", the list's last row; from md up it always shows, its hidden
+        attribute overridden (docs/design/phone.md, rule 7; frame phone-goal-add-step.png). A refused add replaces only
+        #new-goal-step, so the form stays open with its errors. %>
     <% if editable %>
-      <% box.with_footer(bg: :subtle) { render "goals/steps/new", goal:, step: Goal::Step.new } %>
+      <% box.with_footer(bg: :subtle, p: 0, data: { controller: "add-row" }) do %>
+        <%= render(Primer::Beta::Button.new(scheme: :invisible, block: true, align_content: :start, display: [ nil, nil, :none ], classes: "add-row__button",
+                                            data: { action: "add-row#open", add_row_target: "button" })) do |button| %>
+          <% button.with_leading_visual_icon(icon: :plus) %>
+          Add step
+        <% end %>
+        <div class="add-row__form p-3" hidden data-add-row-target="form">
+          <%= render "goals/steps/new", goal:, step: Goal::Step.new %>
+        </div>
+      <% end %>
     <% end %>
   <% end %>
 </div>

@@ -4,6 +4,9 @@
 
 import { application } from "./application"
 
+import AddRowController from "./add_row_controller"
+application.register("add-row", AddRowController)
+
 import AiDraftController from "./ai_draft_controller"
 application.register("ai-draft", AiDraftController)
 

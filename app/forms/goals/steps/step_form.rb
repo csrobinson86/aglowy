@@ -29,7 +29,12 @@ class Goals::Steps::StepForm < ApplicationForm
     when :actions
       f.group(layout: :horizontal) do |actions|
         actions.submit(name: :submit, label: @editing ? "Save" : "Add step", scheme: @editing ? :primary : :default)
-        actions.button(name: :cancel, label: "Cancel", scheme: :invisible, data: { action: "goal-step#cancel" }) if @editing
+        if @editing
+          actions.button(name: :cancel, label: "Cancel", scheme: :invisible, data: { action: "goal-step#cancel" })
+        else
+          # On a phone the add-step form opens from "+ Add step", and Cancel hides it again (docs/design/phone.md, rule 7).
+          actions.button(name: :cancel, label: "Cancel", display: [ nil, nil, :none ], data: { action: "add-row#close" })
+        end
       end
     end
   end
