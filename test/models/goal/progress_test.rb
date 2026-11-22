@@ -27,6 +27,18 @@ class Goal::ProgressTest < ActiveSupport::TestCase
     assert_nil goal.reload.progress.next_due_on
   end
 
+  test "next due step is the undone step with the earliest due date, for the phone's \"Next:\" line" do
+    goal = goals(:gospels)
+    assert_equal goal_steps(:read_luke), goal.progress.next_due_step
+
+    prayer = goal.add_step(title: "Pray about it", due_on: Date.new(2027, 1, 5))
+    assert_equal prayer, goal.reload.progress.next_due_step, "a later step due sooner comes first"
+
+    prayer.tick(for: nil, by: users(:spouse))
+    goal.steps.where.not(due_on: nil).where.not(id: prayer).update_all(due_on: nil)
+    assert_nil goal.reload.progress.next_due_step, "the done step doesn't count, and the rest have no date"
+  end
+
   test "Maria 2 of 5, Daniel 2 of 4, Eli 4 of 6, Sofia 2 of 5" do
     people = goals(:gospels).progress.people.index_by(&:user)
 

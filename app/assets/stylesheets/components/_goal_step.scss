@@ -18,3 +18,8 @@
   background-color: var(--bgColor-success-muted);
   border-color: var(--borderColor-success-emphasis);
 }
+
+// On a phone, a row whose viewer may not tick it has no box, and this space in its place keeps the titles in line.
+.goal-step__no-box {
+  width: var(--base-size-16);
+}

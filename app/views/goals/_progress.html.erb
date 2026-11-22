@@ -1,5 +1,7 @@
 <%# locals: (goal:) %>
-<%# "3 of 7 steps done", what's left, the bar, and each person's count (docs/design/goals.md, Progress). %>
+<%# "3 of 7 steps done", what's left, the bar, and each person's count (docs/design/goals.md, Progress). On a phone it's
+    one compact card instead: the count with the percentage, the bar, the next step due and a line of first names
+    (docs/design/phone.md, A goal; frames phone-goal.png and phone-family-goal.png). %>
 <% progress = goal.progress %>
 <div id="goal-progress">
   <%# Nothing completes on its own: whoever may finish the goal is asked. %>
@@ -13,7 +15,8 @@
       Every step is done. Mark the goal complete?
     <% end %>
   <% end %>
-  <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
+  <% people = progress.people.select { it.steps_count.positive? } %>
+  <%= render(Primer::Beta::BorderBox.new(mb: 4, display: [ :none, nil, :block ])) do |box| %>
     <% box.with_body do %>
       <div class="d-flex flex-wrap flex-items-baseline gap-2 mb-2">
         <% if progress.steps_count.zero? %>
@@ -30,7 +33,6 @@
       <%= render(Primer::Beta::ProgressBar.new(size: :large, mb: 3, aria: { hidden: true })) do |bar| %>
         <% bar.with_item(percentage: progress.percent, bg: :success_emphasis) %>
       <% end %>
-      <% people = progress.people.select { it.steps_count.positive? } %>
       <% if people.any? %>
         <ul class="list-style-none d-flex flex-wrap gap-2">
           <% people.each do |person| %>
@@ -39,6 +41,32 @@
                 <%= render AvatarComponent.new(user: person.user, size: 20, classes: "mr-1") %>
                 <%= person.name %> · <%= person.done_count %> of <%= person.steps_count %>
               <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  <% end %>
+  <%= render(Primer::Beta::BorderBox.new(id: "goal-progress-card", mb: 4, display: [ nil, nil, :none ])) do |box| %>
+    <% box.with_body do %>
+      <div class="d-flex flex-items-baseline mb-2">
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2)) { progress.steps_count.zero? ? "No steps yet" : "#{progress.done_count} of #{pluralize(progress.steps_count, "step")} done" } %>
+        <span class="goal-progress-card__percent color-fg-muted ml-auto"><%= progress.percent %>%</span>
+      </div>
+      <%= render(Primer::Beta::ProgressBar.new(size: :large, aria: { hidden: true })) do |bar| %>
+        <% bar.with_item(percentage: progress.percent, bg: :success_emphasis) %>
+      <% end %>
+      <% if (next_step = progress.next_due_step) %>
+        <p class="goal-progress-card__next color-fg-muted mt-2 mb-0 wb-break-word">
+          Next: <span class="color-fg-default"><%= next_step.title %></span> · due <%= next_step.due_on.strftime("%b %-d") %>
+        </p>
+      <% end %>
+      <% if people.any? %>
+        <ul class="goal-progress-card__people list-style-none d-flex flex-wrap flex-items-center mt-2">
+          <% people.each do |person| %>
+            <li class="d-flex flex-items-center color-fg-muted mt-1 mr-3">
+              <%= render AvatarComponent.new(user: person.user, size: 20, classes: "mr-1") %>
+              <span><%= person.user.first_name %> <%= person.done_count %></span>
             </li>
           <% end %>
         </ul>

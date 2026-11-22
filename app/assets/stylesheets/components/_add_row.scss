@@ -1,0 +1,15 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// An add-row form behind its "+ Add <thing>" button on a phone (add-row controller, docs/design/phone.md, The rules: 7).
+// The button is a full row with a 44px touch target. From md up the form always shows, so its hidden attribute, which
+// Primer makes display: none !important, is overridden there.
+.add-row__button {
+  min-height: var(--control-minTarget-auto);
+}
+
+.add-row__form[hidden] {
+  @media (min-width: map.get(primer.$breakpoints, md)) {
+    display: block !important;
+  }
+}
