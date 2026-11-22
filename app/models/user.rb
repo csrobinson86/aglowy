@@ -29,6 +29,8 @@ class User < ApplicationRecord
   has_one :daily_brief_plan, class_name: "DailyBrief::Plan", dependent: :destroy
   has_many :daily_briefs, dependent: :destroy
   has_many :daily_brief_writings, through: :daily_briefs, source: :writings
+  # Their study guide setting, while it's on (docs/design/study-guide.md, Models).
+  has_one :weekly_study_guide, dependent: :delete
   # Deleting the person deletes the open invitations they sent (invited_by_id is not null).
   has_many :sent_invitations, class_name: "Invitation", foreign_key: :invited_by_id, inverse_of: :invited_by, dependent: :delete_all
 
@@ -127,6 +129,29 @@ class User < ApplicationRecord
   # (docs/design/daily-brief.md, Who can do what).
   def may_have_daily_brief?
     head_or_adult_somewhere?
+  end
+
+  # Head or adult in any active household. The study guide is the person's, not one household's, and children have none
+  # (docs/design/study-guide.md, Who can do what).
+  def may_have_study_guide?
+    head_or_adult_somewhere?
+  end
+
+  def study_guide_on?
+    weekly_study_guide.present?
+  end
+
+  # False, saving nothing, without accepted AI terms. create_or_find_by! on the unique index makes one row however many
+  # times it's turned on (docs/design/study-guide.md, The Settings section).
+  def turn_on_study_guide
+    return false unless accepted_ai_terms?
+
+    User::WeeklyStudyGuide.create_or_find_by!(user: self).tap { reset_weekly_study_guide }
+  end
+
+  def turn_off_study_guide
+    User::WeeklyStudyGuide.where(user: self).delete_all
+    reset_weekly_study_guide
   end
 
   # Daily brief writings left today, counted like personal study's questions (docs/design/daily-brief.md, The purpose).

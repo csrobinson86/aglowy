@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_20_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -1069,6 +1069,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_030000) do
     t.check_constraint "name::text ~ '^[a-z0-9][a-z0-9-]{0,29}$'::text", name: "tags_name_check"
   end
 
+  create_table "user_weekly_study_guides", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_user_weekly_study_guides_on_user_id", unique: true
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "time_zone"
@@ -1198,4 +1205,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_20_030000) do
   add_foreign_key "push_subscriptions", "users", on_delete: :cascade
   add_foreign_key "taggings", "tags", on_delete: :cascade
   add_foreign_key "tags", "users"
+  add_foreign_key "user_weekly_study_guides", "users", on_delete: :cascade
 end

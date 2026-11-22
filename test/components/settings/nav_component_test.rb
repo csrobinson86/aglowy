@@ -27,10 +27,22 @@ class Settings::NavComponentTest < ViewComponent::TestCase
     render_inline(Settings::NavComponent.new(membership: memberships(:spouse_in_home), selected: :meetings))
 
     assert_selector "nav[aria-label='Settings'] h2", text: "The Head Family"
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Meetings", "Children" ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Meetings", "Children" ],
                  page.all("nav[aria-label='Settings'] a").map { it.text.strip }
     assert_selector ".settings-nav__menu a", text: "Children", visible: :all
     assert_no_selector ".settings-nav__menu a", text: "Members and roles", visible: :all
+  end
+
+  # For a head or adult in any household (docs/design/study-guide.md, The Settings section).
+  test "a head sees Study guide last in the You group; a child doesn't" do
+    render_inline(Settings::NavComponent.new(membership: memberships(:head_in_home), selected: :study_guide))
+
+    assert_equal [ "Calendar", "Notifications", "Study guide", "Household" ], page.all("nav[aria-label='Settings'] a").map { it.text.strip }[5..8]
+    assert_selector "nav[aria-label='Settings'] a[href='/#{@home.id}/settings/study_guide'][aria-current=page]", text: "Study guide"
+
+    render_inline(Settings::NavComponent.new(membership: memberships(:child_in_home), selected: :profile))
+
+    assert_no_selector "a[href$='/settings/study_guide']", visible: :all
   end
 
   test "a child sees no household group" do

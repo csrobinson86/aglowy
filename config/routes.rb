@@ -94,6 +94,7 @@ Rails.application.routes.draw do
       resource :calendar_feed, only: :update               # Reset link
       resource :notifications, only: %i[ show update ]     # Notifications: what also comes by email (docs/design/notifications.md)
       resource :quiet_hours, only: :update                 # Quiet hours
+      resource :study_guide, only: %i[ show update ]       # Study guide, heads and adults (docs/design/study-guide.md)
       resource :household, only: %i[ show update ]         # Heads
       resource :meetings, only: %i[ show update ]          # Heads and adults
       resource :children, only: :show                      # Heads and adults
