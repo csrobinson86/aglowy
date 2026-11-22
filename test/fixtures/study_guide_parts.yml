@@ -1,0 +1,23 @@
+# Two parts of the head's guide for the week of 9 November (docs/design/study-guide.md, StudyGuide::Part). The content
+# is encrypted when the fixtures load.
+_fixture:
+  model_class: StudyGuide::Part
+
+head_nov_9_talk:
+  study_guide: head_nov_9
+  step: talk
+  content:
+    title: Jehovah Keeps His Word
+    summary: The talk shows that Jehovah's warnings came true, and so will his promises.
+    points:
+      - text: Jerusalem was warned many times before it fell.
+        ref: Lamentations 1:18
+
+head_nov_9_weekend_overview:
+  study_guide: head_nov_9
+  step: weekend_overview
+  content:
+    glance: The Watchtower Study is about patience at home.
+    jehovah:
+      - quality: Patient
+        text: He gives people time to change.

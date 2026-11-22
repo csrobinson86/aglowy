@@ -20,7 +20,7 @@ class SeedsTest < ActiveSupport::TestCase
     seed
 
     assert_equal [ "The Demo Family", "The Rivera Family" ], Household.order(:name).pluck(:name)
-    assert_equal 5, Identity.count
+    assert_equal 6, Identity.count
     assert Identity.find_by(username: "lucia.rivera").email.nil?
     assert_equal 2, Invitation.count
     assert_equal 2, user("spouse@example.com").households.count
@@ -171,6 +171,16 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal PrepWeek::Card::STEPS.keys, prep_week.cards.map(&:step)
     assert_equal [ "Lamentations 1–2", 4 ], [ prep_week.cards.second.reading, prep_week.cards.second.story.size ]
     assert_equal 3, prep_week.sources.size
+
+    # Daniel's study guide for this week in the Riveras' time zone, with his setting on, from the saved reply, with the
+    # pages it used (14_study_guides.rb).
+    daniel_rivera = user("daniel.rivera@example.com")
+    assert rivera.memberships.find_by!(user: daniel_rivera).adult?
+    assert daniel_rivera.study_guide_on?
+    guide = daniel_rivera.study_guide_for(monday)
+    assert_equal StudyGuide::Part::STEPS.keys, guide.parts.map(&:step)
+    assert_equal "Lamentations 1–2", guide.parts.find { it.step == "bible_reading" }.content["reading"]
+    assert_equal 4, guide.sources.size
 
     assert_equal 0, Ai::Use.count
   end

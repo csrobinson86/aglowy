@@ -95,6 +95,18 @@ module ActiveSupport
                          quality_line: "He loves us.", i_can: "Pray.", **reading.to_h, **attributes)
     end
 
+    # The least content a study guide part for +step+ can have (docs/design/study-guide.md, Ai::Purpose::StudyGuide):
+    # an overview's glance and one quality, the Bible Reading's reading, and every other part's summary, with Spiritual
+    # Gems' two comment ideas.
+    def valid_study_guide_content(step)
+      case step
+      when /overview/ then { "glance" => "A week to keep.", "jehovah" => [ { "quality" => "Loving", "text" => "He cares." } ] }
+      when "bible_reading" then { "reading" => "Lamentations 1–2", "summary" => "A part to keep." }
+      when "spiritual_gems" then { "summary" => "A part to keep.", "comments" => [ { "text" => "One." }, { "text" => "Two." } ] }
+      else { "summary" => "A part to keep." }
+      end
+    end
+
     # A plain image, no attachment at all, as a crafted request could send.
     def image_tag_html
       %(<img src="https://example.com/cat.png">)

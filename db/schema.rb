@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -73,7 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.index ["meeting_part_draft_id"], name: "index_ai_uses_on_meeting_part_draft_id", unique: true
     t.index ["question_id"], name: "index_ai_uses_on_question_id", unique: true
     t.index ["user_id", "purpose", "created_at"], name: "index_ai_uses_on_user_id_and_purpose_and_created_at"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying, 'meeting_prep'::character varying]::text[])", name: "ai_uses_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying, 'meeting_prep'::character varying, 'study_guide'::character varying]::text[])", name: "ai_uses_purpose_check"
   end
 
   create_table "bookmarks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -123,7 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.index ["household_id"], name: "index_chats_on_household_id"
     t.index ["ruby_llm_model_id"], name: "index_chats_on_ruby_llm_model_id"
     t.index ["user_id"], name: "index_chats_on_user_id"
-    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying, 'meeting_prep'::character varying]::text[])", name: "chats_purpose_check"
+    t.check_constraint "purpose::text = ANY (ARRAY['family_study_draft'::character varying, 'personal_study'::character varying, 'meeting_part'::character varying, 'daily_brief'::character varying, 'listening_game'::character varying, 'meeting_prep'::character varying, 'study_guide'::character varying]::text[])", name: "chats_purpose_check"
   end
 
   create_table "collections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1060,6 +1060,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.check_constraint "taggable_type::text = ANY (ARRAY['MeetingNote'::character varying, 'Goal'::character varying, 'PersonalStudy'::character varying, 'PersonalNote'::character varying, 'Bookmark'::character varying]::text[])", name: "taggings_taggable_type_check"
   end
 
+  create_table "study_guide_parts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "study_guide_id", null: false
+    t.string "step", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.index ["study_guide_id", "step"], name: "index_study_guide_parts_on_study_guide_id_and_step", unique: true
+    t.check_constraint "step::text = ANY (ARRAY['midweek_overview'::character varying, 'talk'::character varying, 'spiritual_gems'::character varying, 'bible_reading'::character varying, 'field_ministry'::character varying, 'living'::character varying, 'congregation_bible_study'::character varying, 'weekend_overview'::character varying, 'watchtower_study'::character varying]::text[])", name: "study_guide_parts_step_check"
+  end
+
+  create_table "study_guide_preparations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.date "week_of", null: false
+    t.uuid "token", null: false
+    t.datetime "created_at", null: false
+    t.index ["user_id", "week_of"], name: "index_study_guide_preparations_on_user_id_and_week_of", unique: true
+  end
+
+  create_table "study_guide_sources", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "study_guide_id", null: false
+    t.integer "position", limit: 2, null: false
+    t.string "title", null: false
+    t.string "url", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["study_guide_id", "position"], name: "index_study_guide_sources_on_study_guide_id_and_position", unique: true
+    t.check_constraint "url::text ~~ 'https://%'::text", name: "study_guide_sources_url_check"
+  end
+
+  create_table "study_guides", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.date "week_of", null: false
+    t.uuid "chat_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_id"], name: "index_study_guides_on_chat_id"
+    t.index ["user_id", "week_of"], name: "index_study_guides_on_user_id_and_week_of", unique: true
+  end
+
   create_table "tags", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.string "name", null: false
@@ -1204,6 +1242,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
   add_foreign_key "prep_weeks", "households", on_delete: :cascade
   add_foreign_key "push_subscriptions", "users", on_delete: :cascade
   add_foreign_key "taggings", "tags", on_delete: :cascade
+  add_foreign_key "study_guide_parts", "study_guides", on_delete: :cascade
+  add_foreign_key "study_guide_preparations", "users", on_delete: :cascade
+  add_foreign_key "study_guide_sources", "study_guides", on_delete: :cascade
+  add_foreign_key "study_guides", "chats", on_delete: :nullify
+  add_foreign_key "study_guides", "users", on_delete: :cascade
   add_foreign_key "tags", "users"
   add_foreign_key "user_weekly_study_guides", "users", on_delete: :cascade
 end

@@ -28,6 +28,11 @@ hands it to RubyLLM as the HTTP response would arrive.
   jw.org. Three search results (the week's program and the Watchtower study article among them) and two citations
   carrying `cited_text`, one naming a page the search never returned, which `Ai::SourceLink` drops. Hand-built. The seeds
   use it too, for this week's cards.
+- `study_guide.json`: a study guide for the week of 16–22 November 2026, a part for each of the nine steps, every word
+  written for the fixture (the design's example frames, with the bracketed placeholders filled in), never taken from
+  jw.org. Four search results (the week's program, the reading, the Bible Study chapter and the Watchtower study article)
+  and two citations carrying `cited_text`, one naming a page the search never returned, which `Ai::SourceLink` drops.
+  Hand-built. The seeds use it too, for Hannah's guide this week.
 
 ## Recording a reply
 

@@ -25,6 +25,7 @@ demo.invitations.find_by(email: "grandma@example.com") || demo.invitations.creat
 
 rivera = seed_household(name: "The Rivera Family", head: maria, time_zone: "Pacific Time (US & Canada)", midweek: [ 4, "19:30" ], weekend: [ 6, "16:00" ])
 rivera.memberships.find_or_create_by!(user: spouse) { it.role = :adult }
+rivera.memberships.find_or_create_by!(user: seeded_person("daniel.rivera@example.com")) { it.role = :adult }
 seed_member(rivera, name: "Mateo Rivera", role: :child)
 rivera.enable_meeting_helper(by: maria)
 rivera.enable_meeting_prep(by: maria)
