@@ -2,7 +2,7 @@
   <%= tag.div class: "d-flex flex-items-start p-3", hidden: editing?, data: { goal_step_target: "view" } do %>
     <%# Ticking it submits its form. A mixed step's checkbox is set indeterminate by its controller. On a phone the row has
         only the box for the part the viewer may tick from it, so the desktop's box is hidden there when it differs. %>
-    <div class="flex-shrink-0">
+    <div class="goal-step__box flex-shrink-0">
       <% if ticking? %>
         <% checkbox = render(Primer::Alpha::CheckBox.new(name: "#{dom_id(step)}_done", label: "Mark #{step.title} done", visually_hide_label: true,
                                                          disabled: !checkbox_tickable?, checked: done?,
@@ -75,7 +75,7 @@
       <%= render(Primer::Beta::IconButton.new(icon: :pencil, scheme: :invisible, show_tooltip: false, ml: 2, display: [ :none, nil, :flex ], "aria-label": "Edit step: #{step.title}",
                                               data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
       <%= render(Primer::Beta::IconButton.new(icon: :"chevron-right", scheme: :invisible, show_tooltip: false, ml: 2, display: [ nil, nil, :none ], align_self: :center,
-                                              "aria-label": "Edit step: #{step.title}",
+                                              "aria-label": "Edit step: #{step.title}", classes: "goal-step__open",
                                               data: { action: "goal-step#edit", goal_step_target: "editButton" })) %>
     <% end %>
   <% end %>

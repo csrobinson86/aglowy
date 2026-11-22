@@ -163,6 +163,8 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_selector ".goal-step__title--done", text: "Genesis to Deuteronomy"
     assert_no_selector "svg.octicon-pencil"
     assert_selector "button[aria-label='Edit step: Joshua to Esther'] svg.octicon-chevron-right"
+    assert_touch_target find(step_row("Joshua to Esther", "button[aria-label='Edit step: Joshua to Esther']"))
+    assert_touch_target find(step_row("Joshua to Esther", "input[type=checkbox]"))
     assert_equal page.evaluate_script("document.documentElement.clientWidth"), page.evaluate_script("document.documentElement.scrollWidth")
   end
 
@@ -181,7 +183,8 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_no_selector "#goal-steps button[data-action='add-row#open']"
     fill_in "New step", with: "Job to Song of Solomon"
     fill_in "Due (optional)", with: Date.new(2026, 12, 31)
-    assert_button "Cancel"
+    assert_touch_target find_button("Add step")
+    assert_touch_target find_button("Cancel")
     assert_accessible
     capture_screens("phone-goal-add-step", viewports: ScreenshotHelper::VIEWPORTS.slice(:phone))
     on_a_phone
@@ -211,8 +214,12 @@ class GoalsPhoneTest < ApplicationSystemTestCase
 
     assert_selector ".FormControl-inlineValidation", text: "can't be blank"
     assert_field "New step"
-    assert_button "Cancel"
     assert_accessible
+
+    click_on "Cancel"
+    find("#goal-steps button", exact_text: "Add step").click
+    assert_field "New step", with: "", focused: true
+    assert_no_selector ".FormControl-inlineValidation"
   end
 
   test "a family goal: the people line, and each row's second line for done, due, everyone and partly done" do
@@ -268,7 +275,9 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_no_selector "#goal-steps button[data-action='add-row#open']"
     assert_accessible
 
-    find(step_row("Find three parables and explain one", "input[type=checkbox]")).click
+    box = find(step_row("Find three parables and explain one", "input[type=checkbox]"))
+    assert_touch_target box
+    box.click
     assert_step_line "Find three parables and explain one", "Eli and Sofia · due Feb 28"
     assert_selector "#goal-progress-card .goal-progress-card__people", text: "Eli 3"
   end
