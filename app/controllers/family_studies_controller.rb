@@ -10,6 +10,7 @@ class FamilyStudiesController < ApplicationController
   def index
     @sessions = Current.household.family_study_sessions.ahead.preloaded.limit(10)
     @next_session = @sessions.find { !it.canceled? }
+    @coming_up = @sessions.to_a.excluding(@next_session)
   end
 
   # Also reloads the Repeat field's Turbo Frame when the date changes, so the choices come from the server.
