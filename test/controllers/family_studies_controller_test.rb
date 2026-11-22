@@ -156,7 +156,10 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
       assert_select "main a[href='#{household_family_studies_path(household_id: households(:home))}']", "Cancel"
 
       get household_family_studies_path(household_id: households(:home))
-      assert_select ".Subhead a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
+      assert_select ".Subhead a[href='#{new_household_family_study_path(household_id: households(:home))}']" do
+        assert_select ".d-md-none", "New"
+        assert_select ".d-none.d-md-inline", "Schedule a study"
+      end
       assert_select ".blankslate a[href='#{new_household_family_study_path(household_id: households(:home))}']", "Schedule a study"
     end
   end
