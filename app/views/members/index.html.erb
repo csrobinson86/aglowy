@@ -1,18 +1,25 @@
 <% content_for :title, "Members" %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<% invite = policy(Invitation).create? %>
+<% add_member = policy(Membership).create? %>
+<%# One New menu at every size, beside the title on a phone too (docs/design/phone.md, Members). Each item shows when
+    its page would let this person in; with neither, there's no menu. %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Members" } %>
-  <% subhead.with_actions(display: :flex, flex_wrap: :wrap) do %>
-    <% if policy(Invitation).create? %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_invitation_path, scheme: :primary, mr: 2)) do |button| %>
-        <% button.with_leading_visual_icon(icon: :mail) %>
-        Invite by email
-      <% end %>
-    <% end %>
-    <% if policy(Membership).create? %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_path)) do |button| %>
-        <% button.with_leading_visual_icon(icon: :plus) %>
-        Add without a login
+  <% if invite || add_member %>
+    <% subhead.with_actions do %>
+      <%= render(Primer::Alpha::ActionMenu.new(menu_id: "members-new-menu", anchor_align: :end, classes: "members__new-menu")) do |menu| %>
+        <% menu.with_show_button(scheme: :primary) do |button| %>
+          <% button.with_leading_visual_icon(icon: :plus) %>
+          <% button.with_trailing_action_icon(icon: :"triangle-down") %>
+          New
+        <% end %>
+        <% if invite %>
+          <% menu.with_item(label: "Invite by email", href: new_household_invitation_path) { it.with_leading_visual_icon(icon: :mail) } %>
+        <% end %>
+        <% if add_member %>
+          <% menu.with_item(label: "Add without a login", href: new_household_member_path) { it.with_leading_visual_icon(icon: :"person-add") } %>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
@@ -24,7 +31,7 @@
   <% end %>
   <% @memberships.each do |membership| %>
     <% box.with_row(display: :flex, align_items: :center) do %>
-      <%= render "members/member", membership:, show_sign_in: policy(Invitation).create? %>
+      <%= render "members/member", membership:, show_sign_in: invite %>
     <% end %>
   <% end %>
 <% end %>
@@ -35,7 +42,7 @@
       <h2 class="Box-title">Invited, not joined yet</h2>
     <% end %>
     <% @invitations.each do |invitation| %>
-      <% box.with_row(display: :flex, align_items: :center, flex_wrap: :wrap) do %>
+      <% box.with_row(display: :flex, align_items: :center, flex_wrap: [ :nowrap, nil, :wrap ]) do %>
         <%= render "invitations/invitation", invitation: %>
       <% end %>
     <% end %>

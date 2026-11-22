@@ -34,23 +34,29 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "a head and an adult see Invite by email and Add without a login on the member list" do
+  test "a head and an adult get the New menu with Invite by email and Add without a login, and no standalone buttons" do
     [ identities(:head), identities(:spouse) ].each do |identity|
       sign_in identity
 
       get household_members_path(household_id: households(:home))
 
-      assert_select "main a.Button--primary[href='#{new_household_invitation_path(household_id: households(:home))}']", "Invite by email"
-      assert_select "main a[href='#{new_household_member_path(household_id: households(:home))}']", "Add without a login"
+      assert_select "main .Subhead-actions #members-new-menu-button.Button--primary", text: "New"
+      assert_select "#members-new-menu-list" do
+        assert_select "a[href=?]", new_household_invitation_path(household_id: households(:home)), text: "Invite by email"
+        assert_select "a[href=?]", new_household_member_path(household_id: households(:home)), text: "Add without a login"
+      end
+      assert_select "main a.Button", text: "Invite by email", count: 0
+      assert_select "main a.Button", text: "Add without a login", count: 0
     end
   end
 
-  test "a child sees neither action" do
+  test "a child gets no New menu" do
     sign_in child_identity
 
     get household_members_path(household_id: households(:home))
 
     assert_response :success
+    assert_select "#members-new-menu-button", count: 0
     assert_select "a", { text: "Invite by email", count: 0 }
     assert_select "a", { text: "Add without a login", count: 0 }
   end
@@ -65,6 +71,18 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select "#members .Box-row", text: /Sofia Child\s*No login/
   end
 
+  test "on a phone each member's second line is their role and how they sign in, and the role Label is desktop only" do
+    sign_in identities(:spouse)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "#members .Box-row .d-md-none", text: "Head · head@example.com"
+    assert_select "#members .Box-row .d-md-none", text: "Adult · spouse@example.com"
+    assert_select "#members .Box-row .d-md-none", text: "Child · signs in as eli.rivera"
+    assert_select "#members .Box-row .d-md-none", text: "Child", count: 2 # Charlie and Sofia have no login
+    assert_select "#members .Box-row .Label.d-none.d-md-inline-block", count: 5
+  end
+
   test "heads and adults see Give a login on a child without one and New password link on a username-only child" do
     child_identity # Charlie's login has an email, so there's no password link for it.
     [ identities(:head), identities(:spouse) ].each do |identity|
@@ -72,14 +90,43 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
 
       get household_members_path(household_id: households(:home))
 
+      give_login = new_household_member_login_path(household_id: households(:home), member_id: memberships(:sofia_in_home))
+      password_link = household_member_password_link_path(household_id: households(:home), member_id: memberships(:eli_in_home))
       assert_select "#members .Box-row", text: /Sofia Child/ do
-        assert_select "a[href=?]", new_household_member_login_path(household_id: households(:home), member_id: memberships(:sofia_in_home)), text: "Give a login"
+        assert_select ".d-md-flex a[href=?]", give_login, text: "Give a login"
+        assert_select "#member-#{memberships(:sofia_in_home).id}-menu-list a[href=?]", give_login, text: "Give a login"
       end
       assert_select "#members .Box-row", text: /Eli Child/ do
-        assert_select "form[action=?] button", household_member_password_link_path(household_id: households(:home), member_id: memberships(:eli_in_home)), text: "New password link"
+        assert_select ".d-md-flex form[action=?] button", password_link, text: "New password link"
+        assert_select "#member-#{memberships(:eli_in_home).id}-menu-list form[action=?][data-turbo=false] button", password_link, text: "New password link"
       end
-      assert_select "a", text: "Give a login", count: 1
-      assert_select "button", text: "New password link", count: 1
+      # Each once from md up, and once in the row's phone menu.
+      assert_select "a", text: "Give a login", count: 2
+      assert_select "button", text: "New password link", count: 2
+    end
+  end
+
+  test "on a phone a row's actions are behind one \"…\" named for the member, and a row with none has no \"…\"" do
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "button[aria-label='Actions for Eli Child']"
+    assert_select "button[aria-label='Actions for Sofia Child']"
+    assert_select "button[aria-label='Actions for Charlie Child']" # Charlie has no login either
+    assert_select "button[aria-label='Actions for Hannah Head']", count: 0
+    assert_select "button[aria-label='Actions for Sam Spouse']", count: 0
+  end
+
+  test "a head's phone menu reads a child's personal study while the child has a study AI grant" do
+    memberships(:eli_in_home).grant_study_ai(by: users(:head))
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+
+    assert_select "#member-#{memberships(:eli_in_home).id}-menu-list", text: /New password link.*Read Eli's personal study/m do
+      assert_select "a[href=?]", household_member_personal_studies_path(household_id: households(:home), member_id: memberships(:eli_in_home)),
+                    text: "Read Eli's personal study"
     end
   end
 
@@ -103,6 +150,8 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "No login"
     assert_select "#invitations", count: 0
     assert_not_includes response.body, invitations(:ana).email
+    assert_select "#members .Box-row .d-md-none", text: "Child", count: 3
+    assert_select "button[aria-label^='Actions for']", count: 0
   end
 
   test "open invitations are listed newest first, with resend and cancel for those the viewer may" do
@@ -122,6 +171,31 @@ class MembersControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[aria-label='Resend to #{newest.email}']", "Resend"
     assert_select "button[aria-label='Cancel the invitation to #{newest.email}']", "Cancel"
     assert_select "button[aria-label$='#{invitations(:ana).email}']", count: 0
+  end
+
+  test "on a phone an invitation's second line has its role, and its \"…\" holds Resend, then Cancel invitation… asking first" do
+    travel_to Time.zone.local(2026, 11, 14, 12)
+    invitations(:ana).update_columns(expires_at: Time.zone.local(2026, 11, 21, 12))
+    invitations(:expired).update_columns(expires_at: Time.zone.local(2026, 11, 10, 12))
+    sign_in identities(:head)
+
+    get household_members_path(household_id: households(:home))
+
+    ana = invitations(:ana)
+    assert_select "#invitations .Box-row .d-md-none", text: "Adult · invited by Hannah · until Nov 21"
+    assert_select "#invitations .Box-row .d-md-none.color-fg-attention", text: "Adult · expired on Nov 10"
+    assert_select "#invitations .Box-row .d-none.d-md-flex .Label", count: 2
+    assert_select "button[aria-label='Actions for #{ana.email}']"
+    assert_select "#invitation-#{ana.id}-menu-list", text: /Resend.*Cancel invitation…/m do
+      assert_select "form[action=?] input[name=_method][value=patch]", household_invitation_path(household_id: households(:home), id: ana)
+      assert_select "li[role=presentation]" # the divider
+      assert_select "button.ActionListContent[data-show-dialog-id=?]", "cancel-invitation-#{ana.id}", text: "Cancel invitation…"
+    end
+    assert_select "#invitation-#{invitations(:expired).id}-menu-list button", text: "Send again"
+    assert_select "dialog#cancel-invitation-#{ana.id}" do
+      assert_select "form[action=?] input[name=_method][value=delete]", household_invitation_path(household_id: households(:home), id: ana)
+      assert_select "button", text: "Cancel invitation"
+    end
   end
 
   test "an expired invitation offers Send again to a head" do

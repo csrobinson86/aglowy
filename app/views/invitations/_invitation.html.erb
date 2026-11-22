@@ -1,16 +1,20 @@
 <%# locals: (invitation:) %>
+<% role = invitation.role.humanize %>
+<% until_date = l(invitation.expires_on, format: "%b %-d") %>
 <%= render(Primer::Beta::Octicon.new(icon: :mail, color: :muted, mr: 3, flex_shrink: 0)) %>
 <div class="flex-auto min-width-0">
   <div class="text-bold css-truncate css-truncate-overflow"><%= invitation.email %></div>
   <% if invitation.expired? %>
-    <div class="color-fg-attention text-small">Expired on <%= l(invitation.expires_on, format: "%b %-d") %></div>
+    <div class="color-fg-attention text-small d-none d-md-block">Expired on <%= until_date %></div>
+    <div class="color-fg-attention text-small d-md-none"><%= role %> · expired on <%= until_date %></div>
   <% else %>
-    <div class="color-fg-muted text-small">Invited by <%= invitation.invited_by.first_name %> · until <%= l(invitation.expires_on, format: "%b %-d") %></div>
+    <div class="color-fg-muted text-small d-none d-md-block">Invited by <%= invitation.invited_by.first_name %> · until <%= until_date %></div>
+    <%# On a phone the role is words on the second line instead of a Label (docs/design/phone.md, Members). %>
+    <div class="color-fg-muted text-small d-md-none"><%= role %> · invited by <%= invitation.invited_by.first_name %> · until <%= until_date %></div>
   <% end %>
 </div>
-<%# Wraps under the address on a phone. %>
-<div class="d-flex flex-items-center ml-auto pl-2">
-  <%= render(Primer::Beta::Label.new(scheme: invitation.head? ? :accent : :secondary)) { invitation.role.humanize } %>
+<div class="d-none d-md-flex flex-items-center ml-auto pl-2">
+  <%= render(Primer::Beta::Label.new(scheme: invitation.head? ? :accent : :secondary)) { role } %>
   <% if policy(invitation).update? %>
     <% resend_label = invitation.expired? ? "Send again" : "Resend" %>
     <%= primer_form_with(url: household_invitation_path(id: invitation), method: :patch, class: "ml-2") do |f| %>
@@ -21,3 +25,30 @@
     <% end %>
   <% end %>
 </div>
+<%# On a phone Resend and Cancel are behind one plain "…"; Cancel asks first, in a Primer Dialog (docs/design/phone.md,
+    The rules: 4, and Members). %>
+<% if policy(invitation).update? %>
+  <% dialog_id = "cancel-invitation-#{invitation.id}" %>
+  <%= render(Primer::Alpha::ActionMenu.new(menu_id: "invitation-#{invitation.id}-menu", anchor_align: :end, ml: :auto, pl: 2, display: [ nil, nil, :none ],
+                                           classes: "members__row-menu")) do |menu| %>
+    <% menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "Actions for #{invitation.email}", show_tooltip: false) %>
+    <% menu.with_item(label: invitation.expired? ? "Send again" : "Resend", href: household_invitation_path(id: invitation), form_arguments: { method: :patch }) do |item| %>
+      <% item.with_leading_visual_icon(icon: :mail) %>
+    <% end %>
+    <% menu.with_divider %>
+    <% menu.with_item(label: "Cancel invitation…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": dialog_id }) do |item| %>
+      <% item.with_leading_visual_icon(icon: :trash) %>
+    <% end %>
+  <% end %>
+  <%= render(Primer::Alpha::Dialog.new(id: dialog_id, title: "Cancel the invitation to #{invitation.email}?")) do |dialog| %>
+    <% dialog.with_body do %>
+      <p class="mb-0">The link in their email stops working. You can invite them again later.</p>
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dialog_id })) { "Keep it" } %>
+      <%= primer_form_with(url: household_invitation_path(id: invitation), method: :delete) do |f| %>
+        <%= render Invitations::ActionForm.new(f, label: "Cancel invitation", aria_label: "Cancel invitation to #{invitation.email}", scheme: :danger) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

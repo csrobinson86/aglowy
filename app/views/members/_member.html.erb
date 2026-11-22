@@ -1,23 +1,49 @@
 <%# locals: (membership:, show_sign_in:) %>
+<% name = membership.user.name %>
+<%# A head here can read a child's personal studies while the child has a study AI grant (docs/design/personal-study.md, Children). %>
+<% study = ChildStudyPolicy.new(Current.membership, membership).show? %>
+<% give_login = policy(membership).give_login? %>
+<% password_link = !give_login && policy(membership).new_password_link? %>
 <%= render AvatarComponent.new(user: membership.user, size: 32, classes: "mr-3") %>
 <div class="flex-1 min-width-0">
-  <div class="text-bold css-truncate css-truncate-overflow"><%= membership.user.name %></div>
+  <div class="text-bold css-truncate css-truncate-overflow"><%= name %></div>
   <% if show_sign_in %>
-    <div class="color-fg-muted text-small css-truncate css-truncate-overflow"><%= how_they_sign_in(membership.user) %></div>
+    <div class="color-fg-muted text-small css-truncate css-truncate-overflow d-none d-md-block"><%= how_they_sign_in(membership.user) %></div>
   <% end %>
+  <%# On a phone the role is words on the second line instead of a Label (docs/design/phone.md, Members). %>
+  <div class="color-fg-muted text-small css-truncate css-truncate-overflow d-md-none"><%= role_and_sign_in(membership, show_sign_in:) %></div>
 </div>
-<%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary, ml: 2)) { membership.role.humanize } %>
-<%# A head here can read a child's personal studies while the child has a study AI grant (docs/design/personal-study.md, Children). %>
-<% if ChildStudyPolicy.new(Current.membership, membership).show? %>
-  <%= render(Primer::Beta::Button.new(tag: :a, href: household_member_personal_studies_path(member_id: membership), ml: 2,
-                                      aria: { label: "Read #{membership.user.name}'s personal study" })) { "Personal study" } %>
-<% end %>
-<% if policy(membership).give_login? %>
-  <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_login_path(member_id: membership), ml: 2,
-                                      aria: { label: "Give a login to #{membership.user.name}" })) { "Give a login" } %>
-<% elsif policy(membership).new_password_link? %>
-  <%# Without Turbo, like Give a login: the link page is rendered, not redirected to. %>
-  <%= primer_form_with(url: household_member_password_link_path(member_id: membership), class: "ml-2", data: { turbo: false }) do |f| %>
-    <%= render Members::PasswordLinkForm.new(f, name: membership.user.name) %>
+<%= render(Primer::Beta::Label.new(scheme: membership.head? ? :accent : :secondary, ml: 2, display: [ :none, nil, :inline_block ])) { membership.role.humanize } %>
+<% if study || give_login || password_link %>
+  <div class="d-none d-md-flex flex-items-center">
+    <% if study %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_member_personal_studies_path(member_id: membership), ml: 2,
+                                          aria: { label: "Read #{name}'s personal study" })) { "Personal study" } %>
+    <% end %>
+    <% if give_login %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_member_login_path(member_id: membership), ml: 2,
+                                          aria: { label: "Give a login to #{name}" })) { "Give a login" } %>
+    <% elsif password_link %>
+      <%# Without Turbo, like Give a login: the link page is rendered, not redirected to. %>
+      <%= primer_form_with(url: household_member_password_link_path(member_id: membership), class: "ml-2", data: { turbo: false }) do |f| %>
+        <%= render Members::PasswordLinkForm.new(f, name:) %>
+      <% end %>
+    <% end %>
+  </div>
+  <%# On a phone the same actions are behind one plain "…", with its own menu_id per row (docs/design/phone.md, Members). %>
+  <%= render(Primer::Alpha::ActionMenu.new(menu_id: "member-#{membership.id}-menu", anchor_align: :end, ml: 2, display: [ nil, nil, :none ],
+                                           classes: "members__row-menu")) do |menu| %>
+    <% menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "Actions for #{name}", show_tooltip: false) %>
+    <% if give_login %>
+      <% menu.with_item(label: "Give a login", href: new_household_member_login_path(member_id: membership)) { it.with_leading_visual_icon(icon: :key) } %>
+    <% elsif password_link %>
+      <% menu.with_item(label: "New password link", href: household_member_password_link_path(member_id: membership),
+                        form_arguments: { method: :post, html: { data: { turbo: false } } }) { it.with_leading_visual_icon(icon: :key) } %>
+    <% end %>
+    <% if study %>
+      <% menu.with_item(label: "Read #{membership.user.first_name}'s personal study", href: household_member_personal_studies_path(member_id: membership)) do |item| %>
+        <% item.with_leading_visual_icon(icon: :search) %>
+      <% end %>
+    <% end %>
   <% end %>
 <% end %>

@@ -14,7 +14,7 @@ class MembersTest < ApplicationSystemTestCase
 
   test "Members stays selected on Add a member, which passes assert_accessible" do
     visit household_members_url(household_id: households(:home))
-    click_on "Add without a login"
+    choose_from_menu "New", "Add without a login"
 
     assert_selector "h1", text: "Add a member"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Members"
@@ -25,9 +25,29 @@ class MembersTest < ApplicationSystemTestCase
     assert_accessible
   end
 
+  test "New › Invite by email and New › Add without a login open their pages, on desktop and phone" do
+    [ :desktop, :phone ].each do |size|
+      if size == :phone
+        emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)
+        emulate_touch(true)
+      end
+
+      visit household_members_url(household_id: households(:home))
+      choose_from_menu "New", "Invite by email"
+      assert_selector "h1", text: "Invite someone to the The Head Family"
+
+      visit household_members_url(household_id: households(:home))
+      choose_from_menu "New", "Add without a login"
+      assert_selector "h1", text: "Add a member"
+    end
+  ensure
+    cdp("Emulation.clearDeviceMetricsOverride")
+    cdp("Emulation.setTouchEmulationEnabled", enabled: false)
+  end
+
   test "a head invites someone, sees them under Invited, not joined yet, and cancels it" do
     visit household_members_url(household_id: households(:home))
-    click_on "Invite by email"
+    choose_from_menu "New", "Invite by email"
 
     assert_selector "h1", text: "Invite someone to the The Head Family"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Members"
