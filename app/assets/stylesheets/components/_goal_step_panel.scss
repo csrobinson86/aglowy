@@ -1,0 +1,20 @@
+// A step's panel on a phone (GoalStepPanelComponent, docs/design/phone.md, A goal; frame phone-family-goal-step.png).
+// Its buttons are 44px tall, and each person's row is a 44px touch target; a tick box takes a touch 44px across, as a
+// step row's does (docs/design/phone.md, rule 8).
+.goal-step-panel .Button {
+  min-height: var(--control-minTarget-auto);
+}
+
+.goal-step-panel__person {
+  min-height: var(--control-minTarget-auto);
+}
+
+.goal-step-panel__person .FormControl-checkbox::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--control-minTarget-auto);
+  height: var(--control-minTarget-auto);
+  content: "";
+  transform: translate(-50%, -50%);
+}

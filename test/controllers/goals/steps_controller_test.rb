@@ -82,8 +82,12 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select "turbo-stream[action=replace][target='#{dom_id(step)}']"
     assert_includes response.body, "can&#39;t be blank"
-    assert_select "input[type=checkbox][value='#{@sofia.id}'][checked]", count: 1
-    assert_select "input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
+    # The phone panel shows the form again too, morphed so it stays open (docs/design/phone.md, A goal).
+    [ dom_id(step), dom_id(step, :panel_body) ].each do |target|
+      assert_select "turbo-stream[target='#{target}'] input[type=checkbox][value='#{@sofia.id}'][checked]", count: 1
+      assert_select "turbo-stream[target='#{target}'] input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
+    end
+    assert_select "turbo-stream[action=replace][method=morph][target='#{dom_id(step, :panel_body)}'] [data-goal-step-target=form]:not([hidden])"
     assert_equal 2, step.reload.assignees.count
     assert_equal 1, step.completions.count
   end

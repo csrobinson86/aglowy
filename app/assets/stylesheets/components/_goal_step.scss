@@ -24,8 +24,7 @@
   width: var(--base-size-16);
 }
 
-// A row's tick box stays 16px to the eye and takes a touch 44px across, and its "›" is 44px: a button, or the same
-// space for a mark when the viewer may not edit the step. Primer's coarse-pointer sizes don't reach 44px for either;
+// A row's tick box stays 16px to the eye and takes a touch 44px across, and its "›" button is 44px. Primer's coarse-pointer sizes don't reach 44px for either;
 // with a mouse --control-minTarget-auto is small enough to change nothing (docs/design/phone.md, rule 8).
 .goal-step__box .FormControl-checkbox::after {
   position: absolute;

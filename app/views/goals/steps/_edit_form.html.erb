@@ -1,0 +1,8 @@
+<%# locals: (step:, namespace:, checked_ids: nil) %>
+<%# A step's edit form, in its row from md up and in its panel on a phone, each with its own namespace for the ids. %>
+<%= primer_form_with(model: step, url: household_goal_step_path(goal_id: step.goal, id: step), namespace:, class: "flex-auto min-width-0",
+                     data: { action: "change->goal-step#warn" }) do |f| %>
+  <%= render Goals::Steps::StepForm.new(f, section: :fields, members: step.goal.assignable_users, editing: true, checked_ids:) %>
+  <p class="color-fg-attention mb-3" aria-live="polite" data-goal-step-target="warning"></p>
+  <%= render Goals::Steps::StepForm.new(f, section: :actions, editing: true) %>
+<% end %>

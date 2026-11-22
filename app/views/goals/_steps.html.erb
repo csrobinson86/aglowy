@@ -30,4 +30,14 @@
       <% end %>
     <% end %>
   <% end %>
+  <%# Each step's phone panel, opened by its row's "›" (docs/design/phone.md, A goal, The step panel). Outside the steps'
+      Turbo Frames, so a tick redraws only the panel's body and it stays open. Saving or removing a step redraws all of
+      this with the panel open, so dialog-removal lets the page scroll again. %>
+  <div data-controller="dialog-removal">
+    <% goal.steps.each do |step| %>
+      <%= render(Primer::Alpha::Dialog.new(id: dom_id(step, :panel), title: step.title, position: :center, position_narrow: :bottom)) do |dialog| %>
+        <% dialog.with_body(pb: 3) { render "goals/steps/panel", step:, editable: } %>
+      <% end %>
+    <% end %>
+  </div>
 </div>

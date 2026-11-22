@@ -1,3 +1,5 @@
-<%# A tick redraws its step's row, with focus back on the pressed toggle, and the progress box from the reloaded goal. %>
+<%# A tick redraws its step's row, with focus back on the pressed toggle, its phone panel's body, morphed so a box
+    ticked there keeps its focus, and the progress box from the reloaded goal. %>
 <%= turbo_stream.replace @step, partial: "goals/steps/step", locals: { step: @step, editable: policy(@step).update?, focused: @part } %>
+<%= turbo_stream.replace dom_id(@step, :panel_body), method: :morph, partial: "goals/steps/panel", locals: { step: @step, editable: policy(@step).update? } %>
 <%= turbo_stream.replace "goal-progress", partial: "goals/progress", locals: { goal: @goal } %>

@@ -1,0 +1,52 @@
+<%# The goal-step controller swaps the facts for the edit form or for Remove step's question, as it does in a row. %>
+<%= tag.div id: body_id, class: "goal-step-panel", data: { controller: "goal-step", goal_step_ticks_value: ticks.to_json } do %>
+  <%= tag.div hidden: editing?, data: { goal_step_target: "view" } do %>
+    <% if panel_meta_text.present? %>
+      <p class="goal-step-panel__meta color-fg-muted"><%= panel_meta_text %></p>
+    <% end %>
+    <% if named? %>
+      <fieldset class="mb-3">
+        <legend class="text-bold mb-1">Who's done it</legend>
+        <ul class="list-style-none">
+          <% people.each do |person| %>
+            <li class="goal-step-panel__person d-flex flex-items-center">
+              <% if panel_tickable?(person) %>
+                <%= primer_form_with(**tick_form_options(person.id)) do %>
+                  <%= render(Primer::Alpha::CheckBox.new(name: check_box_name(person), id: check_box_name(person), label: person_label(person), checked: step.done_for?(person),
+                                                         data: { action: "change->goal-step#tick" })) %>
+                <% end %>
+              <% else %>
+                <%= render AvatarComponent.new(user: person, classes: "mr-2") %><%= person_status(person) %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </fieldset>
+    <% end %>
+    <% if schedulable? %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: schedule_path, block: true, mb: 2)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :calendar) %>
+        Schedule as a family study
+      <% end %>
+    <% end %>
+    <% if edit_form? %>
+      <div class="d-flex gap-2">
+        <%= render(Primer::Beta::Button.new(block: true, data: { action: "goal-step#edit", goal_step_target: "editButton" })) { "Edit step" } %>
+        <%= render(Primer::Beta::Button.new(scheme: :danger, block: true, data: { action: "goal-step#askToRemove", goal_step_target: "removeButton" })) { "Remove step" } %>
+      </div>
+    <% end %>
+  <% end %>
+  <% if edit_form? %>
+    <%= tag.div edit_form, hidden: !editing?, data: { goal_step_target: "form" } %>
+    <%# Remove step asks first, here in the panel, never in a browser confirm. %>
+    <div hidden data-goal-step-target="confirm">
+      <p>Remove this step? Who's done it goes with it.</p>
+      <div class="d-flex gap-2">
+        <%= render(Primer::Beta::Button.new(block: true, data: { action: "goal-step#keep" })) { "Cancel" } %>
+        <%= primer_form_with(url: household_goal_step_path(household_id: household.id, goal_id: goal, id: step), method: :delete, class: "flex-1") do |f| %>
+          <%= render Goals::Steps::RemovalForm.new(f) %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>

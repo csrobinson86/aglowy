@@ -6,7 +6,8 @@
 # An Everyone step, or a step for one person, ticks with its checkbox; a step for two or more people has a
 # toggle per person and a checkbox that only shows how far they've got (frame milestone-goal.png).
 # On a phone the row is two lines and a "›", with no pencil or buttons; its tick box is the one part the viewer may
-# tick from the row, or none (docs/design/phone.md, A goal; frames phone-goal.png and phone-family-goal.png).
+# tick from the row, or none (docs/design/phone.md, A goal; frames phone-goal.png and phone-family-goal.png). The "›"
+# opens the step's panel, GoalStepPanelComponent in a Dialog with panel_id.
 class GoalStepComponent < ApplicationComponent
   renders_one :edit_form
 
@@ -37,6 +38,10 @@ class GoalStepComponent < ApplicationComponent
 
   def editing?
     @editing && edit_form?
+  end
+
+  def panel_id
+    dom_id(step, :panel)
   end
 
   def highlighted?

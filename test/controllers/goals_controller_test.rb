@@ -305,7 +305,11 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
       assert_select "#goal-steps .Box-row", count: 2
       assert_select "#goal-steps .Box-row", text: /Read Genesis\s*Done · /
       assert_select "main form", count: 0
-      assert_select "main input, main button, main action-menu, main dialog", count: 0
+      assert_select "main input, main action-menu", count: 0
+      # On a phone each row's "›" opens its step's panel, which shows only facts and its Close (docs/design/phone.md, A goal).
+      assert_select "main button:not(.goal-step__open):not(.Overlay-closeButton)", count: 0
+      assert_select "main dialog", count: 2
+      assert_select "main dialog[id^=panel_goal_step_]", count: 2
       assert_select "a[href='#{edit_household_goal_path(household_id: households(:home), id: goal)}']", count: 0
     end
   end
@@ -478,6 +482,8 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_response :conflict
     assert_select "turbo-stream[action=replace][target='#{ActionView::RecordIdentifier.dom_id(step)}']"
     assert_includes response.body, "Someone else changed this step. Here&#39;s the latest."
+    assert_select "turbo-stream[action=replace][method=morph][target='#{ActionView::RecordIdentifier.dom_id(step, :panel_body)}'] .flash-warn",
+                  text: "Someone else changed this step. Here's the latest."
     step.reload
     assert_equal "Find three parables and explain one", step.title
     assert_equal [ users(:eli), users(:sofia) ].sort_by(&:id), step.assignees.sort_by(&:id)

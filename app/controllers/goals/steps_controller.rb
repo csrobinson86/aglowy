@@ -62,9 +62,12 @@ class Goals::StepsController < ApplicationController
     render :changes
   end
 
-  # A failed edit shows the people the user ticked; a stale one shows the step as it is now.
+  # A failed edit shows the people the user ticked; a stale one shows the step as it is now. Both the row and the phone
+  # panel show the form again, whichever it came from; the panel morphs, so it stays open with its focus.
   def render_step(status:, stale: false, checked_ids: nil)
-    render turbo_stream: turbo_stream.replace(@step, partial: "goals/steps/step", locals: { step: @step, editable: true, editing: true, stale:, checked_ids: }),
+    locals = { step: @step, editable: true, editing: true, stale:, checked_ids: }
+    render turbo_stream: [ turbo_stream.replace(@step, partial: "goals/steps/step", locals:),
+                           turbo_stream.replace(helpers.dom_id(@step, :panel_body), method: :morph, partial: "goals/steps/panel", locals:) ],
            status: status
   end
 end

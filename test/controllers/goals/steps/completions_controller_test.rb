@@ -14,6 +14,7 @@ class Goals::Steps::CompletionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "turbo-stream[action=replace][target=#{dom_id(goal_steps(:read_luke))}]"
+    assert_select "turbo-stream[action=replace][method=morph][target=#{dom_id(goal_steps(:read_luke), :panel_body)}]"
     assert_select "turbo-stream[action=replace][target=goal-progress]"
     tick = goal_steps(:read_luke).completions.sole
     assert_nil tick.user
