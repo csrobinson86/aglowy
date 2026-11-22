@@ -1,0 +1,39 @@
+<%# locals: (goal:, household:) %>
+<%# The dialogs the goal header's buttons and "…" menus open, for those who can edit it. They sit outside the header,
+    so a dialog opens from the phone's menu while the desktop header is hidden, and the other way round. %>
+<% if goal.personal? && !goal.shared_with?(household) %>
+  <% left_out = goal.households_not_shared_with_besides(household).to_a %>
+  <%= render(Primer::Alpha::Dialog.new(id: "share-goal", title: "Share with #{household.name}?")) do |dialog| %>
+    <% dialog.with_body do %>
+      <p>Members of <strong><%= household.name %></strong> will be able to read this goal and its steps. They can't change it.</p>
+      <p class="color-fg-muted mb-0"><%= "#{left_out.map(&:name).to_sentence} won't see it. " if left_out.any? %>You can stop sharing at any time, and if you leave <%= household.name %> it stops automatically.</p>
+    <% end %>
+    <% dialog.with_footer do %>
+      <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "share-goal" })) { "Cancel" } %>
+      <%= primer_form_with(url: household_goal_sharing_path(goal_id: goal)) do |f| %>
+        <%= render Goals::LifecycleForm.new(f, label: "Share goal", scheme: :primary, dialog_id: "share-goal") %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%# The phone-tags controller puts the one tag editor here on a phone (docs/design/phone.md, The rules: 5). %>
+<% if goal.personal? %>
+  <%= render(Primer::Alpha::Dialog.new(id: "goal-tags", title: "Tags")) do |dialog| %>
+    <% dialog.with_body(pb: 3) do %>
+      <div data-phone-tags-target="dialog"></div>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%= render(Primer::Alpha::Dialog.new(id: "delete-goal", title: "Delete this goal?")) do |dialog| %>
+  <% dialog.with_body do %>
+    Its steps and progress are deleted too. Archive it instead to keep it for looking back.
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-goal" })) { "Cancel" } %>
+    <%= primer_form_with(url: household_goal_path(id: goal), method: :delete) do |f| %>
+      <%= render Goals::LifecycleForm.new(f, label: "Delete goal", scheme: :danger) %>
+    <% end %>
+  <% end %>
+<% end %>

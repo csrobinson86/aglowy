@@ -12,6 +12,7 @@ class Goals::TaggingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal [ tags(:spouse_ministry) ], @goal.tags.to_a
     assert_select "turbo-stream[action=replace][target='tag_editor_goal_#{@goal.id}'] template a.Label", text: "#ministry"
+    assert_select "turbo-stream[action=update][target='tags_goal_#{@goal.id}'] template a.Label", text: "#ministry"
 
     delete tagging_path(@goal, tags(:spouse_ministry)), as: :turbo_stream
 

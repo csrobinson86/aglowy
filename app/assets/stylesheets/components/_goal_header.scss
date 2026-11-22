@@ -1,0 +1,36 @@
+@use "sass:map";
+@use "@primer/css/support/variables/layout" as primer;
+
+// A goal's header on a phone (docs/design/phone.md, A goal; frame phone-goal.png). Below md the Subhead has no line
+// under it, and desktop keeps Primer's own.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .goal-header {
+    border-bottom: 0;
+  }
+}
+
+// A personal goal's tags as read-only chips under its why on a phone (The rules: 5 and 8). Each chip keeps Primer's
+// Label height, 20px, and a pseudo-element stretches what a touch reaches to 44px tall. Rows 28px apart leave 4px
+// between one row's targets and the next, as mr-1 does between chips in a row, so a wrapped row's never covers the
+// one above it. A chip is at least 44px wide, so a one-letter tag's target stays its own too.
+.goal-header__tags {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: var(--base-size-28);
+
+  &:has(.Label) {
+    margin-bottom: var(--base-size-16);
+  }
+
+  > .Label {
+    position: relative;
+    min-width: var(--control-minTarget-coarse);
+    text-align: center;
+  }
+
+  > .Label::after {
+    position: absolute;
+    inset: calc((100% - var(--control-minTarget-coarse)) / 2) 0;
+    content: "";
+  }
+}

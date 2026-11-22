@@ -1,0 +1,8 @@
+<div class="back-row d-flex d-md-none flex-items-center flex-justify-between mb-2">
+  <%= render(Primer::Beta::Link.new(href:, classes: "back-row__link")) do %>
+    <%= render Primer::Beta::Octicon.new(:"chevron-left", mr: 1, flex_shrink: 0) %><span class="css-truncate css-truncate-overflow"><%= label %></span>
+  <% end %>
+  <% if menu? %>
+    <div class="back-row__menu"><%= menu %></div>
+  <% end %>
+</div>
