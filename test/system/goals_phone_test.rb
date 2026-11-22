@@ -273,6 +273,7 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_selector step_row("Find three parables and explain one", "input[type=checkbox]:checked")
     assert_no_button "Sofia Child"
     assert_no_selector "#goal-steps button[data-action='add-row#open']"
+    assert_selector "#goal-steps .goal-step__open svg.octicon-chevron-right", count: 7
     assert_accessible
 
     box = find(step_row("Find three parables and explain one", "input[type=checkbox]"))
@@ -295,6 +296,7 @@ class GoalsPhoneTest < ApplicationSystemTestCase
       assert_no_selector "#goal-steps input[type=checkbox]"
       assert_no_selector "#goal-steps button[data-action='add-row#open']"
       assert_no_field "New step"
+      assert_selector "#goal-steps .goal-step__open svg.octicon-chevron-right", count: goal.steps.count
     end
   end
 

@@ -291,6 +291,14 @@ class GoalStepComponentTest < ViewComponent::TestCase
     assert_selector "button.d-md-none[aria-label='Edit step: Read Luke together'][data-action='goal-step#edit'] svg.octicon-chevron-right"
   end
 
+  test "a phone row ends in › for someone who may not edit the step, marking the row without a control" do
+    render_inline(GoalStepComponent.new(step: preloaded(:read_luke)))
+
+    assert_selector ".goal-step__open.d-md-none[aria-hidden=true] svg.octicon-chevron-right"
+    assert_no_selector "button svg.octicon-chevron-right"
+    assert_no_selector "svg.octicon-pencil"
+  end
+
   private
     def completions_path(step)
       "/#{households(:home).id}/goals/#{goals(:gospels).id}/steps/#{step.id}/completions"
