@@ -172,6 +172,12 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ "Lamentations 1–2", 4 ], [ prep_week.cards.second.reading, prep_week.cards.second.story.size ]
     assert_equal 3, prep_week.sources.size
 
+    # Hannah's study guide for this week, from the saved reply, with the pages it used (14_study_guides.rb).
+    guide = head.study_guide_for(Time.current.in_time_zone(head.limit_time_zone).to_date.beginning_of_week(:monday))
+    assert_equal StudyGuide::Part::STEPS.keys, guide.parts.map(&:step)
+    assert_equal "Lamentations 1–2", guide.parts.find { it.step == "bible_reading" }.content["reading"]
+    assert_equal 4, guide.sources.size
+
     assert_equal 0, Ai::Use.count
   end
 

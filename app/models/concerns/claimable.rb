@@ -1,6 +1,7 @@
 # The claim that a run is asking the AI for a household's week (docs/design/listening-game.md, When it runs; the same
-# for Get ready, docs/design/meeting-prep.md, The weekly AI job). Taken and checked only inside household.with_lock; the
-# run keeps the token it set, and saves only while the claim still holds it.
+# for Get ready, docs/design/meeting-prep.md, The weekly AI job, and a person's study guide, docs/design/study-guide.md).
+# Taken and checked only inside the household's lock, or the person's for a study guide; the run keeps the token it set,
+# and saves only while the claim still holds it.
 module Claimable
   extend ActiveSupport::Concern
 

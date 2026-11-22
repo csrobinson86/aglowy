@@ -52,6 +52,9 @@ production:
   purge_old_prep_weeks:
     class: PrepWeek::PurgeJob
     schedule: every day at 4:50am
+  purge_old_study_guides:
+    class: StudyGuide::PurgeJob
+    schedule: every day at 4:55am
   prepare_daily_briefs:
     class: DailyBrief::PrepareJob
     schedule: every 15 minutes
