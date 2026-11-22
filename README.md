@@ -99,6 +99,7 @@
   | `head@example.com` | Hannah Demo, head of The Demo Family |
   | `spouse@example.com` | Sam Demo, an adult in both households |
   | `rivera@example.com` | Maria Rivera, head of The Rivera Family |
+  | `daniel.rivera@example.com` | Daniel Rivera, an adult in The Rivera Family with this week's study guide |
   | `lucia.rivera` | Lucia Rivera, a child with a username login and the meeting helper |
   | `staff@example.com` | Stella Staff, platform staff (Madmin) |
 
