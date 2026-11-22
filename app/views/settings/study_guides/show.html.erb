@@ -1,0 +1,22 @@
+<% content_for :title, "Study guide · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :study_guide) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new) do |box| %>
+      <% box.with_header { |header| header.with_title(tag: :h3) { "Weekly study guide" } } %>
+      <% box.with_body do %>
+        <% terms = @user.accepted_ai_terms? %>
+        <%= primer_form_with(scope: :study_guide, url: household_settings_study_guide_path, method: :patch) do |f| %>
+          <%= render Settings::StudyGuideForm.new(f, on: @user.study_guide_on?, disabled: !terms) %>
+        <% end %>
+        <% unless terms %>
+          <%# Where AI terms are accepted, as Get ready's and the listening game's pages say (docs/design/ai.md, First use). %>
+          <%= render(Primer::Beta::Text.new(tag: :p, color: :muted, mt: 3, mb: 0)) do %>
+            Turn on AI features first. You can do it from Draft with AI when you schedule a family study.
+            <%= render(Primer::Beta::Link.new(href: new_household_family_study_path, underline: true)) { "Schedule a family study" } %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

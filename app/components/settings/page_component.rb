@@ -11,6 +11,7 @@ class Settings::PageComponent < ApplicationComponent
     tags: "Rename or delete your tags and collections. Only you see them.",
     calendar: "Who sees your times, and your phone calendar link.",
     notifications: "What reaches you, and where. Follows you to every household.",
+    study_guide: "You · in every household where you're a head or an adult.",
     household: "heads can change this.",
     meetings: "heads and adults can change this.",
     children: "heads and adults; AI for a child is heads only.",

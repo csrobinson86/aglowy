@@ -22,6 +22,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | You | Calendar | yes | yes | yes | Share my times with a household; the phone calendar link (`docs/design/calendar.md`, CAL-01) |
 | You | Notifications | yes | yes | yes, without email | What comes by email and to your phone, quiet hours, your devices (`docs/design/notifications.md`, NOTIFY-01). Not on `/account`: people with no household get no notifications |
 | You | Offline | yes | yes | yes | Keep Aglowy available offline on this device: on or off, what's kept, notes waiting to save (`docs/design/offline.md`, OFFLINE-01). Lives in this browser, not on the server. Not on `/account` |
+| You | Study guide | yes | yes | no, unless a head or adult in another household | "Make me a study guide each week" (`docs/design/study-guide.md`, PREP-02). For a head or adult in any active household; someone who is a child everywhere gets a 404 |
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
 | | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch and, while it's on, the Get ready check box (`docs/design/meeting-prep.md`); "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
@@ -96,6 +97,7 @@ A person can leave every household they're in (`docs/design/invitations.md`). Th
 | Calendar | Who sees your times, and your phone calendar link. |
 | Notifications | What reaches you, and where. Follows you to every household. |
 | Offline | Only this phone or computer. Turn it on separately on each one. |
+| Study guide | You · in every household where you're a head or an adult. |
 | Household | Rivera household · heads can change this. |
 | Meetings | Rivera household · heads and adults can change this. |
 | Children | Rivera household · heads and adults; AI for a child is heads only. |
