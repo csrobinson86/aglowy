@@ -16,10 +16,11 @@
   <% end %>
   <% resources.each do |resource| %>
     <% box.with_row(display: :flex, align_items: :center) do %>
-      <%= render(Primer::Beta::Octicon.new(icon: resource.file? ? :file : :link, color: :muted, mr: 2, flex_shrink: 0)) %>
+      <%# On a phone a row is two lines, the title then its host or size, with no icon (docs/design/phone.md, rule 6). %>
+      <%= render(Primer::Beta::Octicon.new(icon: resource.file? ? :file : :link, color: :muted, mr: 2, flex_shrink: 0, display: [ :none, nil, :inline_block ])) %>
       <div class="flex-1 min-width-0">
         <%= render "family_study/resources/resource", resource: %>
-        <span class="color-fg-muted text-small ml-1"><%= resource.file? ? number_to_human_size(resource.file.byte_size) : resource.host %></span>
+        <span class="color-fg-muted text-small d-block d-md-inline ml-md-1"><%= resource.file? ? number_to_human_size(resource.file.byte_size) : resource.host %></span>
       </div>
       <% if editable %>
         <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>

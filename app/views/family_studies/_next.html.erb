@@ -1,0 +1,13 @@
+<%# locals: (study_session:) -%>
+<%# The Next card on a phone (docs/design/phone.md, Family studies; frame phone-family-studies.png): "Next", the topic,
+    then "<weekday>, <Mon d> · <time> · <repeat>". The whole card opens the session. %>
+<% local = study_session.local_scheduled_at %>
+<%= render(Primer::Beta::BorderBox.new(bg: :inset, mb: 4)) do |box| %>
+  <% box.with_body(p: 0) do %>
+    <%= render(Primer::Beta::Link.new(href: household_family_study_session_path(family_study_id: study_session.family_study, id: study_session), classes: "family-studies-next d-flex flex-column p-3 color-fg-default no-underline")) do %>
+      <span class="text-small text-semibold color-fg-muted">Next</span>
+      <%= tag.span study_session.topic.presence || "Topic not chosen yet", class: [ "f3 text-semibold wb-break-word", ("color-fg-muted" if study_session.topic.blank?) ] %>
+      <span class="color-fg-muted"><%= l(local, format: :next_card) %> · <%= l(local, format: :clock_with_meridiem) %> · <%= study_session.family_study.repeat_description %></span>
+    <% end %>
+  <% end %>
+<% end %>

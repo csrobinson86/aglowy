@@ -1,0 +1,19 @@
+<%# locals: (family_study:, study_session:) %>
+<%# A session's "…" in the back row on a phone (docs/design/phone.md, Family studies): Edit session, a divider, then
+    Cancel this session…, which asks first, or Restore this session. %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: "session-phone-menu", anchor_align: :end)) do |menu| %>
+  <% menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "Session actions", show_tooltip: false) %>
+  <% menu.with_item(label: "Edit session", href: edit_household_family_study_session_path(family_study_id: family_study, id: study_session)) do |item| %>
+    <% item.with_leading_visual_icon(icon: :pencil) %>
+  <% end %>
+  <% menu.with_divider %>
+  <% if study_session.canceled? %>
+    <% menu.with_item(label: "Restore this session", href: household_family_study_session_cancellation_path(family_study_id: family_study, session_id: study_session), form_arguments: { method: :delete }) do |item| %>
+      <% item.with_leading_visual_icon(icon: :history) %>
+    <% end %>
+  <% else %>
+    <% menu.with_item(label: "Cancel this session…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": "cancel-session" }) do |item| %>
+      <% item.with_leading_visual_icon(icon: :"x-circle") %>
+    <% end %>
+  <% end %>
+<% end %>

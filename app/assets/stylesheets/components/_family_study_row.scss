@@ -1,0 +1,5 @@
+// A coming family study session on a phone (docs/design/phone.md, Family studies; frame phone-family-studies.png):
+// the month and day in a column of their own, so every row's topic starts at the same place.
+.family-study-row__date {
+  width: var(--base-size-40);
+}

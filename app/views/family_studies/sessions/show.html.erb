@@ -1,25 +1,37 @@
 <% title = @study_session.topic.presence || "Family study" %>
 <% content_for :title, title %>
 
-<%= render(Primer::Beta::Breadcrumbs.new(mb: 2)) do |breadcrumbs| %>
+<%# On a phone the breadcrumbs and header buttons give way to a back row with the session's "…", and the description
+    is the meta line, with "Cancelled" in words (docs/design/phone.md, Family studies). %>
+<% editable = policy(@study_session).update? %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
   <% breadcrumbs.with_item(href: household_family_studies_path) { "Family studies" } %>
   <% breadcrumbs.with_item(href: household_family_study_session_path(family_study_id: @family_study, id: @study_session)) { l(@study_session.local_scheduled_at, format: :session_breadcrumb) } %>
 <% end %>
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%= render BackRowComponent.new(href: household_family_studies_path, label: "Family studies") do |row| %>
+  <% if editable %>
+    <% row.with_menu { render "family_studies/sessions/menu", family_study: @family_study, study_session: @study_session } %>
+  <% end %>
+<% end %>
+<%= render Primer::Beta::Subhead.new(classes: "family-study-session__header") do |subhead| %>
   <% subhead.with_heading(tag: :h1, classes: "wb-break-word") { title } %>
-  <% subhead.with_description do %>
+  <% subhead.with_description(id: "session-meta") do %>
     <%= l(@study_session.local_scheduled_at, format: :session_day) %> ·
     <%= session_time_range(@study_session) %> ·
     <%= @family_study.repeat_description %>
     <% if @study_session.canceled? %>
-      <%= render(Primer::Beta::Label.new(scheme: :danger, ml: 1)) { "Cancelled" } %>
+      <%= render(Primer::Beta::Label.new(scheme: :danger, ml: 1, display: [ :none, nil, :inline_block ])) { "Cancelled" } %>
+      <span class="d-md-none">· <span class="color-fg-danger">Cancelled</span></span>
     <% end %>
   <% end %>
-  <% if policy(@study_session).update? %>
-    <% subhead.with_actions(display: :flex) do %>
+  <% if editable %>
+    <% subhead.with_actions(display: [ :none, nil, :flex ]) do %>
       <%= render "family_studies/sessions/actions", family_study: @family_study, study_session: @study_session %>
     <% end %>
   <% end %>
+<% end %>
+<% if editable && !@study_session.canceled? %>
+  <%= render "family_studies/sessions/cancel_dialog", family_study: @family_study, study_session: @study_session %>
 <% end %>
 
 <%= render "family_studies/storage_warning", household: Current.household %>
@@ -27,10 +39,15 @@
 <%= render(Primer::Beta::BorderBox.new(mb: 4)) do |box| %>
   <% box.with_header(display: :flex, align_items: :center) do |header| %>
     <% header.with_title(tag: :h2, flex: 1) { "Notes" } %>
-    <% if policy(@study_session).update? %>
-      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_family_study_session_notes_path(family_study_id: @family_study, session_id: @study_session), size: :small)) do |button| %>
+    <% if editable %>
+      <% notes_path = edit_household_family_study_session_notes_path(family_study_id: @family_study, session_id: @study_session) %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: notes_path, size: :small, display: [ :none, nil, :inline_flex ])) do |button| %>
         <% button.with_leading_visual_icon(icon: :pencil) %>
         Edit notes
+      <% end %>
+      <%# A plain link on a phone (docs/design/phone.md, Family studies). %>
+      <%= render(Primer::Beta::Link.new(href: notes_path, classes: "family-study-session__edit-notes d-md-none")) do %>
+        <%= render(Primer::Beta::Octicon.new(icon: :pencil, mr: 1)) %>Edit
       <% end %>
     <% end %>
   <% end %>
