@@ -126,6 +126,19 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     end
   end
 
+  test "on a narrow phone a range that doesn't fit ends in an ellipsis, and the toolbar stays one row" do
+    emulate_viewport(320, 640, phone: true)
+    visit calendar_url(view: "month", date: "2026-09-01")
+
+    range = find(".calendar-toolbar h2", text: "September 2026")
+    assert_operator range.evaluate_script("this.scrollWidth - this.clientWidth"), :>, 0, "the range fits, so nothing is truncated"
+    style = range.evaluate_script("(({ display, textOverflow }) => ({ display, textOverflow }))(getComputedStyle(this))")
+    assert_equal({ "display" => "block", "textOverflow" => "ellipsis" }, style)
+    tops = [ find_link("Today"), find("[aria-label^='Previous']"), range, find("[aria-label^='Next']"), find("button[aria-label='Show on the calendar']") ].map { rect(it, "top") }
+    assert_operator tops.max - tops.min, :<=, 4, "the toolbar wraps"
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
+  end
+
   test "\"Show on the calendar\" opens the Show choices; unticking Field service hides it" do
     visit calendar_url
     assert_selector ".calendar-item--field-service", text: "Field service"

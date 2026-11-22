@@ -267,16 +267,17 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
     min-width: 0;
   }
 
+  // A block, not a flex box: text-overflow applies only to a block container's inline content. align-content centres
+  // its line in the row's height.
   .calendar-toolbar__range {
-    display: flex;
     flex: 1;
     order: 1;
-    align-items: center;
     align-self: stretch;
-    justify-content: center;
+    align-content: center;
     min-width: 0;
     overflow: hidden;
     font-size: var(--text-title-size-small);
+    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
