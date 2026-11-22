@@ -482,8 +482,8 @@ class GoalsControllerTest < ActionDispatch::IntegrationTest
     assert_response :conflict
     assert_select "turbo-stream[action=replace][target='#{ActionView::RecordIdentifier.dom_id(step)}']"
     assert_includes response.body, "Someone else changed this step. Here&#39;s the latest."
-    assert_select "turbo-stream[action=replace][method=morph][target='#{ActionView::RecordIdentifier.dom_id(step, :panel_body)}'] .flash-warn",
-                  text: "Someone else changed this step. Here's the latest."
+    assert_select "turbo-stream[target='#{ActionView::RecordIdentifier.dom_id(step)}'] input[name='goal_step[title]'][autofocus]"
+    assert_select "turbo-stream[target='#{ActionView::RecordIdentifier.dom_id(step, :panel_body)}'] .flash-warn", count: 0
     step.reload
     assert_equal "Find three parables and explain one", step.title
     assert_equal [ users(:eli), users(:sofia) ].sort_by(&:id), step.assignees.sort_by(&:id)

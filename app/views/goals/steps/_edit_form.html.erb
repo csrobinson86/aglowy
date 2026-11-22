@@ -1,8 +1,10 @@
-<%# locals: (step:, namespace:, checked_ids: nil) %>
-<%# A step's edit form, in its row from md up and in its panel on a phone, each with its own namespace for the ids. %>
-<%= primer_form_with(model: step, url: household_goal_step_path(goal_id: step.goal, id: step), namespace:, class: "flex-auto min-width-0",
+<%# locals: (step:, namespace:, checked_ids: nil, panel: false, stale: false) %>
+<%# A step's edit form, in its row from md up and in its panel on a phone, each with its own namespace for the ids.
+    panel: the panel's form says so, so a refused save shows the form again only where it came from. stale: the step
+    changed under it, and Title takes focus back from the Save button Turbo disabled. %>
+<%= primer_form_with(model: step, url: household_goal_step_path(goal_id: step.goal, id: step, panel: (true if panel)), namespace:, class: "flex-auto min-width-0",
                      data: { action: "change->goal-step#warn" }) do |f| %>
-  <%= render Goals::Steps::StepForm.new(f, section: :fields, members: step.goal.assignable_users, editing: true, checked_ids:) %>
+  <%= render Goals::Steps::StepForm.new(f, section: :fields, members: step.goal.assignable_users, editing: true, checked_ids:, autofocus: stale) %>
   <p class="color-fg-attention mb-3" aria-live="polite" data-goal-step-target="warning"></p>
   <%= render Goals::Steps::StepForm.new(f, section: :actions, editing: true) %>
 <% end %>

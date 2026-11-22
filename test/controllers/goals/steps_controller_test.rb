@@ -82,14 +82,28 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_content
     assert_select "turbo-stream[action=replace][target='#{dom_id(step)}']"
     assert_includes response.body, "can&#39;t be blank"
-    # The phone panel shows the form again too, morphed so it stays open (docs/design/phone.md, A goal).
-    [ dom_id(step), dom_id(step, :panel_body) ].each do |target|
-      assert_select "turbo-stream[target='#{target}'] input[type=checkbox][value='#{@sofia.id}'][checked]", count: 1
-      assert_select "turbo-stream[target='#{target}'] input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
-    end
-    assert_select "turbo-stream[action=replace][method=morph][target='#{dom_id(step, :panel_body)}'] [data-goal-step-target=form]:not([hidden])"
+    assert_select "turbo-stream[target='#{dom_id(step)}'] input[type=checkbox][value='#{@sofia.id}'][checked]", count: 1
+    assert_select "turbo-stream[target='#{dom_id(step)}'] input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
+    # The phone panel, which didn't send it, shows the step and not the form (docs/design/phone.md, A goal).
+    assert_select "turbo-stream[action=replace][method=morph][target='#{dom_id(step, :panel_body)}'] [data-goal-step-target=form][hidden]"
     assert_equal 2, step.reload.assignees.count
     assert_equal 1, step.completions.count
+  end
+
+  test "a blank title from the phone panel shows the form again in the panel only, morphed so it stays open" do
+    step = goal_steps(:parables)
+    sign_in identities(:spouse)
+
+    patch step_path(step, panel: true), params: { goal_step: { title: "", assignee_ids: [ "", @sofia.id ], lock_version: 0 } }, as: :turbo_stream
+
+    assert_response :unprocessable_content
+    panel = "turbo-stream[action=replace][method=morph][target='#{dom_id(step, :panel_body)}']"
+    assert_select "#{panel} [data-goal-step-target=form]:not([hidden])", text: /can't be blank/
+    assert_select "#{panel} input[type=checkbox][value='#{@sofia.id}'][checked]", count: 1
+    assert_select "#{panel} input[type=checkbox][value='#{@eli.id}'][checked]", count: 0
+    assert_select "#{panel} form[action$='?panel=true']"
+    assert_select "turbo-stream[target='#{dom_id(step)}'] [data-goal-step-target=form][hidden]"
+    assert_equal "Find three parables and explain one", step.reload.title
   end
 
   test "removes it" do
@@ -226,8 +240,8 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
       household_goal_steps_path(household_id: households(:home), goal_id: @goal)
     end
 
-    def step_path(step)
-      household_goal_step_path(household_id: households(:home), goal_id: @goal, id: step)
+    def step_path(step, **)
+      household_goal_step_path(household_id: households(:home), goal_id: @goal, id: step, **)
     end
 
     def dom_id(...)

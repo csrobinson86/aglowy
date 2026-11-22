@@ -298,6 +298,7 @@ class GoalStepComponentTest < ViewComponent::TestCase
 
     assert_selector "button.d-md-none[aria-label='Open step: Read Luke together'] svg.octicon-chevron-right"
     assert_no_selector "svg.octicon-pencil"
+    assert_selector "button.goal-step__open[data-show-dialog-id]:not([data-action])"
   end
 
   private

@@ -8,7 +8,7 @@
           <%= render(Primer::Beta::Flash.new(scheme: :warning, icon: :alert, mb: 3)) { "Someone else changed this step. Here's the latest." } %>
         <% end %>
         <div class="d-flex flex-items-start gap-2">
-          <%= render "goals/steps/edit_form", step:, namespace: dom_id(step), checked_ids: %>
+          <%= render "goals/steps/edit_form", step:, namespace: dom_id(step), checked_ids:, stale: %>
           <%# Primer forms have no icon button. show_tooltip: false keeps the aria-label, which Primer's tooltip would replace. %>
           <%= primer_form_with(url: household_goal_step_path(goal_id: step.goal, id: step), method: :delete) do %>
             <%= render(Primer::Beta::IconButton.new(icon: :trash, type: :submit, scheme: :danger, show_tooltip: false, "aria-label": "Remove step: #{step.title}")) %>

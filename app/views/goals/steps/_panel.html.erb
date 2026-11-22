@@ -7,7 +7,7 @@
       <% if stale %>
         <%= render(Primer::Beta::Flash.new(scheme: :warning, icon: :alert, mb: 3)) { "Someone else changed this step. Here's the latest." } %>
       <% end %>
-      <%= render "goals/steps/edit_form", step:, namespace: dom_id(step, :panel), checked_ids: %>
+      <%= render "goals/steps/edit_form", step:, namespace: dom_id(step, :panel), checked_ids:, panel: true, stale: %>
     <% end %>
   <% end %>
 <% end %>

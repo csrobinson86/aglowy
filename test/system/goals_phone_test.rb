@@ -412,6 +412,32 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_selector ".goal-step__title", exact_text: "Read Luke 1 to 12 together"
   end
 
+  test "a refused or stale edit shows the form again in the open panel, with focus on Title, and the row stays a row" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Read Luke together"
+    within("dialog[open]") do
+      click_on "Edit step"
+      fill_in "Title", with: "   "
+      click_on "Save"
+      assert_selector ".FormControl-inlineValidation", text: "can't be blank"
+      assert_field "Title", focused: true
+
+      goal_steps(:read_luke).update!(title: "Read Luke, changed by Hannah")
+      fill_in "Title", with: "Read Luke 1 to 12"
+      click_on "Save"
+      assert_text "Someone else changed this step. Here's the latest."
+      assert_field "Title", with: "Read Luke, changed by Hannah", focused: true
+      find("button[aria-label='Close']").click
+    end
+
+    assert_no_selector "dialog[open]"
+    # The row shows the step as it is now, as a row with its "›".
+    assert_selector step_row("Read Luke, changed by Hannah", "button[aria-label='Open step: Read Luke, changed by Hannah']")
+    assert_no_field "Title"
+  end
+
   test "Remove step asks in the panel, then removes" do
     sign_in identities(:spouse)
     visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
