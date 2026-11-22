@@ -275,7 +275,9 @@ $below-md: "(max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px))";
     align-self: stretch;
     justify-content: center;
     min-width: 0;
+    overflow: hidden;
     font-size: var(--text-title-size-small);
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
