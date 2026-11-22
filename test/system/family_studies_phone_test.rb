@@ -100,6 +100,23 @@ class FamilyStudiesPhoneTest < ApplicationSystemTestCase
     capture_screens("phone-family-study-session")
   end
 
+  test "a long resource title and a long topic stay on one line, cut with an ellipsis, so their rows stay two lines" do
+    long = "Imitate Their Faith: Ruth, Naomi and the loyal love that carried two widows home to Bethlehem"
+    family_study_sessions(:weekly_later).update!(topic: long)
+    @next.resources.create!(kind: :link, url: "https://wol.jw.org/en/wol/d/r1/lp-e/2023361", title: long)
+    sign_in identities(:head)
+
+    visit_on_a_phone household_family_studies_url(household_id: households(:home))
+    assert_cut_to_one_line find(".family-study-row__topic", exact_text: long)
+
+    visit_on_a_phone session_url(@next)
+    title = find(".family-study-session__resource-title", exact_text: long)
+    assert_cut_to_one_line title
+    host = find(".Box-row", text: long).find("span", exact_text: "wol.jw.org")
+    assert_operator host.evaluate_script("this.getBoundingClientRect().top"), :>=, title.evaluate_script("this.getBoundingClientRect().bottom") - 1
+    assert_equal page.evaluate_script("document.documentElement.clientWidth"), page.evaluate_script("document.documentElement.scrollWidth")
+  end
+
   test "Edit session in the … opens the edit page" do
     sign_in identities(:head)
     visit_on_a_phone session_url(@next)
@@ -200,6 +217,12 @@ class FamilyStudiesPhoneTest < ApplicationSystemTestCase
 
     def session_url(study_session)
       household_family_study_session_url(household_id: households(:home), family_study_id: study_session.family_study, id: study_session)
+    end
+
+    # Its text runs past its box, so it's cut, and the box is one line tall.
+    def assert_cut_to_one_line(element)
+      assert_operator element.evaluate_script("this.scrollWidth - this.clientWidth"), :>, 0, "the text fits, so nothing is cut"
+      assert_equal element.evaluate_script("parseFloat(getComputedStyle(this).lineHeight)").round, element.evaluate_script("this.clientHeight")
     end
 
     # The menu's button is named only by its aria-label.

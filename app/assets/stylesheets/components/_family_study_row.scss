@@ -3,3 +3,11 @@
 .family-study-row__date {
   width: var(--base-size-40);
 }
+
+// One line, cut with an ellipsis, so a long topic keeps the row to two lines (docs/design/phone.md, rule 6).
+.family-study-row__topic {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

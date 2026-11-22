@@ -85,6 +85,20 @@ class FamilyStudiesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".family-study-row", count: 9
   end
 
+  test "with the next 10 sessions all cancelled, the Next card is the first one after them" do
+    family_studies(:weekly).extend_sessions
+    ahead = households(:home).family_study_sessions.ahead.to_a
+    ahead.first(10).each(&:cancel)
+    sign_in identities(:head)
+
+    get household_family_studies_path(household_id: households(:home))
+
+    path = household_family_study_session_path(household_id: households(:home), family_study_id: ahead[10].family_study, id: ahead[10])
+    assert_select "a.family-studies-next[href='#{path}']"
+    assert_select ".family-study-row", count: 10
+    assert_select ".family-study-row s", text: "Topic not chosen yet", minimum: 1
+  end
+
   test "with no sessions, heads and adults are told to schedule the first study" do
     households(:home).family_studies.destroy_all
 

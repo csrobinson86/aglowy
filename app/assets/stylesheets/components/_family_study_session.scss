@@ -15,3 +15,14 @@
   align-items: center;
   min-height: var(--control-minTarget-auto);
 }
+
+// A resource's title on a phone is one line, cut with an ellipsis, so its row stays two lines (docs/design/phone.md,
+// rule 6). From md up it wraps beside its host or size, as before.
+@media (max-width: calc(#{map.get(primer.$breakpoints, md)} - 0.02px)) {
+  .family-study-session__resource-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
