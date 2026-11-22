@@ -37,7 +37,7 @@ end
 # seeds make those themselves, and ask nothing.
 unless defined?(SEEDS_DROP_DELIVERIES)
   SEEDS_DROP_DELIVERIES = true
-  [ Notification::DeliveryJob, ListeningGame::PrepareJob, PrepWeek::PrepareJob ].each { it.before_enqueue { throw :abort if Thread.current[:seeding] } }
+  [ Notification::DeliveryJob, ListeningGame::PrepareJob, PrepWeek::PrepareJob, StudyGuide::PrepareJob ].each { it.before_enqueue { throw :abort if Thread.current[:seeding] } }
 end
 
 begin

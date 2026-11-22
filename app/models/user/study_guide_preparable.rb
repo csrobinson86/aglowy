@@ -10,6 +10,25 @@ module User::StudyGuidePreparable
     # Their parts and sources go with them (on_delete: :cascade).
     has_many :study_guides, dependent: :delete_all
     has_many :study_guide_preparations, class_name: "StudyGuide::Preparation", dependent: :delete_all
+
+    # StudyGuide::PrepareJob runs for people in both: the setting on, and a head or adult in an active household.
+    scope :with_study_guide_on, -> { joins(:weekly_study_guide).includes(:weekly_study_guide) }
+    scope :head_or_adult_somewhere, -> { where(id: Membership.active.where(role: %w[ head adult ]).select(:user_id)) }
+  end
+
+  # The parts still missing from this week, the Monday where the person lives (Trap 6), while their study guide is on
+  # and they're a head or adult somewhere. Only the current week is asked for, so a week is never retried once it ends.
+  def prepare_this_weeks_study_guide
+    prepare_study_guide(study_guide_week) if study_guide_on? && may_have_study_guide?
+  end
+
+  def prepare_study_guide_later
+    StudyGuide::PrepareJob.perform_later(self)
+  end
+
+  # The Monday of the person's current week, by limit_time_zone's clock.
+  def study_guide_week
+    Time.current.in_time_zone(limit_time_zone).to_date.beginning_of_week(:monday)
   end
 
   # The guide with the parts it saved, or nil when no step is missing a part, another run holds the week's claim, the

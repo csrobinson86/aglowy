@@ -534,4 +534,34 @@ class UserTest < ActiveSupport::TestCase
 
     assert users(:eli).may_have_daily_brief?
   end
+  # The weekly study guide job's clock (docs/design/study-guide.md, The weekly job; Trap 6): limit_time_zone's zone.
+  test "at_local_hour by the person's own zone, else their oldest active household's, else UTC" do
+    households(:home).update!(time_zone: "Auckland")
+    users(:spouse).update!(time_zone: "Eastern Time (US & Canada)")
+    # Monday 16 November 2026: 3am in UTC, 4pm in Auckland, 10pm on Sunday in New York.
+    now = Time.utc(2026, 11, 16, 3)
+
+    at_three = User.at_local_hour(3, now:)
+    assert_includes at_three, users(:outsider), "no zone of their own, and their household's is UTC"
+    assert_not_includes at_three, users(:head), "their oldest active household is in Auckland"
+    assert_not_includes at_three, users(:spouse)
+
+    assert_includes User.at_local_hour(16, now:), users(:head)
+    assert_includes User.at_local_hour(22, now:), users(:spouse)
+    assert_includes User.at_local_hour(3, now:), users(:staff), "no zone and no household is UTC"
+  end
+
+  test "at_local_hour skips an inactive membership's household, as limit_time_zone does" do
+    households(:home).update!(time_zone: "Auckland")
+    now = Time.utc(2026, 11, 16, 3)
+
+    assert_equal "Auckland", users(:head).limit_time_zone
+    assert_includes User.at_local_hour(16, now:), users(:head)
+    assert_includes User.at_local_hour(3, now:), users(:former), "their only seat is inactive, so UTC"
+
+    users(:head).memberships.find_by!(household: households(:home)).update_column(:active, false)
+
+    assert_equal "UTC", users(:head).reload.limit_time_zone
+    assert_includes User.at_local_hour(3, now:), users(:head), "the parents household, in UTC, is the only active one"
+  end
 end
