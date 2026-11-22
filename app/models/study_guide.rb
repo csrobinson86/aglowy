@@ -17,10 +17,11 @@ class StudyGuide < ApplicationRecord
   # The parts a reply's fields hold for +steps+, as attributes for StudyGuide::Part: each step once, the first part for
   # it whose content passes the checks before saving (docs/design/study-guide.md, Ai::Purpose::StudyGuide).
   def self.parts_from_reply(fields, steps:, copy_check:)
-    Array(fields["parts"]).grep(Hash).select { it["step"].in?(steps) }.uniq { it["step"] }.filter_map do |part|
+    parts = Array(fields["parts"]).grep(Hash).select { it["step"].in?(steps) }.filter_map do |part|
       content = StudyGuide::Part::Shape.new(part["step"]).content_from_reply(part["content"], copy_check:)
       { step: part["step"], content: } if content
     end
+    parts.uniq { it[:step] }
   end
 
   # Saves the parts for steps that still have none, never touching a saved part, with the pages not yet linked and the

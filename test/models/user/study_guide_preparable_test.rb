@@ -324,6 +324,13 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_equal %w[ summary apply ], guide.parts.find { it.step == "living" }.content.keys
   end
 
+  test "a title the copy check removes goes, and the part stays" do
+    accept
+    guide = prepare(reply { content(it, "living")["title"] = "“Comfort all those who mourn and grieve today,” he said." })
+
+    assert_equal %w[ summary apply ], guide.parts.find { it.step == "living" }.content.keys
+  end
+
   test "a list keeps its first items up to its most, and an overview item without its quality goes" do
     accept
     guide = prepare(reply do |parsed|
@@ -357,6 +364,17 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
 
     assert_equal STEPS, guide.parts.map(&:step)
     assert_equal "The talk shows how Jeremiah, though grieving, kept trusting that Jehovah would show mercy again.", guide.parts.second.content["summary"]
+  end
+
+  test "a repeated step whose first part fails its checks keeps the next one" do
+    accept
+    guide = prepare(reply do |parsed|
+      talk = content(parsed, "talk")
+      parsed["parts"].find { it["step"] == "talk" }["content"] = talk.merge("summary" => "")
+      parsed["parts"] << { "step" => "talk", "content" => talk.merge("summary" => "The second try.") }
+    end)
+
+    assert_equal "The second try.", guide.parts.find { it.step == "talk" }.content["summary"]
   end
 
   test "nothing usable saves nothing and lets the claim go" do

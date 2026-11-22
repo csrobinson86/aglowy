@@ -38,8 +38,8 @@ class StudyGuide::Part::Shape
   end
 
   # The content a reply's fields make, or nil when it doesn't fit: each reference ours, or gone with its point kept; web
-  # addresses taken out; texts squished, and any the copy check touches gone with their point, except a title, which is
-  # the part's own as the program gives it (Trap 2); points over their words gone, and each list cut to its most.
+  # addresses taken out; texts squished, and any the copy check touches gone with their point (a title goes on its own,
+  # as one over its words does); points over their words gone, and each list cut to its most.
   def content_from_reply(fields, copy_check:)
     return unless fields.is_a?(Hash)
 
@@ -66,7 +66,7 @@ class StudyGuide::Part::Shape
 
     def text_from_reply(text, name, copy_check:)
       text = text.squish if text.is_a?(String)
-      text if words?(text, name) && (name == "title" || !copy_check.clean(text).last)
+      text if words?(text, name) && !copy_check.clean(text).last
     end
 
     def points_from_reply(points, most, label, copy_check:)
