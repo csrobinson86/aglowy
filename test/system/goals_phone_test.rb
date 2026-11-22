@@ -563,6 +563,19 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     assert_selector step_row("Find three parables and explain one", "button[aria-label='Open step: Find three parables and explain one']:focus")
   end
 
+  test "a panel opened on a phone and closed once the window is desktop width puts focus on the Steps heading, its › hidden" do
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: goals(:gospels))
+
+    open_step "Find three parables and explain one"
+    on_desktop
+    assert_no_selector "button[aria-label='Open step: Find three parables and explain one']"
+    find("dialog[open]").send_keys(:escape)
+
+    assert_no_selector "dialog[open]"
+    assert_selector "h2#goal-steps-heading:focus", exact_text: "Steps"
+  end
+
   test "desktop has no way to the panel" do
     sign_in identities(:spouse)
     visit household_goal_url(household_id: households(:home), id: goals(:gospels))

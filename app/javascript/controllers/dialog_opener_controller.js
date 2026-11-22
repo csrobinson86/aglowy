@@ -9,9 +9,12 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static values = { fallback: String }
 
-  // Bound with :capture, as close doesn't bubble. The browser has already moved focus by then, or failed to.
+  // Bound with :capture, as close doesn't bubble. The browser has already moved focus by then, or failed to. A panel
+  // opened on a phone and closed at desktop width has its "›" hidden, so focus goes to the fallback.
   refocus({ target: dialog }) {
-    if (document.activeElement === document.body || dialog.contains(document.activeElement)) this.#opener(dialog)?.focus()
+    if (document.activeElement === document.body || dialog.contains(document.activeElement)) {
+      (this.#opener(dialog) ?? document.getElementById(this.fallbackValue))?.focus()
+    }
   }
 
   disconnect() {
