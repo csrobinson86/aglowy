@@ -42,6 +42,16 @@ class GoalsPhoneTest < ApplicationSystemTestCase
     capture_screens("phone-goal")
   end
 
+  test "tag chips that wrap onto several rows, one-letter ones too, each keep a whole 44px target of their own" do
+    %w[a b study-together family-worship prayer c memorization ministry].each { @goal.tag_with(it, by: users(:spouse)) }
+    sign_in identities(:spouse)
+    visit_on_a_phone household_goal_url(household_id: households(:home), id: @goal)
+
+    chips = all(".goal-header__tags a", count: 9)
+    assert_operator chips.map { rect(it, "top") }.uniq.size, :>, 1, "the chips don't wrap"
+    chips.each { assert_touch_target it }
+  end
+
   test "Tags… opens the tag editor in a dialog, and the chips follow what it changes" do
     sign_in identities(:spouse)
     visit_on_a_phone household_goal_url(household_id: households(:home), id: @goal)

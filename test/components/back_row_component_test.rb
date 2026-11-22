@@ -19,6 +19,12 @@ class BackRowComponentTest < ViewComponent::TestCase
     assert_selector ".back-row__menu button[aria-label='Goal actions']", count: 1
   end
 
+  test "the with-menu preview shows its menu's button" do
+    render_preview(:with_menu)
+
+    assert_selector ".back-row__menu button[aria-label='Goal actions']", count: 1
+  end
+
   test "renders no menu container without one" do
     render_inline(BackRowComponent.new(href: "/goals", label: "My goals"))
 

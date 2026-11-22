@@ -4,7 +4,7 @@ class BackRowComponentPreview < ViewComponent::Preview
   def with_menu
     render(BackRowComponent.new(href: "#", label: "My goals")) do |row|
       row.with_menu do
-        render(Primer::Alpha::ActionMenu.new(menu_id: "preview-menu", anchor_align: :end)) do |menu|
+        row.render(Primer::Alpha::ActionMenu.new(menu_id: "preview-menu", anchor_align: :end)) do |menu|
           menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "Goal actions", show_tooltip: false)
           menu.with_item(label: "Edit goal", href: "#")
         end
