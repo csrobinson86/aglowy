@@ -434,8 +434,16 @@ class PersonalNotesControllerTest < ActionDispatch::IntegrationTest
       assert_select ".lexxy-content h2", "Statue"
       assert_select ".lexxy-content a.scripture-link", count: 3
     end
-    assert_select "main input:not([type=hidden]), main select, main textarea, main lexxy-editor", count: 0
-    assert_select "main form input[name=_method][value=patch]", count: 0
+    # The phone "…"'s Move to collection Dialog, closed until it's chosen, holds the page's one form field and its one
+    # PATCH: the collection, with the note's version, saved through update (docs/design/phone.md, Notes).
+    assert_select "main input:not([type=hidden]), main textarea, main lexxy-editor", count: 0
+    assert_select "main select", count: 1
+    assert_select "main form input[name=_method][value=patch]", count: 1
+    assert_select "dialog#move-personal-note form[action=?]", household_personal_note_path(household_id: @home, id: @note) do
+      assert_select "input[name=_method][value=patch]"
+      assert_select "input[type=hidden][name='personal_note[base]'][value=?]", base(@note)
+      assert_select "select[name='personal_note[collection_id]'] option[selected][value=?]", collections(:head_quick_references).id
+    end
     assert_select "#tag_editor_personal_note_#{@note.id}", count: 0
     assert_select "section[aria-labelledby=note-scriptures]" do
       assert_select "a.scripture-link" do |links|

@@ -2,18 +2,31 @@
 <%# Unpinning from a card refreshes the page, keeping the place on it. %>
 <% turbo_refreshes_with method: :replace, scroll: :preserve %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%# On a phone "+ New ▾" sits beside the title with Note and Collection, and the description is shortened to who can
+    see the notes (docs/design/phone.md, Notes). From md up, New note and the sidebar's New collection, as before. %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Notes" } %>
-  <% subhead.with_description { "Your own notes to come back to. Only you can see them." } %>
+  <% subhead.with_description do %>
+    <span class="d-md-none">Only you can see these.</span><span class="d-none d-md-inline">Your own notes to come back to. Only you can see them.</span>
+  <% end %>
   <% subhead.with_actions do %>
-    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_note_path(collection: @collection&.id), scheme: :primary)) { "New note" } %>
+    <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_personal_note_path(collection: @collection&.id), scheme: :primary, display: [ :none, nil, :inline_flex ])) { "New note" } %>
+    <%= render(Primer::Alpha::ActionMenu.new(menu_id: "personal-notes-new-menu", anchor_align: :end, display: [ nil, nil, :none ], classes: "personal-notes__menu")) do |menu| %>
+      <% menu.with_show_button(scheme: :primary) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        <% button.with_trailing_action_icon(icon: :"triangle-down") %>
+        New
+      <% end %>
+      <% menu.with_item(label: "Note", href: new_household_personal_note_path(collection: @collection&.id)) { it.with_leading_visual_icon(icon: :pencil) } %>
+      <% menu.with_item(label: "Collection", tag: :button, content_arguments: { "data-show-dialog-id": "new-collection-dialog" }) { it.with_leading_visual_icon(icon: :"file-directory") } %>
+    <% end %>
   <% end %>
 <% end %>
 
 <%= render NotesTabsComponent.new(selected: :personal_notes) %>
 
 <%# Collections and my tags beside the cards (frame notes.png). Below md they're hidden, and in the "All notes ▾" menu
-    by the color filter instead (frame phone-notes.png). %>
+    instead, and the cards give way to rows (frame phone-notes.png). %>
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md)) do |layout| %>
   <% layout.with_sidebar(width: :narrow, row_placement: :none) do %>
     <%= render "personal_notes/collections", collections: @collections, selected: @collection, total_count: @total_count, tag: @tag_name %>
@@ -22,14 +35,22 @@
 
   <% layout.with_main do %>
     <%# Personal study's search box: the same three fields, and the same reason it can't read bodies (Traps). Then the
-        color filter (frame notes.png), under it on a phone, after the "All notes ▾" menu. Each keeps what the other
-        has chosen. %>
-    <div class="personal-notes__filters">
-      <%= primer_form_with(url: household_personal_notes_path, method: :get, class: "personal-notes__search") do |f| %>
+        color filter (frame notes.png). Each keeps what the other has chosen. On a phone "All notes ▾" and a search
+        button share the first row, and the button reveals the search box, which stays open while it holds a search
+        (docs/design/phone.md, Notes). %>
+    <div class="personal-notes__filters" data-controller="reveal" data-reveal-open-class="personal-notes__search--open">
+      <div class="personal-notes__picker d-md-none">
+        <%= render "personal_notes/phone_menu", collections: @collections, selected: @collection, tags: @tags, tag: @tag_name %>
+        <%= render(Primer::Beta::IconButton.new(icon: :search, "aria-label": "Search notes", show_tooltip: false, classes: "personal-notes__search-button",
+                                                aria: { expanded: @query.present?.to_s, controls: "personal-notes-search" },
+                                                data: { reveal_target: "button", action: "reveal#toggle" })) %>
+      </div>
+      <%= primer_form_with(url: household_personal_notes_path, method: :get, id: "personal-notes-search",
+                           class: class_names("personal-notes__search", "personal-notes__search--open": @query.present?),
+                           data: { reveal_target: "content" }) do |f| %>
         <%= render PersonalStudies::SearchForm.new(f, query: @query, collection: @collection_id, tag: @tag_name, color: @color) %>
       <% end %>
       <div class="personal-notes__color-filter">
-        <%= render "personal_notes/phone_menu", collections: @collections, selected: @collection, tags: @tags, tag: @tag_name %>
         <%# Only from sm up: on a phone the swatches need the whole row. It still names the group there. %>
         <span id="note-color-filter-label" class="color-fg-muted d-none d-sm-inline">Color</span>
         <%= primer_form_with(url: household_personal_notes_path, method: :get) do |f| %>
@@ -53,6 +74,7 @@
             <%= render "personal_notes/card", personal_note:, pinned: true %>
           <% end %>
         </div>
+        <%= render "personal_notes/rows", personal_notes: @pinned_notes %>
       </section>
     <% end %>
 
@@ -64,6 +86,7 @@
             <%= render "personal_notes/card", personal_note: %>
           <% end %>
         </div>
+        <%= render "personal_notes/rows", personal_notes: @personal_notes %>
       </section>
     <% end %>
 
@@ -85,7 +108,7 @@
   <% end %>
 <% end %>
 
-<%# Opened by "New collection" in the sidebar, or in the phone's menu. %>
+<%# Opened by "New collection" in the sidebar, or by "+ New ▾" › Collection on a phone. %>
 <%= render(Primer::Alpha::Dialog.new(id: "new-collection-dialog", title: "New collection")) do |dialog| %>
   <% dialog.with_body(pb: 3) do %>
     <%= render "collections/new_form", collection: Collection.new, section: "notes" %>

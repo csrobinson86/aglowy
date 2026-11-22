@@ -4,7 +4,7 @@
     line with its color, collection and tags, and the body as saved, with its scriptures and details beside it, or under
     it on a phone. Nothing on it is a form field; the title, collection and tags are escaped, and the body is Action
     Text, sanitized as it renders (Traps). %>
-<%= render "personal_notes/header", personal_note: @personal_note, edit_link: true %>
+<%= render "personal_notes/header", personal_note: @personal_note, read_view: true %>
 
 <%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :md, classes: "personal-note")) do |layout| %>
   <% layout.with_main do %>
@@ -19,5 +19,17 @@
   <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "personal-note__sidebar") do %>
     <%= render "personal_notes/scriptures", personal_note: @personal_note, bookmarked: Current.user.bookmarked %>
     <%= render "personal_notes/details", personal_note: @personal_note %>
+  <% end %>
+<% end %>
+
+<%# Opened by Move to collection… in the phone's "…". It saves the collection alone through update, with the note's
+    version, so a note changed in another window since is refused as on Edit. %>
+<%= render(Primer::Alpha::Dialog.new(id: "move-personal-note", title: "Move to collection")) do |dialog| %>
+  <% dialog.with_body(pb: 3) do %>
+    <%= primer_form_with(model: @personal_note, url: household_personal_note_path(id: @personal_note), method: :patch, namespace: "move") do |f| %>
+      <%= render PersonalNotes::VersionForm.new(f) %>
+      <%= render PersonalNotes::CollectionForm.new(f, collections: Current.user.collections.for_notes.positioned) %>
+      <%= render PersonalNotes::MoveForm.new(f) %>
+    <% end %>
   <% end %>
 <% end %>

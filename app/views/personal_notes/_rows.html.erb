@@ -1,0 +1,19 @@
+<%# locals: (personal_notes:) %>
+<%# Below md, the notes as two-line rows instead of cards (docs/design/phone.md, Notes; frame phone-notes.png): the color
+    dot and the title, linking to the note across the whole row, then one muted line, "<collection> · <date> · <preview>",
+    each cut with an ellipsis. No tags or buttons in a row: "All notes ▾" filters by tag. From the same preloaded notes
+    as the cards, so it asks no query per row. %>
+<%= render(Primer::Beta::BorderBox.new(display: [ nil, nil, :none ])) do |box| %>
+  <% personal_notes.each do |personal_note| %>
+    <% box.with_row(classes: "personal-notes__row") do %>
+      <span class="note-dot note-dot--<%= personal_note.drawn_color %> personal-notes__row-dot" aria-hidden="true"></span>
+      <%= render "personal_notes/color_name", personal_note: %>
+      <div class="personal-notes__row-text">
+        <%= render(Primer::Beta::Link.new(href: household_personal_note_path(id: personal_note), scheme: :primary, classes: "personal-notes__row-title")) do %>
+          <%= personal_note.title %>
+        <% end %>
+        <div class="personal-notes__row-line"><%= note_row_line(personal_note) %></div>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
