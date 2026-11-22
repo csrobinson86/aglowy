@@ -1,12 +1,13 @@
 <% content_for :title, "Family studies" %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%# On a phone the button stays beside the title, and its label shortens to "New" (docs/design/phone.md, rule 1). %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Family studies" } %>
   <% if policy(FamilyStudy).create? %>
     <% subhead.with_actions do %>
       <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_family_study_path, scheme: :primary)) do |button| %>
         <% button.with_leading_visual_icon(icon: :plus) %>
-        Schedule a study
+        <span class="d-md-none">New</span><span class="d-none d-md-inline">Schedule a study</span>
       <% end %>
     <% end %>
   <% end %>

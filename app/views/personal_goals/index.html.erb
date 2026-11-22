@@ -1,6 +1,7 @@
 <% content_for :title, "My goals" %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%# On a phone New goal stays beside the title (docs/design/phone.md, rule 1). %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "My goals" } %>
   <% subhead.with_description { "Goals of your own, in every household you belong to, private until you share one." } %>
   <% subhead.with_actions do %>

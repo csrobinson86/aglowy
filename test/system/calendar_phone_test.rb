@@ -1,8 +1,8 @@
 require "application_system_test_case"
 
 # The calendar on a phone (docs/design/calendar.md, On a phone; frame phone-calendar.png): the week as a list of days,
-# the CO's visit once as a band above it, the New menu full width under the title, the Show choices in a dialog, no
-# Month control, and every target at least 44px. Tuesday 17 November 2026 in the home household (UTC).
+# the CO's visit once as a band above it, the New menu beside the title, the toolbar on one row, the Show choices in a
+# dialog, no Month control, and every target at least 44px. Tuesday 17 November 2026 in the home household (UTC).
 class CalendarPhoneTest < ApplicationSystemTestCase
   setup do
     travel_to Time.utc(2026, 11, 17, 15)
@@ -68,14 +68,12 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     assert_accessible
   end
 
-  test "New is full width under the title, its items are touch targets, and My time opens its dialog; a child's New has only My time" do
+  test "New sits beside the title, its items are touch targets, and My time opens its dialog; a child's New has only My time" do
     visit calendar_url
     assert_turbo_idle
 
     button = find("#calendar-new-menu-button")
-    width = "this.getBoundingClientRect().width"
-    assert_equal find("main .Subhead").evaluate_script(width), button.evaluate_script(width)
-    assert_operator button.rect.y, :>, find(".Subhead-description").rect.y
+    assert_in_delta rect(find("main h1"), "top"), rect(button, "top"), 4
     assert_touch_target button
     button.click
     assert_selector "[role=menuitem]", text: "Household event"
@@ -110,6 +108,35 @@ class CalendarPhoneTest < ApplicationSystemTestCase
     assert_accessible
     execute_script("window.scrollTo(0, 0)")
     capture_screens("calendar-new-menu")
+  end
+
+  test "the toolbar is one row: Today, previous, the range, next and Show, each a touch target" do
+    { calendar_url => "Nov 16 – 22", calendar_url(date: "2026-12-01") => "Nov 30 – Dec 6", calendar_url(view: "month", date: "2026-09-01") => "September 2026" }.each do |url, range|
+      visit url
+
+      controls = [ find_link("Today"), find("[aria-label^='Previous']"), find(".calendar-toolbar h2", text: range),
+                   find("[aria-label^='Next']"), find("button[aria-label='Show on the calendar']") ]
+      tops = controls.map { rect(it, "top") }
+      assert_operator tops.max - tops.min, :<=, 4, "the toolbar wraps for #{range}"
+      lefts = controls.map { rect(it, "left") }
+      assert_equal lefts.sort, lefts, "the toolbar's controls aren't in order for #{range}"
+      assert_operator controls[2].evaluate_script("this.scrollWidth - this.clientWidth"), :<=, 0, "the range doesn't fit for #{range}"
+      (controls - [ controls[2] ]).each { assert_touch_target it }
+      assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
+    end
+  end
+
+  test "on a narrow phone a range that doesn't fit ends in an ellipsis, and the toolbar stays one row" do
+    emulate_viewport(320, 640, phone: true)
+    visit calendar_url(view: "month", date: "2026-09-01")
+
+    range = find(".calendar-toolbar h2", text: "September 2026")
+    assert_operator range.evaluate_script("this.scrollWidth - this.clientWidth"), :>, 0, "the range fits, so nothing is truncated"
+    style = range.evaluate_script("(({ display, textOverflow }) => ({ display, textOverflow }))(getComputedStyle(this))")
+    assert_equal({ "display" => "block", "textOverflow" => "ellipsis" }, style)
+    tops = [ find_link("Today"), find("[aria-label^='Previous']"), range, find("[aria-label^='Next']"), find("button[aria-label='Show on the calendar']") ].map { rect(it, "top") }
+    assert_operator tops.max - tops.min, :<=, 4, "the toolbar wraps"
+    assert_equal evaluate_script("document.documentElement.clientWidth"), evaluate_script("document.documentElement.scrollWidth")
   end
 
   test "\"Show on the calendar\" opens the Show choices; unticking Field service hides it" do

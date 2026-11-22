@@ -150,7 +150,7 @@ class DashboardTest < ApplicationSystemTestCase
     capture_screens("home-new-menu")
   end
 
-  test "on a phone the New button is full width under the title, and its items meet the touch target size" do
+  test "on a phone the New button sits beside the title, and its items meet the touch target size" do
     sign_in identities(:head)
     emulate_viewport(*ScreenshotHelper::VIEWPORTS[:phone], phone: true)
     emulate_touch(true)
@@ -158,9 +158,9 @@ class DashboardTest < ApplicationSystemTestCase
     assert_turbo_idle
 
     button = find("#home-new-menu-button")
-    width = "this.getBoundingClientRect().width"
-    assert_equal find("main .Subhead").evaluate_script(width), button.evaluate_script(width)
-    assert_operator button.rect.y, :>, find(".Subhead-description").rect.y
+    top = "this.getBoundingClientRect().top"
+    assert_in_delta find("main h1").evaluate_script(top), button.evaluate_script(top), 4
+    assert_operator button.evaluate_script(top), :<, find(".Subhead-description").evaluate_script(top)
     assert_touch_target button
     button.click
     assert_selector "[role=menuitem]", text: "Member"

@@ -2,7 +2,8 @@
 <%# Saving a time or an event from Today's dialogs refreshes Home, keeping the place on it. %>
 <% turbo_refreshes_with method: :replace, scroll: :preserve %>
 
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%# On a phone New stays beside the title, and the household and date stay under it (docs/design/phone.md, Home). %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
   <% subhead.with_heading(tag: :h1) { "Home" } %>
   <% subhead.with_description { "#{Current.household.name} · #{Current.household.today.strftime("%A, %B %-d")}" } %>
   <% new_menu = render("dashboards/new_menu") %>
