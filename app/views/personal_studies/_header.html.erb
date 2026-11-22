@@ -15,7 +15,7 @@
     <% breadcrumbs.with_item(href: household_personal_studies_path(collection: collection.id)) { collection.name } %>
   <% end %>
 <% end %>
-<%= render Primer::Beta::Subhead.new do |subhead| %>
+<%= render Primer::Beta::Subhead.new(classes: "personal-study__header") do |subhead| %>
   <% subhead.with_heading(tag: :h1, flex: [ nil, nil, 1 ], classes: "wb-break-word min-width-0") { personal_study.title_in_database } %>
   <% subhead.with_actions(display: [ :none, nil, :flex ], align_items: :center) do %>
     <%= render "personal_studies/menu", personal_study: %>

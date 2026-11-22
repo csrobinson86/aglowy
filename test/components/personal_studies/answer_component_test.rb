@@ -160,7 +160,7 @@ class PersonalStudies::AnswerComponentTest < ViewComponent::TestCase
     assert_link "Why Does God Allow Suffering?", href: SUFFERING, visible: :all
     assert_text "Check each point against its page."
     assert_no_text "Keep digging"
-    assert_no_selector "button, form, [data-study-ask-target]"
+    assert_no_selector "button, form, [data-study-ask-target]", visible: :all
   end
 
   test "read-only failed and stopped: what happened, with nothing to press" do
