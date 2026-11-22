@@ -138,7 +138,8 @@ class PersonalStudyAiTest < ApplicationSystemTestCase
 
     find("button[aria-label='Study actions']").click
     assert_selector "[role=menuitem]", text: "Create family study"
-    capture_screens("personal-study-menu-family-study")
+    # This is the desktop menu; below md it's hidden and the back row's menu takes its place, so a phone size closes it.
+    capture_screens("personal-study-menu-family-study", viewports: ScreenshotHelper::VIEWPORTS.slice(:desktop))
     find("[role=menuitem]", text: "Create family study").click
 
     assert_selector "h1", text: "Schedule a family study"
