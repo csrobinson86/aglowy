@@ -72,6 +72,64 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button[aria-label='Go bag actions']", count: 0
   end
 
+  test "a head and an adult see the tabs with counters, a checkbox and › on each row, and + Add item ending each section" do
+    go_bag_items(:water).update!(use_by: Date.new(2026, 12, 10))
+    [ identities(:head), identities(:spouse) ].each do |identity|
+      sign_in identity
+      get bag_path(go_bags(:family))
+
+      assert_select "nav[aria-label=Show] a", count: 3
+      assert_equal [ "All 3", "To buy 2", "Use by soon 1" ], css_select("nav[aria-label=Show] a").map { it.text.squish }
+      assert_select "nav[aria-label=Show] a[aria-current=page][href='#{bag_path(go_bags(:family))}']", text: /All/
+      assert_select "nav[aria-label=Show] a[href=?]", bag_path(go_bags(:family), show: "to_buy")
+      assert_select "nav[aria-label=Show] a[href=?]", bag_path(go_bags(:family), show: "use_by_soon")
+      assert_select "##{dom_id(go_bag_items(:flashlight))} input[type=checkbox]"
+      assert_select "##{dom_id(go_bag_items(:flashlight))} a[aria-label='Open Flashlight'][data-turbo-frame=go_bag_item_dialog]"
+      assert_select "main section .Box-row:last-child a[href=?][data-turbo-frame=go_bag_item_dialog]",
+                    new_household_go_bag_item_path(household_id: households(:home), go_bag_id: go_bags(:family), category_id: go_bag_categories(:water_food).id), text: "Add item"
+      assert_select "main section .Box-row:last-child a[href=?]", new_household_go_bag_item_path(household_id: households(:home), go_bag_id: go_bags(:family)), text: "Add item"
+      assert_select "turbo-frame#go_bag_item_dialog"
+    end
+  end
+
+  test "To buy and Use by soon keep their items, and an empty one says so" do
+    sign_in identities(:spouse)
+    get bag_path(go_bags(:family), show: "to_buy")
+    assert_select "nav[aria-label=Show] a[aria-current=page]", text: /To buy/
+    assert_equal [ "Flashlight" ], css_select(".go-bag-item-row__name").map { it.text.strip }
+
+    get bag_path(go_bags(:family), show: "use_by_soon")
+    assert_select "nav[aria-label=Show] a[aria-current=page]", text: /Use by soon/
+    assert_select ".go-bag-item-row__name", count: 0
+    assert_select ".blankslate", text: "Nothing to use soon."
+
+    go_bag_items(:flashlight).acquire(by: users(:spouse))
+    get bag_path(go_bags(:family), show: "to_buy")
+    assert_select ".blankslate", text: "Nothing to buy for this bag."
+  end
+
+  test "a bag with no items offers Add item to heads and adults, not children" do
+    sign_in identities(:spouse)
+    get bag_path(go_bags(:charlies))
+    assert_select ".blankslate a[href='#{new_household_go_bag_item_path(household_id: households(:home), go_bag_id: go_bags(:charlies))}'][data-turbo-frame=go_bag_item_dialog]", "Add item"
+
+    sign_in child_identity
+    get bag_path(go_bags(:charlies))
+    assert_select ".blankslate h2", "No items in this bag yet"
+    assert_select ".blankslate a", count: 0
+  end
+
+  test "a child sees every item, with no tabs, checkboxes, › or Add item, whatever the URL asks" do
+    sign_in child_identity
+    get bag_path(go_bags(:family), show: "to_buy")
+
+    assert_select "nav[aria-label=Show]", count: 0
+    assert_select ".go-bag-item-row__name", count: 3
+    assert_select "main form, main input[type=checkbox], turbo-frame#go_bag_item_dialog", count: 0
+    assert_select "main a", { text: "Add item", count: 0 }
+    assert_select "main a[aria-label^=Open]", count: 0
+  end
+
   test "a bag's page and the list ask no more queries for three bags of many items than for one small bag" do
     sign_in identities(:spouse)
     get household_go_bags_path(household_id: households(:home))
@@ -236,8 +294,12 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
-    def bag_path(bag)
-      household_go_bag_path(household_id: bag.household_id, id: bag)
+    def bag_path(bag, **params)
+      household_go_bag_path(household_id: bag.household_id, id: bag, **params)
+    end
+
+    def dom_id(...)
+      ActionView::RecordIdentifier.dom_id(...)
     end
 
     def assert_not_authorized

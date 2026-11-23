@@ -138,6 +138,21 @@ class GoBagTest < ActiveSupport::TestCase
       assert_equal 3, family.items_count
       assert_equal 2, family.ready_count
       assert_equal 1, family.to_buy_count(today)
+      assert_equal 0, family.use_by_soon_count(today)
+    end
+  end
+
+  test "the bag page's tabs keep the items to buy or to use soon, still grouped by category" do
+    go_bag_items(:water).update!(use_by: Date.new(2026, 12, 10))
+    family = @household.go_bags.preloaded.find(go_bags(:family).id)
+    today = Date.new(2026, 11, 23)
+    names = ->(groups) { groups.map { |category, items| [ category&.name, items.map(&:name) ] } }
+
+    assert_queries_count(0) do
+      assert_equal 1, family.use_by_soon_count(today)
+      assert_equal [ [ "Water and food", [ "Bottled water" ] ], [ "Light, power and radio", [ "Flashlight" ] ], [ nil, [ "Spare batteries" ] ] ], names.(family.items_by_category)
+      assert_equal [ [ "Water and food", [ "Bottled water" ] ], [ "Light, power and radio", [ "Flashlight" ] ] ], names.(family.items_by_category(show: "to_buy", today:))
+      assert_equal [ [ "Water and food", [ "Bottled water" ] ] ], names.(family.items_by_category(show: "use_by_soon", today:))
     end
   end
 end
