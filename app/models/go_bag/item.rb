@@ -12,8 +12,8 @@ class GoBag::Item < ApplicationRecord
   has_one :acquisition, dependent: :delete
   # Its use-by reminders (docs/design/go-bags.md, The use-by reminder). Removing the bag takes them too (GoBag).
   has_many :notifications, as: :subject, dependent: :delete_all
-  # Locked first, so a reminder being made (remind_about_use_by_now) commits before its notifications are deleted.
-  before_destroy :lock!, prepend: true
+  # Before the delete_all above, so each person's counter refreshes too.
+  before_destroy :withdraw_use_by_reminders, prepend: true
 
   encrypts :name, :quantity, :stored_at
 
@@ -113,6 +113,12 @@ class GoBag::Item < ApplicationRecord
   end
 
   private
+    # Locked first, so a reminder being made (remind_about_use_by_now) commits before its notifications are withdrawn.
+    def withdraw_use_by_reminders
+      lock!
+      notifications.withdraw
+    end
+
     def category_in_household
       errors.add(:category, "must be one of the household's categories") unless category&.household_id == go_bag.household_id
     end

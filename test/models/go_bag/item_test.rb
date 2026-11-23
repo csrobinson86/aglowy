@@ -172,6 +172,15 @@ class GoBag::ItemTest < ActiveSupport::TestCase
     assert_not Notification.exists?(reminder.id)
   end
 
+  test "removing the item refreshes the counter of each person it reminded" do
+    water = go_bag_items(:water)
+    remind(users(:spouse), about: water)
+
+    assert_turbo_stream_broadcasts [ users(:spouse), :notifications ], count: 2 do
+      water.destroy!
+    end
+  end
+
   test "deleting the bag removes its items' use-by reminders, and leaves other notifications alone" do
     reminder = remind(users(:spouse), about: go_bag_items(:water))
     other = users(:spouse).notify(kind: "weekly_preview", household: households(:home), subject: households(:home), data: { week_of: "2026-11-23" }, dedupe_key: "weekly_preview:1")
