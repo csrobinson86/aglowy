@@ -17,3 +17,6 @@ Rendered at 2× from the approved mockup. `docs/design/notes.md` says what each 
 | `notes-meeting-notes-shared.png` | The Meeting notes tab showing notes shared in the household | NOTES-01 |
 | `notes-meeting-notes-dark.png` | The Meeting notes tab in dark mode | NOTES-01 |
 | `phone-notes-meeting-notes.png` | The Meeting notes tab on a phone | NOTES-01 |
+| `notes-meeting-notes-weeks.png` | The Meeting notes tab's main area with Earlier a week at a time: the newest week open, the rest closed (the app sidebar is unchanged) | NOTES-01, #442 |
+| `notes-meeting-notes-weeks-dark.png` | The same, dark | NOTES-01, #442 |
+| `phone-notes-meeting-notes-weeks.png` | Earlier a week at a time on a phone | NOTES-01, #442 |
