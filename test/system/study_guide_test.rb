@@ -87,6 +87,7 @@ class StudyGuidePageTest < ApplicationSystemTestCase
     assert_no_selector "aside"
     assert_no_selector ".study-guide-page__side"
     assert_no_button "Print"
+    assert_no_text "Kept for 8 weeks."
     assert_no_link "My meeting notes"
     assert_selector "h2", text: "Keep Hoping in Jehovah"
     within(".study-guide-print-sources") do

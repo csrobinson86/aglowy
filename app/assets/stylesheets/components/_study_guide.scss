@@ -113,9 +113,11 @@
 // become one. The print controller prints in light colours, whatever the person's appearance.
 @media print {
   body:has(.study-guide-page) {
-    // The top bar (d-md-none) and the header's actions (d-flex) carry Primer's display utilities, which are !important.
+    // The top bar (d-md-none), the header's actions and the buttons' row (d-flex) carry Primer's display utilities,
+    // which are !important.
     .app-shell__top-bar,
-    main .Subhead-actions {
+    main .Subhead-actions,
+    .study-guide-page__buttons {
       display: none !important;
     }
 
@@ -133,8 +135,7 @@
     display: block;
   }
 
-  .study-guide-page__side,
-  .study-guide-page__buttons {
+  .study-guide-page__side {
     display: none;
   }
 
