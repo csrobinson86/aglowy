@@ -1,0 +1,7 @@
+water_had:
+  item: water
+  acquired_by: spouse
+
+batteries_had:
+  item: batteries
+  acquired_by: spouse

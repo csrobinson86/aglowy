@@ -177,6 +177,28 @@ class MembershipTest < ActiveSupport::TestCase
     assert_equal [ head ], home_step.reload.assignees.to_a
   end
 
+  # The bag then reads "For everyone" (docs/design/go-bags.md, GoBag).
+  test "deactivate clears who that household's go bags are for, and leaves the person's bags in another household" do
+    head = users(:head)
+    parents_bag = households(:parents).go_bags.create!(name: "Car kit", for_user: head, created_by: users(:grandparent))
+    home_bag = go_bags(:family)
+    home_bag.update!(for_user: head)
+
+    assert memberships(:head_in_parents).deactivate
+
+    assert_nil parents_bag.reload.for_user_id
+    assert_equal head, home_bag.reload.for_user
+  end
+
+  test "saving a go bag for someone who left between loading and saving is refused" do
+    bag = Household.find(households(:home).id).go_bags.new(name: "Spouse's bag", for_user: users(:spouse), created_by: users(:head))
+
+    assert memberships(:spouse_in_home).deactivate
+
+    assert_not bag.save
+    assert_includes bag.errors[:for_user], "must be an active member of the household"
+  end
+
   test "change_role refuses to demote the sole head" do
     membership = memberships(:head_in_home)
 

@@ -1,0 +1,17 @@
+# Two of the home household's categories came from the suggestions; the other household has its own.
+water_food:
+  household: home
+  name: Water and food
+  position: 1
+  suggestion_key: water_food
+
+light_power:
+  household: home
+  name: Light, power and radio
+  position: 2
+  suggestion_key: light_power
+
+outsiders_tools:
+  household: other
+  name: Tools
+  position: 1

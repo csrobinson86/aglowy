@@ -1,0 +1,12 @@
+# The home household's bags (docs/design/go-bags.md, GoBag). No one named means it's for everyone.
+family:
+  household: home
+  name: Family go bag
+  kept_at: the hall closet
+  created_by: spouse
+
+charlies:
+  household: home
+  name: Charlie's bag
+  for_user: child
+  created_by: spouse
