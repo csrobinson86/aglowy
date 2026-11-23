@@ -4,6 +4,8 @@ class GoBag::Category < ApplicationRecord
   LIMIT = 50
 
   belongs_to :household
+  # A category never moves house, so the household's limit and positions hold.
+  attr_readonly :household_id
   # Deleting a category keeps its items: the database sets their category_id to null (on_delete: :nullify).
   has_many :items, class_name: "GoBag::Item"
 

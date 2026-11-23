@@ -30,6 +30,10 @@ class GoBag::CategoryTest < ActiveSupport::TestCase
     assert_queries_match(/FOR UPDATE/) { @household.go_bag_categories.create!(name: "For the car") }
   end
 
+  test "a category stays in its household" do
+    assert_raises(ActiveRecord::ReadonlyAttributeError) { go_bag_categories(:water_food).update(household: households(:other)) }
+  end
+
   test "a category needs a name" do
     category = @household.go_bag_categories.new
 

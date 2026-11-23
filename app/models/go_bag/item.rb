@@ -5,6 +5,8 @@ class GoBag::Item < ApplicationRecord
   SOON = 30.days
 
   belongs_to :go_bag
+  # An item never moves bag, so the bag's limit holds.
+  attr_readonly :go_bag_id
   # Nil is No category.
   belongs_to :category, class_name: "GoBag::Category", optional: true
   has_one :acquisition, dependent: :delete

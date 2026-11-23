@@ -114,6 +114,21 @@ class GoBagTest < ActiveSupport::TestCase
     assert_includes bag.errors[:base], "The household already has 50 go-bag categories, the most it can have"
   end
 
+  test "create_with_suggestions inside a caller's transaction still saves nothing when the categories don't fit" do
+    (GoBag::Category::LIMIT - 2).times { |i| @household.go_bag_categories.create!(name: "Category #{i}") }
+    saved = nil
+
+    assert_no_difference [ -> { GoBag.count }, -> { GoBag::Category.count }, -> { GoBag::Item.count } ] do
+      GoBag.transaction { saved = @household.go_bags.create_with_suggestions({ name: "Grab bag" }, suggested: true, by: users(:spouse)).persisted? }
+    end
+
+    assert_not saved
+  end
+
+  test "a bag stays in its household" do
+    assert_raises(ActiveRecord::ReadonlyAttributeError) { go_bags(:family).update(household: households(:other)) }
+  end
+
   test "counts come from preloaded items without a query per item" do
     bags = assert_queries_count(4) { @household.go_bags.preloaded.to_a }
     family = bags.find { it == go_bags(:family) }

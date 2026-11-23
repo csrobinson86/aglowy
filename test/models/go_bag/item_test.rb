@@ -121,6 +121,10 @@ class GoBag::ItemTest < ActiveSupport::TestCase
     assert_queries_match(/FOR UPDATE/) { @bag.items.create!(name: "Whistle") }
   end
 
+  test "an item stays in its bag" do
+    assert_raises(ActiveRecord::ReadonlyAttributeError) { go_bag_items(:water).update(go_bag: go_bags(:charlies)) }
+  end
+
   test "an item needs a name" do
     item = @bag.items.new
 

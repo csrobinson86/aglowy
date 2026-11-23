@@ -4,6 +4,8 @@ class GoBag < ApplicationRecord
   LIMIT = 20
 
   belongs_to :household
+  # A bag never moves house, so the household's limits and categories hold.
+  attr_readonly :household_id
   # Nil means it's for everyone. Membership#deactivate clears it when that person leaves.
   belongs_to :for_user, class_name: "User", optional: true
   belongs_to :created_by, class_name: "User"
@@ -30,9 +32,9 @@ class GoBag < ApplicationRecord
   # With suggested, the suggested items go in too, none of them acquired, each in the household's category for its
   # suggestion_key, made last when it's missing. All in one transaction under the household's lock, so two bags made
   # at once can't both make a missing category, and a household whose categories are full saves nothing at all
-  # (docs/design/go-bags.md, GoBag::Suggestions).
+  # (docs/design/go-bags.md, GoBag::Suggestions). Its own savepoint, so that holds inside a caller's transaction too.
   def save_with_suggestions(suggested:)
-    transaction do
+    transaction(requires_new: true) do
       household&.lock!
       raise ActiveRecord::Rollback unless save
 
