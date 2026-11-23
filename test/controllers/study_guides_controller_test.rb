@@ -51,6 +51,128 @@ class StudyGuidesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: "Jehovah Keeps His Word", count: 0
   end
 
+  # The children's Get ready cards beside each part (docs/design/study-guide.md, The children's card; Trap 4): last
+  # week's talk and Bible Reading cards are in prep_week_cards.yml.
+  test "show, with Get ready on and cards: each matching part shows its card, read-only with Change" do
+    enable_get_ready
+    @guide.parts.create!(step: "bible_reading", content: { "reading" => "Lamentations 1–2", "summary" => "Jeremiah mourns Jerusalem." })
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card", count: 2
+    assert_select ".study-guide-part", text: /Jehovah Keeps His Word/ do
+      assert_select ".study-guide-prep-card" do
+        assert_select "*", text: /For Eli · from Get ready/
+        assert_select "*", text: /Jeremiah felt very sad. But he remembered that Jehovah never stops caring./
+        assert_select "*", text: /Jehovah cares/
+        assert_select "*", text: /I can\s+Tell Jehovah when I feel sad./
+        assert_select "a[href=?][data-turbo-frame=meeting_prep_card_dialog]",
+          edit_household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "midweek", id: "talk"), "Change"
+        assert_select "input, textarea, form", count: 0
+      end
+    end
+    assert_select ".study-guide-part", text: /The Bible reading/ do
+      assert_select ".study-guide-prep-card", text: /A sad song about Jerusalem.\s+Jehovah is fair\s+·\s+I can\s+Listen when Mom and Dad warn me./
+    end
+    assert_select "turbo-frame#meeting_prep_card_dialog"
+  end
+
+  test "show, with no child here who signs in, says the card is from Get ready without naming anyone" do
+    enable_get_ready
+    identities(:eli).destroy!
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card__kicker", count: 1, text: "From Get ready"
+  end
+
+  test "show, with Get ready off here, has no children's cards" do
+    @home.enable_meeting_helper(by: users(:head))
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select "h2", "Jehovah Keeps His Word"
+    assert_select ".study-guide-prep-card", count: 0
+    assert_select "main", text: /from Get ready/, count: 0
+  end
+
+  test "show: a part without a card, Spiritual Gems and the overview, have none" do
+    enable_get_ready
+    prep_week_cards(:home_nov_9_bible_reading).destroy!
+    @guide.parts.create!(step: "bible_reading", content: { "reading" => "Lamentations 1–2", "summary" => "Jeremiah mourns Jerusalem." })
+    @guide.parts.create!(step: "spiritual_gems", content: { "summary" => "Short comments.", "comments" => [ { "text" => "One." }, { "text" => "Two." } ] })
+    @guide.parts.create!(step: "midweek_overview", content: { "glance" => "Jeremiah grieves over Jerusalem.",
+                                                                 "jehovah" => [ { "quality" => "Merciful", "text" => "He still hears his people." } ] })
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card", count: 1
+    assert_select ".study-guide-part", text: /Jehovah Keeps His Word/ do
+      assert_select ".study-guide-prep-card", count: 1
+    end
+    assert_select ".study-guide-part", text: /The Bible reading/ do
+      assert_select ".study-guide-prep-card", count: 0
+    end
+    assert_select ".study-guide-part", text: /Ideas for comments/ do
+      assert_select ".study-guide-prep-card", count: 0
+    end
+    assert_select ".study-guide-glance .study-guide-prep-card", count: 0
+  end
+
+  test "show escapes the children's card text" do
+    enable_get_ready
+    prep_week_cards(:home_nov_9_talk).update!(about: "<b>Bold</b> words", i_can: "<i>Sing</i> loudly.")
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card", text: /<b>Bold<\/b> words/
+    assert_select ".study-guide-prep-card", text: /<i>Sing<\/i> loudly./
+    assert_select ".study-guide-prep-card b, .study-guide-prep-card i", count: 0
+  end
+
+  test "show, on the weekend, puts the Watchtower card on the Watchtower Study part" do
+    enable_get_ready
+    prep_weeks(:home_nov_9).cards.create!(meeting: "weekend", step: "watchtower_study", about: "Jehovah listens when we pray.",
+                                          quality: "loving", quality_line: "He hears every prayer.", i_can: "Say a prayer before bed.")
+    @guide.parts.create!(step: "watchtower_study", content: { "title" => "Be Patient at Home", "summary" => "The article is about patience." })
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09", meeting: "weekend")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card", count: 1
+    assert_select ".study-guide-part", text: /Be Patient at Home/ do
+      assert_select ".study-guide-prep-card", text: /Jehovah listens when we pray.\s+Jehovah is loving\s+·\s+I can\s+Say a prayer before bed./
+      assert_select "a[href=?]", edit_household_meeting_prep_card_path(household_id: @home, meeting_prep_meeting: "weekend", id: "watchtower_study"), "Change"
+    end
+  end
+
+  test "show takes the cards from the household in the URL, never from the guide" do
+    enable_get_ready
+
+    get household_study_guide_path(household_id: households(:parents), week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select "h2", "Jehovah Keeps His Word"
+    assert_select ".study-guide-prep-card", count: 0
+  end
+
+  test "show, for an earlier week, shows that week's card without Change, which changes only this week's" do
+    enable_get_ready
+    travel_to Time.utc(2026, 11, 17, 16)
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card", text: /Tell Jehovah when I feel sad./
+    assert_select ".study-guide-prep-card a", count: 0
+    assert_select "turbo-frame#meeting_prep_card_dialog", count: 0
+  end
+
   test "another person's week is a 404" do
     sign_in identities(:spouse)
 
@@ -80,4 +202,10 @@ class StudyGuidesControllerTest < ActionDispatch::IntegrationTest
     get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
     assert_response :not_found
   end
+
+  private
+    def enable_get_ready
+      @home.enable_meeting_helper(by: users(:head))
+      @home.enable_meeting_prep(by: users(:head))
+    end
 end

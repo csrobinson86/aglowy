@@ -111,6 +111,49 @@ class StudyGuidePageTest < ApplicationSystemTestCase
     capture_screens("study-guide-missing-parts")
   end
 
+  test "the children's Get ready card on the Treasures part, for both children, and Change opens Get ready's dialog" do
+    @home.change_meeting_times(midweek_wday: 4, midweek_time: "19:00", weekend_wday: 0, weekend_time: "10:00")
+    @home.enable_meeting_helper(by: @head)
+    @home.enable_meeting_prep(by: @head)
+    users(:child).create_identity!(username: "charlie", password: "password123", confirmed_at: Time.current)
+    card = @home.prep_weeks.create!(week_of: "2026-11-16").cards.create!(
+      meeting: "midweek", step: "talk", about: "Jeremiah felt very sad. But he remembered that Jehovah never stops caring.",
+      quality: "caring", quality_line: "His kindness is new every morning.", i_can: "Tell Jehovah when I feel sad.")
+    add_midweek
+    sign_in identities(:head)
+    visit household_study_guide_url(household_id: @home, week_of: "2026-11-16")
+
+    within(".study-guide-part", text: "Keep Hoping in Jehovah") do
+      within(".study-guide-prep-card") do
+        assert_text "For Charlie and Eli · from Get ready"
+        assert_text "Jeremiah felt very sad. But he remembered that Jehovah never stops caring."
+        assert_text "Jehovah cares · I can Tell Jehovah when I feel sad."
+      end
+    end
+    within(".study-guide-part", text: "Ideas for comments") { assert_no_selector ".study-guide-prep-card" }
+    within(".study-guide-part", text: "Comfort Those Who Mourn") { assert_no_selector ".study-guide-prep-card" }
+    assert_accessible
+    capture_screens("study-guide-prep-card", scroll_to: ".study-guide-prep-card")
+
+    within(".study-guide-prep-card") { click_on "Change" }
+
+    assert_selector "dialog[open] h1", text: "Treasures From God's Word"
+    assert_field "I can…", with: "Tell Jehovah when I feel sad."
+    wait_for_dialog
+    assert_accessible
+
+    fill_in "I can…", with: "Draw Jehovah a <b>thank-you</b> picture."
+    click_on "Save"
+
+    assert_no_selector "dialog[open]"
+    assert_text "Card saved."
+    within(".study-guide-part", text: "Keep Hoping in Jehovah") do
+      assert_selector ".study-guide-prep-card", text: "Jehovah cares · I can Draw Jehovah a <b>thank-you</b> picture."
+    end
+    assert_equal "Draw Jehovah a <b>thank-you</b> picture.", card.reload.i_can
+    assert_accessible
+  end
+
   private
     def add_part(step, content)
       @guide.parts.create!(step:, content:)

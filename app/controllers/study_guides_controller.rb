@@ -25,5 +25,7 @@ class StudyGuidesController < ApplicationController
     @study_guide = Current.user.study_guides.preloaded.find_by!(week_of: params[:week_of])
     authorize @study_guide
     @meeting = params[:meeting] == "weekend" ? "weekend" : "midweek"
+    # The children's cards are the household's in the URL, never the guide's (docs/design/study-guide.md, Trap 4).
+    @prep_cards = Current.household.prep_cards_by_step(@study_guide.week_of)
   end
 end

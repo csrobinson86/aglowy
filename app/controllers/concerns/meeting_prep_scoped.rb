@@ -25,7 +25,7 @@ module MeetingPrepScoped
   end
 
   def set_prep_week
-    @week_of = Current.household.today.beginning_of_week(:monday)
+    @week_of = Current.household.prep_week_of
     @prep_week = Current.household.prep_week_for(@week_of)
   end
 

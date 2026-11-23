@@ -15,7 +15,8 @@
 }
 
 .study-guide-glance__kicker,
-.study-guide-part__kicker {
+.study-guide-part__kicker,
+.study-guide-prep-card__kicker {
   margin-bottom: var(--base-size-4);
   font-size: var(--text-body-size-small);
   font-weight: var(--base-text-weight-medium);
@@ -90,6 +91,28 @@
   padding-left: var(--base-size-16);
 }
 
+// The children's Get ready card at the foot of a part's card: dashed, so it reads as theirs and not the guide's.
+.study-guide-prep-card {
+  margin-top: var(--base-size-16);
+  padding: var(--base-size-8) var(--base-size-12) var(--base-size-12);
+  background-color: var(--bgColor-muted);
+  border: var(--borderWidth-thin) dashed var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}
+
+.study-guide-prep-card__kicker {
+  margin-bottom: 0;
+}
+
+// Change is a 44px target on a touch screen; with a mouse --control-minTarget-auto is small enough to change nothing.
+.study-guide-prep-card__change {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}
+
 // Scriptures in this guide, side by side, wrapping.
 .study-guide-scriptures {
   display: flex;
@@ -135,7 +158,8 @@
     display: block;
   }
 
-  .study-guide-page__side {
+  .study-guide-page__side,
+  .study-guide-prep-card__change {
     display: none;
   }
 
