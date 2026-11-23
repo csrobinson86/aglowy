@@ -1,0 +1,34 @@
+<%# locals: (category:, renaming: nil) %>
+<%# A category's row: its name, what's in it and its "…" (Rename, Delete), or while renaming, its form, all in its
+    Turbo Frame. Delete asks first in the dialog beside the frame (frame go-bag-categories.png). %>
+<% name = category.name %>
+<%= turbo_frame_tag category, class: "d-flex flex-items-center" do %>
+  <% if renaming %>
+    <div class="flex-auto"><%= render "settings/go_bag_categories/form", category: renaming %></div>
+  <% else %>
+    <div class="flex-auto min-width-0 mr-2">
+      <div class="Truncate"><span class="Truncate-text"><%= name %></span></div>
+      <div class="color-fg-muted f6"><%= go_bag_category_contents(category) %></div>
+    </div>
+    <%= render(Primer::Alpha::ActionMenu.new(menu_id: dom_id(category, :menu), anchor_align: :end, classes: "go-bag-categories__menu")) do |menu| %>
+      <% menu.with_show_button(icon: :"kebab-horizontal", scheme: :invisible, "aria-label": "#{name} actions", show_tooltip: false) %>
+      <% menu.with_item(label: "Rename", href: household_settings_go_bag_categories_path(rename: category.id),
+                        content_arguments: { data: { turbo_frame: dom_id(category) } }) do |item| %>
+        <% item.with_leading_visual_icon(icon: :pencil) %>
+      <% end %>
+      <% menu.with_divider %>
+      <% menu.with_item(label: "Delete…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": dom_id(category, :delete_dialog) }) do |item| %>
+        <% item.with_leading_visual_icon(icon: :trash) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+<%= render(Primer::Alpha::Dialog.new(id: dom_id(category, :delete_dialog), title: "Delete #{name}?")) do |dialog| %>
+  <% dialog.with_body { go_bag_category_delete_line(category) } %>
+  <% dialog.with_footer do %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: dom_id(category, :delete_dialog) })) { "Cancel" } %>
+    <%= primer_form_with(url: household_settings_go_bag_category_path(id: category), method: :delete) do |f| %>
+      <%= render Settings::GoBagCategoryDeletionForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>

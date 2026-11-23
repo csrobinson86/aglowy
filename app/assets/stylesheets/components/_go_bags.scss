@@ -34,3 +34,15 @@
   min-width: var(--control-minTarget-auto);
   min-height: var(--control-minTarget-auto);
 }
+
+// Settings → Go bags: a category's "…" and its menu items, and the Categories link on Go bags, take a 44px touch
+// (docs/design/phone.md, rule 8), as Members' row menus do. With a mouse --control-minTarget-auto changes nothing.
+.go-bag-categories__menu .ActionListContent,
+.go-bags__categories {
+  min-height: var(--control-minTarget-auto);
+}
+
+.go-bag-categories__menu .Button--iconOnly {
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}

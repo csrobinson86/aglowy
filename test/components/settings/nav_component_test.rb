@@ -14,22 +14,25 @@ class Settings::NavComponentTest < ViewComponent::TestCase
                  page.all("nav[aria-label='Settings'] a").map { it[:href] }
   end
 
-  test "a head sees all four household sections, under the household's name" do
+  test "a head sees all five household sections, under the household's name" do
     render_inline(Settings::NavComponent.new(membership: memberships(:head_in_home), selected: :profile))
 
     assert_selector "nav[aria-label='Settings'] h2", text: "The Head Family"
-    assert_equal [ "Household", "Meetings", "Children", "Members and roles" ], page.all("nav[aria-label='Settings'] a").map { it.text.strip }.last(4)
-    assert_equal %W[ /#{@home.id}/settings/household /#{@home.id}/settings/meetings /#{@home.id}/settings/children /#{@home.id}/settings/members ],
-                 page.all("nav[aria-label='Settings'] a").map { it[:href] }.last(4)
+    assert_equal [ "Household", "Meetings", "Children", "Go bags", "Members and roles" ], page.all("nav[aria-label='Settings'] a").map { it.text.strip }.last(5)
+    assert_equal %W[ /#{@home.id}/settings/household /#{@home.id}/settings/meetings /#{@home.id}/settings/children /#{@home.id}/settings/go_bag_categories
+                    /#{@home.id}/settings/members ],
+                 page.all("nav[aria-label='Settings'] a").map { it[:href] }.last(5)
   end
 
-  test "an adult sees Meetings and Children only" do
+  test "an adult sees Meetings, Children and Go bags only" do
     render_inline(Settings::NavComponent.new(membership: memberships(:spouse_in_home), selected: :meetings))
 
     assert_selector "nav[aria-label='Settings'] h2", text: "The Head Family"
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Meetings", "Children" ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Meetings", "Children",
+                   "Go bags" ],
                  page.all("nav[aria-label='Settings'] a").map { it.text.strip }
     assert_selector ".settings-nav__menu a", text: "Children", visible: :all
+    assert_selector ".settings-nav__menu a[href='/#{@home.id}/settings/go_bag_categories']", text: "Go bags", visible: :all
     assert_no_selector ".settings-nav__menu a", text: "Members and roles", visible: :all
   end
 
@@ -51,6 +54,7 @@ class Settings::NavComponentTest < ViewComponent::TestCase
     assert_no_text "The Head Family"
     assert_selector "nav[aria-label='Settings'] h2", count: 1
     assert_no_selector "a[href$='/settings/meetings']", visible: :all
+    assert_no_selector "a[href$='/settings/go_bag_categories']", visible: :all
   end
 
   test "the current section is selected, and only it" do

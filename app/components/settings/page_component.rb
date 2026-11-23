@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Every Settings page: the h1, the section nav, then the section's title, its one-line note and its boxes
-# (docs/design/settings.md, The page). A household section's note starts with the household's name.
+# (docs/design/settings.md, The page). A household section's note names the household.
 class Settings::PageComponent < ApplicationComponent
   NOTES = {
     profile: "Follows you to every household.",
@@ -12,10 +12,11 @@ class Settings::PageComponent < ApplicationComponent
     calendar: "Who sees your times, and your phone calendar link.",
     notifications: "What reaches you, and where. Follows you to every household.",
     study_guide: "You · in every household where you're a head or an adult.",
-    household: "heads can change this.",
-    meetings: "heads and adults can change this.",
-    children: "heads and adults; AI for a child is heads only.",
-    members: "heads only."
+    household: "%{household} · heads can change this.",
+    meetings: "%{household} · heads and adults can change this.",
+    children: "%{household} · heads and adults; AI for a child is heads only.",
+    go_bag_categories: %(Categories for %{household}'s go bags. Heads and adults can change them. Deleting one keeps its items, under "No category".),
+    members: "%{household} · heads only."
   }.freeze
 
   renders_one :body
@@ -32,7 +33,7 @@ class Settings::PageComponent < ApplicationComponent
   end
 
   def note
-    household_section? ? "#{membership.household.name} · #{NOTES.fetch(section)}" : NOTES.fetch(section)
+    household_section? ? format(NOTES.fetch(section), household: membership.household.name) : NOTES.fetch(section)
   end
 
   private

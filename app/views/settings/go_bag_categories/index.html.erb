@@ -1,0 +1,29 @@
+<% content_for :title, "Go bags · Settings" %>
+
+<%= render Settings::PageComponent.new(membership: Current.membership, section: :go_bag_categories) do |page| %>
+  <% page.with_body do %>
+    <%= render(Primer::Beta::BorderBox.new(id: "go-bag-categories", mb: 4)) do |box| %>
+      <% if @categories.none? %>
+        <% box.with_body(color: :muted) { "No categories yet." } %>
+      <% end %>
+      <% @categories.each do |category| %>
+        <% box.with_row do %>
+          <%= render "settings/go_bag_categories/category", category:, renaming: (@renaming if @renaming&.id == category.id) %>
+        <% end %>
+      <% end %>
+      <%# The link fills its row, so it's big enough to tap on a phone. %>
+      <% box.with_row(p: 0) do %>
+        <%= turbo_frame_tag GoBag::Category.new do %>
+          <% if @adding %>
+            <div class="p-3"><%= render "settings/go_bag_categories/form", category: @adding %></div>
+          <% else %>
+            <%= render(Primer::Beta::Link.new(href: household_settings_go_bag_categories_path(add: 1), display: :block, p: 3)) do |link| %>
+              <% link.with_leading_visual_icon(icon: :plus) %>
+              Add category
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

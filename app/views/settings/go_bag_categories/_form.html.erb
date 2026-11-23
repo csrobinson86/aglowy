@@ -1,0 +1,7 @@
+<%# locals: (category:) %>
+<%# Add category or Rename, in its row's Turbo Frame. A save goes to the top, so the section comes back with its notice,
+    and a refused one re-renders the section with this form and its error. %>
+<%= primer_form_with(model: category, url: category.new_record? ? household_settings_go_bag_categories_path : household_settings_go_bag_category_path(id: category),
+      namespace: dom_id(category), data: { turbo_frame: "_top" }) do |f| %>
+  <%= render Settings::GoBagCategoryForm.new(f, cancel_path: household_settings_go_bag_categories_path) %>
+<% end %>

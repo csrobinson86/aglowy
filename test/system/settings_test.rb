@@ -65,7 +65,8 @@ class SettingsTest < ApplicationSystemTestCase
     sign_in identities(:head)
     visit household_settings_url(household_id: households(:home))
 
-    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Household", "Meetings", "Children", "Members and roles" ],
+    assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Household", "Meetings", "Children", "Go bags",
+                   "Members and roles" ],
                  all("nav[aria-label='Settings'] a").map(&:text)
     within("nav[aria-label='Settings']") { click_on "Household" }
     assert_selector "h2", text: "Household"
@@ -103,13 +104,14 @@ class SettingsTest < ApplicationSystemTestCase
     assert memberships(:spouse_in_home).reload.head?
   end
 
-  test "an adult sees only Meetings and Children of the household's sections, sets the meeting times and turns the helper on and off" do
+  test "an adult sees only Meetings, Children and Go bags of the household's sections, sets the meeting times and turns the helper on and off" do
     sign_in identities(:spouse)
     visit household_settings_url(household_id: households(:home))
 
     within("nav[aria-label='Settings']") do
       assert_selector "h2", text: "The Head Family"
-      assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Meetings", "Children" ], all("a").map(&:text)
+      assert_equal [ "Profile", "Appearance", "Signing in", "My households", "Tags and collections", "Calendar", "Notifications", "Study guide", "Meetings", "Children", "Go bags" ],
+                   all("a").map(&:text)
       click_on "Meetings"
     end
     assert_selector "h2", text: "Meetings"

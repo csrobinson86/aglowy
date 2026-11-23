@@ -8,7 +8,8 @@ class Settings::NavComponent < ApplicationComponent
   # Each section's id is its controller's, and its page is household_settings_<id>_path.
   SECTIONS = { profile: "Profile", appearance: "Appearance", sign_in: "Signing in", memberships: "My households", tags: "Tags and collections",
                calendar: "Calendar", notifications: "Notifications", study_guide: "Study guide" }.freeze
-  HOUSEHOLD_SECTIONS = { household: "Household", meetings: "Meetings", children: "Children", members: "Members and roles" }.freeze
+  HOUSEHOLD_SECTIONS = { household: "Household", meetings: "Meetings", children: "Children", go_bag_categories: "Go bags",
+                         members: "Members and roles" }.freeze
   LABELS = SECTIONS.merge(HOUSEHOLD_SECTIONS).freeze
 
   attr_reader :membership, :selected
@@ -40,9 +41,16 @@ class Settings::NavComponent < ApplicationComponent
       membership.user.may_have_study_guide? ? SECTIONS : SECTIONS.except(:study_guide)
     end
 
-    # Household and Members and roles for heads; Meetings and Children for heads and adults.
+    # Household and Members and roles for heads; Meetings and Children for heads and adults; Go bags as
+    # GoBag::CategoryPolicy allows, heads and adults.
     def household_sections
       policy = HouseholdPolicy.new(membership, household)
-      HOUSEHOLD_SECTIONS.select { |id, _| id.in?(%i[ meetings children ]) ? policy.manage_meetings? : policy.update? }
+      HOUSEHOLD_SECTIONS.select do |id, _|
+        case id
+        when :meetings, :children then policy.manage_meetings?
+        when :go_bag_categories then GoBag::CategoryPolicy.new(membership, GoBag::Category).index?
+        else policy.update?
+        end
+      end
     end
 end

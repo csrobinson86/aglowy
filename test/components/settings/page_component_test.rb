@@ -20,4 +20,11 @@ class Settings::PageComponentTest < ViewComponent::TestCase
     assert_selector "h2.settings-page__title", text: "Meetings"
     assert_selector "p", text: "The Head Family · heads and adults can change this."
   end
+
+  test "Go bags' note names the household in its sentence" do
+    render_inline(Settings::PageComponent.new(membership: memberships(:spouse_in_home), section: :go_bag_categories)) { |page| page.with_body { "" } }
+
+    assert_selector "h2.settings-page__title", text: "Go bags"
+    assert_selector "p", text: %(Categories for The Head Family's go bags. Heads and adults can change them. Deleting one keeps its items, under "No category".)
+  end
 end

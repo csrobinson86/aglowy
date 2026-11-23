@@ -39,6 +39,16 @@
   <% end %>
 <% end %>
 
+<% unless read_only %>
+  <p class="mb-4">
+    <%= render(Primer::Beta::Link.new(href: household_settings_go_bag_categories_path, display: :inline_flex, align_items: :center,
+                                    classes: "go-bags__categories")) do |link| %>
+      <% link.with_leading_visual_icon(icon: :"list-unordered") %>
+      Categories
+    <% end %>
+  </p>
+<% end %>
+
 <%# The guide is its title and a link, never its text, and Aglowy never fetches it (docs/design/go-bags.md, Linked). %>
 <% guide = GoBag::Suggestions.new.guide %>
 <%= render Primer::Beta::BorderBox.new do |box| %>

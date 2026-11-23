@@ -103,6 +103,7 @@ Rails.application.routes.draw do
       end
       resource :meeting_helper, only: :update              # Children's meeting helper switch
       resources :members, only: :index                     # Members and roles, heads
+      resources :go_bag_categories, only: %i[ index create update destroy ]   # Go bags, heads and adults (docs/design/go-bags.md)
     end
     # Changing a role and removing a member are on Settings → Members and roles, heads only (docs/design/invitations.md).
     resources :members, only: %i[ index new create destroy ] do
