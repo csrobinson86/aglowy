@@ -183,8 +183,9 @@ A new notification kind, added by its own story as `docs/design/notifications.md
 
 | Kind | Who gets it | Made when | Subject | Says | Opens | Email |
 | --- | --- | --- | --- | --- | --- | --- |
-| `go_bag_use_by` | The household's active heads and adults | Each day at 8 AM in the household's zone, for items we have whose use-by date is today or within the next 30 days | `GoBag::Item` | "Bottled water in Family go bag: use by December 20", then "Replace it, then set the new use-by date." | The item's page | Daily summary |
+| `go_bag_use_by` | The household's active heads and adults | Each day at 8 AM in the household's zone, for items we have whose use-by date is today or within the next 30 days | `GoBag::Item`, with `data: { use_by: }` | "Bottled water in Family go bag: use by December 20", then "Replace it, then set the new use-by date." | The item's page | Daily summary |
 
+- **Each reminder shows its own date.** The item and bag names and the link come from the subject when it's shown, as for other kinds, but the date comes from `data["use_by"]`, like the weekly preview's `week_of`. So after a date changes, the older reminder still says the date it was sent for. A date isn't personal, so storing it keeps to the notifications rule.
 - **Once for each date.** The dedupe key is `go_bag_use_by:<item id>:<use_by>`, so the daily job never sends it twice. A new use-by date makes a new key, so the next date gets its own reminder. An item with no date, an item we don't have, and a date already past get nothing.
 - **Right away for a date already close.** When an item is saved or ticked with a use-by date already inside the 30 days (today included), `item.remind_about_use_by_later` sends the reminder straight away, with the same dedupe key. Otherwise a date set for today after the 8 AM run would never get one. The daily job then finds it already sent.
 - **Job:** `Notification::GoBagUseByJob`, every hour at minute 20 (`config/recurring.yml`): `Household.at_local_hour(8).find_each(&:remind_about_go_bag_use_by)`.
