@@ -184,7 +184,10 @@ Rails.application.routes.draw do
     end
     # The signed-in person's own study guide, a week at a time by its Monday (2026-11-16), ?meeting=weekend for the
     # weekend; found through Current.user, for heads and adults (docs/design/study-guide.md, Pages and routes).
-    resources :study_guides, only: %i[ index show ], param: :week_of
+    resources :study_guides, only: %i[ index show ], param: :week_of do
+      # Keep in Notes: the week's guide as one of the person's own notes.
+      resource :note, only: :create, module: :study_guides
+    end
     # This week's listening game for heads and adults, and changing a round in a dialog (docs/design/listening-game.md,
     # Pages).
     resource :listening_game, only: :show do

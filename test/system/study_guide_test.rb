@@ -86,6 +86,7 @@ class StudyGuidePageTest < ApplicationSystemTestCase
 
     assert_no_selector "aside"
     assert_no_selector ".study-guide-page__side"
+    assert_no_button "Keep in Notes"
     assert_no_button "Print"
     assert_no_text "Kept for 8 weeks."
     assert_no_link "My meeting notes"
@@ -152,6 +153,33 @@ class StudyGuidePageTest < ApplicationSystemTestCase
     end
     assert_equal "Draw Jehovah a <b>thank-you</b> picture.", card.reload.i_can
     assert_accessible
+  end
+
+  test "Keep in Notes opens the guide as a note, both meetings, its scriptures linked" do
+    add_midweek
+    add_weekend
+    sign_in identities(:head)
+    visit household_study_guide_url(household_id: @home, week_of: "2026-11-16")
+    capture_screens("study-guide-keep-in-notes", scroll_to: ".study-guide-page__buttons")
+
+    click_on "Keep in Notes"
+
+    assert_text "Kept in Notes."
+    assert_selector "main h1", text: "Study guide · Week of November 16"
+    within(".personal-note") do
+      assert_selector "h2", text: "Midweek meeting"
+      assert_selector "h2", text: "Weekend meeting"
+      assert_text "Keep Hoping in Jehovah"
+      assert_text "Be Patient at Home"
+      assert_text "Talk about <b>hope</b>."
+      assert_no_selector "b", text: "hope"
+      assert_link "Lamentations 1:1", href: Bible::Reference.parse("Lamentations 1:1").jw_url
+      assert_link "Psalm 23", href: Bible::Reference.parse("Psalm 23").jw_url
+      assert_link "Proverbs 17:17", href: Bible::Reference.parse("Proverbs 17:17").jw_url
+    end
+    assert_turbo_idle
+    assert_accessible
+    capture_screens("study-guide-kept-note")
   end
 
   private
