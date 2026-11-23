@@ -39,6 +39,7 @@ class GoBagsTest < ApplicationSystemTestCase
     within(".Subhead") { click_on "Edit" }
     assert_selector "h1", text: "Edit go bag"
     assert_no_field "Start with suggested items"
+    assert_accessible
     fill_in "Name", with: "Home go bag"
     select "Charlie Child", from: "For"
     click_on "Save"

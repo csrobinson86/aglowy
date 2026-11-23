@@ -88,10 +88,12 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "New ticks Start with suggested items only when the household has no bags" do
-    sign_in identities(:spouse)
-    get new_household_go_bag_path(household_id: households(:home))
-    assert_response :success
-    assert_select "input[type=checkbox][name='go_bag[suggested]']:not([checked])"
+    [ identities(:head), identities(:spouse) ].each do |identity|
+      sign_in identity
+      get new_household_go_bag_path(household_id: households(:home))
+      assert_response :success
+      assert_select "input[type=checkbox][name='go_bag[suggested]']:not([checked])"
+    end
 
     households(:home).go_bags.destroy_all
     get new_household_go_bag_path(household_id: households(:home))
@@ -135,6 +137,17 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[type=checkbox][name='go_bag[suggested]'][checked]"
   end
 
+  test "the household's 21st bag is refused, with the reason above the form" do
+    18.times { households(:home).go_bags.create!(name: "Bag #{it}", created_by: users(:spouse)) }
+    sign_in identities(:spouse)
+
+    assert_no_difference -> { GoBag.count } do
+      post household_go_bags_path(household_id: households(:home)), params: { go_bag: { name: "One too many" } }
+    end
+    assert_response :unprocessable_content
+    assert_select ".flash-error", text: /The household already has 20 go bags, the most it can have/
+  end
+
   test "for_user_id of a non-member is refused with the error by the field" do
     sign_in identities(:spouse)
 
@@ -156,13 +169,13 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
       sign_in identity
       get edit_household_go_bag_path(household_id: households(:home), id: go_bags(:family))
       assert_response :success
-      assert_select "input[name='go_bag[name]'][value='Family go bag']"
+      assert_select "input[name='go_bag[name]'][value='#{go_bags(:family).reload.name}']"
       assert_select "input[name='go_bag[suggested]']", count: 0
-    end
 
-    patch bag_path(go_bags(:family)), params: { go_bag: { name: "Home bag", kept_at: "the garage", for_user_id: users(:child).id } }
-    assert_redirected_to bag_path(go_bags(:family))
-    assert_equal [ "Home bag", "the garage", users(:child) ], go_bags(:family).reload.then { [ it.name, it.kept_at, it.for_user ] }
+      patch bag_path(go_bags(:family)), params: { go_bag: { name: "Bag by #{identity.user.first_name}", kept_at: "the garage", for_user_id: users(:child).id } }
+      assert_redirected_to bag_path(go_bags(:family))
+      assert_equal [ "Bag by #{identity.user.first_name}", "the garage", users(:child) ], go_bags(:family).reload.then { [ it.name, it.kept_at, it.for_user ] }
+    end
 
     patch bag_path(go_bags(:family)), params: { go_bag: { name: "" } }
     assert_response :unprocessable_content
@@ -170,13 +183,15 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "Destroy deletes the bag and its items" do
-    sign_in identities(:spouse)
+    [ [ identities(:head), go_bags(:family), 3 ], [ identities(:spouse), go_bags(:charlies), 0 ] ].each do |identity, bag, items|
+      sign_in identity
 
-    assert_difference -> { GoBag.count } => -1, -> { GoBag::Item.count } => -3 do
-      delete bag_path(go_bags(:family))
+      assert_difference -> { GoBag.count } => -1, -> { GoBag::Item.count } => -items do
+        delete bag_path(bag)
+      end
+      assert_redirected_to household_go_bags_path(household_id: households(:home))
+      assert_equal "Go bag deleted.", flash[:notice]
     end
-    assert_redirected_to household_go_bags_path(household_id: households(:home))
-    assert_equal "Go bag deleted.", flash[:notice]
   end
 
   test "a child is refused New, Create, Edit, Update and Destroy" do

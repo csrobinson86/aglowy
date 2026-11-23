@@ -4,6 +4,7 @@ class GoBagsController < ApplicationController
   include HouseholdScoped
 
   before_action :set_go_bag, only: %i[ show edit update destroy ]
+  before_action :set_members, only: %i[ new create edit update ]
 
   def index
     authorize GoBag
@@ -57,6 +58,11 @@ class GoBagsController < ApplicationController
   private
     def set_go_bag
       @go_bag = Current.household.go_bags.preloaded.find(params[:id])
+    end
+
+    # Who a bag can be for, in the form's For.
+    def set_members
+      @members = Current.household.active_memberships.includes(:user).map(&:user)
     end
 
     def go_bag_params

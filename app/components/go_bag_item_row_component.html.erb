@@ -8,6 +8,6 @@
   <% end %>
   <div class="flex-1 min-width-0">
     <div class="go-bag-item-row__name"><%= item.name %></div>
-    <div class="go-bag-item-row__line color-fg-muted"><%= safe_join(parts.map { |part| part.color ? tag.span(part.text, class: "color-fg-#{part.color}") : part.text }, " · ") %></div>
+    <div class="go-bag-item-row__line f6 color-fg-muted"><%= safe_join(parts.map { |part| part.color ? tag.span(part.text, class: "color-fg-#{part.color}") : part.text }, " · ") %></div>
   </div>
 </div>
