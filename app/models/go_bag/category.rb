@@ -14,6 +14,12 @@ class GoBag::Category < ApplicationRecord
   validates :name, presence: true, length: { maximum: 40 }
   validate :within_the_limit, on: :create
 
+  # Each with items_count and bags_count, the items in it across the household's bags, for Settings → Go bags.
+  scope :with_items_counts, -> do
+    left_joins(:items).group(:id)
+      .select("go_bag_categories.*", "COUNT(go_bag_items.id) AS items_count", "COUNT(DISTINCT go_bag_items.go_bag_id) AS bags_count")
+  end
+
   private
     # Behind the household's lock, which save's transaction holds until the row is in, so two categories added at once
     # can't both be the 50th, nor take the same position. A new category goes last.

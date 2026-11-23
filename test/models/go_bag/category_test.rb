@@ -30,6 +30,15 @@ class GoBag::CategoryTest < ActiveSupport::TestCase
     assert_queries_match(/FOR UPDATE/) { @household.go_bag_categories.create!(name: "For the car") }
   end
 
+  test "with_items_counts counts each category's items and the bags they're in, in position order, empty ones too" do
+    go_bags(:charlies).items.create!(name: "Canned beans", category: go_bag_categories(:water_food))
+    @household.go_bag_categories.create!(name: "Pets")
+
+    counts = @household.go_bag_categories.with_items_counts.map { [ it.name, it.items_count, it.bags_count ] }
+
+    assert_equal [ [ "Water and food", 2, 2 ], [ "Light, power and radio", 1, 1 ], [ "Pets", 0, 0 ] ], counts
+  end
+
   test "a category stays in its household" do
     assert_raises(ActiveRecord::ReadonlyAttributeError) { go_bag_categories(:water_food).update(household: households(:other)) }
   end
