@@ -67,7 +67,7 @@ All reached through `Current.household`.
 | `household_id` | uuid | FK → households, not null, cascade | |
 | `name` | string | not null, `encrypts :name` | "Family go bag" |
 | `kept_at` | string | nullable, `encrypts :kept_at` | Where the bag is kept: "the hall closet". Shown as "Kept in the hall closet" |
-| `for_user_id` | uuid | FK → users, nullable, `on_delete: :nullify` | The person it's for. Null means everyone. Must be an active member of the household (validated) |
+| `for_user_id` | uuid | FK → users, nullable, `on_delete: :nullify` | The person it's for. Null means everyone. Must be an active member of the household (validated under `household.lock!`, so it can't land just after that person leaves) |
 | `created_by_id` | uuid | FK → users, not null | |
 
 - Bags are listed in the order they were made (by id, which is UUIDv7). Never sort by name in SQL, since it's encrypted.
@@ -186,6 +186,7 @@ A new notification kind, added by its own story as `docs/design/notifications.md
 | `go_bag_use_by` | The household's active heads and adults | Each day at 8 AM in the household's zone, for items we have whose use-by date is today or within the next 30 days | `GoBag::Item` | "Bottled water in Family go bag: use by December 20", then "Replace it, then set the new use-by date." | The item's page | Daily summary |
 
 - **Once for each date.** The dedupe key is `go_bag_use_by:<item id>:<use_by>`, so the daily job never sends it twice. A new use-by date makes a new key, so the next date gets its own reminder. An item with no date, an item we don't have, and a date already past get nothing.
+- **Right away for a date already close.** When an item is saved or ticked with a use-by date already inside the 30 days (today included), `item.remind_about_use_by_later` sends the reminder straight away, with the same dedupe key. Otherwise a date set for today after the 8 AM run would never get one. The daily job then finds it already sent.
 - **Job:** `Notification::GoBagUseByJob`, every hour at minute 20 (`config/recurring.yml`): `Household.at_local_hour(8).find_each(&:remind_about_go_bag_use_by)`.
 - **The subject goes with the item.** `GoBag::Item` gets `has_many :notifications, as: :subject, dependent: :delete_all`, as the other subjects do, so removing an item or its bag removes its reminders.
 - **Settings → Notifications** offers the kind to anyone who is a head or adult in some household. Label "Go bag use-by dates", description "A month before something in a go bag needs replacing. Heads and adults." Icon `briefcase`, in yellow.
@@ -214,5 +215,5 @@ A new notification kind, added by its own story as `docs/design/notifications.md
 - Filters: All, To buy, Use by soon, each empty and full
 - To buy: nothing to buy, items to get in several bags, an item to replace, a row just ticked
 - Categories: none yet, made from the suggestions, renamed, deleted while it holds items
-- The reminder: sent once, not sent again the next day, sent again after the date changes, not sent for an item we don't have
+- The reminder: sent once, not sent again the next day, sent again after the date changes, not sent for an item we don't have, sent right away for a date set to today after 8 AM
 - Phone and desktop; light and dark; `assert_accessible` with the item dialog and each "…" menu open
