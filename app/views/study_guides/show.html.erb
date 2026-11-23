@@ -7,6 +7,9 @@
     them the pages used and the scriptures, which move under the cards on a phone. Print leaves out the sidebar, the side
     column and the buttons, and lists the pages with their full addresses at the end. Every field is escaped (Trap 5). %>
 <% overviews, parts = @study_guide.parts_for(@meeting).partition(&:overview?) %>
+<%# The children's Get ready cards (The children's card): Change only on this week's, the only week Get ready changes. %>
+<% prep_card_readers = Current.household.prep_card_readers.map(&:first_name) if @prep_cards.any? %>
+<% prep_cards_changeable = @prep_cards.any? && @study_guide.week_of == Current.household.prep_week_of %>
 <%= render "study_guides/header", study_guide: @study_guide, meeting: @meeting %>
 
 <%= render(Primer::Alpha::Banner.new(icon: :"sparkle-fill", mb: 4)) do %>
@@ -23,7 +26,11 @@
         <%= render "study_guides/overview", overview: %>
       <% end %>
       <% parts.each do |part| %>
-        <%= render StudyGuides::PartComponent.new(part:) %>
+        <%= render StudyGuides::PartComponent.new(part:) do %>
+          <% if (card = @prep_cards[part.step]) %>
+            <%= render "study_guides/prep_card", card:, readers: prep_card_readers, changeable: prep_cards_changeable %>
+          <% end %>
+        <% end %>
       <% end %>
     </div>
     <div class="study-guide-page__buttons d-flex flex-wrap flex-items-center mt-3">
@@ -42,4 +49,8 @@
   <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "study-guide-page__side") do %>
     <%= render "study_guides/sources", study_guide: @study_guide, meeting: @meeting %>
   <% end %>
+<% end %>
+
+<% if prep_cards_changeable %>
+  <%= turbo_frame_tag "meeting_prep_card_dialog" %>
 <% end %>

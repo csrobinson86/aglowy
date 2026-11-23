@@ -1,0 +1,23 @@
+<%# locals: (card:, readers:, changeable:, focus: false) -%>
+<%# The children's Get ready card at the foot of a part's card (docs/design/study-guide.md, The children's card; frame
+    desktop-guide-midweek.png): the children who see it, what it's about, the quality's words and I can, read-only, with
+    Change loading Get ready's Change a card into the page's dialog frame. Redrawn in place when the dialog saves, with
+    focus back on Change. AI or parent text, always escaped (Trap 4). %>
+<%= tag.div id: dom_id(card, :study_guide), class: "study-guide-prep-card" do %>
+  <div class="d-flex flex-items-center">
+    <p class="study-guide-prep-card__kicker flex-1 min-width-0 wb-break-word">
+      <%= readers.any? ? "For #{readers.to_sentence} · from Get ready" : "From Get ready" %>
+    </p>
+    <% if changeable %>
+      <%= render(Primer::Beta::Link.new(href: edit_household_meeting_prep_card_path(meeting_prep_meeting: card.meeting, id: card.step),
+            underline: true, font_size: :small, ml: 2, autofocus: focus, classes: "study-guide-prep-card__change",
+            "aria-label": "Change the #{MeetingNote::HelperSteps.for(card.meeting).fetch(card.step).title} card",
+            data: { turbo_frame: "meeting_prep_card_dialog" })) { "Change" } %>
+    <% end %>
+  </div>
+  <p class="text-bold mb-1 wb-break-word"><%= card.about %></p>
+  <p class="mb-0 wb-break-word">
+    <span class="text-semibold color-fg-attention"><%= card.quality_words %></span> ·
+    <span class="text-semibold color-fg-success">I can</span> <%= card.i_can %>
+  </p>
+<% end %>

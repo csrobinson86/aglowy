@@ -1,6 +1,9 @@
 <%# Empties the frame, which closes the dialog, and redraws the card in place with focus back on its Change. %>
 <%= turbo_stream.update "meeting_prep_card_dialog" %>
 <%= turbo_stream.update dom_id(@card), partial: "meeting_preps/cards/row", locals: { card: @card, focus: true } %>
+<%# Or, when Change was on a part of the study guide (docs/design/study-guide.md, The children's card), redraws it there. %>
+<%= turbo_stream.replace dom_id(@card, :study_guide), partial: "study_guides/prep_card",
+      locals: { card: @card, readers: Current.household.prep_card_readers.map(&:first_name), changeable: true, focus: true } %>
 <%# The notice takes the old one's place, first in the household layout's main, where shared/flash renders it. %>
 <%= turbo_stream.remove_all "main .flash:not(.Banner)" %>
 <%= turbo_stream.prepend_all "main .container-xl", partial: "shared/flash" %>

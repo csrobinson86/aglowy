@@ -3,6 +3,7 @@
 # A part's card in the study guide (docs/design/study-guide.md, A part's card; frames desktop-guide-midweek.png and
 # desktop-guide-weekend.png): its name and length in small print with its tone dot, its title as an h2, a summary, then
 # its labelled rows of points, each ending with its scripture link. Everything in it is the AI's, escaped (Trap 5).
+# Its content, the children's Get ready card for the part when there is one, goes at the bottom.
 class StudyGuides::PartComponent < ApplicationComponent
   # The program's set lengths; the others vary week to week, and the Bible Reading shows its passage instead.
   MINUTES = { "talk" => 10, "spiritual_gems" => 10, "congregation_bible_study" => 30, "watchtower_study" => 60 }.freeze
