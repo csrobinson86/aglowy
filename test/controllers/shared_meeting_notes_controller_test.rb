@@ -17,7 +17,7 @@ class SharedMeetingNotesControllerTest < ActionDispatch::IntegrationTest
       assert_select "ul[aria-label='Show'] a[href='#{household_meeting_notes_path(household_id: households(:home))}']", text: "Mine"
       assert_select "ul[aria-label='Show'] a[aria-current='true']", text: /Shared in The Head Family\s+1/
       assert_select "main .Box-row a[href='#{household_meeting_note_path(household_id: households(:home), id: meeting_notes(:head_midweek))}']", text: "Life and Ministry"
-      assert_select "main .Box-row", text: /Hannah Head · Week of November 16–22, 2026/
+      assert_select "main .Box-row details[open]", text: /Week of November 16–22.*Life and Ministry\s*Hannah Head/m
       sign_out :identity
     end
   end
@@ -42,9 +42,32 @@ class SharedMeetingNotesControllerTest < ActionDispatch::IntegrationTest
     get household_shared_meeting_notes_path(household_id: households(:home))
 
     assert_select "main .Box-row", count: 2
-    assert_select "main .Box-row:nth-child(1)", text: /Life and Ministry.*Hannah Head/m
-    assert_select "main .Box-row:nth-child(2)", text: /Weekend meeting.*Sam Spouse · Weekend of November 14–15, 2026/m
+    assert_select "main .Box-row:nth-child(1) details[open]", text: /Week of November 16–22.*Life and Ministry\s*Hannah Head/m
+    assert_select "main .Box-row:nth-child(2) details:not([open])", text: /Week of November 9–15.*Weekend meeting\s*Sam Spouse · Weekend of November 14–15, 2026/m
     assert_select "ul[aria-label='Show'] .Label", "2"
+  end
+
+  test "grouped by week: two people's notes for the same meeting in one week sit in one row, each with its author" do
+    spouse_midweek = users(:spouse).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    head_midweek = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    head_weekend = users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 2))
+    [ spouse_midweek, head_midweek, head_weekend ].each { it.share_with(households(:home)) }
+    sign_in identities(:spouse)
+
+    get household_shared_meeting_notes_path(household_id: households(:home))
+
+    assert_select "main .Box-row", count: 2
+    assert_select "main details[open]", count: 1
+    week = "main .Box-row:nth-child(1) details[open]"
+    assert_select "#{week} summary", text: /Week of November 9–15.*2 notes/m
+    assert_select "#{week} summary .Label", count: 0
+    assert_select "#{week} li", count: 2
+    assert_select "#{week} li", text: /Life and Ministry\s*Hannah Head/
+    assert_select "#{week} li", text: /Life and Ministry\s*Sam Spouse/
+    assert_select "#{week} li a[href='#{household_meeting_note_path(household_id: households(:home), id: spouse_midweek)}']", text: "Life and Ministry"
+    assert_select "#{week} li a[href='#{household_meeting_note_path(household_id: households(:home), id: head_midweek)}']", text: "Life and Ministry"
+    assert_select "main .Box-row:nth-child(2) details:not([open])", text: /Week of November 2–8.*1 note.*Weekend meeting\s*Hannah Head/m
+    assert_select "main a", text: /Older|Newer/, count: 0
   end
 
   test "nothing shared yet shows an empty state" do
