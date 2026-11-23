@@ -1,0 +1,49 @@
+<% content_for :title, "Go bags" %>
+<% read_only = !policy(GoBag).create? %>
+
+<%# "+ New" stays beside the title on a phone (docs/design/phone.md, rule 1). The line says who can change the bags, so
+    it stays on a phone too (rule 3). %>
+<%= render Primer::Beta::Subhead.new(classes: "page-header--phone-inline") do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "Go bags" } %>
+  <% subhead.with_description { "Children can look; adults keep them up to date." } %>
+  <% unless read_only %>
+    <% subhead.with_actions do %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_go_bag_path, scheme: :primary)) do |button| %>
+        <% button.with_leading_visual_icon(icon: :plus) %>
+        New
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if @go_bags.any? %>
+  <%= render Primer::Beta::BorderBox.new(mb: 4) do |box| %>
+    <% @go_bags.each do |go_bag| %>
+      <% box.with_row(p: 0) { render GoBagRowComponent.new(go_bag:, today: Current.household.today, read_only:) } %>
+    <% end %>
+  <% end %>
+<% else %>
+  <%= render Primer::Beta::Blankslate.new(border: true, spacious: true, mb: 4) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :briefcase) %>
+    <% blankslate.with_heading(tag: :h2) { "No go bags yet" } %>
+    <% if read_only %>
+      <% blankslate.with_description { "When a parent writes down a go bag, it will show up here." } %>
+    <% else %>
+      <% blankslate.with_description { "Write down what's in each emergency bag, what still needs buying and where things are kept." } %>
+      <% blankslate.with_primary_action(href: new_household_go_bag_path) { "New go bag" } %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%# The guide is its title and a link, never its text, and Aglowy never fetches it (docs/design/go-bags.md, Linked). %>
+<% guide = GoBag::Suggestions.new.guide %>
+<%= render Primer::Beta::BorderBox.new do |box| %>
+  <% box.with_body(display: :flex, color: :muted) do %>
+    <%= render(Primer::Beta::Octicon.new(:book, mr: 2, mt: 1, flex_shrink: 0)) %>
+    <p class="mb-0">
+      Ideas for what to pack:
+      <%= render(Primer::Beta::Link.new(href: guide.url, target: "_blank", rel: "noopener", underline: true)) { guide.title } %>
+      (<%= guide.publication %>, on wol.jw.org)
+    </p>
+  <% end %>
+<% end %>

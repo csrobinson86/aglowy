@@ -1,0 +1,10 @@
+<%= render(Primer::Beta::Link.new(href: household_go_bag_path(household_id: go_bag.household_id, id: go_bag), classes: "go-bag-row d-flex flex-items-center px-3 py-2 color-fg-default no-underline")) do %>
+  <span class="go-bag-row__icon d-flex flex-items-center flex-justify-center flex-shrink-0 mr-3 rounded-2 border color-bg-subtle color-fg-muted">
+    <%= render(Primer::Beta::Octicon.new(:briefcase)) %>
+  </span>
+  <span class="flex-1 min-width-0">
+    <span class="go-bag-row__name text-semibold"><%= go_bag.name %></span>
+    <span class="go-bag-row__line d-block f6 color-fg-muted"><%= line %></span>
+  </span>
+  <%= render(Primer::Beta::Octicon.new(:"chevron-right", color: :muted, flex_shrink: 0, ml: 2)) %>
+<% end %>

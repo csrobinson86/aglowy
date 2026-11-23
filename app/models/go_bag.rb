@@ -55,8 +55,18 @@ class GoBag < ApplicationRecord
     items.count(&:acquired?)
   end
 
+  def ready_percent
+    items_count.zero? ? 0 : (100.0 * ready_count / items_count).round
+  end
+
   def to_buy_count(today)
     items.count { it.to_buy?(today) }
+  end
+
+  # The loaded items grouped by category, in the categories' order, with No category (nil) last
+  # (docs/design/go-bags.md, GoBag::Item). Within a group they keep the order they were added.
+  def items_by_category
+    items.group_by(&:category).sort_by { |category, _| category ? [ 0, category.position ] : [ 1, 0 ] }
   end
 
   private

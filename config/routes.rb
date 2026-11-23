@@ -213,6 +213,8 @@ Rails.application.routes.draw do
         resources :completions, only: %i[ create destroy ], module: :steps
       end
     end
+    # The household's go bags, found through Current.household; children only look (docs/design/go-bags.md, Pages).
+    resources :go_bags
     # The signed-in person's own studies, found through Current.user (docs/design/personal-study.md, Pages and routes).
     resources :personal_studies, only: %i[ index new create show update destroy ] do
       resources :taggings, only: %i[ create destroy ], module: :personal_studies

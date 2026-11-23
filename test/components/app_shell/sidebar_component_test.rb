@@ -46,7 +46,7 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
 
       assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/daily_brief'][data-turbo-prefetch=false] svg.octicon-north-star", count: 1
       mine = page.all("nav[aria-label='Main'] a").map { it.text.strip }
-      assert_equal mine.index("Family goals") + 1, mine.index("Daily brief"), "first in Mine for #{membership}"
+      assert_equal mine.index("Go bags") + 1, mine.index("Daily brief"), "first in Mine for #{membership}"
     end
 
     render_inline(AppShell::SidebarComponent.new(membership: memberships(:eli_in_home), selected_item: :dashboards, label: "Main"))

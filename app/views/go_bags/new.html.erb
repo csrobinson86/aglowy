@@ -1,0 +1,20 @@
+<% content_for :title, "New go bag" %>
+
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_go_bags_path) { "Go bags" } %>
+  <% breadcrumbs.with_item(href: new_household_go_bag_path) { "New" } %>
+<% end %>
+<%= render BackRowComponent.new(href: household_go_bags_path, label: "Go bags") %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "New go bag" } %>
+<% end %>
+
+<div class="container-md ml-0">
+  <%# The household's limits are on :base, which no field shows. %>
+  <% if @go_bag.errors[:base].any? %>
+    <%= render(Primer::Beta::Flash.new(scheme: :danger, mb: 4)) { @go_bag.errors[:base].to_sentence } %>
+  <% end %>
+  <%= primer_form_with(model: @go_bag, url: household_go_bags_path) do |f| %>
+    <%= render GoBags::GoBagForm.new(f, members: @members, cancel_path: household_go_bags_path, suggested: @suggested) %>
+  <% end %>
+</div>

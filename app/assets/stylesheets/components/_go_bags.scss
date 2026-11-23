@@ -1,0 +1,19 @@
+// Go bags (docs/design/go-bags.md, Pages; frames go-bags.png and go-bag-child.png).
+
+// A bag's icon in its own small box, as in the list's rows.
+.go-bag-row__icon {
+  width: var(--base-size-40);
+  height: var(--base-size-40);
+}
+
+// A bag's name and an item's name and line keep a row to two lines each at most, cut with an ellipsis
+// (docs/design/go-bags.md, Item rows; docs/design/phone.md, rule 6).
+.go-bag-row__name,
+.go-bag-item-row__name,
+.go-bag-item-row__line {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
