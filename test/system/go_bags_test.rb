@@ -31,7 +31,7 @@ class GoBagsTest < ApplicationSystemTestCase
     assert_selector "#go-bag-progress", text: "0 of 37 ready"
     assert_equal GoBag::Suggestions.new.categories.map(&:name), all("main h2.go-bag__category").map(&:text)
     within(:xpath, "//h2[normalize-space()='Water and food']/following-sibling::*[1]") do
-      assert_selector ".Box-row", text: /Bottled water\s*Still to get · 1 gallon a person a day, for 3 days/
+      assert_selector ".Box-row", text: /Bottled water\s*To buy · 1 gallon a person a day, for 3 days/
     end
     assert_accessible
     capture_screens("go-bag")

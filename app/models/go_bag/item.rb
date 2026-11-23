@@ -18,7 +18,8 @@ class GoBag::Item < ApplicationRecord
   validates :name, presence: true, length: { maximum: 100 }
   validates :quantity, length: { maximum: 40 }
   validates :stored_at, length: { maximum: 80 }
-  validate :category_in_household, if: -> { category && go_bag }
+  # On the id, so one that doesn't exist (deleted while the form was open) is refused here, not by the foreign key.
+  validate :category_in_household, if: -> { category_id && go_bag }
   validate :within_the_limit, on: :create
 
   scope :acquired, -> { where.associated(:acquisition) }
@@ -59,19 +60,19 @@ class GoBag::Item < ApplicationRecord
   end
 
   # The item form's fields and its "We have it" box, saved together or not at all. have is the box's value, "0" or
-  # "1" from a form.
+  # "1" from a form; nil leaves the tick as it was.
   def save_with(have:, by:)
     transaction do
       next false unless save
 
-      ActiveModel::Type::Boolean.new.cast(have) ? acquire(by:) : unacquire
+      ActiveModel::Type::Boolean.new.cast(have) ? acquire(by:) : unacquire unless have.nil?
       true
     end
   end
 
   private
     def category_in_household
-      errors.add(:category, "must be one of the household's categories") unless category.household_id == go_bag.household_id
+      errors.add(:category, "must be one of the household's categories") unless category&.household_id == go_bag.household_id
     end
 
     # Behind the household's lock, which save's transaction holds until the row is in, so two items added at once can't

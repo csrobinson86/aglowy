@@ -1,0 +1,2 @@
+<% content_for :title, @item.name_in_database %>
+<%= render "go_bags/items/item", go_bag: @go_bag, item: @item, title: @item.name_in_database, have: have? %>

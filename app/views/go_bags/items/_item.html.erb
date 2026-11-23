@@ -1,0 +1,26 @@
+<%# locals: (go_bag:, item:, title:, have:) %>
+<%# Opened from the bag's page, a dialog in its Turbo Frame, from the bottom on a phone (frame go-bag-item.png). Saving
+    empties the frame with the dialog still open, so dialog-removal lets the page scroll again. Opened directly, as from
+    a notification, a page with a back row to the bag (docs/design/go-bags.md, An item). %>
+<% if turbo_frame_request? %>
+  <%= turbo_frame_tag "go_bag_item_dialog" do %>
+    <div data-controller="dialog-removal">
+      <%= render(Primer::Alpha::Dialog.new(id: "go-bag-item-dialog", title:, size: :medium_portrait, position_narrow: :bottom, open: true)) do |dialog| %>
+        <% dialog.with_body(pb: 3) { render "go_bags/items/form", go_bag:, item:, have: } %>
+      <% end %>
+    </div>
+  <% end %>
+<% else %>
+  <%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
+    <% breadcrumbs.with_item(href: household_go_bags_path) { "Go bags" } %>
+    <% breadcrumbs.with_item(href: household_go_bag_path(id: go_bag)) { go_bag.name } %>
+    <% breadcrumbs.with_item(href: item.new_record? ? new_household_go_bag_item_path(go_bag_id: go_bag) : edit_household_go_bag_item_path(go_bag_id: go_bag, id: item)) { title } %>
+  <% end %>
+  <%= render BackRowComponent.new(href: household_go_bag_path(id: go_bag), label: go_bag.name) %>
+  <%= render Primer::Beta::Subhead.new do |subhead| %>
+    <% subhead.with_heading(tag: :h1, classes: "wb-break-word min-width-0") { title } %>
+  <% end %>
+  <div class="container-md ml-0">
+    <%= render "go_bags/items/form", go_bag:, item:, have: %>
+  </div>
+<% end %>

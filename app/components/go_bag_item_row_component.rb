@@ -2,22 +2,43 @@
 
 # One item on a bag's page (docs/design/go-bags.md, Item rows): its name, cut to two lines, and one muted line joining
 # "To buy" when we don't have it, how many, where it's kept, and its use-by date: in the attention color when it's
-# soon, and "expired Nov 20" in the danger color once it has passed. read_only is the row as a child sees it (frame
-# go-bag-child.png): an icon for "We have it" or "Still to get", "Still to get" instead of "To buy", and no colors.
+# soon, and "expired Nov 20" in the danger color once it has passed. For heads and adults it starts with the "we have
+# it" box, which saves as soon as it's ticked, and ends with "›", opening the item's dialog (frame go-bag.png).
+# read_only is the row as a child sees it (frame go-bag-child.png): an icon for "We have it" or "Still to get", "Still
+# to get" instead of "To buy", no colors, and nothing to press.
 class GoBagItemRowComponent < ApplicationComponent
   Part = Data.define(:text, :color)
 
   attr_reader :item, :today
 
-  # today: the household's (household.today).
-  def initialize(item:, today:, read_only: false)
+  # today: the household's (household.today). show: the bag page's tab, kept by the box's form so the redrawn tabs
+  # stay on it. focus: the box takes focus, as when a Turbo Stream redraws the row it was just ticked in.
+  def initialize(item:, today:, read_only: false, show: nil, focus: false)
     @item = item
     @today = today
     @read_only = read_only
+    @show = show
+    @focus = focus
   end
 
   def read_only?
     @read_only
+  end
+
+  def focus?
+    @focus
+  end
+
+  # Ticking posts the acquisition; unticking deletes it. The box is held disabled until the row redraws, so a quick
+  # second change can't send the same request again.
+  def tick_form_options
+    { url: household_go_bag_item_acquisition_path(household_id:, go_bag_id: item.go_bag_id, item_id: item, show: @show),
+      method: item.acquired? ? :delete : :post,
+      data: { controller: "auto-submit", auto_submit_hold_value: true, action: "turbo:submit-end->auto-submit#release" } }
+  end
+
+  def edit_path
+    edit_household_go_bag_item_path(household_id:, go_bag_id: item.go_bag_id, id: item)
   end
 
   # The line's parts, the first one capitalized: "In the bag", "6 gallons · in the bag". There's always one, since an
@@ -31,6 +52,10 @@ class GoBagItemRowComponent < ApplicationComponent
   end
 
   private
+    def household_id
+      item.go_bag.household_id
+    end
+
     # Where it's kept when it's somewhere else; "in the bag" once we have it.
     def place
       if item.stored_at.present?

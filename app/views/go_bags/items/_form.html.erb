@@ -1,0 +1,11 @@
+<%# locals: (go_bag:, item:, have:) %>
+<%# The item form, and on an existing item the delete form its Remove item submits (GoBags::ItemForm). %>
+<% if item.errors[:base].any? %>
+  <%= render(Primer::Beta::Flash.new(scheme: :danger, mb: 3)) { item.errors[:base].to_sentence } %>
+<% end %>
+<%= primer_form_with(model: item, url: item.new_record? ? household_go_bag_items_path(go_bag_id: go_bag) : household_go_bag_item_path(go_bag_id: go_bag, id: item)) do |f| %>
+  <%= render GoBags::ItemForm.new(f, categories: Current.household.go_bag_categories, have:) %>
+<% end %>
+<% if item.persisted? %>
+  <%= primer_form_with(url: household_go_bag_item_path(go_bag_id: go_bag, id: item), method: :delete, id: GoBags::ItemForm::DELETE_FORM_ID) {} %>
+<% end %>

@@ -1,9 +1,11 @@
 <% content_for :title, @go_bag.name %>
+<%# Saving an item's dialog refreshes the page, which keeps its place. %>
+<% turbo_refreshes_with method: :replace, scroll: :preserve %>
 <% can_change = policy(@go_bag).update? %>
 
 <%# On a phone a back row with the bag's "…"; from md up, breadcrumbs, and Edit and the "…" in the header
-    (docs/design/phone.md, rule 2). In this story every item row is read-only, as a child sees it (frame
-    go-bag-child.png): the checkboxes, "›", "+ Add item" and the tabs come with items. %>
+    (docs/design/phone.md, rule 2). Heads and adults get the tabs, a checkbox and "›" on each row, and "+ Add item"; a
+    child's rows are read-only (frame go-bag-child.png). %>
 <%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
   <% breadcrumbs.with_item(href: household_go_bags_path) { "Go bags" } %>
   <% breadcrumbs.with_item(href: household_go_bag_path(id: @go_bag)) { @go_bag.name } %>
@@ -29,32 +31,53 @@
   <%= render "go_bags/delete_dialog", go_bag: @go_bag %>
 <% end %>
 
-<%= render(Primer::Beta::BorderBox.new(id: "go-bag-progress", mb: 4)) do |box| %>
-  <% box.with_body do %>
-    <div class="d-flex flex-items-baseline mb-2">
-      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2)) { "#{@go_bag.ready_count} of #{@go_bag.items_count} ready" } %>
-      <span class="color-fg-muted ml-auto"><%= @go_bag.ready_percent %>%</span>
-    </div>
-    <%# The heading says the same, so the bar is hidden from screen readers. %>
-    <%= render(Primer::Beta::ProgressBar.new(size: :large, aria: { hidden: true })) do |bar| %>
-      <% bar.with_item(percentage: @go_bag.ready_percent, bg: :success_emphasis) %>
-    <% end %>
-  <% end %>
-<% end %>
+<%= render "go_bags/progress", go_bag: @go_bag %>
+<% today = Current.household.today %>
+<% sections = @go_bag.items_by_category(show: @show, today:) %>
 
 <% if @go_bag.items_count.zero? %>
   <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
     <% blankslate.with_visual_icon(icon: :briefcase) %>
     <% blankslate.with_heading(tag: :h2) { "No items in this bag yet" } %>
+    <% if can_change %>
+      <% blankslate.with_primary_action(href: new_household_go_bag_item_path(go_bag_id: @go_bag), data: { turbo_frame: "go_bag_item_dialog" }) { "Add item" } %>
+    <% end %>
+  <% end %>
+<% else %>
+  <% if can_change %>
+    <%= render "go_bags/tabs", go_bag: @go_bag, show: @show %>
+  <% end %>
+  <% if sections.empty? %>
+    <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+      <% blankslate.with_heading(tag: :h2) { @show == "to_buy" ? "Nothing to buy for this bag." : "Nothing to use soon." } %>
+    <% end %>
   <% end %>
 <% end %>
-<% @go_bag.items_by_category.each do |category, items| %>
+<% sections.each do |category, items| %>
   <section class="mb-4">
     <h2 class="go-bag__category f5 text-semibold color-fg-muted mb-2"><%= category&.name || "No category" %></h2>
     <%= render Primer::Beta::BorderBox.new do |box| %>
       <% items.each do |item| %>
-        <% box.with_row { render GoBagItemRowComponent.new(item:, today: Current.household.today, read_only: true) } %>
+        <% box.with_row(id: dom_id(item)) { render GoBagItemRowComponent.new(item:, today:, read_only: !can_change, show: @show) } %>
+      <% end %>
+      <% if can_change %>
+        <% box.with_row do %>
+          <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_go_bag_item_path(go_bag_id: @go_bag, category_id: category&.id), scheme: :link,
+                id: category ? dom_id(category, :add_item) : "add_item_no_category", "aria-label": "Add item to #{category&.name || "No category"}",
+                data: { turbo_frame: "go_bag_item_dialog" })) do |button| %>
+            <% button.with_leading_visual_icon(icon: :plus) %>
+            Add item
+          <% end %>
+        <% end %>
       <% end %>
     <% end %>
   </section>
+<% end %>
+
+<%# An item's dialog loads here, from a row's "›" or "+ Add item" (GoBags::ItemsController). A save refreshes the page,
+    and frame-dialog-focus puts focus back on the link that opened it, found by its id, or on the selected tab when the
+    tab has no links left. %>
+<% if can_change %>
+  <%= turbo_frame_tag "go_bag_item_dialog", data: { controller: "frame-dialog-focus", frame_dialog_focus_fallback_value: "#go-bag-tabs [aria-current=page]",
+                                                    action: "click@document->frame-dialog-focus#remember close->frame-dialog-focus#forget:capture" } %>
 <% end %>

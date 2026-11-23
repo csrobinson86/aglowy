@@ -5,9 +5,20 @@
     <% else %>
       <%= render(Primer::Beta::Octicon.new(:"issue-draft", size: :medium, color: :muted, flex_shrink: 0, mr: 3, "aria-label": "Still to get")) %>
     <% end %>
+  <% else %>
+    <div class="go-bag-item-row__box flex-shrink-0 mr-3">
+      <%= primer_form_with(**tick_form_options) do %>
+        <%= render(Primer::Alpha::CheckBox.new(name: "#{dom_id(item)}_have", label: "We have #{item.name}", visually_hide_label: true, checked: item.acquired?,
+                                               autofocus: focus?, data: { action: "change->auto-submit#submit" })) %>
+      <% end %>
+    </div>
   <% end %>
   <div class="flex-1 min-width-0">
     <div class="go-bag-item-row__name"><%= item.name %></div>
     <div class="go-bag-item-row__line f6 color-fg-muted"><%= safe_join(parts.map { |part| part.color ? tag.span(part.text, class: "color-fg-#{part.color}") : part.text }, " · ") %></div>
   </div>
+  <% unless read_only? %>
+    <%= render(Primer::Beta::IconButton.new(tag: :a, href: edit_path, icon: :"chevron-right", scheme: :invisible, show_tooltip: false, flex_shrink: 0, ml: 2,
+                                            id: dom_id(item, :open), "aria-label": "Open #{item.name}", classes: "go-bag-item-row__open", data: { turbo_frame: "go_bag_item_dialog" })) %>
+  <% end %>
 </div>

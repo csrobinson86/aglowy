@@ -1,0 +1,14 @@
+<%# locals: (go_bag:, show:) %>
+<%# All, To buy and Use by soon, each a link with its count, for heads and adults (docs/design/go-bags.md, A bag).
+    show: the tab chosen, nil for All. Redrawn when a row's box is ticked, so the counts stay true. %>
+<% today = Current.household.today %>
+<div id="go-bag-tabs">
+  <%= render(Primer::Alpha::UnderlineNav.new(label: "Show", mb: 3)) do |nav| %>
+    <% [ [ nil, "All", go_bag.items_count ], [ "to_buy", "To buy", go_bag.to_buy_count(today) ], [ "use_by_soon", "Use by soon", go_bag.use_by_soon_count(today) ] ].each do |value, label, count| %>
+      <% nav.with_tab(href: household_go_bag_path(id: go_bag, show: value), selected: show == value) do |tab| %>
+        <% tab.with_text { label } %>
+        <% tab.with_counter(count:) %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

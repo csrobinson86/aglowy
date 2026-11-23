@@ -81,6 +81,16 @@ class GoBag::ItemTest < ActiveSupport::TestCase
     assert_not item.acquired?
   end
 
+  test "save_with have: nil saves the item and leaves the tick as it was" do
+    item = go_bag_items(:water)
+    item.quantity = "8 gallons"
+
+    assert item.save_with(have: nil, by: users(:spouse))
+
+    assert_equal "8 gallons", item.reload.quantity
+    assert item.acquired?
+  end
+
   test "save_with an invalid item saves nothing, not even the tick" do
     item = go_bag_items(:flashlight)
     item.name = ""
@@ -92,6 +102,13 @@ class GoBag::ItemTest < ActiveSupport::TestCase
 
   test "a category from another household is invalid" do
     item = @bag.items.new(name: "Duct tape", category: go_bag_categories(:outsiders_tools))
+
+    assert_not item.valid?
+    assert_includes item.errors[:category], "must be one of the household's categories"
+  end
+
+  test "a category that doesn't exist is invalid, not a foreign key error" do
+    item = @bag.items.new(name: "Duct tape", category_id: SecureRandom.uuid_v7)
 
     assert_not item.valid?
     assert_includes item.errors[:category], "must be one of the household's categories"
