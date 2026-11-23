@@ -95,14 +95,15 @@ The page uses Primer components and utilities. The few app-specific styles (the 
 - **Filling in, never replacing,** as Get ready does: a run asks only for the missing parts, and saves a part only where there's none. The unique (`study_guide_id`, `step`) index stops a second one.
 - **The claim** is a `StudyGuide::Preparation` (`user_id`, `week_of`, unique; `token`; `created_at`), with the same token, 15-minute takeover and 5-minute timeout rules, taken under the person's lock (`user.with_lock`).
 - **The owner** is the person. Without accepted AI terms nothing is asked (`:not_allowed`, no chat).
-- `user.prepare_study_guide(week_of)` makes a chat (`purpose: "study_guide"`, the person as `user`, no household) and calls `Chat#ask_within_purpose` with the week's dates, `MeetingNote.program_url(week_of)` as text, and the missing steps.
+- **Three requests, one per group of steps** (`Ai::Purpose::StudyGuide::GROUPS`, #432): `midweek_opening` (`midweek_overview`, `talk`, `spiritual_gems`, `bible_reading`), `midweek_ministry` (`field_ministry`, `living`, `congregation_bible_study`) and `weekend` (`weekend_overview`, `watchtower_study`). Anthropic compiles a reply schema into a grammar, and rejected all nine steps in one schema as too large, and midweek's seven too; each of these three compiled.
+- `user.prepare_study_guide(week_of)` takes one claim for the run. Then, for each group with a step still missing a part, in order, it checks the daily limit under the person's lock, makes that request's chat (`purpose: "study_guide"`, the person as `user`, no household), and calls `Chat#ask_within_purpose` with the week's dates, `MeetingNote.program_url(week_of)` as text, and the group's missing steps only, passing them as `steps:` for the schema. Each reply's parts are saved straight away (`fill_in`), never replacing a saved part. A failed request lets the claim go and destroys that request's chat; parts saved from earlier groups stay, and later groups wait for the next run. Reaching the daily limit stops the run without error and lets the claim go. The guide's `chat` is the latest request's that saved a part.
 
 ### `Ai::Purpose::StudyGuide`
 
 Instructions in `config/ai/study_guide.md`:
 
-- `allowed_hosts`: the usual three. `max_searches`: 8 (the program, the reading, the Bible Study chapter and the Watchtower study article).
-- `schema`: `off_topic`, and `parts`, a list of `{ step, content }`, where `step` is one of the steps asked for and `content` has the step's fields:
+- `allowed_hosts`: the usual three. `max_searches`: 4 a request (the program, the group's material, and room for one more).
+- `schema(steps)`: `off_topic`, and one key for each step the request asks for, in step order, each the step's fields. Every key is required and there's no `anyOf`. Keyed by step, as the daily brief's schema is by section, and asked for a group at a time (The weekly job), because Anthropic compiles the schema into a grammar and rejected it as too large (#432): first a `parts` list whose items were an `anyOf` of the step shapes, then all nine steps keyed, without the union. RubyLLM always sends the schema to Anthropic as `output_config.format` `json_schema`, so it stays, smaller. The fields:
 
 | Step | Fields (each list item is `{ text, ref }`, `ref` optional) |
 | --- | --- |
@@ -114,8 +115,8 @@ Instructions in `config/ai/study_guide.md`:
 | `congregation_bible_study`, `watchtower_study` | `title`, `summary`, `notes` (up to 8, each with `paragraphs` like "4–7"), `jehovah` (up to 2), `comments` (up to 4, each with `paragraph`) |
 
   A `title` is the part's title as the program gives it, at most 12 words. A `summary` is at most 50 words; each item's `text` at most 30.
-- **The instructions say:** find the week's program and each part's material; write for adults preparing for the meetings, in its own words, never quoting a page or a verse; give each point's scripture as a reference; make "About Jehovah" points about a quality the material really shows; make comment ideas short, in the first person, things a person could say; base notes on what the paragraphs cover, in order; return fewer parts rather than guess.
-- `daily_limit`: 2 a day per person. `keep_for`: 7 days (the chat; the guide has its own rule).
+- **The instructions say:** find the week's program and each part's material; fill in only the keys for the steps the message names; write for adults preparing for the meetings, in its own words, never quoting a page or a verse; give each point's scripture as a reference; make "About Jehovah" points about a quality the material really shows; make comment ideas short, in the first person, things a person could say; base notes on what the paragraphs cover, in order; leave a step empty rather than guess.
+- `daily_limit`: 6 a day per person, one for each request: two whole runs of three, turning it on and the 3am run, on the same day (#432). `keep_for`: 7 days (the chat; the guide has its own rule).
 - **Every safety measure in `docs/design/ai.md` applies.** Moderation is skipped because no person's text is sent. The copy check runs on every text field: a removed item goes; a part left without its `summary` (or a Bible Reading part without its `reading`, or an overview without its `glance`) is dropped, so that step stays missing for the next run. A reference that doesn't parse is dropped and its point kept. Every field is escaped when shown.
 - **Checks before saving:** each step at most once, only a step that was asked for and still has none; every `summary`, `glance` and Bible Reading `reading` present and at least 1 word; the word limits, counted as `text.split.size`; list lengths; Spiritual Gems with fewer than 2 comment ideas is dropped. A run with no new parts saves nothing and lets the claim go.
 - **Sources:** each source that passes `Ai::SourceLink` is kept as a `StudyGuide::Source`, title and URL only.
@@ -197,7 +198,7 @@ end
 4. **The children's cards are the household's.** Read them through `Current.household`, only while Get ready is on there, and only for a head or adult.
 5. **AI output is untrusted text.** Escape every field, in the page, the note and the print view.
 6. **The person's clock, not a household's,** for the job, the week and the limit.
-7. **Tests never call a provider.** The job's tests use a recorded reply in `test/fixtures/files/ai/study_guide.json`.
+7. **Tests never call a provider.** The job's tests use a recorded reply for each group in `test/fixtures/files/ai/study_guide_<group>.json`.
 
 ## States each story checks
 

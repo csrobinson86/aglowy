@@ -1,8 +1,9 @@
 require "test_helper"
 
 # user.prepare_study_guide (docs/design/study-guide.md, The weekly job and Ai::Purpose::StudyGuide; Traps 1, 2, 5 and
-# 7). Monday 16 November 2026 at 3am in UTC, the head's time zone. The provider answers through WebMock with the recorded
-# reply in test/fixtures/files/ai/study_guide.json: no test calls a provider, and nothing reaches jw.org or wol.jw.org.
+# 7). Monday 16 November 2026 at 3am in UTC, the head's time zone. The provider answers each request through WebMock with
+# its group's recorded reply in test/fixtures/files/ai/study_guide_<group>.json: no test calls a provider, and nothing
+# reaches jw.org or wol.jw.org.
 class User::StudyGuidePreparableTest < ActiveSupport::TestCase
   PROVIDER = "https://api.anthropic.com/v1/messages".freeze
   WEEK = Date.new(2026, 11, 16)
@@ -14,13 +15,15 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
               [ "https://wol.jw.org/en/wol/d/r1/lp-e/2026645", "The Watchtower, study article for November 22" ] ].freeze
   STEPS = %w[ midweek_overview talk spiritual_gems bible_reading field_ministry living congregation_bible_study
               weekend_overview watchtower_study ].freeze
+  GROUPS = [ %w[ midweek_overview talk spiritual_gems bible_reading ], %w[ field_ministry living congregation_bible_study ],
+             %w[ weekend_overview watchtower_study ] ].freeze
 
   setup do
     @user = users(:head)
     travel_to MONDAY
   end
 
-  test "the recorded reply saves the parts and sources" do
+  test "the recorded replies save the parts and sources" do
     accept
     guide = prepare.reload
 
@@ -46,6 +49,58 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_empty StudyGuide::Preparation.all
   end
 
+  # Three requests, each with a schema small enough for Anthropic (Ai::Purpose::StudyGuide::GROUPS, #432).
+
+  test "a fresh week makes three requests, one per group, and saves all nine steps" do
+    accept
+
+    assert_difference -> { @user.chats.where(purpose: "study_guide").count }, 3 do
+      guide = prepare
+
+      assert_equal STEPS, guide.parts.map(&:step)
+      assert_includes guide.chat.messages.find_by!(role: "user").content, "parts for: weekend_overview, watchtower_study\n"
+    end
+    assert_equal GROUPS, asked_steps
+    GROUPS.each { |steps| assert_requested(:post, PROVIDER, times: 1) { question_in(it).include?("parts for: #{steps.join(", ")}\n") } }
+    assert_empty StudyGuide::Preparation.all
+  end
+
+  test "a week missing steps in two groups makes two requests, each for its own missing steps" do
+    accept
+    guide = StudyGuide.create!(user: @user, week_of: WEEK)
+    (STEPS - %w[ talk living congregation_bible_study ]).each { guide_part(guide, it) }
+
+    prepare
+
+    assert_equal [ %w[ talk ], %w[ living congregation_bible_study ] ], asked_steps
+    assert_equal STEPS, guide.reload.parts.map(&:step)
+  end
+
+  test "a failed second request keeps the first group's parts, lets the claim go and destroys only its own chat" do
+    accept
+    stub_request(:post, PROVIDER).to_return { reply_to(it) }.then.to_return(status: 500)
+
+    assert_raises(RubyLLM::ServerError) { @user.prepare_study_guide(WEEK) }
+
+    guide = @user.study_guide_for(WEEK)
+    assert_equal GROUPS.first, guide.parts.map(&:step)
+    assert_equal [ guide.chat ], @user.chats.where(purpose: "study_guide").to_a
+    assert_empty StudyGuide::Preparation.all
+    assert_equal GROUPS.drop(1).flatten, @user.missing_study_guide_steps(WEEK)
+  end
+
+  test "the daily limit reached after two requests saves those and stops" do
+    accept
+    4.times { study_guide_chat }
+
+    guide = prepare
+
+    assert_equal GROUPS.first(2), asked_steps
+    assert_equal GROUPS.first(2).flatten, guide.parts.map(&:step)
+    assert_equal 6, @user.chats.where(purpose: "study_guide").count
+    assert_empty StudyGuide::Preparation.all
+  end
+
   test "study_guide_for reads the week with its parts and sources, or nil" do
     accept
     prepare
@@ -62,7 +117,7 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_no_difference -> { Chat.count } do
       assert_nil @user.prepare_study_guide(WEEK)
     end
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
     assert_equal 9, @user.study_guide_for(WEEK).parts.size
   end
 
@@ -76,15 +131,15 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_nil @user.study_guide_for(WEEK)
   end
 
-  test "two runs at once send one request: the second finds the first's claim" do
+  test "two runs at once send one run's requests: the second finds the first's claim" do
     accept
-    stub_request(:post, PROVIDER).to_return do
+    stub_request(:post, PROVIDER).to_return do |request|
       assert_nil @user.prepare_study_guide(WEEK)
-      { status: 200, body: reply.to_json, headers: { "Content-Type" => "application/json" } }
+      reply_to(request)
     end
 
     assert @user.prepare_study_guide(WEEK)
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
   end
 
   test "a claim older than 15 minutes is taken over" do
@@ -95,18 +150,19 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_not StudyGuide::Preparation.exists?(stale.id)
   end
 
-  test "a run whose claim was taken over saves nothing" do
+  test "a run whose claim was taken over saves nothing and asks no more" do
     accept
     newer = SecureRandom.uuid
-    stub_request(:post, PROVIDER).to_return do
+    stub_request(:post, PROVIDER).to_return do |request|
       # Another run takes the claim over while this one's request is out.
       StudyGuide::Preparation.sole.update!(token: newer, created_at: Time.current)
-      { status: 200, body: reply.to_json, headers: { "Content-Type" => "application/json" } }
+      reply_to(request)
     end
 
     assert_nil @user.prepare_study_guide(WEEK)
     assert_nil @user.study_guide_for(WEEK)
     assert_equal newer, StudyGuide::Preparation.sole.token
+    assert_requested :post, PROVIDER, times: 1
   end
 
   test "no accepted AI terms: not allowed, no claim, no chat, no request" do
@@ -120,16 +176,16 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_not_requested :post, PROVIDER
   end
 
-  test "the daily limit: a person who has had their 2 requests today sends no third, and yesterday's don't count" do
+  test "the daily limit: a person who has had their 6 requests today sends no seventh, and yesterday's don't count" do
     accept
     travel_to(MONDAY - 4.hours) { study_guide_chat }
-    study_guide_chat
-    prepare(unusable_reply)
+    3.times { study_guide_chat }
+    prepare { off_topic(it) }
 
     assert_no_difference -> { Chat.count } do
       assert_nil @user.prepare_study_guide(WEEK)
     end
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
     assert_empty StudyGuide::Preparation.all
   end
 
@@ -137,7 +193,7 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     accept
     @user.update!(time_zone: "Pacific Time (US & Canada)")
     # 3am UTC on Monday is still Sunday in California, so a chat at 9am UTC on Sunday is today's there.
-    travel_to(MONDAY - 18.hours) { 2.times { study_guide_chat } }
+    travel_to(MONDAY - 18.hours) { 6.times { study_guide_chat } }
     stub_request(:post, PROVIDER)
 
     assert_nil @user.prepare_study_guide(WEEK)
@@ -158,22 +214,24 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     accept
     prepare
 
-    assert_requested(:post, PROVIDER, times: 1) do |request|
+    assert_requested(:post, PROVIDER, times: 3) do |request|
       question = question_in(request)
-      [ PROGRAM, "November 16, 2026", "November 22, 2026", STEPS.join(", ") ].all? { question.include?(it) }
+      [ PROGRAM, "November 16, 2026", "November 22, 2026", "Write parts for: " ].all? { question.include?(it) }
     end
     assert_not_requested :any, %r{\Ahttps?://([^/]+\.)?jw\.org}
   end
 
   # Filling in, never replacing (The weekly job).
 
-  test "a week missing only watchtower_study asks for that step alone and keeps the rest" do
+  test "a week missing only watchtower_study makes one request, the weekend group's, for that step alone, and keeps the rest" do
     accept
     guide = StudyGuide.create!(user: @user, week_of: WEEK)
     (STEPS - %w[ watchtower_study ]).each { guide_part(guide, it) }
     kept = guide.parts.find_by!(step: "talk").content
 
     assert_equal guide, prepare
+    assert_requested(:post, PROVIDER, times: 1)
+    assert_equal [ %w[ watchtower_study ] ], asked_steps
     assert_requested(:post, PROVIDER) { question_in(it).include?("parts for: watchtower_study\n") }
     assert_equal STEPS, guide.reload.parts.map(&:step)
     assert_equal kept, guide.parts.find_by!(step: "talk").content
@@ -181,7 +239,7 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_empty @user.missing_study_guide_steps(WEEK)
   end
 
-  test "a reply part for a step that wasn't asked for is dropped" do
+  test "a step the reply fills in that wasn't asked for isn't saved" do
     accept
     guide = StudyGuide.create!(user: @user, week_of: WEEK)
     guide_part(guide, "talk")
@@ -192,12 +250,20 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_equal 9, guide.parts.count
   end
 
+  test "a step left empty saves the rest and stays missing for the next run" do
+    accept
+    guide = prepare { it["living"] = empty_step("living") }
+
+    assert_equal STEPS - %w[ living ], guide.parts.map(&:step)
+    assert_equal %w[ living ], @user.missing_study_guide_steps(WEEK)
+  end
+
   test "a reply part for a step that got a part while the request was out is dropped" do
     accept
     guide = StudyGuide.create!(user: @user, week_of: WEEK)
-    stub_request(:post, PROVIDER).to_return do
-      guide_part(guide, "living")
-      { status: 200, body: reply.to_json, headers: { "Content-Type" => "application/json" } }
+    stub_request(:post, PROVIDER).to_return do |request|
+      guide_part(guide, "living") if question_in(request).include?("living")
+      reply_to(request)
     end
 
     @user.prepare_study_guide(WEEK)
@@ -234,7 +300,7 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
   test "a summary removed by the copy check drops the part, and the next run asks for it again" do
     accept
     summary = "Jeremiah mourns Jerusalem after its destruction, picturing the city as a widow left alone."
-    guide = prepare(reply(citations: [ "Here Jeremiah mourns Jerusalem after its destruction, picturing the city as a widow." ]))
+    guide = prepare(citations: [ "Here Jeremiah mourns Jerusalem after its destruction, picturing the city as a widow." ])
 
     assert_equal STEPS - %w[ bible_reading ], guide.parts.map(&:step)
     assert_equal [ "bible_reading" ], @user.missing_study_guide_steps(WEEK)
@@ -249,22 +315,22 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
   test "a Bible Reading part without its reading is dropped" do
     accept
 
-    assert_equal STEPS - %w[ bible_reading ], prepare(reply { content(it, "bible_reading")["reading"] = " " }).parts.map(&:step)
+    assert_equal STEPS - %w[ bible_reading ], prepare { content(it, "bible_reading")["reading"] = " " }.parts.map(&:step)
   end
 
   test "an overview without its glance, or a part without its summary, is dropped" do
     accept
-    guide = prepare(reply do |parsed|
+    guide = prepare do |parsed|
       content(parsed, "weekend_overview").delete("glance")
       content(parsed, "living")["summary"] = ""
-    end)
+    end
 
     assert_equal STEPS - %w[ living weekend_overview ], guide.parts.map(&:step)
   end
 
   test "an item the copy check removes goes, and the part stays" do
     accept
-    guide = prepare(reply(citations: [ "And so Jerusalem lies empty; its people are gone and its enemies mock it, they say." ]))
+    guide = prepare(citations: [ "And so Jerusalem lies empty; its people are gone and its enemies mock it, they say." ])
 
     happens = guide.parts.find { it.step == "bible_reading" }.content["happens"]
     assert_equal [ "Jeremiah weeps and calls on the people to cry out to Jehovah." ], happens.pluck("text")
@@ -272,17 +338,17 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
 
   test "a quotation longer than 5 words removes its item" do
     accept
-    guide = prepare(reply { content(it, "talk")["points"][1]["text"] = "He said “I will hope in him, my portion” then." })
+    guide = prepare { content(it, "talk")["points"][1]["text"] = "He said “I will hope in him, my portion” then." }
 
     assert_equal [ "Jerusalem’s fall was hard, but it wasn’t the end of Jehovah’s care." ], guide.parts.find { it.step == "talk" }.content["points"].pluck("text")
   end
 
   test "a reference that doesn't parse is dropped and its point kept" do
     accept
-    guide = prepare(reply do |parsed|
+    guide = prepare do |parsed|
       content(parsed, "talk")["points"][0]["ref"] = "Lamentations 9:99"
       content(parsed, "midweek_overview")["jehovah"][0]["ref"] = "Hezekiah 3:1"
-    end)
+    end
 
     point = guide.parts.find { it.step == "talk" }.content["points"].first
     assert_equal({ "text" => "Jerusalem’s fall was hard, but it wasn’t the end of Jehovah’s care." }, point)
@@ -292,51 +358,51 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
 
   test "a whole chapter is a reference that parses" do
     accept
-    guide = prepare(reply { content(it, "living")["apply"][0]["ref"] = "Psalm 23" })
+    guide = prepare { content(it, "living")["apply"][0]["ref"] = "Psalm 23" }
 
     assert_equal "Psalm 23", guide.parts.find { it.step == "living" }.content["apply"].first["ref"]
   end
 
   test "an item over 30 words drops the item, and one of 30 is kept" do
     accept
-    guide = prepare(reply do |parsed|
+    guide = prepare do |parsed|
       content(parsed, "bible_reading")["apply"][0]["text"] = ([ "Jehovah" ] * 31).join(" ")
       content(parsed, "bible_reading")["apply"][1]["text"] = ([ "Jehovah" ] * 30).join(" ")
-    end)
+    end
 
     assert_equal [ ([ "Jehovah" ] * 30).join(" ") ], guide.parts.find { it.step == "bible_reading" }.content["apply"].pluck("text")
   end
 
   test "a summary over 50 words or a glance over 40 drops the part" do
     accept
-    guide = prepare(reply do |parsed|
+    guide = prepare do |parsed|
       content(parsed, "talk")["summary"] = ([ "Jehovah" ] * 51).join(" ")
       content(parsed, "midweek_overview")["glance"] = ([ "Jehovah" ] * 41).join(" ")
-    end)
+    end
 
     assert_equal STEPS - %w[ midweek_overview talk ], guide.parts.map(&:step)
   end
 
   test "a title over 12 words goes, and the part stays" do
     accept
-    guide = prepare(reply { content(it, "living")["title"] = ([ "Comfort" ] * 13).join(" ") })
+    guide = prepare { content(it, "living")["title"] = ([ "Comfort" ] * 13).join(" ") }
 
     assert_equal %w[ summary apply ], guide.parts.find { it.step == "living" }.content.keys
   end
 
   test "a title the copy check removes goes, and the part stays" do
     accept
-    guide = prepare(reply { content(it, "living")["title"] = "“Comfort all those who mourn and grieve today,” he said." })
+    guide = prepare { content(it, "living")["title"] = "“Comfort all those who mourn and grieve today,” he said." }
 
     assert_equal %w[ summary apply ], guide.parts.find { it.step == "living" }.content.keys
   end
 
   test "a list keeps its first items up to its most, and an overview item without its quality goes" do
     accept
-    guide = prepare(reply do |parsed|
+    guide = prepare do |parsed|
       content(parsed, "talk")["points"] *= 3
       content(parsed, "midweek_overview")["jehovah"][1]["quality"] = ""
-    end)
+    end
 
     assert_equal 4, guide.parts.find { it.step == "talk" }.content["points"].size
     assert_equal %w[ Merciful Faithful ], guide.parts.first.content["jehovah"].pluck("quality")
@@ -345,44 +411,37 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
   test "one comment idea drops Spiritual Gems" do
     accept
 
-    assert_equal STEPS - %w[ spiritual_gems ], prepare(reply { content(it, "spiritual_gems")["comments"].pop(2) }).parts.map(&:step)
+    assert_equal STEPS - %w[ spiritual_gems ], prepare { content(it, "spiritual_gems")["comments"].pop(2) }.parts.map(&:step)
   end
 
   test "a web address in a point is taken out, and the point kept" do
     accept
-    guide = prepare(reply { content(it, "living")["apply"][0]["text"] = "Send a short card to someone, see https://example.com/cards today." })
+    guide = prepare { content(it, "living")["apply"][0]["text"] = "Send a short card to someone, see https://example.com/cards today." }
 
     assert_equal "Send a short card to someone, see today.", guide.parts.find { it.step == "living" }.content["apply"].first["text"]
   end
 
-  test "a repeated step keeps the first part for it, and an unknown step is dropped" do
+  test "a key that isn't a step is ignored" do
     accept
-    guide = prepare(reply do |parsed|
-      parsed["parts"] << { "step" => "talk", "content" => content(parsed, "talk").merge("summary" => "Again.") }
-      parsed["parts"] << { "step" => "public_talk", "content" => content(parsed, "talk") }
-    end)
+    guide = prepare { it["public_talk"] = it["talk"].merge("summary" => "Again.") }
 
     assert_equal STEPS, guide.parts.map(&:step)
     assert_equal "The talk shows how Jeremiah, though grieving, kept trusting that Jehovah would show mercy again.", guide.parts.second.content["summary"]
   end
 
-  test "a repeated step whose first part fails its checks keeps the next one" do
+  test "a step whose value isn't its fields is dropped, and the rest saved" do
     accept
-    guide = prepare(reply do |parsed|
-      talk = content(parsed, "talk")
-      parsed["parts"].find { it["step"] == "talk" }["content"] = talk.merge("summary" => "")
-      parsed["parts"] << { "step" => "talk", "content" => talk.merge("summary" => "The second try.") }
-    end)
+    guide = prepare { it["talk"] = "The talk shows how Jeremiah kept trusting Jehovah." }
 
-    assert_equal "The second try.", guide.parts.find { it.step == "talk" }.content["summary"]
+    assert_equal STEPS - %w[ talk ], guide.parts.map(&:step)
   end
 
   test "nothing usable saves nothing and lets the claim go" do
     accept
 
     assert_no_difference -> { StudyGuide.count } do
-      assert_nil prepare(reply { it["parts"].each { |part| part["content"]["summary"] = part["content"]["glance"] = "" } })
-      assert_nil prepare(unusable_reply)
+      assert_nil(prepare { |parsed| STEPS.each { parsed[it]["summary"] = parsed[it]["glance"] = "" } })
+      assert_nil(prepare { off_topic(it) })
     end
     assert_empty StudyGuide::Preparation.all
   end
@@ -392,8 +451,8 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
       @user.accept_ai_terms(understood: true)
     end
 
-    def prepare(body = reply)
-      stub_request(:post, PROVIDER).to_return(status: 200, body: body.to_json, headers: { "Content-Type" => "application/json" })
+    def prepare(citations: [], &change)
+      stub_request(:post, PROVIDER).to_return { reply_to(it, citations:, &change) }
       @user.prepare_study_guide(WEEK)
     end
 
@@ -413,25 +472,47 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
       JSON.parse(request.body)["messages"].last["content"].pluck("text").join
     end
 
+    # The steps each request answered by reply_to asked for in its schema, in the order they were sent.
+    def asked_steps
+      @asked_steps.to_a
+    end
+
     def content(parsed, step)
-      parsed["parts"].find { it["step"] == step }["content"]
+      parsed.fetch(step)
     end
 
-    # The recorded reply as the provider sends it. With a block or +citations+, its parsed fields (changed by the block)
-    # go in one text block, followed by an empty one carrying a citation for each of +citations+, so the copy check has
-    # excerpts to compare.
-    def reply(citations: [])
-      body = JSON.parse(file_fixture("ai/study_guide.json").read)
-      return body unless block_given? || citations.any?
-
-      texts, others = body["content"].partition { it["type"] == "text" }
-      parsed = JSON.parse(texts.pluck("text").join).tap { yield it if block_given? }
-      cited = citations.map { { "type" => "web_search_result_location", "url" => PROGRAM, "title" => SOURCES.first.last, "cited_text" => it } }
-      body.merge("content" => others + [ { "type" => "text", "text" => parsed.to_json }, { "type" => "text", "text" => "", "citations" => cited } ])
+    # A step as the reply leaves it when the message doesn't ask for it: empty strings and lists.
+    def empty_step(step)
+      shape = StudyGuide::Part::Shape.new(step)
+      shape.texts.index_with("").merge(shape.lists.transform_values { [] })
     end
 
-    # Off topic, with no parts: a reply the provider answered, with nothing to save.
-    def unusable_reply
-      reply.merge("content" => [ { "type" => "text", "text" => { off_topic: true, parts: [] }.to_json } ])
+    # The request's group's recorded reply as the provider sends it (study_guide_recording). With a block or +citations+,
+    # the three recordings' fields together, changed by the block, go back each to its own reply: its steps, and any key
+    # that isn't a step. They go in one text block, followed by an empty one carrying a citation for each of +citations+,
+    # so the copy check has excerpts to compare.
+    def reply_to(request, citations: [])
+      (@asked_steps ||= []) << JSON.parse(request.body).dig("output_config", "format", "schema", "properties").keys - [ "off_topic" ]
+      body = JSON.parse(study_guide_recording(request))
+      if block_given? || citations.any?
+        texts, others = body["content"].partition { it["type"] == "text" }
+        fields = recorded_fields.tap { yield it if block_given? }
+        parsed = fields.slice(*JSON.parse(texts.pluck("text").join).keys).merge(fields.except(*STEPS))
+        cited = citations.map { { "type" => "web_search_result_location", "url" => PROGRAM, "title" => SOURCES.first.last, "cited_text" => it } }
+        body["content"] = others + [ { "type" => "text", "text" => parsed.to_json }, { "type" => "text", "text" => "", "citations" => cited } ]
+      end
+      { status: 200, body: body.to_json, headers: { "Content-Type" => "application/json" } }
+    end
+
+    # Every step's fields from the three recordings, and off_topic.
+    def recorded_fields
+      Ai::Purpose::StudyGuide::GROUPS.keys.map do |group|
+        JSON.parse(JSON.parse(file_fixture("ai/study_guide_#{group}.json").read)["content"].filter_map { it["text"] }.join)
+      end.reduce(:merge)
+    end
+
+    # Off topic, with every step empty: a reply the provider answered, with nothing to save.
+    def off_topic(fields)
+      fields.merge!("off_topic" => true, **STEPS.index_with { empty_step(it) })
     end
 end

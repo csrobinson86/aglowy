@@ -5,7 +5,8 @@
 module Claimable
   extend ActiveSupport::Concern
 
-  # A run's request times out after 5 minutes, so a claim this old belongs to a run that died.
+  # A run's request times out after 5 minutes, so a claim this old belongs to a run that died, or, for a study guide's
+  # three requests, one taken over safely: it checks taken_over? before each request and each save.
   HELD_FOR = 15.minutes
 
   # This run's claim with a fresh token, or nil while another run's is held.
@@ -19,6 +20,11 @@ module Claimable
   # Lets the claim go if it's still this run's: true when it was.
   def release
     self.class.where(id:, token:).delete_all == 1
+  end
+
+  # Another run has taken the claim over since this run took it.
+  def taken_over?
+    !self.class.exists?(id:, token:)
   end
 
   private

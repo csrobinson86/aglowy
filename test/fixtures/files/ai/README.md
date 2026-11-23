@@ -28,11 +28,14 @@ hands it to RubyLLM as the HTTP response would arrive.
   jw.org. Three search results (the week's program and the Watchtower study article among them) and two citations
   carrying `cited_text`, one naming a page the search never returned, which `Ai::SourceLink` drops. Hand-built. The seeds
   use it too, for this week's cards.
-- `study_guide.json`: a study guide for the week of 16–22 November 2026, a part for each of the nine steps, every word
-  written for the fixture (the design's example frames, with the bracketed placeholders filled in), never taken from
-  jw.org. Four search results (the week's program, the reading, the Bible Study chapter and the Watchtower study article)
-  and two citations carrying `cited_text`, one naming a page the search never returned, which `Ai::SourceLink` drops.
-  Hand-built. The seeds use it too, for Hannah's guide this week.
+- `study_guide_midweek_opening.json`, `study_guide_midweek_ministry.json` and `study_guide_weekend.json`: a study guide
+  for the week of 16–22 November 2026, one reply for each of `Ai::Purpose::StudyGuide::GROUPS`, each keyed by its
+  group's steps with all of them filled in, every word written for the fixture (the design's example frames, with the
+  bracketed placeholders filled in), never taken from jw.org. Four search results between them: the week's program and
+  the reading in the first, the program again and the Bible Study chapter in the second, and the Watchtower study article
+  in the third. The first has two citations carrying `cited_text`, one naming a page the search never returned, which
+  `Ai::SourceLink` drops. Hand-built, split from one reply for all nine steps (#432). The seeds use them too, for Daniel's
+  guide this week.
 
 ## Recording a reply
 

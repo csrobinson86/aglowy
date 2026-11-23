@@ -42,11 +42,13 @@ class StudyGuide::PartTest < ActiveSupport::TestCase
   end
 
   test "each step's full content from the design is valid" do
-    guide = JSON.parse(JSON.parse(file_fixture("ai/study_guide.json").read)["content"].filter_map { it["text"] }.join)
+    guide = Ai::Purpose::StudyGuide::GROUPS.keys.map do |group|
+      JSON.parse(JSON.parse(file_fixture("ai/study_guide_#{group}.json").read)["content"].filter_map { it["text"] }.join)
+    end.reduce(:merge)
 
-    guide["parts"].each do |each_part|
-      content = each_part["content"].transform_values { |value| value.is_a?(Array) ? value.map { it.compact_blank } : value }
-      assert part(each_part["step"], content).valid?, "#{each_part["step"]} wasn't valid"
+    STEPS.each do |step|
+      content = guide.fetch(step).transform_values { |value| value.is_a?(Array) ? value.map { it.compact_blank } : value }
+      assert part(step, content).valid?, "#{step} wasn't valid"
     end
   end
 

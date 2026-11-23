@@ -1,7 +1,7 @@
-# Writing a person's study guide for a week's two meetings (docs/design/study-guide.md, Ai::Purpose::StudyGuide): a part
-# for each step the question asks for, with the fields StudyGuide::Part::Shape gives that step. Nobody's text is sent,
-# only the week's dates, the program's address and the steps, so there's no moderation check. Its chat is kept 7 days;
-# the guide has its own rule.
+# Writing a person's study guide for a week's two meetings (docs/design/study-guide.md, Ai::Purpose::StudyGuide), one
+# group of steps a request: a key for each step asked for, with the fields StudyGuide::Part::Shape gives it. Nobody's
+# text is sent, only the week's dates, the program's address and the steps, so there's no moderation check. Its chat is
+# kept 7 days; the guide has its own rule.
 class Ai::Purpose::StudyGuide < Ai::Purpose
   # Lengths and counts go in descriptions: the provider's structured output doesn't enforce them, and the checks before
   # saving run on every reply anyway.
@@ -25,24 +25,30 @@ class Ai::Purpose::StudyGuide < Ai::Purpose
     "notes" => "Notes on what the paragraphs cover, in order"
   }.freeze
   REF = { type: "string", description: "The point's scripture as a reference, like Lamentations 2:17 or Psalm 23. An empty string when it has none" }.freeze
+  # The steps asked for together, one request each, in step order. Anthropic compiles a reply schema into a grammar, and
+  # rejected all nine steps in one as too large, and midweek's seven too; each of these compiled (#432).
+  GROUPS = { "midweek_opening" => %w[ midweek_overview talk spiritual_gems bible_reading ],
+             "midweek_ministry" => %w[ field_ministry living congregation_bible_study ],
+             "weekend" => %w[ weekend_overview watchtower_study ] }.freeze
 
-  # The program, the reading, the Bible Study chapter and the Watchtower study article.
-  def max_searches = 8
+  # A request's: the program, the group's material, and room for one more.
+  def max_searches = 4
   def max_output_tokens = 8_000
-  # Per person, counted where they live (docs/design/study-guide.md, Ai::Purpose::StudyGuide).
-  def daily_limit = 2
+  # Per person, counted where they live (docs/design/study-guide.md, Ai::Purpose::StudyGuide): two whole runs of three
+  # requests, turning it on and the 3am run, on the same day.
+  def daily_limit = 6
   def keep_for = 7.days
-  # Well under the 15 minutes its claim is held, and a timeout fails the run (The weekly job).
+  # A timeout fails the run (The weekly job). A run's three requests, each just under this, could reach the 15 minutes
+  # its claim is held: then another run takes it over, and this one saves and asks no more.
   def request_timeout = 5.minutes
   def user_block = "study_guide_week"
 
-  def schema
+  # A key for each of +steps+, as the daily brief has per section, and no anyOf, which Anthropic compiles into a larger
+  # grammar still (#432).
+  def schema(steps)
     { name: "study_guide",
-      schema: { type: "object",
-                properties: { off_topic: { type: "boolean", description: "True when the message isn't a week to write a study guide for. Then leave parts empty" },
-                              parts: { type: "array", description: "At most one part for each step asked for. Fewer, or none, rather than guess",
-                                       items: { anyOf: ::StudyGuide::Part::Shape::SHAPES.group_by { _2 }.map { |shape, steps| part(steps.map(&:first), shape) } } } },
-                required: %i[ off_topic parts ], additionalProperties: false } }
+      schema: object(off_topic: { type: "boolean", description: "True when the message isn't a week to write a study guide for. Then leave every step empty" },
+                     **steps.to_h { [ it.to_sym, step(it) ] }) }
   end
 
   # The week's dates, the steps still missing a part, and the program's address on wol.jw.org, which Aglowy builds but
@@ -54,14 +60,14 @@ class Ai::Purpose::StudyGuide < Ai::Purpose
   end
 
   private
-    def part(steps, shape)
-      content = shape[:texts].to_h { [ it.to_sym, text(it) ] }
-        .merge(shape[:lists].to_h { |name, (counts, label)| [ name.to_sym, list(name, counts, label) ] })
+    def object(description: nil, **properties)
+      { type: "object", description:, properties:, required: properties.keys, additionalProperties: false }.compact
+    end
 
-      { type: "object",
-        properties: { step: { type: "string", enum: steps, description: "One of the steps the message asks for" },
-                      content: { type: "object", properties: content, required: content.keys, additionalProperties: false } },
-        required: %i[ step content ], additionalProperties: false }
+    def step(name)
+      shape = ::StudyGuide::Part::Shape.new(name)
+      object(description: "The #{name} step. Leave its fields empty, with empty strings and lists, rather than guess",
+             **shape.texts.to_h { [ it.to_sym, text(it) ] }, **shape.lists.to_h { |list_name, (counts, label)| [ list_name.to_sym, list(list_name, counts, label) ] })
     end
 
     def text(name)

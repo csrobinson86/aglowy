@@ -22,14 +22,15 @@ class Chat < ApplicationRecord
   before_destroy -> { ruby_llm_usages.delete_all(:delete_all) }, prepend: true
 
   # The only way a feature calls the AI: the purpose's instructions, schema and web search, and the person's text
-  # inside the marked block. Chunks go to +stream+ as they arrive.
-  def ask_within_purpose(text, stream: nil)
+  # inside the marked block. Chunks go to +stream+ as they arrive. With +steps+, for a purpose asked for some of its
+  # steps at a time (the study guide), the schema is the purpose's for those steps.
+  def ask_within_purpose(text, stream: nil, steps: nil)
     follow_configured_model
     keep_to_request_timeout
     raise UnsupportedProvider, "AI_MODEL must be an #{PROVIDER} model, not #{provider}" unless provider.to_s == PROVIDER
 
     with_instructions(ai_purpose.instructions)
-      .with_schema(ai_purpose.schema)
+      .with_schema(steps ? ai_purpose.schema(steps) : ai_purpose.schema)
       .with_provider_tools(web_search: ai_purpose.web_search)
       .with_max_output_tokens(ai_purpose.max_output_tokens)
     keep_recent_context
