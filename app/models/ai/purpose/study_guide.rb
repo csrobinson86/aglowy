@@ -1,5 +1,5 @@
-# Writing a person's study guide for a week's two meetings (docs/design/study-guide.md, Ai::Purpose::StudyGuide): a part
-# for each step the question asks for, with the fields StudyGuide::Part::Shape gives that step. Nobody's text is sent,
+# Writing a person's study guide for a week's two meetings (docs/design/study-guide.md, Ai::Purpose::StudyGuide): a key
+# for each step, with the fields StudyGuide::Part::Shape gives it, filled in only for the steps the question asks for. Nobody's text is sent,
 # only the week's dates, the program's address and the steps, so there's no moderation check. Its chat is kept 7 days;
 # the guide has its own rule.
 class Ai::Purpose::StudyGuide < Ai::Purpose
@@ -36,13 +36,12 @@ class Ai::Purpose::StudyGuide < Ai::Purpose
   def request_timeout = 5.minutes
   def user_block = "study_guide_week"
 
+  # One fixed key per step, as the daily brief has per section, and no anyOf: strict structured output compiles a union
+  # of the steps' shapes into one grammar, which Anthropic rejected as too large (#432).
   def schema
     { name: "study_guide",
-      schema: { type: "object",
-                properties: { off_topic: { type: "boolean", description: "True when the message isn't a week to write a study guide for. Then leave parts empty" },
-                              parts: { type: "array", description: "At most one part for each step asked for. Fewer, or none, rather than guess",
-                                       items: { anyOf: ::StudyGuide::Part::Shape::SHAPES.group_by { _2 }.map { |shape, steps| part(steps.map(&:first), shape) } } } },
-                required: %i[ off_topic parts ], additionalProperties: false } }
+      schema: object(off_topic: { type: "boolean", description: "True when the message isn't a week to write a study guide for. Then leave every step empty" },
+                     **::StudyGuide::Part::STEPS.keys.to_h { [ it.to_sym, step(it) ] }) }
   end
 
   # The week's dates, the steps still missing a part, and the program's address on wol.jw.org, which Aglowy builds but
@@ -54,14 +53,14 @@ class Ai::Purpose::StudyGuide < Ai::Purpose
   end
 
   private
-    def part(steps, shape)
-      content = shape[:texts].to_h { [ it.to_sym, text(it) ] }
-        .merge(shape[:lists].to_h { |name, (counts, label)| [ name.to_sym, list(name, counts, label) ] })
+    def object(description: nil, **properties)
+      { type: "object", description:, properties:, required: properties.keys, additionalProperties: false }.compact
+    end
 
-      { type: "object",
-        properties: { step: { type: "string", enum: steps, description: "One of the steps the message asks for" },
-                      content: { type: "object", properties: content, required: content.keys, additionalProperties: false } },
-        required: %i[ step content ], additionalProperties: false }
+    def step(name)
+      shape = ::StudyGuide::Part::Shape.new(name)
+      object(description: "The #{name} step, only when the message asks for it. Otherwise leave its fields empty: empty strings and lists. Empty, too, rather than guess",
+             **shape.texts.to_h { [ it.to_sym, text(it) ] }, **shape.lists.to_h { |list_name, (counts, label)| [ list_name.to_sym, list(list_name, counts, label) ] })
     end
 
     def text(name)

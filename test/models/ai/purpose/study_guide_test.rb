@@ -22,21 +22,35 @@ class Ai::Purpose::StudyGuideTest < ActiveSupport::TestCase
     assert StudyGuide::Preparation::HELD_FOR > @purpose.request_timeout * 2
   end
 
-  test "its schema has off_topic and a list of parts, each a step with its own fields" do
+  test "its schema has off_topic and a key for each step, in step order, every one required" do
     schema = @purpose.schema[:schema]
 
-    assert_equal %i[ off_topic parts ], schema[:properties].keys
+    assert_equal [ :off_topic, *StudyGuide::Part::STEPS.keys.map(&:to_sym) ], schema[:properties].keys
     assert_equal schema[:properties].keys, schema[:required]
-    shapes = schema.dig(:properties, :parts, :items, :anyOf)
-    assert_equal StudyGuide::Part::STEPS.keys.sort, shapes.flat_map { it.dig(:properties, :step, :enum) }.sort
-    talk = shapes.find { it.dig(:properties, :step, :enum) == %w[ talk ] }.dig(:properties, :content)
-    assert_equal %i[ title summary points jehovah ], talk[:properties].keys
-    assert_equal talk[:properties].keys, talk[:required]
+    assert_equal false, schema[:additionalProperties]
+    assert_includes schema.dig(:properties, :off_topic, :description), "leave every step empty"
+    assert_includes schema.dig(:properties, :talk, :description), "empty strings and lists"
+  end
+
+  # Strict structured output compiles a union into one grammar, and the study guide's was too large for Anthropic (#432).
+  test "its schema has no anyOf anywhere" do
+    assert_not_includes @purpose.schema.to_json, "anyOf"
+  end
+
+  test "each step's content has exactly its shape's texts and lists, with their lengths and counts" do
+    StudyGuide::Part::STEPS.each_key do |step|
+      content, shape = @purpose.schema.dig(:schema, :properties, step.to_sym), StudyGuide::Part::Shape.new(step)
+
+      assert_equal (shape.texts + shape.lists.keys).map(&:to_sym), content[:properties].keys, step
+      assert_equal content[:properties].keys, content[:required], step
+      assert_equal false, content[:additionalProperties], step
+    end
+    talk = @purpose.schema.dig(:schema, :properties, :talk)
     assert_includes talk.dig(:properties, :summary, :description), "50 words"
     assert_includes talk.dig(:properties, :title, :description), "12 words"
     assert_includes talk.dig(:properties, :points, :description), "Up to 4"
     assert_equal %i[ text ref ], talk.dig(:properties, :points, :items, :properties).keys
-    overview = shapes.find { it.dig(:properties, :step, :enum).include?("midweek_overview") }.dig(:properties, :content)
+    overview = @purpose.schema.dig(:schema, :properties, :weekend_overview)
     assert_equal %i[ quality text ref ], overview.dig(:properties, :jehovah, :items, :properties).keys
     assert_includes overview.dig(:properties, :jehovah, :description), "1 to 4"
   end

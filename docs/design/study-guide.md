@@ -102,7 +102,7 @@ The page uses Primer components and utilities. The few app-specific styles (the 
 Instructions in `config/ai/study_guide.md`:
 
 - `allowed_hosts`: the usual three. `max_searches`: 8 (the program, the reading, the Bible Study chapter and the Watchtower study article).
-- `schema`: `off_topic`, and `parts`, a list of `{ step, content }`, where `step` is one of the steps asked for and `content` has the step's fields:
+- `schema`: `off_topic`, and one key for each of the nine steps, in step order, each the step's fields. Every key is required and there's no `anyOf`: a step the message doesn't ask for is left empty (empty strings and lists), and isn't read. Keyed by step, as the daily brief's schema is by section, because the first schema, a `parts` list whose items were an `anyOf` of the step shapes, compiled into a grammar Anthropic's strict structured output rejected as too large (#432). The fields:
 
 | Step | Fields (each list item is `{ text, ref }`, `ref` optional) |
 | --- | --- |

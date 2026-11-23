@@ -181,7 +181,7 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_empty @user.missing_study_guide_steps(WEEK)
   end
 
-  test "a reply part for a step that wasn't asked for is dropped" do
+  test "a step the reply fills in that wasn't asked for isn't saved" do
     accept
     guide = StudyGuide.create!(user: @user, week_of: WEEK)
     guide_part(guide, "talk")
@@ -190,6 +190,14 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
 
     assert_equal "A part to keep.", guide.parts.find_by!(step: "talk").content["summary"]
     assert_equal 9, guide.parts.count
+  end
+
+  test "a step left empty saves the rest and stays missing for the next run" do
+    accept
+    guide = prepare(reply { it["living"] = empty_step("living") })
+
+    assert_equal STEPS - %w[ living ], guide.parts.map(&:step)
+    assert_equal %w[ living ], @user.missing_study_guide_steps(WEEK)
   end
 
   test "a reply part for a step that got a part while the request was out is dropped" do
@@ -355,33 +363,26 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     assert_equal "Send a short card to someone, see today.", guide.parts.find { it.step == "living" }.content["apply"].first["text"]
   end
 
-  test "a repeated step keeps the first part for it, and an unknown step is dropped" do
+  test "a key that isn't a step is ignored" do
     accept
-    guide = prepare(reply do |parsed|
-      parsed["parts"] << { "step" => "talk", "content" => content(parsed, "talk").merge("summary" => "Again.") }
-      parsed["parts"] << { "step" => "public_talk", "content" => content(parsed, "talk") }
-    end)
+    guide = prepare(reply { it["public_talk"] = it["talk"].merge("summary" => "Again.") })
 
     assert_equal STEPS, guide.parts.map(&:step)
     assert_equal "The talk shows how Jeremiah, though grieving, kept trusting that Jehovah would show mercy again.", guide.parts.second.content["summary"]
   end
 
-  test "a repeated step whose first part fails its checks keeps the next one" do
+  test "a step whose value isn't its fields is dropped, and the rest saved" do
     accept
-    guide = prepare(reply do |parsed|
-      talk = content(parsed, "talk")
-      parsed["parts"].find { it["step"] == "talk" }["content"] = talk.merge("summary" => "")
-      parsed["parts"] << { "step" => "talk", "content" => talk.merge("summary" => "The second try.") }
-    end)
+    guide = prepare(reply { it["talk"] = "The talk shows how Jeremiah kept trusting Jehovah." })
 
-    assert_equal "The second try.", guide.parts.find { it.step == "talk" }.content["summary"]
+    assert_equal STEPS - %w[ talk ], guide.parts.map(&:step)
   end
 
   test "nothing usable saves nothing and lets the claim go" do
     accept
 
     assert_no_difference -> { StudyGuide.count } do
-      assert_nil prepare(reply { it["parts"].each { |part| part["content"]["summary"] = part["content"]["glance"] = "" } })
+      assert_nil prepare(reply { |parsed| STEPS.each { parsed[it]["summary"] = parsed[it]["glance"] = "" } })
       assert_nil prepare(unusable_reply)
     end
     assert_empty StudyGuide::Preparation.all
@@ -414,7 +415,13 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
     end
 
     def content(parsed, step)
-      parsed["parts"].find { it["step"] == step }["content"]
+      parsed.fetch(step)
+    end
+
+    # A step as the reply leaves it when the message doesn't ask for it: empty strings and lists.
+    def empty_step(step)
+      shape = StudyGuide::Part::Shape.new(step)
+      shape.texts.index_with("").merge(shape.lists.transform_values { [] })
     end
 
     # The recorded reply as the provider sends it. With a block or +citations+, its parsed fields (changed by the block)
@@ -430,8 +437,8 @@ class User::StudyGuidePreparableTest < ActiveSupport::TestCase
       body.merge("content" => others + [ { "type" => "text", "text" => parsed.to_json }, { "type" => "text", "text" => "", "citations" => cited } ])
     end
 
-    # Off topic, with no parts: a reply the provider answered, with nothing to save.
+    # Off topic, with every step empty: a reply the provider answered, with nothing to save.
     def unusable_reply
-      reply.merge("content" => [ { "type" => "text", "text" => { off_topic: true, parts: [] }.to_json } ])
+      reply.merge("content" => [ { "type" => "text", "text" => { off_topic: true, **STEPS.index_with { empty_step(it) } }.to_json } ])
     end
 end
