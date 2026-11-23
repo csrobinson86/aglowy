@@ -16,6 +16,28 @@ class Chat::AskWithinPurposeTest < ActiveSupport::TestCase
     assert_equal @purpose.max_output_tokens, sent[:max_tokens]
   end
 
+  # The study guide asks for a group of steps at a time, each with a schema small enough for Anthropic (#432).
+  test "with steps, the schema sent is the purpose's for those steps alone" do
+    # Its request timeout gives the chat a new connection, so WebMock answers rather than reply_with.
+    chat = Chat.create!(user: users(:head), purpose: "study_guide")
+    steps = %w[ weekend_overview watchtower_study ]
+    stub_request(:post, "https://api.anthropic.com/v1/messages").to_return(status: 200, body: file_fixture("ai/study_guide_weekend.json").read, headers: { "Content-Type" => "application/json" })
+
+    chat.ask_within_purpose("Week", steps:)
+
+    assert_requested(:post, "https://api.anthropic.com/v1/messages") do |request|
+      JSON.parse(request.body).dig("output_config", "format", "schema") == JSON.parse(Ai::Purpose.find("study_guide").schema(steps)[:schema].to_json)
+    end
+  end
+
+  test "without steps, a purpose's schema is sent unchanged" do
+    @chat = Chat.create!(user: users(:head), purpose: "daily_brief")
+
+    sent = reply_with("off_topic") { @chat.ask_within_purpose("Today") }
+
+    assert_equal JSON.parse(Ai::Purpose.find("daily_brief").schema[:schema].to_json), JSON.parse(sent.dig(:output_config, :format, :schema).to_json)
+  end
+
   test "the person's text arrives inside the marked block" do
     sent = reply_with("family_study_draft") { @chat.ask_within_purpose("Prayer as a family") }
 

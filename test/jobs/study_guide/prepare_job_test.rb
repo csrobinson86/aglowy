@@ -2,7 +2,8 @@ require "test_helper"
 
 # When the study guide is made (docs/design/study-guide.md, The weekly job; Trap 6). Monday 16 November 2026 at 3:15am
 # UTC. Hannah (head in home, adult in parents) has accepted the AI terms and turned her study guide on; everyone is in
-# UTC unless a test moves them. The provider answers through WebMock with the recorded reply: no test calls a provider.
+# UTC unless a test moves them. The provider answers each request through WebMock with its group's recorded reply, so a
+# fresh week is three requests: no test calls a provider.
 class StudyGuide::PrepareJobTest < ActiveJob::TestCase
   PROVIDER = "https://api.anthropic.com/v1/messages".freeze
   WEEK = Date.new(2026, 11, 16)
@@ -47,7 +48,7 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
 
     travel_to(MONDAY + 1.day) { StudyGuide::PrepareJob.perform_now }
 
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
     assert_equal STEPS, guide(@head).parts.map(&:step)
   end
 
@@ -58,7 +59,7 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
 
     travel_to(MONDAY) { StudyGuide::PrepareJob.perform_now }
 
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
     assert_nil guide(eli)
   end
 
@@ -72,7 +73,7 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
 
     # 8:15am UTC is 3:15am on Monday there.
     travel_to(MONDAY + 5.hours) { StudyGuide::PrepareJob.perform_now }
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
     assert_equal [ WEEK ], @head.study_guides.where.not(id: study_guides(:head_nov_9)).pluck(:week_of)
   end
 
@@ -121,20 +122,21 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
     travel_to(MONDAY + 7.days) { StudyGuide::PrepareJob.perform_now }
 
     assert_equal %w[ talk ], week.reload.parts.map(&:step)
-    assert_requested(:post, PROVIDER, times: 1) { |request| request.body.include?("Monday, November 23, 2026") }
+    assert_requested(:post, PROVIDER, times: 3) { |request| request.body.include?("Monday, November 23, 2026") }
     assert @head.study_guides.exists?(week_of: WEEK + 7)
   end
 
   test "one failure doesn't stop the rest" do
     grandparent = users(:grandparent)
     turn_on(grandparent)
-    stub_request(:post, PROVIDER).to_return(status: 500).then.to_return(**recorded_reply)
+    stub_request(:post, PROVIDER).to_return(status: 500).then.to_return { recorded_reply(it) }
 
     travel_to(MONDAY) do
       assert_error_reported(RubyLLM::ServerError) { StudyGuide::PrepareJob.perform_now }
     end
 
-    assert_requested :post, PROVIDER, times: 2
+    # The first person's first request fails, and the second person's three are answered.
+    assert_requested :post, PROVIDER, times: 4
     assert_equal 1, StudyGuide.where(week_of: WEEK).count
     assert_empty StudyGuide::Preparation.all
   end
@@ -143,14 +145,15 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
     grandparent = users(:grandparent)
     turn_on(grandparent)
     # During the first person's request, both turn it off: the second, loaded with the batch, must not be asked for.
-    stub_request(:post, PROVIDER).to_return do
+    stub_request(:post, PROVIDER).to_return do |request|
       [ @head, grandparent ].each(&:turn_off_study_guide)
-      recorded_reply
+      recorded_reply(request)
     end
 
     travel_to(MONDAY) { StudyGuide::PrepareJob.perform_now }
 
-    assert_requested :post, PROVIDER, times: 1
+    # The first person's run, already under way, asks for its three groups.
+    assert_requested :post, PROVIDER, times: 3
     assert_equal 1, StudyGuide.where(week_of: WEEK).count
   end
 
@@ -161,7 +164,7 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
     # Turning the setting on enqueues it straight away.
     travel_to(MONDAY + 10.hours) { StudyGuide::PrepareJob.perform_now(@head) }
 
-    assert_requested :post, PROVIDER, times: 1
+    assert_requested :post, PROVIDER, times: 3
     assert guide(@head)
     assert_nil guide(users(:grandparent))
   end
@@ -192,11 +195,11 @@ class StudyGuide::PrepareJobTest < ActiveJob::TestCase
       user.study_guides.find_by(week_of: WEEK)
     end
 
-    def recorded_reply
-      { status: 200, body: file_fixture("ai/study_guide.json").read, headers: { "Content-Type" => "application/json" } }
+    def recorded_reply(request)
+      { status: 200, body: study_guide_recording(request), headers: { "Content-Type" => "application/json" } }
     end
 
     def stub_provider
-      stub_request(:post, PROVIDER).to_return(**recorded_reply)
+      stub_request(:post, PROVIDER).to_return { recorded_reply(it) }
     end
 end

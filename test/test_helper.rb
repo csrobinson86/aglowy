@@ -107,6 +107,14 @@ module ActiveSupport
       end
     end
 
+    # The recorded study guide reply for the group a request's schema asks for, as the provider sends it
+    # (test/fixtures/files/ai/study_guide_<group>.json; Ai::Purpose::StudyGuide::GROUPS).
+    def study_guide_recording(request)
+      steps = ::JSON.parse(request.body).dig("output_config", "format", "schema", "properties").keys
+      group, _ = Ai::Purpose::StudyGuide::GROUPS.find { |_, of| of.intersect?(steps) }
+      file_fixture("ai/study_guide_#{group}.json").read
+    end
+
     # A plain image, no attachment at all, as a crafted request could send.
     def image_tag_html
       %(<img src="https://example.com/cat.png">)
