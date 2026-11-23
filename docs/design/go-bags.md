@@ -19,7 +19,7 @@ Read this before touching `GoBag`, its items, categories or the go-bag reminder.
 Go bags help a family get ready for a disaster together. They serve vision goal 3 ("households work the way real families do": parents run it, children see it) and goal 4 (calm and private). The guardrails come from the vision:
 
 - **No nagging.** One reminder for each use-by date and nothing else: no reminder for an empty bag or for unbought items, and no streaks.
-- **Private.** Everything people type here is encrypted: bag names, places, category names, item names and how many. Use-by dates aren't, as goals' target and due dates aren't, because the database has to find the items whose date is coming up; a date alone says nothing about the item. The reminder keeps a copy of that date (The use-by reminder). A household's bags are invisible to non-members, who get a 404.
+- **Private.** All the text people type here is encrypted: bag names, places, category names, item names and how many. Use-by dates aren't, as goals' target and due dates aren't, because the database has to find the items whose date is coming up; a date alone says nothing about the item. The reminder keeps a copy of that date (The use-by reminder). A household's bags are invisible to non-members, who get a 404.
 - **Linked, never copied.** The guide is the *Awake!* article "When Disaster Strikes—Steps That Can Save Lives" (g17 No. 5), linked on wol.jw.org. Aglowy shows its title and link only. The suggested items are Aglowy's own list, not copied from the article (vision, non-goals; `docs/design/ai.md`). Aglowy never fetches the page.
 
 ## What GOBAGS-01 builds, and what comes later
@@ -199,7 +199,7 @@ A new notification kind, added by its own story as `docs/design/notifications.md
 
 ## Traps
 
-- Everything typed is encrypted. Sort by `position`, id or dates, never by a name in SQL.
+- All typed text is encrypted (use-by dates aren't; see Private, above). Sort by `position`, id or dates, never by a name in SQL.
 - "To buy" means the same thing everywhere: to get, or use by soon. Use the one scope and method; don't count it two ways.
 - "Soon" uses the household's today (`household.today`), not the server's date.
 - A child must not tick, edit or add anything, even with a crafted request. The policy refuses it, and request tests prove it for each write.
