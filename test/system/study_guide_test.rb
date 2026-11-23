@@ -93,7 +93,8 @@ class StudyGuidePageTest < ApplicationSystemTestCase
       assert_selector "h2", text: "Pages used"
       assert_selector "li", text: "Life and Ministry Meeting Workbook, November 16-22 https://wol.jw.org/en/wol/meetings/r1/lp-e/2026/47"
     end
-    page.save_screenshot(Rails.root.join("tmp/screenshots/ui/study-guide-print-light.png")) if ENV["SCREENSHOTS"]
+    # Emulated print fires no beforeprint, so the print controller's light colours aren't in this one.
+    page.save_screenshot(Rails.root.join("tmp/screenshots/ui/study-guide-print.png")) if ENV["SCREENSHOTS"]
   ensure
     page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", media: "")
   end

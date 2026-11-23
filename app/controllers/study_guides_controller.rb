@@ -13,7 +13,7 @@ class StudyGuidesController < ApplicationController
     authorize :study_guide
     week_of = Current.user.study_guide_week
 
-    if Current.user.study_guides.exists?(week_of:)
+    if Current.user.study_guide_for?(week_of)
       redirect_to household_study_guide_path(week_of:)
     else
       @study_guides = Current.user.study_guides.order(week_of: :desc)

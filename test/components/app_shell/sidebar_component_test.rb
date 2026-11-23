@@ -54,6 +54,25 @@ class AppShell::SidebarComponentTest < ViewComponent::TestCase
     assert_no_selector "svg.octicon-north-star"
   end
 
+  test "Study guide shows after Today's meeting, with the book icon, for a head and an adult with it on, not with it off or for a child" do
+    User::WeeklyStudyGuide.create!(user: users(:spouse))
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item: :dashboards, label: "Main"))
+    assert_no_text "Study guide"
+
+    User::WeeklyStudyGuide.create!(user: users(:head))
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      render_inline(AppShell::SidebarComponent.new(membership: memberships(membership).reload, selected_item: :study_guides, label: "Main"))
+
+      assert_selector "nav[aria-label='Main'] a[href='/#{households(:home).id}/study_guides'][aria-current=page] svg.octicon-book", count: 1
+      mine = page.all("nav[aria-label='Main'] a").map { it.text.strip }
+      assert_equal mine.index("Today's meeting") + 1, mine.index("Study guide"), "after Today's meeting for #{membership}"
+    end
+
+    User::WeeklyStudyGuide.create!(user: users(:eli))
+    render_inline(AppShell::SidebarComponent.new(membership: memberships(:eli_in_home), selected_item: :dashboards, label: "Main"))
+    assert_no_text "Study guide"
+  end
+
   test "Daily brief is selected on its pages" do
     render_inline(AppShell::SidebarComponent.new(membership: memberships(:head_in_home), selected_item: :daily_briefs, label: "Main"))
 

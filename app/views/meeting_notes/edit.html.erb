@@ -5,7 +5,7 @@
 
 <%# Beside the outline, the person's study guide for the note's week and meeting, while it's kept
     (docs/design/study-guide.md, Where people find it). %>
-<% if study_guide_on_here? && Current.user.study_guides.exists?(week_of: @meeting_note.week_of) %>
+<% if study_guide_on_here? && Current.user.study_guide_for?(@meeting_note.week_of) %>
   <p class="mb-3">
     <%= render(Primer::Beta::Link.new(href: household_study_guide_path(week_of: @meeting_note.week_of, meeting: @meeting_note.kind), underline: true)) do |link| %>
       <% link.with_leading_visual_icon(icon: :book) %>
