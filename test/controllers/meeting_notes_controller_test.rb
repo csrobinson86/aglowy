@@ -100,6 +100,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .Box-row:nth-of-type(1) details li:nth-of-type(2) a[href='#{note_path(newer_weekend)}']", text: "Weekend meeting"
     assert_select "main .Box-row:nth-of-type(2) details:not([open]) summary", text: /Week of November 2–8.*1 note/m
     assert_select "main .Box-row:nth-of-type(2) details li a[href='#{note_path(older_weekend)}']", text: "Weekend meeting"
+    assert_select "main .Box-row:nth-of-type(2) details li", text: /Weekend of November 7–8, 2026 · Nothing written yet/
     assert_select "main details[open]", count: 1, text: /Week of November 9–15/
   end
 

@@ -2,8 +2,9 @@
 
 # A week in the Meeting notes tab's Earlier list: a Primer Details whose summary shows the week, a dot per note and
 # whether any is shared, and which opens to the week's notes (docs/design/notes.md, Earlier, a week at a time; frames
-# notes-meeting-notes-weeks.png and phone-notes-meeting-notes-weeks.png). Pass the notes in_week_order, with their
-# sharings and tags preloaded on my list or their users on the shared list, so a page asks no query per note.
+# notes-meeting-notes-weeks.png and phone-notes-meeting-notes-weeks.png). Pass the notes in_week_order, with their gems
+# and parts' notes for the summary, and their sharings and tags on my list or their users on the shared list, preloaded,
+# so a page asks no query per note.
 class MeetingNoteWeekComponent < ApplicationComponent
   attr_reader :week_of, :notes
 
@@ -26,9 +27,10 @@ class MeetingNoteWeekComponent < ApplicationComponent
     MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)
   end
 
-  # Life and Ministry rows drop the week, since the summary has it; a weekend row keeps its days.
+  # The author on the shared list, then the weekend's days (a Life and Ministry row drops the week, since the week's
+  # summary has it), then what's written: "2 gems, 1 part with notes".
   def details(note)
-    [ (note.user.name if shared_list?), (note.display_week if note.weekend?) ].compact.join(" · ")
+    [ (note.user.name if shared_list?), (note.display_week if note.weekend?), helpers.meeting_note_summary(note) ].compact.join(" · ")
   end
 
   def note_path(note)

@@ -14,7 +14,7 @@ class SharedMeetingNotesController < ApplicationController
     if @kind
       @meeting_notes = of_kind(shared).includes(:user).newest_first
     else
-      @weeks = shared.includes(:user).in_week_order.group_by(&:week_of)
+      @weeks = shared.includes(:user, :gems, parts: :rich_text_notes).in_week_order.group_by(&:week_of)
     end
   end
 end

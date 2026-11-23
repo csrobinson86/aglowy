@@ -20,9 +20,7 @@
         <%= helpers.meeting_note_dot(dot_color(note)) %>
         <div class="d-md-flex min-width-0">
           <%= render(Primer::Beta::Link.new(href: note_path(note), scheme: :primary, font_weight: :bold, mr: 3)) { helpers.meeting_note_title(note) } %>
-          <% if details(note).present? %>
-            <div class="color-fg-muted wb-break-word"><%= details(note) %></div>
-          <% end %>
+          <div class="color-fg-muted wb-break-word"><%= details(note) %></div>
         </div>
         <% unless shared_list? %>
           <div class="d-flex flex-wrap flex-items-center flex-justify-end ml-auto">

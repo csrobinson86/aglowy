@@ -24,7 +24,7 @@ class MeetingNotesController < ApplicationController
       @this_week = Current.user.meeting_notes_for_week(week_of)
       earlier = notes.where(week_of: ...week_of)
       @earlier = Page.new(earlier.weeks, number: params[:page], size: 12)
-      @weeks = earlier.where(week_of: @earlier.records.map(&:week_of)).in_week_order.group_by(&:week_of)
+      @weeks = earlier.where(week_of: @earlier.records.map(&:week_of)).includes(:gems, parts: :rich_text_notes).in_week_order.group_by(&:week_of)
     end
   end
 

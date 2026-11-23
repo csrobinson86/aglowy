@@ -68,10 +68,14 @@ class MeetingNoteWeekComponentTest < ViewComponent::TestCase
     assert_selector "li a.Label[href='/#{households(:home).id}/tags/ministry']", text: "#ministry"
   end
 
-  test "Life and Ministry rows drop the week, Weekend rows keep their day" do
-    render_week(notes: [ start("midweek"), start("weekend") ])
+  test "Life and Ministry rows drop the week, Weekend rows keep their day, and each says what's written" do
+    midweek = start("midweek")
+    midweek.revise!(gems_attributes: [ { scripture: "Isaiah 41:10", insight: "He holds on to us." } ])
 
-    assert_selector "li", text: /Weekend meeting\s*Weekend of November 14–15, 2026/
+    render_week(notes: [ midweek, start("weekend") ])
+
+    assert_selector "li", text: /Life and Ministry\s*1 gem\s*\z/
+    assert_selector "li", text: /Weekend meeting\s*Weekend of November 14–15, 2026 · Nothing written yet/
     assert_no_selector "li", text: "Week of November 9–15"
   end
 
@@ -101,6 +105,6 @@ class MeetingNoteWeekComponentTest < ViewComponent::TestCase
     end
 
     def render_week(notes:, week_of: WEEK, open: true, shared_list: false)
-      render_inline(MeetingNoteWeekComponent.new(week_of:, notes: MeetingNote.where(id: notes).includes(:user, :sharings, :tags).in_week_order, open:, shared_list:))
+      render_inline(MeetingNoteWeekComponent.new(week_of:, notes: MeetingNote.where(id: notes).includes(:user, :sharings, :tags, :gems, parts: :rich_text_notes).in_week_order, open:, shared_list:))
     end
 end
