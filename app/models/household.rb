@@ -20,6 +20,7 @@ class Household < ApplicationRecord
   has_many :events, class_name: "Household::Event", dependent: :delete_all
   # Bags in the order they were made; the database takes their items with them (on_delete: :cascade).
   has_many :go_bags, -> { order(:id) }, dependent: :delete_all
+  has_many :go_bag_items, through: :go_bags, source: :items, class_name: "GoBag::Item"
   has_many :go_bag_categories, -> { order(:position) }, class_name: "GoBag::Category", dependent: :delete_all
   # The weekly previews about it (docs/design/notifications.md, Models).
   has_many :notifications, as: :subject, dependent: :delete_all
@@ -262,6 +263,12 @@ class Household < ApplicationRecord
     zone = ActiveSupport::TimeZone[time_zone]
     family_study_sessions.without_topic.where(canceled_at: nil).where(scheduled_at: zone.local(on.year, on.month, on.day)...on.next_day.then { zone.local(it.year, it.month, it.day) })
       .preloaded.each { it.ask_heads_for_topic(on:) }
+  end
+
+  # Each go-bag item we have whose use-by date is from today to a month later reminds the heads and adults, once for
+  # each date (docs/design/go-bags.md, The use-by reminder).
+  def remind_about_go_bag_use_by
+    go_bag_items.use_by_reminder_due(today).each(&:remind_about_use_by_now)
   end
 
   private

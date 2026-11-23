@@ -31,6 +31,9 @@ production:
   ask_for_study_topics:
     class: Notification::StudyTopicJob
     schedule: every hour at minute 10
+  remind_about_go_bag_use_by:
+    class: Notification::GoBagUseByJob
+    schedule: every hour at minute 20
   follow_up_invitations:
     class: Notification::InvitationFollowUpJob
     schedule: every day at 2pm

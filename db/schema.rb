@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_23_010300) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -763,7 +763,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_010300) do
     t.datetime "created_at", null: false
     t.index ["user_id", "kind", "channel"], name: "index_notification_settings_on_user_id_and_kind_and_channel", unique: true
     t.check_constraint "channel::text = ANY (ARRAY['email'::character varying, 'push'::character varying]::text[])", name: "notification_settings_channel_check"
-    t.check_constraint "kind::text = ANY (ARRAY['weekly_preview'::character varying, 'study_topic_needed'::character varying, 'shared_with_you'::character varying, 'invitation_unaccepted'::character varying]::text[])", name: "notification_settings_kind_check"
+    t.check_constraint "kind::text = ANY (ARRAY['weekly_preview'::character varying, 'study_topic_needed'::character varying, 'shared_with_you'::character varying, 'invitation_unaccepted'::character varying, 'go_bag_use_by'::character varying]::text[])", name: "notification_settings_kind_check"
   end
 
   create_table "notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -781,7 +781,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_010300) do
     t.index ["household_id"], name: "index_notifications_on_household_id"
     t.index ["subject_type", "subject_id"], name: "index_notifications_on_subject"
     t.index ["user_id", "dedupe_key"], name: "index_notifications_on_user_id_and_dedupe_key", unique: true
-    t.check_constraint "kind::text = ANY (ARRAY['weekly_preview'::character varying, 'study_topic_needed'::character varying, 'shared_with_you'::character varying, 'invitation_unaccepted'::character varying]::text[])", name: "notifications_kind_check"
+    t.check_constraint "kind::text = ANY (ARRAY['weekly_preview'::character varying, 'study_topic_needed'::character varying, 'shared_with_you'::character varying, 'invitation_unaccepted'::character varying, 'go_bag_use_by'::character varying]::text[])", name: "notifications_kind_check"
   end
 
   create_table "personal_note_pins", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

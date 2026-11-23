@@ -32,3 +32,11 @@ unless find_seeded(rivera.go_bags, name: "Mateo's bag")
   bag.items.create!(name: "A small toy or book", category: category.("children")).acquire(by: maria)
   bag.items.create!(name: "A favorite snack", category: category.("children"))
 end
+
+# Maria's reminder for the bottled water, 20 days out, as the 8 AM job would make it (docs/design/go-bags.md, The use-by
+# reminder). Unread. None if the water or its date has gone since the bag was seeded.
+water = find_seeded(find_seeded(rivera.go_bags, name: "Family go bag").items, name: "Bottled water")
+if water&.use_by
+  maria.notify(kind: "go_bag_use_by", household: rivera, subject: water, data: { use_by: water.use_by.iso8601 },
+    dedupe_key: "go_bag_use_by:#{water.id}:#{water.use_by.iso8601}")
+end

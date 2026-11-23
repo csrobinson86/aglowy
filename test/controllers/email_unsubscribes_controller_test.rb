@@ -14,12 +14,12 @@ class EmailUnsubscribesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "main h1", "Turn off Weekly preview emails?"
     assert_select "main form[method=post][action=?] button[type=submit]", email_unsubscribe_path(scope: "weekly_preview", token: @head.unsubscribe_token("weekly_preview")), "Turn off this email"
-    assert_equal 4, @head.notification_settings.count
+    assert_equal 5, @head.notification_settings.count
 
     get email_unsubscribe_path(scope: "summary", token: @head.unsubscribe_token("summary"))
 
     assert_select "main h1", "Turn off your daily summary email?"
-    assert_equal 4, @head.notification_settings.count
+    assert_equal 5, @head.notification_settings.count
   end
 
   test "POST from a right-away email turns that kind off" do
@@ -27,7 +27,7 @@ class EmailUnsubscribesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "main h1", "Family study needs a topic emails are off"
-    assert_equal %w[ invitation_unaccepted shared_with_you weekly_preview ], @head.notification_settings.pluck(:kind).sort
+    assert_equal %w[ go_bag_use_by invitation_unaccepted shared_with_you weekly_preview ], @head.notification_settings.pluck(:kind).sort
   end
 
   test "POST from a summary turns off every summary kind" do
@@ -101,7 +101,7 @@ class EmailUnsubscribesControllerTest < ActionDispatch::IntegrationTest
       assert_select "main", text: /This link no longer works\. Change emails in Settings → Notifications\./
     end
 
-    assert_equal 4, @head.notification_settings.count
+    assert_equal 5, @head.notification_settings.count
   end
 
   test "a deleted person's link is refused" do

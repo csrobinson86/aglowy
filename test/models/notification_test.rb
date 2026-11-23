@@ -17,6 +17,13 @@ class NotificationTest < ActiveSupport::TestCase
     end
   end
 
+  test "database: the go-bag use-by kind is one it takes" do
+    assert_difference -> { Notification.count }, 1 do
+      Notification.insert!({ user_id: users(:spouse).id, household_id: households(:home).id, kind: "go_bag_use_by",
+                             subject_type: "GoBag::Item", subject_id: go_bag_items(:water).id, dedupe_key: "go_bag_use_by:1" })
+    end
+  end
+
   test "database: an unknown kind raises CheckViolation" do
     assert_raises ActiveRecord::CheckViolation do
       Notification.insert!({ user_id: users(:spouse).id, household_id: households(:home).id, kind: "streak_missed",

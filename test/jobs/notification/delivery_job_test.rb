@@ -25,6 +25,21 @@ class Notification::DeliveryJobTest < ActiveJob::TestCase
     assert_equal [ "email" ], notification.deliveries.pluck(:channel)
   end
 
+  test "made inside a transaction, it's queued only once that commits, and not at all after a rollback" do
+    Notification.transaction do
+      weekly_preview_for(@head)
+      assert_no_enqueued_jobs only: Notification::DeliveryJob
+    end
+    assert_enqueued_jobs 1, only: Notification::DeliveryJob
+
+    clear_enqueued_jobs
+    Notification.transaction do
+      @head.notify(kind: "weekly_preview", household: @home, subject: @home, data: { week_of: "2026-11-30" }, dedupe_key: "weekly_preview:#{@home.id}:2026-11-30")
+      raise ActiveRecord::Rollback
+    end
+    assert_no_enqueued_jobs only: Notification::DeliveryJob
+  end
+
   test "none without a setting, and none for a summary kind" do
     @head.notification_settings.change([ %w[ study_topic_needed email ], %w[ shared_with_you email ] ])
     preview = weekly_preview_for(@head)

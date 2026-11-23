@@ -76,6 +76,35 @@ class NotificationsTest < ApplicationSystemTestCase
     capture_screens("notifications-empty")
   end
 
+  test "go bag use-by dates: a head sees the kind in Settings → Notifications, and opening the reminder goes to the item's page" do
+    water = go_bag_items(:water)
+    water.update!(use_by: households(:home).today + 20)
+    water.remind_about_use_by_now
+    sign_in identities(:head)
+
+    visit household_settings_notifications_url(household_id: households(:home))
+    assert_selector "legend", text: "Go bag use-by dates"
+    assert_text "A month before something in a go bag needs replacing. Heads and adults."
+
+    visit household_notifications_url(household_id: households(:home))
+    assert_selector "main .notification-row__icon--yellow .octicon-briefcase"
+    assert_accessible
+    capture_screens("notifications-go-bag-use-by")
+    click_on "Bottled water in Family go bag: use by #{water.use_by.strftime("%B %-d")}"
+
+    assert_current_path edit_household_go_bag_item_path(household_id: households(:home), go_bag_id: go_bags(:family), id: water)
+    assert_field "Name", with: "Bottled water"
+  end
+
+  test "go bag use-by dates: a child doesn't see the kind in Settings → Notifications" do
+    sign_in identities(:eli)
+
+    visit household_settings_notifications_url(household_id: households(:home))
+
+    assert_selector "legend", text: "Weekly preview"
+    assert_no_selector "legend", text: "Go bag use-by dates"
+  end
+
   private
     def share_a_few_with_hannah
       travel_to(2.days.ago) { goals(:spouse_bible_reading).share_with(households(:home)) }

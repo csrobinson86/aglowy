@@ -163,7 +163,39 @@ class GoBag::ItemTest < ActiveSupport::TestCase
     assert_not GoBag::Item::Acquisition.exists?(item_id: water.id)
   end
 
+  test "removing the item removes its use-by reminders" do
+    water = go_bag_items(:water)
+    reminder = remind(users(:spouse), about: water)
+
+    water.destroy!
+
+    assert_not Notification.exists?(reminder.id)
+  end
+
+  test "removing the item refreshes the counter of each person it reminded" do
+    water = go_bag_items(:water)
+    remind(users(:spouse), about: water)
+
+    assert_turbo_stream_broadcasts [ users(:spouse), :notifications ], count: 2 do
+      water.destroy!
+    end
+  end
+
+  test "deleting the bag removes its items' use-by reminders, and leaves other notifications alone" do
+    reminder = remind(users(:spouse), about: go_bag_items(:water))
+    other = users(:spouse).notify(kind: "weekly_preview", household: households(:home), subject: households(:home), data: { week_of: "2026-11-23" }, dedupe_key: "weekly_preview:1")
+
+    @bag.destroy!
+
+    assert_not Notification.exists?(reminder.id)
+    assert Notification.exists?(other.id)
+  end
+
   private
+    def remind(user, about:)
+      user.notify(kind: "go_bag_use_by", household: households(:home), subject: about, data: { use_by: "2026-12-20" }, dedupe_key: "go_bag_use_by:#{about.id}:2026-12-20")
+    end
+
     def acquired_item(name, use_by:)
       @bag.items.create!(name:, use_by:).tap { it.acquire(by: users(:spouse)) }
     end
