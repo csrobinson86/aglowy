@@ -34,6 +34,7 @@ What follows from these, approved by merging this design PR:
 | `shared_with_you` | Every active member of the household except the person sharing | When `Shareable#share_with` creates a sharing (meeting notes, goals and meeting parts) | `MeetingNote`, `Goal` or `MeetingPart`, with `actor` | "Daniel shared a meeting note", then "Life and Ministry · week of November 16" | The shared note, goal or part | Daily summary |
 | `invitation_unaccepted` | Whoever sent the invitation | Each day, for household invitations sent 5 days ago that are still pending and unexpired | `Invitation` | "Your invitation hasn't been accepted", then "Grandpa Luis (grandpa@example.com) was invited 5 days ago. Send it again?" | Members, where it can be sent again | Daily summary |
 
+- **Later kinds** add a row in their own design doc: `go_bag_use_by` (`docs/design/go-bags.md`, The use-by reminder).
 - **The wording is worked out when it's shown,** from the kind and the subject, so a renamed household or person shows the new name. Nothing personal is stored on the notification.
 - **The weekly preview** is built from `Household::Calendar` for the coming Monday to Sunday: meetings, sessions and household events, never anyone's personal times. A week with nothing in it sends nothing.
 - **A shared goal's title** shows in the notification. A goal's title is visible to the household once it's shared, but its steps never appear in a notification.

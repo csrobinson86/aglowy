@@ -26,6 +26,7 @@ Frames in `docs/design/settings/` (README there). Mockups are in the "Settings (
 | The household's name | Household | yes | no | no | Name, time zone |
 | | Meetings | yes | yes | no | Midweek and weekend meeting times (`docs/design/meeting-helper.md`) |
 | | Children | yes | yes, meeting helper and avatars | no | Children's avatars (`docs/design/avatars.md`); the meeting helper switch and, while it's on, the Get ready check box (`docs/design/meeting-prep.md`); "Personal study with AI" per child, heads only (`docs/design/personal-study.md`, Children) |
+| | Go bags | yes | yes | no | The categories for the household's go bags: add, rename, delete (`docs/design/go-bags.md`, GOBAGS-01) |
 | | Members and roles | yes | no | no | Each member's role, and Remove |
 
 - The household group's heading is the household's name ("Rivera household"), because these settings belong to that household and nobody else's.
@@ -54,6 +55,7 @@ scope "/:household_id", as: :household do
     resource :children, only: :show
     resource :meeting_helper, only: :update
     resources :members, only: :index                    # Members and roles
+    resources :go_bag_categories, only: %i[ index create update destroy ]   # Go bags (GOBAGS-01)
   end
 end
 ```
