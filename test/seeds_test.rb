@@ -118,12 +118,12 @@ class SeedsTest < ActiveSupport::TestCase
     assert_operator my_times.size, :>=, 9
     assert_equal [ "Lucia's time" ], Household::Calendar.new(rivera, viewer: maria, range: monday..monday + 6).items.select(&:shared?).map(&:subtitle).uniq
 
-    # Maria's inbox: Lucia's helper note, then Sam's two notes and a goal, the two oldest read, and one of each
-    # scheduled kind (09_notifications.rb).
-    assert_equal 7, maria.notifications.visible.count
-    assert_equal 5, maria.unread_notifications_count
+    # Maria's inbox: Lucia's helper note, then Sam's two notes and a goal, the two oldest read, one of each
+    # scheduled kind (09_notifications.rb), and the go-bag reminder for the bottled water (15_go_bags.rb).
+    assert_equal 8, maria.notifications.visible.count
+    assert_equal 6, maria.unread_notifications_count
     assert_equal [ "Sam shared a meeting note", "Sam shared a goal", "Sam shared a meeting note" ], maria.notifications.where(actor: user("spouse@example.com")).newest_first.map(&:title)
-    assert_equal %w[ invitation_unaccepted shared_with_you study_topic_needed weekly_preview ], maria.notifications.distinct.pluck(:kind).sort
+    assert_equal %w[ go_bag_use_by invitation_unaccepted shared_with_you study_topic_needed weekly_preview ], maria.notifications.distinct.pluck(:kind).sort
     assert maria.notifications.all? { it.household == rivera }
     assert_match "was invited 5 days ago", maria.notifications.find_by!(kind: "invitation_unaccepted").body
 
@@ -189,6 +189,8 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal [ GoBag::Suggestions.new.categories.sum { it.items.size }, 5 ], [ family_bag.items_count, family_bag.items.to_get.count ]
     assert_equal 1, family_bag.items.use_by_soon(rivera.today).count
     assert_equal 2, family_bag.items.where.not(use_by: nil).count
+    reminder = maria.notifications.find_by!(kind: "go_bag_use_by")
+    assert_equal [ "Bottled water", (rivera.today + 20).iso8601 ], [ reminder.subject.name, reminder.data["use_by"] ]
     assert_includes rivera.go_bag_categories.map(&:name), "For the car"
     assert_equal rivera.users.find_by!(name: "Mateo Rivera"), rivera.go_bags.last.for_user
 

@@ -5,7 +5,7 @@ class Notification::Kind
 
   def self.kinds
     { "weekly_preview" => WeeklyPreview, "study_topic_needed" => StudyTopicNeeded, "shared_with_you" => SharedWithYou,
-      "invitation_unaccepted" => InvitationUnaccepted }
+      "invitation_unaccepted" => InvitationUnaccepted, "go_bag_use_by" => GoBagUseBy }
   end
 
   def self.for(notification)

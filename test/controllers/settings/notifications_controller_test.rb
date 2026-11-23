@@ -5,7 +5,7 @@ require "test_helper"
 class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
   setup { @home = households(:home) }
 
-  test "a head sees all four kinds, each with an Email box, ticked where it's on" do
+  test "a head sees all five kinds, each with an Email box, ticked where it's on" do
     users(:head).notification_settings.change([ %w[ weekly_preview email ] ])
     sign_in identities(:head)
 
@@ -15,9 +15,9 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main h2", "Notifications"
     assert_select "main", text: /What reaches you, and where\. Follows you to every household\./
     assert_select "nav[aria-label='Settings'] a[aria-current=page]", "Notifications"
-    assert_equal [ "Weekly preview", "Family study needs a topic", "Shared with you", "Invitation not accepted" ], css_select("main fieldset legend").map { it.text.strip }
+    assert_equal [ "Weekly preview", "Family study needs a topic", "Shared with you", "Invitation not accepted", "Go bag use-by dates" ], css_select("main fieldset legend").map { it.text.strip }
     assert_select "form[action=?] input[type=checkbox][name='notification_settings[weekly_preview][]'][value=email][checked]", household_settings_notifications_path(household_id: @home)
-    %w[ study_topic_needed shared_with_you invitation_unaccepted ].each do |kind|
+    %w[ study_topic_needed shared_with_you invitation_unaccepted go_bag_use_by ].each do |kind|
       assert_select "input[type=checkbox][name='notification_settings[#{kind}][]'][value=email]:not([checked])"
     end
     assert_select "main", text: /Sunday evening: each household's week ahead\./
@@ -25,13 +25,13 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /Emails go to head@example\.com\. "Right away" sends when it happens; the rest wait for your daily summary at 7:00 AM\./
   end
 
-  test "an adult sees the invitation kind but not the topic kind" do
+  test "an adult sees the invitation and go-bag kinds but not the topic kind" do
     sign_in identities(:spouse)
 
     get household_settings_notifications_path(household_id: @home)
 
-    assert_equal [ "Weekly preview", "Shared with you", "Invitation not accepted" ], css_select("main fieldset legend").map { it.text.strip }
-    assert_select "input[type=checkbox][value=email]", count: 3
+    assert_equal [ "Weekly preview", "Shared with you", "Invitation not accepted", "Go bag use-by dates" ], css_select("main fieldset legend").map { it.text.strip }
+    assert_select "input[type=checkbox][value=email]", count: 4
   end
 
   test "a child's form has no Email, and a Phone box for each kind" do
@@ -55,7 +55,7 @@ class Settings::NotificationsControllerTest < ActionDispatch::IntegrationTest
     get household_settings_notifications_path(household_id: @home)
 
     assert_select "input[type=checkbox][value=email]", count: 0
-    assert_select "input[type=checkbox][value=push]", count: 3
+    assert_select "input[type=checkbox][value=push]", count: 4
     assert_select "main", text: /Your login has no email address, so nothing is emailed\./
   end
 

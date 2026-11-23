@@ -13,6 +13,8 @@ class GoBag < ApplicationRecord
   belongs_to :created_by, class_name: "User"
   # The database takes their acquisitions with them (on_delete: :cascade).
   has_many :items, -> { order(:id) }, dependent: :delete_all, inverse_of: :go_bag
+  # Before the items go, since a notification's subject is polymorphic and nothing else takes their reminders.
+  before_destroy :withdraw_item_reminders, prepend: true
 
   encrypts :name, :kept_at
 
@@ -88,6 +90,11 @@ class GoBag < ApplicationRecord
   end
 
   private
+    # Under the items' locks, so a reminder being made (GoBag::Item#remind_about_use_by_now) commits before they go.
+    def withdraw_item_reminders
+      Notification.where(subject_type: GoBag::Item.polymorphic_name, subject_id: items.lock.ids).withdraw
+    end
+
     def add_suggested_items
       GoBag::Suggestions.new.categories.each do |suggested|
         category = household.go_bag_categories.find_by(suggestion_key: suggested.key) ||

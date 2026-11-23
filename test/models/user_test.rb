@@ -484,9 +484,9 @@ class UserTest < ActiveSupport::TestCase
     end
   end
 
-  test "notification_kinds: everyone gets the weekly preview and shared, heads and adults the invitation kind, heads the topic kind" do
-    assert_equal %w[ weekly_preview study_topic_needed shared_with_you invitation_unaccepted ], users(:head).notification_kinds.map(&:name)
-    assert_equal %w[ weekly_preview shared_with_you invitation_unaccepted ], users(:spouse).notification_kinds.map(&:name)
+  test "notification_kinds: everyone gets the weekly preview and shared, heads and adults the invitation and go-bag kinds, heads the topic kind" do
+    assert_equal %w[ weekly_preview study_topic_needed shared_with_you invitation_unaccepted go_bag_use_by ], users(:head).notification_kinds.map(&:name)
+    assert_equal %w[ weekly_preview shared_with_you invitation_unaccepted go_bag_use_by ], users(:spouse).notification_kinds.map(&:name)
     assert_equal %w[ weekly_preview shared_with_you ], users(:eli).notification_kinds.map(&:name)
     assert_equal %w[ weekly_preview shared_with_you ], users(:former).notification_kinds.map(&:name), "roles in a household they left don't count"
   end
@@ -506,7 +506,7 @@ class UserTest < ActiveSupport::TestCase
 
     head.notification_settings.change(everything)
     head.unsubscribe_from_email("weekly_preview")
-    assert_equal %w[ invitation_unaccepted shared_with_you study_topic_needed ], head.notification_settings.pluck(:kind).sort
+    assert_equal %w[ go_bag_use_by invitation_unaccepted shared_with_you study_topic_needed ], head.notification_settings.pluck(:kind).sort
 
     head.unsubscribe_from_email("summary")
     assert_equal %w[ study_topic_needed ], head.notification_settings.pluck(:kind)

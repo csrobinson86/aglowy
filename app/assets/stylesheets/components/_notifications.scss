@@ -19,7 +19,7 @@
   margin-right: var(--base-size-12);
   border-radius: var(--borderRadius-full);
 
-  @each $color in "pink", "purple", "blue", "gray" {
+  @each $color in "pink", "purple", "blue", "gray", "yellow" {
     &--#{$color} {
       color: var(--display-#{$color}-fgColor);
       background-color: var(--display-#{$color}-bgColor-muted);

@@ -20,6 +20,12 @@ class NotificationSettingTest < ActiveSupport::TestCase
     end
   end
 
+  test "database: the go-bag use-by kind is one it takes" do
+    assert_difference -> { NotificationSetting.count }, 1 do
+      NotificationSetting.insert!({ user_id: @head.id, kind: "go_bag_use_by", channel: "email" })
+    end
+  end
+
   test "database: an unknown kind raises CheckViolation" do
     assert_raises ActiveRecord::CheckViolation do
       NotificationSetting.insert!({ user_id: @head.id, kind: "streak_missed", channel: "email" })
