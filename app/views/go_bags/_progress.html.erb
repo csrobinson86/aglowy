@@ -1,0 +1,14 @@
+<%# locals: (go_bag:) %>
+<%# "18 of 24 ready", the percentage and the bar (frame go-bag.png). Redrawn when a row's box is ticked. %>
+<%= render(Primer::Beta::BorderBox.new(id: "go-bag-progress", mb: 4)) do |box| %>
+  <% box.with_body do %>
+    <div class="d-flex flex-items-baseline mb-2">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2)) { "#{go_bag.ready_count} of #{go_bag.items_count} ready" } %>
+      <span class="color-fg-muted ml-auto"><%= go_bag.ready_percent %>%</span>
+    </div>
+    <%# The heading says the same, so the bar is hidden from screen readers. %>
+    <%= render(Primer::Beta::ProgressBar.new(size: :large, aria: { hidden: true })) do |bar| %>
+      <% bar.with_item(percentage: go_bag.ready_percent, bg: :success_emphasis) %>
+    <% end %>
+  <% end %>
+<% end %>

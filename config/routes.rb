@@ -214,7 +214,12 @@ Rails.application.routes.draw do
       end
     end
     # The household's go bags, found through Current.household; children only look (docs/design/go-bags.md, Pages).
-    resources :go_bags
+    resources :go_bags do
+      # An item's dialog, and ticking "we have it" from its row, through the bag's items (An item, Item rows).
+      resources :items, only: %i[ new create edit update destroy ], module: :go_bags do
+        resource :acquisition, only: %i[ create destroy ], module: :items
+      end
+    end
     # The signed-in person's own studies, found through Current.user (docs/design/personal-study.md, Pages and routes).
     resources :personal_studies, only: %i[ index new create show update destroy ] do
       resources :taggings, only: %i[ create destroy ], module: :personal_studies

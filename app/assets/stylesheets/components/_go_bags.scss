@@ -17,3 +17,20 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
+
+// A row's "we have it" box stays 16px to the eye and takes a touch 44px across, and its "›" is 44px, as a goal step's
+// are (docs/design/phone.md, rule 8). With a mouse --control-minTarget-auto is small enough to change nothing.
+.go-bag-item-row__box .FormControl-checkbox::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--control-minTarget-auto);
+  height: var(--control-minTarget-auto);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.go-bag-item-row__open {
+  min-width: var(--control-minTarget-auto);
+  min-height: var(--control-minTarget-auto);
+}

@@ -1,0 +1,4 @@
+<%# Empties the frame, which closes the dialog, then refreshes the bag's page, whose URL knows the tab. Without a
+    request id: with this request's, Turbo would skip the refresh as an echo of its own. %>
+<%= turbo_stream.update "go_bag_item_dialog" %>
+<%= turbo_stream.refresh(request_id: nil) %>

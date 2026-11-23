@@ -11,8 +11,10 @@ class GoBagsController < ApplicationController
     @go_bags = Current.household.go_bags.preloaded
   end
 
+  # show: the tab, To buy or Use by soon; All when it's neither. Children have no tabs and see every item.
   def show
     authorize @go_bag
+    @show = params[:show].presence_in(GoBag::SHOWS) if policy(@go_bag).update?
   end
 
   # Start with suggested items is ticked for the household's first bag.

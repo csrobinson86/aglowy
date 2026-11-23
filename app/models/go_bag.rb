@@ -2,6 +2,8 @@
 # bags are listed by id, the order they were made, never by name.
 class GoBag < ApplicationRecord
   LIMIT = 20
+  # The bag page's tabs after All (docs/design/go-bags.md, A bag).
+  SHOWS = %w[ to_buy use_by_soon ]
 
   belongs_to :household
   # A bag never moves house, so the household's limits and categories hold.
@@ -63,10 +65,20 @@ class GoBag < ApplicationRecord
     items.count { it.to_buy?(today) }
   end
 
+  def use_by_soon_count(today)
+    items.count { it.use_by_soon?(today) }
+  end
+
   # The loaded items grouped by category, in the categories' order, with No category (nil) last
-  # (docs/design/go-bags.md, GoBag::Item). Within a group they keep the order they were added.
-  def items_by_category
-    items.group_by(&:category).sort_by { |category, _| category ? [ 0, category.position ] : [ 1, 0 ] }
+  # (docs/design/go-bags.md, GoBag::Item). Within a group they keep the order they were added. show, one of SHOWS,
+  # keeps only the items to buy or to use soon, as of today; nil keeps them all.
+  def items_by_category(show: nil, today: nil)
+    shown = case show
+    when "to_buy" then items.select { it.to_buy?(today) }
+    when "use_by_soon" then items.select { it.use_by_soon?(today) }
+    else items
+    end
+    shown.group_by(&:category).sort_by { |category, _| category ? [ 0, category.position ] : [ 1, 0 ] }
   end
 
   private
