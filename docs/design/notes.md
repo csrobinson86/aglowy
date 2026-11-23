@@ -47,7 +47,23 @@ Frame `notes-meeting-notes.png`. The same two columns as the Notes tab (`Primer:
 - **Main column:**
   - "This week" with its two cards, as today, with a left bar in the meeting's color. Hidden while a filter is set, as today
   - "Earlier", with a Primer `SegmentedControl` labelled "Show": "Mine" and "Shared in <household>" with its count. They're links to `/meeting_notes` and `/shared_meeting_notes`, keeping `?kind=`. If the pinned `SegmentedControl` can't render links, use two `Button`s with `aria-current`, and record it here. The pinned 0.53.5 renders links (an item with `href` gets `aria-current` and no select action), so there's no fallback. While a filter hides This week, the heading reads "All weeks", since the list then holds this week's notes too
-  - the list as today: dot, meeting, week, summary, tags (`tags_for(Current.user)`), "Shared", and Newer / Older notes
+  - **the list, a week at a time** (frames `notes-meeting-notes-weeks.png`, `notes-meeting-notes-weeks-dark.png` and `phone-notes-meeting-notes-weeks.png`; Casey, 23 Nov). Below.
+
+#### Earlier, a week at a time
+
+The earlier notes are grouped by meeting week (`week_of`), newest first, so the list stays short and each week's two meetings sit together.
+
+- **A row per week** in the `BorderBox`. Each row is a Primer `Details` (a real `<details>` and `<summary>`), so it opens without JavaScript and from the keyboard. The summary shows:
+  - a chevron (`chevron-right`, turned down when open)
+  - "Week of November 9–15" (`meeting_week_label(week_of)`, the same dates as `display_week`), or "Nov 9–15" below `md`
+  - a dot for each note in the week, in the meeting's color, then "2 notes" or "1 note" in muted text
+  - a "Shared" Label at the end when any note in the week is shared (my list only)
+- **Opening a week** shows its notes as today's rows: dot, meeting, summary, tags (`tags_for(Current.user)`) and "Shared". Life and Ministry rows drop the week, since the summary has it. Weekend rows keep their day. Below `md`, each note is two lines, as on the phone list today.
+- **The newest week on the page starts open**, so last week's notes are one glance away. The rest start closed. Nothing is remembered between visits.
+- **Pages count weeks, not notes:** 12 weeks a page, with "Newer weeks" and "Older weeks" (`Page` over the distinct `week_of` values, newest first; then the notes for those weeks in one query).
+- **With a meeting or tag filter set, the list stays flat**, as before, with "Newer notes" and "Older notes". A filtered list holds about one note a week, so a row per week would only add a click.
+- **The shared list** groups the same way. Its rows keep the author ("Sam Rivera"), and a week can hold several people's notes for one meeting. It isn't paginated today, and grouping doesn't change that.
+- The Blankslates don't change.
 - The old "My notes" / "Shared in" `UnderlineNav` (`meeting_notes/_tabs`) goes away; a second row of tabs under the first is what the switch replaces.
 - No search box: meeting notes are encrypted, and the meeting and tag filters cover finding one.
 
