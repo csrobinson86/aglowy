@@ -10,6 +10,11 @@ class SharedMeetingNotesController < ApplicationController
     @kind_counts = shared.group(:kind).count
     @shared_count = @kind_counts.values.sum
     @this_week = Current.user.meeting_notes_for_week(Current.membership.this_week) unless @kind
-    @meeting_notes = of_kind(shared).includes(:user).newest_first
+    # A week at a time, as my own list, and flat when filtered by a meeting (docs/design/notes.md, Earlier, a week at a time).
+    if @kind
+      @meeting_notes = of_kind(shared).includes(:user).newest_first
+    else
+      @weeks = shared.includes(:user, :gems, parts: :rich_text_notes).in_week_order.group_by(&:week_of)
+    end
   end
 end

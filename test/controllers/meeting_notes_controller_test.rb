@@ -85,24 +85,82 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_select "main .Box", text: /Week of November 9–15, 2026/
   end
 
-  test "earlier notes are newest first, 20 at a time" do
-    weeks = (0..10).map { Date.new(2026, 11, 9) - it.weeks }
+  test "earlier notes are grouped by week, newest first, with only the newest week open" do
+    older_weekend = users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 2))
+    newer_weekend = users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    newer_midweek = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home))
+
+    assert_select "main .Box-row", count: 2
+    assert_select "main .Box-row:nth-of-type(1) details[open] summary", text: /Week of November 9–15.*2 notes/m
+    assert_select "main .Box-row:nth-of-type(1) details li", count: 2
+    assert_select "main .Box-row:nth-of-type(1) details li:nth-of-type(1) a[href='#{note_path(newer_midweek)}']", text: "Life and Ministry"
+    assert_select "main .Box-row:nth-of-type(1) details li:nth-of-type(2) a[href='#{note_path(newer_weekend)}']", text: "Weekend meeting"
+    assert_select "main .Box-row:nth-of-type(2) details:not([open]) summary", text: /Week of November 2–8.*1 note/m
+    assert_select "main .Box-row:nth-of-type(2) details li a[href='#{note_path(older_weekend)}']", text: "Weekend meeting"
+    assert_select "main .Box-row:nth-of-type(2) details li", text: /Weekend of November 7–8, 2026 · Nothing written yet/
+    assert_select "main details[open]", count: 1, text: /Week of November 9–15/
+  end
+
+  test "this week's notes stay in This week and out of Earlier" do
+    users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    sign_in identities(:head)
+
+    get household_meeting_notes_path(household_id: households(:home))
+
+    assert_select "main .Box-row", count: 1
+    assert_select "main .Box-row summary", text: /Week of November 9–15/
+    assert_select "main .Box-row a[href='#{note_path(meeting_notes(:head_midweek))}']", count: 0
+    assert_select "main .Box-row a[href='#{note_path(meeting_notes(:head_weekend))}']", count: 0
+    assert_select "main .Box-row", text: /November 16–22/, count: 0
+  end
+
+  test "earlier weeks come 12 at a time, a week with notes for both meetings counting once" do
+    weeks = (0..12).map { Date.new(2026, 11, 9) - it.weeks }
     weeks.each { |week| %w[ midweek weekend ].each { users(:head).start_meeting_note(kind: it, week_of: week) } }
     sign_in identities(:head)
 
     get household_meeting_notes_path(household_id: households(:home))
 
-    assert_select "main .Box-row", count: 20
-    assert_select "main .Box-row:first-of-type", text: /Weekend meeting.*Weekend of November 14–15, 2026/m
-    assert_select "main .Box-row:nth-of-type(2)", text: /Life and Ministry.*Week of November 9–15, 2026/m
-    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 2)}']", text: "Older notes"
+    assert_select "main .Box-row", count: 12
+    assert_select "main .Box-row details li", count: 24
+    assert_select "main .Box-row:first-of-type summary", text: /Week of November 9–15/
+    assert_select "main .Box-row:last-of-type summary", text: /Week of August 24–30/
+    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 2)}']", text: "Older weeks"
+    assert_select "main a", text: "Newer weeks", count: 0
+    assert_select "main a", text: /Older notes|Newer notes/, count: 0
 
     get household_meeting_notes_path(household_id: households(:home), page: 2)
 
-    assert_select "main .Box-row", count: 2
-    assert_select "main .Box-row", text: /Week of August 31–September 6, 2026/
-    assert_select "main a", text: "Older notes", count: 0
-    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 1)}']", text: "Newer notes"
+    assert_select "main .Box-row", count: 1
+    assert_select "main .Box-row details[open] summary", text: /Week of August 17–23.*2 notes/m
+    assert_select "main a", text: "Older weeks", count: 0
+    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 1)}']", text: "Newer weeks"
+  end
+
+  test "with a meeting or a tag filter the list stays flat, a note a row, 20 at a time with Older notes" do
+    weeks = (0..20).map { Date.new(2026, 11, 9) - it.weeks }
+    weeks.each { users(:head).start_meeting_note(kind: "midweek", week_of: it).tag_with("prayer", by: users(:head)) }
+    meeting_notes(:head_midweek).tag_with("prayer", by: users(:head))
+    sign_in identities(:head)
+
+    [ { kind: "midweek" }, { tag: "prayer" } ].each do |filter|
+      get household_meeting_notes_path(household_id: households(:home), **filter)
+
+      assert_select "main .Box-row", count: 20
+      assert_select "main .Box-row details", count: 0
+      assert_select "main .Box-row:first-of-type", text: /Life and Ministry.*Week of November 16–22, 2026/m
+      assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 2, **filter)}']", text: "Older notes"
+      assert_select "main a", text: "Older weeks", count: 0
+
+      get household_meeting_notes_path(household_id: households(:home), page: 2, **filter)
+
+      assert_select "main .Box-row", count: 2
+      assert_select "main .Box-row", text: /Week of June 29–July 5, 2026/
+      assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: 1, **filter)}']", text: "Newer notes"
+    end
   end
 
   test "a page number past the end or too large shows no notes, not an error" do
@@ -113,7 +171,7 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "main h2", text: "No earlier notes"
-    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: Page::LAST - 1)}']", text: "Newer notes"
+    assert_select "main a[href='#{household_meeting_notes_path(household_id: households(:home), page: Page::LAST - 1)}']", text: "Newer weeks"
   end
 
   test "no earlier notes shows an empty state" do
@@ -859,8 +917,9 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
 
     get household_meeting_notes_path(household_id: households(:home))
 
-    assert_select "main .Box-row .Label", count: 1
-    assert_select "main .Box-row", text: /Life and Ministry.*Shared/m
+    assert_select "main .Box-row summary .Label", text: "Shared", count: 1
+    assert_select "main .Box-row li .Label", text: "Shared", count: 1
+    assert_select "main .Box-row li", text: /Life and Ministry.*Shared/m
   end
 
   test "a member can read a shared note" do

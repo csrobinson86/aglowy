@@ -37,7 +37,8 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
     assert_no_selector "nav[aria-label='Main'] a", text: "Meeting notes"
     assert_selector "h2", text: "This week"
-    assert_selector ".Box-row", count: 2
+    assert_selector ".Box-row", count: 1
+    assert_selector ".Box-row details[open] li", count: 2
     assert_accessible
     capture_screens("notes-meeting-notes")
 
@@ -55,7 +56,8 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_accessible
 
     within(".Layout-sidebar nav[aria-label='Meetings']") { click_on "All meetings" }
-    assert_selector ".Box-row", count: 2
+    assert_selector ".Box-row", count: 1
+    assert_selector ".Box-row details[open] li", count: 2
     assert_selector "h2", text: "This week"
     capture_screens("notes-meeting-notes-shared")
     within("ul[aria-label='Show']") { click_on "Mine" }
@@ -67,7 +69,7 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_selector "body[data-color-mode=dark]"
     assert_accessible
 
-    within(".Box-row", text: "Week of November 9–15, 2026") { click_on "Life and Ministry" }
+    within(".Box-row", text: "Week of November 9–15") { click_on "Life and Ministry" }
     assert_selector "h1", text: "Life and Ministry"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
     within("nav[aria-label='Breadcrumb']") { click_on "Meeting notes" }
@@ -97,7 +99,8 @@ class MeetingNotesTest < ApplicationSystemTestCase
     sign_in identities(:head)
 
     visit household_meeting_notes_url(household_id: households(:home))
-    assert_selector ".Box-row", count: 2
+    assert_selector ".Box-row", count: 1
+    assert_selector ".Box-row details[open] li", count: 2
     assert_accessible
     capture_screens("meeting-notes")
 
@@ -105,6 +108,49 @@ class MeetingNotesTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Life and Ministry"
     assert_accessible
     capture_screens("meeting-note")
+  end
+
+  test "open and close a week with the mouse and the keyboard, and open a note from inside one" do
+    travel_to Time.utc(2026, 11, 18, 12)
+    shared = users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 9))
+    shared.share_with(households(:home))
+    shared.tag_with("ministry", by: users(:head))
+    users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 11, 9))
+    users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 11, 2))
+    users(:head).start_meeting_note(kind: "midweek", week_of: Date.new(2026, 10, 26))
+    users(:head).start_meeting_note(kind: "weekend", week_of: Date.new(2026, 10, 26))
+    sign_in identities(:head)
+
+    visit household_meeting_notes_url(household_id: households(:home))
+    assert_selector ".Box-row", count: 3
+    assert_selector "details[open]", count: 1, text: "Week of November 9–15"
+    assert_selector "details[open] li", count: 2
+    assert_accessible
+    capture_screens("notes-meeting-notes-weeks")
+
+    newest = find("details", text: "Week of November 9–15")
+    newest.find("summary").click
+    assert_no_selector "details[open]"
+    assert_no_selector "details li a", text: "Weekend meeting"
+
+    older = find("details", text: "Week of November 2–8")
+    older.find("summary").click
+    assert_selector "details[open]", count: 1, text: "Week of November 2–8"
+    assert_selector "details[open] summary[aria-expanded=true]"
+    older.find("summary").click
+    assert_no_selector "details[open]"
+
+    crossing = find("details", text: "Week of October 26 – November 1")
+    crossing.find("summary").send_keys(:enter)
+    assert_selector "details[open]", count: 1, text: "Week of October 26 – November 1"
+    assert_selector "details[open] li", count: 2
+    crossing.find("summary").send_keys(:enter)
+    assert_no_selector "details[open]"
+
+    newest.find("summary").send_keys(:enter)
+    within("details[open]") { click_on "Life and Ministry" }
+    assert_selector "h1", text: "Life and Ministry"
+    assert_current_path household_meeting_note_path(household_id: households(:home), id: shared)
   end
 
   test "the owner's midweek note lists their parts that week, and each opens its part" do

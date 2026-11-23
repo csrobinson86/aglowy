@@ -13,7 +13,8 @@ class SharedMeetingNotesTest < ApplicationSystemTestCase
     click_on "Shared in The Head Family"
     assert_selector "ul[aria-label='Show'] a[aria-current='true']", text: "Shared in The Head Family"
     assert_selector "nav[aria-label='Main'] a[aria-current='page']", text: "Notes"
-    assert_text "Hannah Head · Week of November 16–22, 2026"
+    assert_selector "details[open] summary", text: "Week of November 16–22"
+    assert_selector "details[open] li", text: /Life and Ministry\s*Hannah Head/
     assert_accessible
     capture_screens("shared-notes")
 

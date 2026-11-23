@@ -33,6 +33,11 @@ class MeetingNote < ApplicationRecord
 
   scope :preloaded, -> { includes(:user, :gems, :shared_households, :marks, :finds, :answer, drawings: { image_attachment: :blob }, parts: :rich_text_notes) }
   scope :newest_first, -> { order(week_of: :desc, kind: :desc) }
+  # Grouped a week at a time, newest week first, with Life and Ministry before the weekend in each week
+  # (docs/design/notes.md, Earlier, a week at a time).
+  scope :in_week_order, -> { reorder(week_of: :desc, kind: :asc, created_at: :asc) }
+  # The distinct weeks with notes, newest first, so a Page counts weeks, not notes.
+  scope :weeks, -> { unscope(:includes).select(:week_of).distinct.reorder(week_of: :desc) }
 
   def outline
     Outline.new(kind: kind, version: outline_version)

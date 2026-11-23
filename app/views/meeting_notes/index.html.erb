@@ -6,7 +6,14 @@
   <% end %>
 
   <%= render Primer::Beta::BorderBox.new do |box| %>
-    <% if @earlier.records.any? %>
+    <% if @earlier.records.any? && @weeks %>
+      <%# A row per week, the newest on the page open (docs/design/notes.md, Earlier, a week at a time). %>
+      <% @weeks.each_with_index do |(week_of, notes), index| %>
+        <% box.with_row(p: 0) do %>
+          <%= render MeetingNoteWeekComponent.new(week_of:, notes:, open: index.zero?) %>
+        <% end %>
+      <% end %>
+    <% elsif @earlier.records.any? %>
       <% @earlier.records.each do |note| %>
         <% box.with_row(display: :flex, align_items: :center) do %>
           <%= meeting_note_dot(MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)) %>
@@ -46,10 +53,10 @@
   <% if @earlier.previous? || @earlier.next? %>
     <div class="d-flex flex-justify-between mt-3">
       <% if @earlier.previous? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number - 1, tag: @tag_name, kind: @kind))) { "Newer notes" } %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number - 1, tag: @tag_name, kind: @kind))) { @weeks ? "Newer weeks" : "Newer notes" } %>
       <% end %>
       <% if @earlier.next? %>
-        <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number + 1, tag: @tag_name, kind: @kind), ml: :auto)) { "Older notes" } %>
+        <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path(page: @earlier.number + 1, tag: @tag_name, kind: @kind), ml: :auto)) { @weeks ? "Older weeks" : "Older notes" } %>
       <% end %>
     </div>
   <% end %>

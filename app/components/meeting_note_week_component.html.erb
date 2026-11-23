@@ -1,0 +1,36 @@
+<%= render(Primer::Beta::Details.new(open: open?, reset: true, classes: "meeting-notes__week")) do |week| %>
+  <% week.with_summary(button: false, display: :flex, align_items: :center, px: 3, py: 2, classes: "meeting-notes__week-summary") do %>
+    <%= render(Primer::Beta::Octicon.new(:"chevron-right", color: :muted, mr: 2, classes: "meeting-notes__chevron")) %>
+    <span class="text-bold d-none d-md-inline"><%= helpers.meeting_week_label(week_of) %></span>
+    <%# Below md the short label takes the free space, so the dots and count sit at the end (frame phone-notes-meeting-notes-weeks.png). %>
+    <span class="text-bold d-md-none flex-auto"><%= helpers.meeting_week_label(week_of, short: true) %></span>
+    <span class="d-flex flex-items-center flex-shrink-0 ml-2">
+      <span aria-hidden="true">
+        <% notes.each do |note| %><%= render(Primer::Beta::Octicon.new(:"dot-fill", color: dot_color(note))) %><% end %>
+      </span>
+      <span class="color-fg-muted ml-1"><%= pluralize(notes.size, "note") %></span>
+    </span>
+    <% if shared? %>
+      <span class="ml-auto pl-2"><%= render(Primer::Beta::Label.new) { "Shared" } %></span>
+    <% end %>
+  <% end %>
+  <% week.with_body(tag: :ul) do %>
+    <% notes.each do |note| %>
+      <li class="d-flex flex-items-center border-top py-2 pr-3 pl-6">
+        <%= helpers.meeting_note_dot(dot_color(note)) %>
+        <div class="d-md-flex min-width-0">
+          <%= render(Primer::Beta::Link.new(href: note_path(note), scheme: :primary, font_weight: :bold, mr: 3)) { helpers.meeting_note_title(note) } %>
+          <div class="color-fg-muted wb-break-word"><%= details(note) %></div>
+        </div>
+        <% unless shared_list? %>
+          <div class="d-flex flex-wrap flex-items-center flex-justify-end ml-auto">
+            <%= render "tags/labels", taggable: note, household: Current.household %>
+            <% if note.sharings.any? %>
+              <%= render(Primer::Beta::Label.new) { "Shared" } %>
+            <% end %>
+          </div>
+        <% end %>
+      </li>
+    <% end %>
+  <% end %>
+<% end %>
