@@ -117,6 +117,11 @@ class GoBags::ItemsControllerTest < ActionDispatch::IntegrationTest
     patch item_path(go_bag_items(:water)), params: { go_bag_item: { category_id: go_bag_categories(:outsiders_tools).id, have: "1" } }
     assert_response :unprocessable_content
     assert_equal go_bag_categories(:water_food), go_bag_items(:water).reload.category
+
+    # One that doesn't exist, as when it's deleted while the dialog is open, is refused the same way.
+    patch item_path(go_bag_items(:water)), params: { go_bag_item: { category_id: SecureRandom.uuid_v7, have: "1" } }
+    assert_response :unprocessable_content
+    assert_equal go_bag_categories(:water_food), go_bag_items(:water).reload.category
   end
 
   test "a head and an adult remove an item" do
