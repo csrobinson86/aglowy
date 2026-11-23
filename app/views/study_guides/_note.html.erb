@@ -1,0 +1,38 @@
+<%# locals: (study_guide:) -%>
+<%# A study guide as Keep in Notes keeps it (StudyGuide#keep_as_note; docs/design/study-guide.md, Pages and routes): both
+    meetings, each overview and every part's rows as the page shows them (StudyGuides::PartComponent), then the pages
+    used. The children's Get ready cards aren't kept. Every field is escaped here (Trap 5), and every ref is a scripture
+    link from its parsed reference, a whole chapter too. %>
+<% { "midweek" => "Midweek meeting", "weekend" => "Weekend meeting" }.each do |meeting, heading| %>
+  <% overviews, parts = study_guide.parts_for(meeting).partition(&:overview?) %>
+  <% next if overviews.none? && parts.none? %>
+  <h2><%= heading %></h2>
+  <% overviews.each do |overview| %>
+    <p><strong>This week at a glance:</strong> <%= overview.content["glance"] %></p>
+    <h3>What this <%= meeting == "weekend" ? "study" : "week's program" %> teaches us about Jehovah</h3>
+    <ul>
+      <% overview.points("jehovah").each do |point| %>
+        <li><strong><%= point["quality"] %>:</strong> <%= point["text"] %> <%= Bible::Reference.parse(point["ref"])&.then { scripture_attachment(it) } %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% parts.map { StudyGuides::PartComponent.new(part: it) }.each do |card| %>
+    <h3><%= card.title %></h3>
+    <p><em><%= card.kicker %></em></p>
+    <p><%= card.summary %></p>
+    <% card.rows.each do |label, points| %>
+      <p><strong><%= label %></strong></p>
+      <ul>
+        <% points.each do |point| %>
+          <li><%= card.paragraphs(point) %><%= point["text"] %> <%= card.reference(point)&.then { scripture_attachment(it) } %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+<% end %>
+<% if study_guide.sources.any? %>
+  <h2>Pages used</h2>
+  <ul>
+    <% study_guide.sources.each do |source| %><li><%= link_to source.title, source.url %></li><% end %>
+  </ul>
+<% end %>

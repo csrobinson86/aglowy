@@ -34,6 +34,9 @@
       <% end %>
     </div>
     <div class="study-guide-page__buttons d-flex flex-wrap flex-items-center mt-3">
+      <%= primer_form_with(url: household_study_guide_note_path(study_guide_week_of: @study_guide.week_of)) do |f| %>
+        <%= render StudyGuides::NoteForm.new(f) %>
+      <% end %>
       <%= render(Primer::Beta::Button.new(data: { controller: "print", action: "print#print beforeprint@window->print#lighten afterprint@window->print#restore" })) { "Print" } %>
       <span class="text-small color-fg-muted">Kept for 8 weeks.</span>
     </div>

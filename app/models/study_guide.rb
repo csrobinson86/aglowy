@@ -61,7 +61,23 @@ class StudyGuide < ApplicationRecord
     parts_for(meeting).flat_map(&:references).uniq
   end
 
+  # A copy kept as one of the owner's own notes, titled with its Monday (docs/design/study-guide.md, Pages and routes,
+  # Keep in Notes). The body is our own partial: both meetings, every part's rows, every field escaped and every ref a
+  # scripture link from its parsed reference (Trap 5), without the children's cards. Like a daily brief's, it also links
+  # any reference written in the text, as the note's own saves would. Nothing links it back, so it stays when the guide
+  # is purged; keeping it twice makes two.
+  def keep_as_note
+    user.personal_notes.new(title: "Study guide · Week of #{week_of.strftime("%B %-d")}", body: note_html).tap do |note|
+      note.link_scriptures
+      note.save!
+    end
+  end
+
   private
+    def note_html
+      ApplicationController.render(partial: "study_guides/note", locals: { study_guide: self })
+    end
+
     # A page already linked isn't linked twice, and one whose search result has no title is left out, rather than
     # losing the parts to the not-null title.
     def link(pages)
