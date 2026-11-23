@@ -3,17 +3,21 @@ import { Controller } from "@hotwired/stimulus"
 // On a Turbo Frame whose links load a dialog that a save closes by emptying the frame and refreshing the page, as a go
 // bag's item dialog. The refresh draws a new page, so the browser has no opener to give focus back to and it falls to
 // the body. Instead it goes to the link that opened the dialog, found again by its id; or, when that's gone, as for a
-// removed item, the last link in its section (its "+ Add item"); or the first link on the page that opens the frame.
+// removed item, the last link in its section (its "+ Add item"); or the first link on the page that opens the frame; or,
+// when none is left, as for the last item removed from a bag's To buy tab, the fallback: the selected tab.
 // Closing the dialog leaves focus to the browser, and leaving the page with the dialog open forgets it.
 let returnTo = null
 
 export default class extends Controller {
+  static values = { fallback: String }
+
   connect() {
     if (returnTo?.frame !== this.element.id) return
 
     const { ids } = returnTo
     returnTo = null
-    const target = ids.map(id => id && document.getElementById(id)).find(link => link?.checkVisibility()) ?? this.#openers(document)[0]
+    const target = ids.map(id => id && document.getElementById(id)).find(link => link?.checkVisibility()) ?? this.#openers(document)[0] ??
+      (this.fallbackValue && document.querySelector(this.fallbackValue))
     target?.focus()
   }
 

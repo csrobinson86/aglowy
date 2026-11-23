@@ -4,7 +4,8 @@ import { Controller } from "@hotwired/stimulus"
 // now, as soon as it's on the page: "Write it with AI" once the person has turned on AI drafts from the brief. With
 // hold, the field that changed stays disabled until the response redraws it, as a go bag row's "we have it" box: its
 // form posts or deletes as it was drawn, so a second change before the redraw would send the first one again. It's
-// back on if the submission fails (release, on turbo:submit-end).
+// back on if the submission fails (release, on turbo:submit-end), put back as it was drawn, so it matches its form again.
+// A failure that the server did save anyway is mended by the next change, as ticking and unticking are safe to repeat.
 export default class extends Controller {
   static values = { now: Boolean, hold: Boolean }
 
@@ -21,6 +22,9 @@ export default class extends Controller {
   }
 
   release({ detail: { success } }) {
-    if (!success && this.held) this.held.disabled = false
+    if (success || !this.held) return
+
+    this.held.checked = this.held.defaultChecked
+    this.held.disabled = false
   }
 }

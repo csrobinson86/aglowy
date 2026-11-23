@@ -75,8 +75,9 @@
 <% end %>
 
 <%# An item's dialog loads here, from a row's "›" or "+ Add item" (GoBags::ItemsController). A save refreshes the page,
-    and frame-dialog-focus puts focus back on the link that opened it, found by its id. %>
+    and frame-dialog-focus puts focus back on the link that opened it, found by its id, or on the selected tab when the
+    tab has no links left. %>
 <% if can_change %>
-  <%= turbo_frame_tag "go_bag_item_dialog", data: { controller: "frame-dialog-focus",
+  <%= turbo_frame_tag "go_bag_item_dialog", data: { controller: "frame-dialog-focus", frame_dialog_focus_fallback_value: "#go-bag-tabs [aria-current=page]",
                                                     action: "click@document->frame-dialog-focus#remember close->frame-dialog-focus#forget:capture" } %>
 <% end %>

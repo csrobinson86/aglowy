@@ -94,6 +94,24 @@ class GoBagItemsTest < ApplicationSystemTestCase
     assert go_bag_items(:flashlight).reload.acquired?
   end
 
+  test "a tick that never reaches the server puts the box back as it was, so the next tick still ticks" do
+    sign_in identities(:spouse)
+    visit bag_url
+    assert_turbo_idle
+    page.execute_script(<<~JS)
+      const fetch = window.fetch
+      window.fetch = () => { window.fetch = fetch; return Promise.reject(new TypeError("offline")) }
+    JS
+
+    check "We have Flashlight"
+
+    assert_selector "input[name=go_bag_item_#{go_bag_items(:flashlight).id}_have]:not(:checked):not([disabled])"
+    assert_not go_bag_items(:flashlight).reload.acquired?
+    check "We have Flashlight"
+    assert_selector "#go-bag-progress", text: "3 of 3 ready"
+    assert go_bag_items(:flashlight).reload.acquired?
+  end
+
   test "saving or removing in the dialog puts focus back on the link that opened it, or its section's Add item" do
     sign_in identities(:spouse)
     visit bag_url
@@ -120,6 +138,17 @@ class GoBagItemsTest < ApplicationSystemTestCase
     within("dialog[open]") { click_on "Remove item" }
     assert_no_text "Torch"
     assert_selector "a[aria-label='Add item to Light, power and radio']:focus"
+  end
+
+  test "removing the last item on To buy puts focus on the tab" do
+    go_bag_items(:water).update!(use_by: nil)
+    sign_in identities(:spouse)
+    visit bag_url(show: "to_buy")
+
+    open_item "Flashlight"
+    within("dialog[open]") { click_on "Remove item" }
+    assert_selector ".blankslate", text: "Nothing to buy for this bag."
+    assert_selector "nav[aria-label='Show'] a[aria-current=page]:focus", text: "To buy"
   end
 
   test "an empty tab shows its line" do
