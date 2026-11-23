@@ -1,0 +1,22 @@
+<%# locals: (study_guide: nil, meeting: "midweek") %>
+<%# "Study guide", Private, the week with its reading or the Watchtower Study, the Midweek / Weekend links and My meeting
+    notes (docs/design/study-guide.md, How it looks; frames desktop-guide-midweek.png and phone-guide.png). %>
+<%= render Primer::Beta::Subhead.new do |subhead| %>
+  <% subhead.with_heading(tag: :h1) do %>
+    Study guide <%= render(Primer::Beta::Label.new(ml: 1, vertical_align: :middle)) { "Private" } %>
+  <% end %>
+  <% if study_guide %>
+    <% subhead.with_actions(display: :flex, flex_wrap: :wrap, align_items: :center, classes: "study-guide-page__actions") do %>
+      <nav aria-label="Midweek or weekend">
+        <%= render(Primer::Alpha::SegmentedControl.new("aria-label": "Midweek or weekend")) do |control| %>
+          <% control.with_item(tag: :a, href: household_study_guide_path(week_of: study_guide.week_of), label: "Midweek", selected: meeting == "midweek") %>
+          <% control.with_item(tag: :a, href: household_study_guide_path(week_of: study_guide.week_of, meeting: "weekend"), label: "Weekend", selected: meeting == "weekend") %>
+        <% end %>
+      </nav>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: household_meeting_notes_path)) { "My meeting notes" } %>
+    <% end %>
+    <% subhead.with_description do %>
+      <%= [ study_guide.display_week, (meeting == "weekend" ? "Watchtower Study" : study_guide.reading), "Only you see this." ].compact.join(" · ") %>
+    <% end %>
+  <% end %>
+<% end %>

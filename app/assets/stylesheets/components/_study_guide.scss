@@ -1,0 +1,146 @@
+// The study guide (docs/design/study-guide.md, How it looks; frames desktop-guide-midweek.png, desktop-guide-weekend.png
+// and phone-guide.png): the glance, the Jehovah box and a card per part, in a column.
+.study-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-size-16);
+}
+
+// This week at a glance: a muted box, its sentence in large type.
+.study-guide-glance {
+  padding: var(--base-size-16);
+  background-color: var(--bgColor-muted);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}
+
+.study-guide-glance__kicker,
+.study-guide-part__kicker {
+  margin-bottom: var(--base-size-4);
+  font-size: var(--text-body-size-small);
+  font-weight: var(--base-text-weight-medium);
+  color: var(--fgColor-muted);
+}
+
+.study-guide-glance__text {
+  margin: 0;
+  font-size: var(--text-title-size-medium);
+  font-weight: var(--base-text-weight-semibold);
+  line-height: var(--text-title-lineHeight-medium);
+  overflow-wrap: anywhere;
+}
+
+// What it teaches about Jehovah: an attention box, each quality's name beside its point, under it on a phone.
+.study-guide-jehovah {
+  padding: var(--base-size-16);
+  background-color: var(--bgColor-attention-muted);
+  border: var(--borderWidth-thin) solid var(--borderColor-attention-emphasis);
+  border-radius: var(--borderRadius-medium);
+}
+
+.study-guide-jehovah__qualities {
+  margin: 0;
+}
+
+.study-guide-jehovah__quality,
+.study-guide-part__row {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--base-size-16);
+
+  & + & {
+    margin-top: var(--base-size-8);
+  }
+}
+
+.study-guide-jehovah__name {
+  flex: 0 1 calc(var(--base-size-80) * 2);
+  min-width: 0;
+  font-weight: var(--base-text-weight-semibold);
+  color: var(--fgColor-attention);
+  overflow-wrap: anywhere;
+}
+
+.study-guide-jehovah__text,
+.study-guide-part__points {
+  flex: 1 1 calc(var(--base-size-128) * 2);
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+// A part's card (StudyGuides::PartComponent): bordered, with rows of a label beside its list of points.
+.study-guide-part {
+  padding: var(--base-size-16);
+  border: var(--borderWidth-thin) solid var(--borderColor-default);
+  border-radius: var(--borderRadius-medium);
+}
+
+.study-guide-part__rows {
+  margin: var(--base-size-12) 0 0;
+}
+
+.study-guide-part__label {
+  flex: 0 1 calc(var(--base-size-80) * 2);
+  min-width: 0;
+  font-weight: var(--base-text-weight-semibold);
+}
+
+.study-guide-part__points ul {
+  padding-left: var(--base-size-16);
+}
+
+// Scriptures in this guide, side by side, wrapping.
+.study-guide-scriptures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--base-size-4) var(--base-size-12);
+  list-style: none;
+}
+
+.study-guide-page__actions,
+.study-guide-page__buttons {
+  gap: var(--base-size-8);
+}
+
+// Pages used with their full addresses, at the end of the printed guide only.
+.study-guide-print-sources {
+  display: none;
+}
+
+// Printed (docs/design/study-guide.md, Pages and routes, Print): the guide alone, across the page. The app shell's
+// sidebar and top bar, the side column, the header's links and every button are left out, and the columns they leave
+// become one. The print controller prints in light colours, whatever the person's appearance.
+@media print {
+  body:has(.study-guide-page) {
+    // The top bar (d-md-none), the header's actions and the buttons' row (d-flex) carry Primer's display utilities,
+    // which are !important.
+    .app-shell__top-bar,
+    main .Subhead-actions,
+    .study-guide-page__buttons {
+      display: none !important;
+    }
+
+    .app-shell > .Layout-sidebar,
+    main :is(button, .Button, .btn) {
+      display: none;
+    }
+
+    .app-shell {
+      display: block;
+    }
+  }
+
+  .study-guide-page {
+    display: block;
+  }
+
+  .study-guide-page__side {
+    display: none;
+  }
+
+  .study-guide-print-sources {
+    display: block;
+    margin-top: var(--base-size-24);
+  }
+}

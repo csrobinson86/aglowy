@@ -1,0 +1,23 @@
+<% content_for :title, "Study guide" %>
+<% turbo_exempts_page_from_cache %>
+
+<%# Not made yet this week (docs/design/study-guide.md, How it looks, States): when it will be, and the weeks still kept,
+    newest first. This week's, once made, is opened instead. %>
+<%= render "study_guides/header" %>
+
+<%= render(Primer::Beta::Blankslate.new(narrow: true)) do |blankslate| %>
+  <% blankslate.with_visual_icon(icon: :book) %>
+  <% blankslate.with_heading(tag: :h2) { "This week's isn't ready yet" } %>
+  <% blankslate.with_description { "Your study guide is made early on Monday. This week's isn't ready yet." } %>
+<% end %>
+
+<% if @study_guides.any? %>
+  <%= render(Primer::Beta::BorderBox.new(mt: 4)) do |box| %>
+    <% box.with_header { render(Primer::Beta::Heading.new(tag: :h2, font_size: 5)) { "Earlier weeks" } } %>
+    <% @study_guides.each do |study_guide| %>
+      <% box.with_row do %>
+        <%= render(Primer::Beta::Link.new(href: household_study_guide_path(week_of: study_guide.week_of))) { study_guide.display_week } %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

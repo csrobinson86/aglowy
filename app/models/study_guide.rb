@@ -41,6 +41,26 @@ class StudyGuide < ApplicationRecord
     parts.select { it.meeting == meeting }
   end
 
+  # A step of the meeting still has no part: a later run fills it in (docs/design/study-guide.md, How it looks, States).
+  def missing_parts?(meeting)
+    StudyGuide::Part::STEPS.count { |_, of| of == meeting } > parts_for(meeting).size
+  end
+
+  # "Week of November 16–22, 2026", as a meeting note's week reads.
+  def display_week
+    MeetingNote.new(week_of:).display_week
+  end
+
+  # The week's Bible reading, "Lamentations 1–2", from its part; nil while it has none.
+  def reading
+    parts.find { it.step == "bible_reading" }&.content&.dig("reading")
+  end
+
+  # Scriptures in this guide: each one a meeting's parts point to, once, in the order they come.
+  def references_for(meeting)
+    parts_for(meeting).flat_map(&:references).uniq
+  end
+
   private
     # A page already linked isn't linked twice, and one whose search result has no title is left out, rather than
     # losing the parts to the not-null title.

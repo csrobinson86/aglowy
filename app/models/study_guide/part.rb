@@ -20,6 +20,21 @@ class StudyGuide::Part < ApplicationRecord
     STEPS[step]
   end
 
+  def overview?
+    step.end_with?("_overview")
+  end
+
+  # The scripture each point ends with, from its saved ref, which parsed when it was saved: a whole chapter, "Psalm 23",
+  # as well as verses. Never through Bible::Linker, which links verses only (docs/design/study-guide.md, A part's card).
+  def references
+    points.filter_map { Bible::Reference.parse(it["ref"]) }
+  end
+
+  # The points of a list, none when the part has no such list.
+  def points(list = nil)
+    list ? Array(content[list]) : content.values.grep(Array).flatten
+  end
+
   private
     def content_fits_its_step
       errors.add(:content, "doesn't fit the #{step} step") unless step.in?(STEPS) && Shape.new(step).fits?(content)

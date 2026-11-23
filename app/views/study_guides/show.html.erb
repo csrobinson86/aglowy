@@ -1,0 +1,45 @@
+<% content_for :title, "Study guide" %>
+<%# It's personal: Turbo's in-memory snapshot ignores the controller's no-store, as on the daily brief's page. %>
+<% turbo_exempts_page_from_cache %>
+
+<%# A week's guide, a meeting at a time (docs/design/study-guide.md, How it looks, Pages and routes; frames
+    desktop-guide-midweek.png, desktop-guide-weekend.png and phone-guide.png): the overview, a card per part, and beside
+    them the pages used and the scriptures, which move under the cards on a phone. Print leaves out the sidebar, the side
+    column and the buttons, and lists the pages with their full addresses at the end. Every field is escaped (Trap 5). %>
+<% overviews, parts = @study_guide.parts_for(@meeting).partition(&:overview?) %>
+<%= render "study_guides/header", study_guide: @study_guide, meeting: @meeting %>
+
+<%= render(Primer::Alpha::Banner.new(icon: :"sparkle-fill", mb: 4)) do %>
+  AI wrote this from this week's program on jw.org, in its own words, with links. Check each point against its page.
+<% end %>
+
+<%= render(Primer::Alpha::Layout.new(stacking_breakpoint: :lg, classes: "study-guide-page")) do |layout| %>
+  <% layout.with_main do %>
+    <div class="study-guide">
+      <% if @study_guide.missing_parts?(@meeting) %>
+        <%= render(Primer::Alpha::Banner.new(icon: :clock)) { "Some parts aren't ready yet. They'll be added when they are." } %>
+      <% end %>
+      <% overviews.each do |overview| %>
+        <%= render "study_guides/overview", overview: %>
+      <% end %>
+      <% parts.each do |part| %>
+        <%= render StudyGuides::PartComponent.new(part:) %>
+      <% end %>
+    </div>
+    <div class="study-guide-page__buttons d-flex flex-wrap flex-items-center mt-3">
+      <%= render(Primer::Beta::Button.new(data: { controller: "print", action: "print#print beforeprint@window->print#lighten afterprint@window->print#restore" })) { "Print" } %>
+      <span class="text-small color-fg-muted">Kept for 8 weeks.</span>
+    </div>
+    <section class="study-guide-print-sources" aria-labelledby="study-guide-print-sources-heading">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-guide-print-sources-heading", mb: 2)) { "Pages used" } %>
+      <ul>
+        <% @study_guide.sources.each do |source| %>
+          <li class="wb-break-word"><%= source.title %> <%= source.url %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+  <% layout.with_sidebar(width: :wide, col_placement: :end, row_placement: :end, classes: "study-guide-page__side") do %>
+    <%= render "study_guides/sources", study_guide: @study_guide, meeting: @meeting %>
+  <% end %>
+<% end %>

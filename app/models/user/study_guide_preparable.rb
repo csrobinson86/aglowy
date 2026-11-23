@@ -46,6 +46,12 @@ module User::StudyGuidePreparable
     study_guides.preloaded.find_by(week_of:)
   end
 
+  # A guide is kept for the week, as the meeting note edit page links to it (docs/design/study-guide.md, Where people
+  # find it).
+  def study_guide_for?(week_of)
+    study_guides.exists?(week_of:)
+  end
+
   # The steps of a week with no part, in the guide's order. A week with no guide misses all nine.
   def missing_study_guide_steps(week_of)
     StudyGuide::Part::STEPS.keys - StudyGuide::Part.where(study_guide: study_guides.where(week_of:)).pluck(:step)

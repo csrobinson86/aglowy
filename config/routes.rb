@@ -182,6 +182,9 @@ Rails.application.routes.draw do
       # Starts her note for the meeting, then opens her comment or the Bible Reading drawing.
       resource :note, only: :create, module: :meeting_preps
     end
+    # The signed-in person's own study guide, a week at a time by its Monday (2026-11-16), ?meeting=weekend for the
+    # weekend; found through Current.user, for heads and adults (docs/design/study-guide.md, Pages and routes).
+    resources :study_guides, only: %i[ index show ], param: :week_of
     # This week's listening game for heads and adults, and changing a round in a dialog (docs/design/listening-game.md,
     # Pages).
     resource :listening_game, only: :show do
