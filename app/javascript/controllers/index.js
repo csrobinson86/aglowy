@@ -37,6 +37,9 @@ application.register("dialog-removal", DialogRemovalController)
 import FlashController from "./flash_controller"
 application.register("flash", FlashController)
 
+import FrameDialogFocusController from "./frame_dialog_focus_controller"
+application.register("frame-dialog-focus", FrameDialogFocusController)
+
 import GemsController from "./gems_controller"
 application.register("gems", GemsController)
 

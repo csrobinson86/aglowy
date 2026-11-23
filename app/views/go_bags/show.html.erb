@@ -63,7 +63,8 @@
       <% if can_change %>
         <% box.with_row do %>
           <%= render(Primer::Beta::Button.new(tag: :a, href: new_household_go_bag_item_path(go_bag_id: @go_bag, category_id: category&.id), scheme: :link,
-                "aria-label": "Add item to #{category&.name || "No category"}", data: { turbo_frame: "go_bag_item_dialog" })) do |button| %>
+                id: category ? dom_id(category, :add_item) : "add_item_no_category", "aria-label": "Add item to #{category&.name || "No category"}",
+                data: { turbo_frame: "go_bag_item_dialog" })) do |button| %>
             <% button.with_leading_visual_icon(icon: :plus) %>
             Add item
           <% end %>
@@ -73,7 +74,9 @@
   </section>
 <% end %>
 
-<%# An item's dialog loads here, from a row's "›" or "+ Add item" (GoBags::ItemsController). %>
+<%# An item's dialog loads here, from a row's "›" or "+ Add item" (GoBags::ItemsController). A save refreshes the page,
+    and frame-dialog-focus puts focus back on the link that opened it, found by its id. %>
 <% if can_change %>
-  <%= turbo_frame_tag "go_bag_item_dialog" %>
+  <%= turbo_frame_tag "go_bag_item_dialog", data: { controller: "frame-dialog-focus",
+                                                    action: "click@document->frame-dialog-focus#remember close->frame-dialog-focus#forget:capture" } %>
 <% end %>

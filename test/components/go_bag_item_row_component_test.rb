@@ -13,11 +13,12 @@ class GoBagItemRowComponentTest < ViewComponent::TestCase
   test "for heads and adults, a checkbox that ticks it, and › opening the item in the dialog" do
     render_item(:flashlight)
 
-    form = "form[action='#{path_to(:flashlight, "acquisition")}'][method=post][data-controller=auto-submit]"
+    form = "form[action='#{path_to(:flashlight, "acquisition")}'][method=post][data-controller=auto-submit][data-auto-submit-hold-value=true]" \
+           "[data-action='turbo:submit-end->auto-submit#release']"
     assert_no_selector "#{form} input[name=_method]", visible: :all
     assert_selector "#{form} input[type=checkbox][data-action='change->auto-submit#submit']:not([checked]):not([autofocus])"
     assert_unchecked_field "We have Flashlight"
-    assert_selector "a[href='#{path_to(:flashlight, "edit")}'][data-turbo-frame=go_bag_item_dialog][aria-label='Open Flashlight']"
+    assert_selector "a#open_go_bag_item_#{go_bag_items(:flashlight).id}[href='#{path_to(:flashlight, "edit")}'][data-turbo-frame=go_bag_item_dialog][aria-label='Open Flashlight']"
   end
 
   test "a ticked row's checkbox unticks it, keeps the tab it's on, and takes focus back once redrawn" do

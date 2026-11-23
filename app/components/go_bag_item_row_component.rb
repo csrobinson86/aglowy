@@ -29,10 +29,12 @@ class GoBagItemRowComponent < ApplicationComponent
     @focus
   end
 
-  # Ticking posts the acquisition; unticking deletes it.
+  # Ticking posts the acquisition; unticking deletes it. The box is held disabled until the row redraws, so a quick
+  # second change can't send the same request again.
   def tick_form_options
     { url: household_go_bag_item_acquisition_path(household_id:, go_bag_id: item.go_bag_id, item_id: item, show: @show),
-      method: item.acquired? ? :delete : :post, data: { controller: "auto-submit" } }
+      method: item.acquired? ? :delete : :post,
+      data: { controller: "auto-submit", auto_submit_hold_value: true, action: "turbo:submit-end->auto-submit#release" } }
   end
 
   def edit_path

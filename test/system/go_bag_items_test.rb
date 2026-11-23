@@ -80,6 +80,48 @@ class GoBagItemsTest < ApplicationSystemTestCase
     assert_selector "#go-bag-progress", text: "2 of 3 ready"
   end
 
+  test "a box is held until its row redraws, so a quick untick can't send the tick again" do
+    sign_in identities(:spouse)
+    visit bag_url
+    assert_turbo_idle
+
+    # Both clicks in one script, so the redraw can't come between them.
+    held = find_field("We have Flashlight").evaluate_script("(() => { this.click(); const held = this.disabled; this.click(); return held })()")
+    assert held, "the box wasn't held after the tick"
+
+    assert_selector "#go-bag-progress", text: "3 of 3 ready"
+    assert_selector "input[name=go_bag_item_#{go_bag_items(:flashlight).id}_have]:checked:not([disabled]):focus"
+    assert go_bag_items(:flashlight).reload.acquired?
+  end
+
+  test "saving or removing in the dialog puts focus back on the link that opened it, or its section's Add item" do
+    sign_in identities(:spouse)
+    visit bag_url
+
+    assert_turbo_idle
+    within(section("Light, power and radio")) { click_on "Add item" }
+    wait_for_dialog
+    within("dialog[open]") do
+      fill_in "Name", with: "Whistle"
+      click_on "Add item"
+    end
+    assert_no_selector "dialog[open]"
+    assert_selector "a[aria-label='Add item to Light, power and radio']:focus"
+
+    open_item "Flashlight"
+    within("dialog[open]") do
+      fill_in "Name", with: "Torch"
+      click_on "Save"
+    end
+    assert_no_selector "dialog[open]"
+    assert_selector "a[aria-label='Open Torch']:focus"
+
+    open_item "Torch"
+    within("dialog[open]") { click_on "Remove item" }
+    assert_no_text "Torch"
+    assert_selector "a[aria-label='Add item to Light, power and radio']:focus"
+  end
+
   test "an empty tab shows its line" do
     go_bag_items(:water).update!(use_by: nil)
     sign_in identities(:spouse)

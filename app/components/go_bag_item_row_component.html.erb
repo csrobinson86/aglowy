@@ -19,6 +19,6 @@
   </div>
   <% unless read_only? %>
     <%= render(Primer::Beta::IconButton.new(tag: :a, href: edit_path, icon: :"chevron-right", scheme: :invisible, show_tooltip: false, flex_shrink: 0, ml: 2,
-                                            "aria-label": "Open #{item.name}", classes: "go-bag-item-row__open", data: { turbo_frame: "go_bag_item_dialog" })) %>
+                                            id: dom_id(item, :open), "aria-label": "Open #{item.name}", classes: "go-bag-item-row__open", data: { turbo_frame: "go_bag_item_dialog" })) %>
   <% end %>
 </div>
