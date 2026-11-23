@@ -69,8 +69,8 @@ class GoBagTest < ActiveSupport::TestCase
 
     assert_equal suggestions.categories.sum { it.items.size }, bag.items.count
     assert_equal bag.items.count, bag.items.to_get.count
-    assert_equal go_bag_categories(:water_food), bag.items.find_by!(name: "Can opener").category
-    assert_equal "1 gallon a person a day, for 3 days", bag.items.find_by!(name: "Bottled water").quantity
+    assert_equal go_bag_categories(:water_food), bag.items.find { it.name == "Can opener" }.category
+    assert_equal "1 gallon a person a day, for 3 days", bag.items.find { it.name == "Bottled water" }.quantity
     assert_equal suggestions.categories.map(&:key), @household.go_bag_categories.where.not(suggestion_key: nil).order(:position).pluck(:suggestion_key)
   end
 
@@ -94,7 +94,7 @@ class GoBagTest < ActiveSupport::TestCase
   test "create_with_suggestions saves nothing when the bag is invalid" do
     bag = nil
 
-    assert_no_difference -> { [ GoBag.count, GoBag::Category.count, GoBag::Item.count ] } do
+    assert_no_difference [ -> { GoBag.count }, -> { GoBag::Category.count }, -> { GoBag::Item.count } ] do
       bag = @household.go_bags.create_with_suggestions({ name: "" }, suggested: true, by: users(:spouse))
     end
 
@@ -106,7 +106,7 @@ class GoBagTest < ActiveSupport::TestCase
     (GoBag::Category::LIMIT - 2).times { |i| @household.go_bag_categories.create!(name: "Category #{i}") }
     bag = nil
 
-    assert_no_difference -> { [ GoBag.count, GoBag::Category.count, GoBag::Item.count ] } do
+    assert_no_difference [ -> { GoBag.count }, -> { GoBag::Category.count }, -> { GoBag::Item.count } ] do
       bag = @household.go_bags.create_with_suggestions({ name: "Grab bag" }, suggested: true, by: users(:spouse))
     end
 

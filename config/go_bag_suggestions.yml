@@ -1,0 +1,73 @@
+# The suggested items for a new go bag, in Aglowy's own words (docs/design/go-bags.md, GoBag::Suggestions). Nothing
+# here is copied from jw.org: the guide is its title and link only, and Aglowy never fetches it.
+guide:
+  title: "When Disaster Strikes—Steps That Can Save Lives"
+  publication: "Awake! 2017 No. 5"
+  url: "https://wol.jw.org/en/wol/d/r1/lp-e/102017165"
+
+# Each key is stored on the category made from it (suggestion_key), so never change one.
+categories:
+  - key: water_food
+    name: Water and food
+    items:
+      - { name: Bottled water, quantity: "1 gallon a person a day, for 3 days" }
+      - { name: "Food that keeps, like cans or dried food", quantity: 3 days }
+      - { name: Can opener }
+      - { name: Energy bars }
+      - { name: "Cups, plates and spoons" }
+  - key: light_power
+    name: Light, power and radio
+    items:
+      - { name: Flashlight }
+      - { name: Spare batteries }
+      - { name: Battery or wind-up radio }
+      - { name: Phone charger and power bank }
+  - key: first_aid
+    name: First aid and medicine
+    items:
+      - { name: First-aid kit }
+      - { name: Daily medicines, quantity: a week }
+      - { name: Copies of prescriptions }
+      - { name: Spare glasses }
+      - { name: Hand sanitizer }
+  - key: documents_money
+    name: Documents and money
+    items:
+      - { name: "Copies of IDs and important papers, in a waterproof bag" }
+      - { name: Cash in small bills }
+      - { name: Emergency phone numbers on paper }
+      - { name: Local map with your meeting place marked }
+  - key: clothing_shelter
+    name: Clothing and shelter
+    items:
+      - { name: Change of clothes }
+      - { name: Sturdy shoes }
+      - { name: Rain poncho }
+      - { name: Emergency blanket }
+      - { name: Work gloves }
+      - { name: Dust masks }
+  - key: tools
+    name: Tools and safety
+    items:
+      - { name: Whistle }
+      - { name: Multi-tool }
+      - { name: Duct tape }
+      - { name: Spare keys }
+  - key: hygiene
+    name: Hygiene
+    items:
+      - { name: Toothbrushes and toothpaste }
+      - { name: Wet wipes }
+      - { name: Toilet paper }
+      - { name: Rubbish bags }
+  - key: children
+    name: For children
+    items:
+      - { name: Diapers and wipes }
+      - { name: A small toy or book }
+      - { name: A favorite snack }
+  - key: worship
+    name: Comfort and worship
+    items:
+      - { name: Bible }
+      - { name: Notebook and pen }

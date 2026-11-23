@@ -97,6 +97,13 @@ class GoBag::ItemTest < ActiveSupport::TestCase
     assert_includes item.errors[:category], "must be one of the household's categories"
   end
 
+  test "an item without a bag is invalid, not an error, even with a category" do
+    item = GoBag::Item.new(name: "Duct tape", category: go_bag_categories(:water_food))
+
+    assert_not item.valid?
+    assert item.errors.added?(:go_bag, :blank)
+  end
+
   test "no category is fine" do
     assert @bag.items.new(name: "Duct tape").valid?
   end
@@ -128,10 +135,11 @@ class GoBag::ItemTest < ActiveSupport::TestCase
   end
 
   test "database: deleting a bag deletes its items and their acquisitions" do
+    water = go_bag_items(:water)
     GoBag.where(id: @bag.id).delete_all
 
     assert_not GoBag::Item.exists?(go_bag_id: @bag.id)
-    assert_not GoBag::Item::Acquisition.exists?(item_id: go_bag_items(:water).id)
+    assert_not GoBag::Item::Acquisition.exists?(item_id: water.id)
   end
 
   private
