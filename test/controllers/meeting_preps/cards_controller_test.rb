@@ -241,6 +241,8 @@ class MeetingPreps::CardsControllerTest < ActionDispatch::IntegrationTest
     assert_nil card.reading
     assert_select "turbo-stream[action=update][target=meeting_prep_card_dialog]"
     assert_select "turbo-stream[action=update][target=prep_week_card_#{card.id}] template", text: /Jehovah is loving · I can: Hug my sister./
+    # Or the card at the foot of the study guide's part, when Change was there.
+    assert_select "turbo-stream[action=replace][target=study_guide_prep_week_card_#{card.id}] template", text: /Jehovah is loving\s+·\s+I can\s+Hug my sister./
   end
 
   test "update, without Turbo, goes back to Get ready" do

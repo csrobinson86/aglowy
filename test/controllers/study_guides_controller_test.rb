@@ -78,6 +78,16 @@ class StudyGuidesControllerTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#meeting_prep_card_dialog"
   end
 
+  test "show, with no child here who signs in, says the card is from Get ready without naming anyone" do
+    enable_get_ready
+    identities(:eli).destroy!
+
+    get household_study_guide_path(household_id: @home, week_of: "2026-11-09")
+
+    assert_response :success
+    assert_select ".study-guide-prep-card__kicker", count: 1, text: "From Get ready"
+  end
+
   test "show, with Get ready off here, has no children's cards" do
     @home.enable_meeting_helper(by: users(:head))
 

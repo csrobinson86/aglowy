@@ -23,7 +23,7 @@ module Household::MeetingPrepPreparable
   # The cards still missing from this week, the Monday where the household lives (Trap 7), unless Get ready is off.
   # A week with every card it can still use asks for nothing.
   def prepare_this_weeks_meeting_prep
-    prepare_meeting_prep(today.beginning_of_week(:monday)) if meeting_prep?
+    prepare_meeting_prep(prep_week_of) if meeting_prep?
   end
 
   # Nothing while meeting times aren't set: there's no meeting to get ready for.
@@ -50,7 +50,7 @@ module Household::MeetingPrepPreparable
   # This week's cards are ready, the Monday where the household lives: Home and the sidebar offer Get ready only then
   # (docs/design/meeting-prep.md, Where she finds it).
   def prep_cards_this_week?
-    prep_weeks.where(week_of: today.beginning_of_week(:monday)).joins(:cards).exists?
+    prep_weeks.where(week_of: prep_week_of).joins(:cards).exists?
   end
 
   # Someone can make the cards: the parent's page says so when nobody can (docs/design/meeting-prep.md, The weekly AI job).
