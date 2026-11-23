@@ -2,7 +2,13 @@
 
 <%= render layout: "meeting_notes/tab", locals: { shared: true, kind: @kind, kind_counts: @kind_counts, shared_count: @shared_count, this_week: @this_week } do %>
   <%= render Primer::Beta::BorderBox.new do |box| %>
-    <% if @meeting_notes.any? %>
+    <% if @weeks&.any? %>
+      <% @weeks.each_with_index do |(week_of, notes), index| %>
+        <% box.with_row(p: 0) do %>
+          <%= render MeetingNoteWeekComponent.new(week_of:, notes:, open: index.zero?, shared_list: true) %>
+        <% end %>
+      <% end %>
+    <% elsif @meeting_notes&.any? %>
       <% @meeting_notes.each do |note| %>
         <% box.with_row(display: :flex, align_items: :center) do %>
           <%= meeting_note_dot(MeetingNotesHelper::MEETING_NOTE_DOTS.fetch(note.kind)) %>

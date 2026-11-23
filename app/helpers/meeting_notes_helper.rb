@@ -17,6 +17,15 @@ module MeetingNotesHelper
     "thing" => { icon: "box", color: :muted }, "feeling" => { icon: "heart", color: :danger }, "action" => { icon: "rays", color: :success }
   }.freeze
 
+  # "Week of November 9–15", or "Week of October 26 – November 1" across a month; short: "Nov 9–15". The same seven
+  # days as MeetingNote#display_week, without the year (docs/design/notes.md, Earlier, a week at a time).
+  def meeting_week_label(week_of, short: false)
+    month = short ? "%b" : "%B"
+    last = week_of + 6
+    range = week_of.month == last.month ? "#{week_of.strftime("#{month} %-d")}–#{last.day}" : "#{week_of.strftime("#{month} %-d")} – #{last.strftime("#{month} %-d")}"
+    short ? range : "Week of #{range}"
+  end
+
   def meeting_note_title(note)
     MEETING_NOTE_TITLES.fetch(note.kind)
   end

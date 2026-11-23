@@ -8,20 +8,23 @@ class MeetingNotesController < ApplicationController
 
   before_action :set_editable_meeting_note, only: %i[ edit update ]
 
-  # Filtered by a meeting or a tag, the list holds every week's notes, this week's too, in place of the This week cards.
+  # Filtered by a meeting or a tag, the list holds every week's notes, this week's too, a note a row, in place of the
+  # This week cards. Unfiltered, the earlier notes come a week at a time, 12 weeks a page (docs/design/notes.md).
   def index
     authorize MeetingNote
     @kind_counts = Current.user.meeting_notes.group(:kind).count
     @tags = Current.user.tags.carried_by("MeetingNote").order(:name).load
     @shared_count = MeetingNote.shared_with(Current.household).count
-    notes = tagged(of_kind(Current.user.meeting_notes)).includes(:sharings, :tags).newest_first
+    notes = tagged(of_kind(Current.user.meeting_notes)).includes(:sharings, :tags)
 
     if @kind || @tag_name
-      @earlier = Page.new(notes, number: params[:page])
+      @earlier = Page.new(notes.newest_first, number: params[:page])
     else
       week_of = Current.membership.this_week
       @this_week = Current.user.meeting_notes_for_week(week_of)
-      @earlier = Page.new(notes.where(week_of: ...week_of), number: params[:page])
+      earlier = notes.where(week_of: ...week_of)
+      @earlier = Page.new(earlier.weeks, number: params[:page], size: 12)
+      @weeks = earlier.where(week_of: @earlier.records.map(&:week_of)).in_week_order.group_by(&:week_of)
     end
   end
 

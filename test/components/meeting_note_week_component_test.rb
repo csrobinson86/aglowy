@@ -100,7 +100,7 @@ class MeetingNoteWeekComponentTest < ViewComponent::TestCase
       users(:head).start_meeting_note(kind:, week_of: WEEK)
     end
 
-    def render_week(notes:, week_of: WEEK, open: false, shared_list: false)
+    def render_week(notes:, week_of: WEEK, open: true, shared_list: false)
       render_inline(MeetingNoteWeekComponent.new(week_of:, notes: MeetingNote.where(id: notes).includes(:user, :sharings, :tags).in_week_order, open:, shared_list:))
     end
 end

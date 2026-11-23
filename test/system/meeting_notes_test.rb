@@ -131,7 +131,7 @@ class MeetingNotesTest < ApplicationSystemTestCase
     newest = find("details", text: "Week of November 9–15")
     newest.find("summary").click
     assert_no_selector "details[open]"
-    assert_no_link "Weekend meeting"
+    assert_no_selector "details li a", text: "Weekend meeting"
 
     older = find("details", text: "Week of November 2–8")
     older.find("summary").click

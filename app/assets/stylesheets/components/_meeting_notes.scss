@@ -19,3 +19,18 @@
   align-items: center;
   min-height: var(--control-minTarget-auto);
 }
+
+// A week in the Earlier list (frame notes-meeting-notes-weeks.png): the whole summary opens it, and its chevron turns
+// down and its summary takes the muted background while it's open. Primer's Details turns no icon of its own.
+.meeting-notes__week-summary {
+  min-height: var(--control-minTarget-auto);
+  cursor: pointer;
+}
+
+.meeting-notes__week[open] > .meeting-notes__week-summary {
+  background-color: var(--bgColor-muted);
+}
+
+.meeting-notes__week[open] .meeting-notes__chevron {
+  transform: rotate(90deg);
+}

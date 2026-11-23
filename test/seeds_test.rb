@@ -50,7 +50,7 @@ class SeedsTest < ActiveSupport::TestCase
     head = user("head@example.com")
     demo = head.households.sole
     this_week = demo.today.beginning_of_week(:monday)
-    assert_equal 11, head.meeting_notes.count
+    assert_equal 28, head.meeting_notes.count
     this_weeks_note = head.meeting_notes.find_by!(kind: "midweek", week_of: this_week)
     assert this_weeks_note.gems.any?
     assert this_weeks_note.filled_parts.any?
@@ -60,7 +60,7 @@ class SeedsTest < ActiveSupport::TestCase
     assert child_note.marks.any?
     assert child_note.shared_with?(Household.find_by!(name: "The Rivera Family"))
     assert_equal 7, user("lucia.rivera").meeting_notes.find_by!(kind: "weekend", week_of: this_week).answer.paragraph
-    assert_equal 18, MeetingNote.count
+    assert_equal 35, MeetingNote.count
 
     assert_equal [ 1, 1, 1 ], [ demo.goals.active.count, demo.goals.completed.count, demo.goals.archived.count ]
     steps = demo.goals.active.sole.steps
