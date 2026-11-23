@@ -1,6 +1,7 @@
 # Ticking and unticking "we have it" from an item's row, for heads and adults (docs/design/go-bags.md, Item rows). It
 # saves straight away and is safe to repeat. Answers with Turbo Streams: the row, the ready box and the tabs, on the tab
-# it was ticked on (show). Ticking authorizes the item with update?.
+# it was ticked on (show); or, ticked on To buy (from=to_buy), that page's row alone. Ticking authorizes the item with
+# update?.
 class GoBags::Items::AcquisitionsController < ApplicationController
   include HouseholdScoped
 
@@ -28,6 +29,7 @@ class GoBags::Items::AcquisitionsController < ApplicationController
       @go_bag = Current.household.go_bags.preloaded.find(@item.go_bag_id)
       @item = @go_bag.items.find { it.id == @item.id }
       @show = params[:show].presence_in(GoBag::SHOWS)
+      @to_buy = params[:from] == "to_buy"
       render :changes
     end
 end

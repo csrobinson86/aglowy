@@ -6,6 +6,19 @@ module GoBagsHelper
     elsif go_bag.for_user then "For #{go_bag.for_user.first_name}"
     else "For everyone"
     end
-    [ ("Kept in #{go_bag.kept_at}" if go_bag.kept_at.present?), whose ].compact.join(" · ")
+    [ go_bag_kept_at(go_bag), whose ].compact.join(" · ")
+  end
+
+  # "Kept in the hall closet", or nil when no one has said where.
+  def go_bag_kept_at(go_bag)
+    "Kept in #{go_bag.kept_at}" if go_bag.kept_at.present?
+  end
+
+  # The To buy card's second line: "Across 3 bags · 2 need replacing soon", without the second part when nothing needs
+  # replacing (docs/design/go-bags.md, Go bags).
+  def go_bags_to_buy_line(shopping_list)
+    replacing = shopping_list.replacing_count
+    [ "Across #{pluralize(shopping_list.go_bags.size, "bag")}",
+      ("#{replacing} #{replacing == 1 ? "needs" : "need"} replacing soon" if replacing.positive?) ].compact.join(" · ")
   end
 end

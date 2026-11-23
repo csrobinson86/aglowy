@@ -16,6 +16,10 @@
   <% end %>
 <% end %>
 
+<% if @shopping_list && !@shopping_list.empty? %>
+  <%= render "go_bags/to_buy_card", shopping_list: @shopping_list %>
+<% end %>
+
 <% if @go_bags.any? %>
   <%= render Primer::Beta::BorderBox.new(mb: 4) do |box| %>
     <% @go_bags.each do |go_bag| %>

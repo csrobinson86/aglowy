@@ -1,0 +1,22 @@
+<div class="d-flex flex-items-center">
+  <% if box? %>
+    <div class="go-bag-item-row__box flex-shrink-0 mr-3">
+      <%= primer_form_with(**tick_form_options) do %>
+        <%= render(Primer::Alpha::CheckBox.new(name: "#{dom_id(item, :to_buy)}_have", label: "We have #{item.name}", visually_hide_label: true, checked: item.acquired?,
+                                               autofocus: focus?, data: { action: "change->auto-submit#submit" })) %>
+      <% end %>
+    </div>
+  <% else %>
+    <%= render(Primer::Beta::Octicon.new(:clock, color: line.color, flex_shrink: 0, mr: 3)) %>
+  <% end %>
+  <div class="flex-1 min-width-0">
+    <div class="go-bag-item-row__name"><%= item.name %></div>
+    <% if line %>
+      <div class="go-bag-item-row__line f6 color-fg-<%= line.color || :muted %>"><%= line.text %></div>
+    <% end %>
+  </div>
+  <% unless box? %>
+    <%= render(Primer::Beta::IconButton.new(tag: :a, href: edit_path, icon: :"chevron-right", scheme: :invisible, show_tooltip: false, flex_shrink: 0, ml: 2,
+                                            "aria-label": "Open #{item.name}", classes: "go-bag-item-row__open")) %>
+  <% end %>
+</div>
