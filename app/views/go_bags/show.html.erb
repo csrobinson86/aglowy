@@ -1,0 +1,60 @@
+<% content_for :title, @go_bag.name %>
+<% can_change = policy(@go_bag).update? %>
+
+<%# On a phone a back row with the bag's "…"; from md up, breadcrumbs, and Edit and the "…" in the header
+    (docs/design/phone.md, rule 2). In this story every item row is read-only, as a child sees it (frame
+    go-bag-child.png): the checkboxes, "›", "+ Add item" and the tabs come with items. %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_go_bags_path) { "Go bags" } %>
+  <% breadcrumbs.with_item(href: household_go_bag_path(id: @go_bag)) { @go_bag.name } %>
+<% end %>
+<%= render BackRowComponent.new(href: household_go_bags_path, label: "Go bags") do |row| %>
+  <% if can_change %>
+    <% row.with_menu { render "go_bags/menu", go_bag: @go_bag, phone: true } %>
+  <% end %>
+<% end %>
+
+<%= render Primer::Beta::Subhead.new(mb: 3) do |subhead| %>
+  <% subhead.with_heading(tag: :h1, classes: "wb-break-word min-width-0") { @go_bag.name } %>
+  <% if can_change %>
+    <% subhead.with_actions(display: [ :none, nil, :flex ]) do %>
+      <%= render(Primer::Beta::Button.new(tag: :a, href: edit_household_go_bag_path(id: @go_bag), mr: 2)) { "Edit" } %>
+      <%= render "go_bags/menu", go_bag: @go_bag %>
+    <% end %>
+  <% end %>
+  <% subhead.with_description(id: "go-bag-meta") { go_bag_meta_line(@go_bag, read_only: !can_change) } %>
+<% end %>
+
+<% if can_change %>
+  <%= render "go_bags/delete_dialog", go_bag: @go_bag %>
+<% end %>
+
+<%= render(Primer::Beta::BorderBox.new(id: "go-bag-progress", mb: 4)) do |box| %>
+  <% box.with_body do %>
+    <div class="d-flex flex-items-baseline mb-2">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, mr: 2)) { "#{@go_bag.ready_count} of #{@go_bag.items_count} ready" } %>
+      <span class="color-fg-muted ml-auto"><%= @go_bag.ready_percent %>%</span>
+    </div>
+    <%# The heading says the same, so the bar is hidden from screen readers. %>
+    <%= render(Primer::Beta::ProgressBar.new(size: :large, aria: { hidden: true })) do |bar| %>
+      <% bar.with_item(percentage: @go_bag.ready_percent, bg: :success_emphasis) %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% if @go_bag.items_count.zero? %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :briefcase) %>
+    <% blankslate.with_heading(tag: :h2) { "No items in this bag yet" } %>
+  <% end %>
+<% end %>
+<% @go_bag.items_by_category.each do |category, items| %>
+  <section class="mb-4">
+    <h2 class="go-bag__category f5 text-semibold color-fg-muted mb-2"><%= category&.name || "No category" %></h2>
+    <%= render Primer::Beta::BorderBox.new do |box| %>
+      <% items.each do |item| %>
+        <% box.with_row { render GoBagItemRowComponent.new(item:, today: Current.household.today, read_only: true) } %>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>

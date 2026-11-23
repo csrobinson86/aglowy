@@ -25,6 +25,10 @@
       <% group.with_item(label: "Family goals", href: goals_path, selected_by_ids: :goals) do |item| %>
         <% item.with_leading_visual_icon(icon: :goal) %>
       <% end %>
+      <%# Go bags, for everyone: children look, heads and adults change them (docs/design/go-bags.md, Pages). %>
+      <% group.with_item(label: "Go bags", href: go_bags_path, selected_by_ids: :go_bags) do |item| %>
+        <% item.with_leading_visual_icon(icon: :briefcase) %>
+      <% end %>
     <% end %>
     <% list.with_group do |group| %>
       <% group.with_heading(title: "Mine", heading_level: 2) %>

@@ -1,0 +1,15 @@
+<%# locals: (go_bag:, phone: false) %>
+<%# A bag's "…" (docs/design/go-bags.md, A bag). On a phone it's the back row's plain "…", with Edit bag, which sits in
+    the header from md up. Delete bag asks first in the dialog in go_bags/_delete_dialog, once for both menus. %>
+<%= render(Primer::Alpha::ActionMenu.new(menu_id: phone ? "go-bag-phone-menu" : "go-bag-menu", anchor_align: :end)) do |menu| %>
+  <% menu.with_show_button(icon: :"kebab-horizontal", scheme: phone ? :invisible : :default, "aria-label": "Go bag actions", show_tooltip: false) %>
+  <% if phone %>
+    <% menu.with_item(label: "Edit bag", href: edit_household_go_bag_path(id: go_bag)) do |item| %>
+      <% item.with_leading_visual_icon(icon: :pencil) %>
+    <% end %>
+    <% menu.with_divider %>
+  <% end %>
+  <% menu.with_item(label: "Delete bag…", tag: :button, scheme: :danger, content_arguments: { "data-show-dialog-id": "delete-go-bag" }) do |item| %>
+    <% item.with_leading_visual_icon(icon: :trash) %>
+  <% end %>
+<% end %>

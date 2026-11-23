@@ -45,7 +45,9 @@ class GoBagsTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Home go bag"
     assert_selector "#go-bag-meta", text: "Kept in the hall closet · For Charlie"
 
-    choose_from_menu "Go bag actions", "Delete bag…"
+    assert_turbo_idle
+    find("button[aria-label='Go bag actions']").click
+    find("[role=menuitem]", exact_text: "Delete bag…").click
     wait_for_dialog
     within("dialog[open]") do
       assert_selector "h1", text: "Delete Home go bag?"
@@ -86,7 +88,7 @@ class GoBagsTest < ApplicationSystemTestCase
     assert_selector ".Box-row", text: /Flashlight\s*Still to get/
     assert_selector "svg[aria-label='We have it']", count: 2
     assert_no_link "Edit"
-    assert_no_button "Go bag actions"
+    assert_no_selector "button[aria-label='Go bag actions']", visible: :all
     assert_accessible
     capture_screens("go-bag-child")
   end

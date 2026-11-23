@@ -47,6 +47,10 @@ class AppShell::SidebarComponent < ApplicationComponent
     household_goals_path(household_id: household.id)
   end
 
+  def go_bags_path
+    household_go_bags_path(household_id: household.id)
+  end
+
   # Daily brief, first in Mine, for heads and adults: children have none (docs/design/daily-brief.md, The sidebar).
   def daily_brief?
     user.may_have_daily_brief?

@@ -75,6 +75,7 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
   test "a bag's page and the list ask no more queries for three bags of many items than for one small bag" do
     sign_in identities(:spouse)
     get household_go_bags_path(household_id: households(:home))
+    get bag_path(go_bags(:family))
     list_before = queries_for { get household_go_bags_path(household_id: households(:home)) }
     bag_before = queries_for { get bag_path(go_bags(:family)) }
 
@@ -108,7 +109,7 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
            params: { go_bag: { name: "Car kit", kept_at: "the trunk", for_user_id: users(:eli).id, suggested: "1" } }
     end
 
-    bag = households(:home).go_bags.last
+    bag = households(:home).go_bags.excluding(go_bags(:family), go_bags(:charlies)).sole
     assert_redirected_to bag_path(bag)
     assert_equal [ "Car kit", "the trunk", users(:eli), users(:head) ], [ bag.name, bag.kept_at, bag.for_user, bag.created_by ]
     assert_empty bag.items.acquired
@@ -120,7 +121,7 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
     assert_difference -> { GoBag.count } => 1, -> { GoBag::Item.count } => 0 do
       post household_go_bags_path(household_id: households(:home)), params: { go_bag: { name: "Car kit", kept_at: "", for_user_id: "", suggested: "0" } }
     end
-    assert_nil households(:home).go_bags.last.for_user
+    assert_nil households(:home).go_bags.excluding(go_bags(:family), go_bags(:charlies)).sole.for_user
   end
 
   test "Create with a blank name shows the form again with the error" do
@@ -204,22 +205,19 @@ class GoBagsControllerTest < ActionDispatch::IntegrationTest
 
   test "a bag from another household is a 404, and so is the list for a non-member" do
     outsiders = households(:other).go_bags.create!(name: "Theirs", created_by: users(:outsider))
-    sign_in identities(:spouse)
 
-    get household_go_bag_path(household_id: households(:home), id: outsiders)
-    assert_response :not_found
-    get edit_household_go_bag_path(household_id: households(:home), id: outsiders)
-    assert_response :not_found
-    patch household_go_bag_path(household_id: households(:home), id: outsiders), params: { go_bag: { name: "Mine" } }
-    assert_response :not_found
-    delete household_go_bag_path(household_id: households(:home), id: outsiders)
-    assert_response :not_found
+    # A 404 doesn't keep the session, so each request signs in again.
+    [ -> { get household_go_bag_path(household_id: households(:home), id: outsiders) },
+      -> { get edit_household_go_bag_path(household_id: households(:home), id: outsiders) },
+      -> { patch household_go_bag_path(household_id: households(:home), id: outsiders), params: { go_bag: { name: "Mine" } } },
+      -> { delete household_go_bag_path(household_id: households(:home), id: outsiders) },
+      -> { get household_go_bags_path(household_id: households(:other)) },
+      -> { get household_go_bag_path(household_id: households(:other), id: outsiders) } ].each do |request|
+      sign_in identities(:spouse)
+      request.call
+      assert_response :not_found
+    end
     assert_equal "Theirs", outsiders.reload.name
-
-    get household_go_bags_path(household_id: households(:other))
-    assert_response :not_found
-    get household_go_bag_path(household_id: households(:other), id: outsiders)
-    assert_response :not_found
   end
 
   private

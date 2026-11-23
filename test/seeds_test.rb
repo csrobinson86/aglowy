@@ -182,6 +182,16 @@ class SeedsTest < ActiveSupport::TestCase
     assert_equal "Lamentations 1–2", guide.parts.find { it.step == "bible_reading" }.content["reading"]
     assert_equal 4, guide.sources.size
 
+    # The Riveras' go bags: the family bag from the suggestions, most of it ticked, a car kit with a category of their
+    # own, and Mateo's bag; one use-by date soon and one not (15_go_bags.rb).
+    assert_equal [ "Family go bag", "Car kit", "Mateo's bag" ], rivera.go_bags.map(&:name)
+    family_bag = rivera.go_bags.first
+    assert_equal [ GoBag::Suggestions.new.categories.sum { it.items.size }, 5 ], [ family_bag.items_count, family_bag.items.to_get.count ]
+    assert_equal 1, family_bag.items.use_by_soon(rivera.today).count
+    assert_equal 2, family_bag.items.where.not(use_by: nil).count
+    assert_includes rivera.go_bag_categories.map(&:name), "For the car"
+    assert_equal rivera.users.find_by!(name: "Mateo Rivera"), rivera.go_bags.last.for_user
+
     assert_equal 0, Ai::Use.count
   end
 

@@ -1,0 +1,14 @@
+<%# locals: (go_bag:) %>
+<%# Asked before a bag is deleted, from either "…" (docs/design/go-bags.md, Edit / delete a bag). %>
+<% count = go_bag.items_count %>
+<%= render(Primer::Alpha::Dialog.new(id: "delete-go-bag", title: "Delete #{go_bag.name}?")) do |dialog| %>
+  <% dialog.with_body do %>
+    <%= count.zero? ? "It has no items yet." : "Its #{pluralize(count, "item")} #{count == 1 ? "is" : "are"} deleted too." %>
+  <% end %>
+  <% dialog.with_footer do %>
+    <%= render(Primer::Beta::Button.new(data: { close_dialog_id: "delete-go-bag" })) { "Cancel" } %>
+    <%= primer_form_with(url: household_go_bag_path(id: go_bag), method: :delete) do |f| %>
+      <%= render GoBags::DeleteForm.new(f) %>
+    <% end %>
+  <% end %>
+<% end %>

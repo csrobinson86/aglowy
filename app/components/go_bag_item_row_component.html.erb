@@ -1,0 +1,13 @@
+<div class="d-flex flex-items-center">
+  <% if read_only? %>
+    <% if item.acquired? %>
+      <%= render(Primer::Beta::Octicon.new(:"check-circle", size: :medium, color: :success, flex_shrink: 0, mr: 3, "aria-label": "We have it")) %>
+    <% else %>
+      <%= render(Primer::Beta::Octicon.new(:"issue-draft", size: :medium, color: :muted, flex_shrink: 0, mr: 3, "aria-label": "Still to get")) %>
+    <% end %>
+  <% end %>
+  <div class="flex-1 min-width-0">
+    <div class="go-bag-item-row__name"><%= item.name %></div>
+    <div class="go-bag-item-row__line color-fg-muted"><%= safe_join(parts.map { |part| part.color ? tag.span(part.text, class: "color-fg-#{part.color}") : part.text }, " · ") %></div>
+  </div>
+</div>
