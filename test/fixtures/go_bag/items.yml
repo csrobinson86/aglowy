@@ -1,0 +1,16 @@
+# The family bag: water we have, a flashlight still to get, and batteries we have that are kept somewhere else.
+water:
+  go_bag: family
+  category: water_food
+  name: Bottled water
+  quantity: 6 gallons
+
+flashlight:
+  go_bag: family
+  category: light_power
+  name: Flashlight
+
+batteries:
+  go_bag: family
+  name: Spare batteries
+  stored_at: the kitchen drawer

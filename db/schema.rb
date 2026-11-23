@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_010300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -285,6 +285,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
     t.index ["conductor_id"], name: "index_family_study_sessions_on_conductor_id"
     t.index ["family_study_id", "recurrence_at"], name: "index_family_study_sessions_on_study_and_recurrence_at", unique: true
     t.index ["scheduled_at"], name: "index_family_study_sessions_on_scheduled_at"
+  end
+
+  create_table "go_bag_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.string "name", null: false
+    t.integer "position", null: false
+    t.string "suggestion_key"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["household_id", "suggestion_key"], name: "index_go_bag_categories_on_household_id_and_suggestion_key", unique: true
+  end
+
+  create_table "go_bag_item_acquisitions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "item_id", null: false
+    t.uuid "acquired_by_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["acquired_by_id"], name: "index_go_bag_item_acquisitions_on_acquired_by_id"
+    t.index ["item_id"], name: "index_go_bag_item_acquisitions_on_item_id", unique: true
+  end
+
+  create_table "go_bag_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "go_bag_id", null: false
+    t.uuid "category_id"
+    t.string "name", null: false
+    t.string "quantity"
+    t.string "stored_at"
+    t.date "use_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_go_bag_items_on_category_id"
+    t.index ["go_bag_id"], name: "index_go_bag_items_on_go_bag_id"
+  end
+
+  create_table "go_bags", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "household_id", null: false
+    t.string "name", null: false
+    t.string "kept_at"
+    t.uuid "for_user_id"
+    t.uuid "created_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_go_bags_on_created_by_id"
+    t.index ["for_user_id"], name: "index_go_bags_on_for_user_id"
+    t.index ["household_id"], name: "index_go_bags_on_household_id"
   end
 
   create_table "goal_archivals", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1161,6 +1205,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_020000) do
   add_foreign_key "family_study_resources", "family_study_sessions", column: "session_id"
   add_foreign_key "family_study_sessions", "family_studies"
   add_foreign_key "family_study_sessions", "users", column: "conductor_id"
+  add_foreign_key "go_bag_categories", "households", on_delete: :cascade
+  add_foreign_key "go_bag_item_acquisitions", "go_bag_items", column: "item_id", on_delete: :cascade
+  add_foreign_key "go_bag_item_acquisitions", "users", column: "acquired_by_id"
+  add_foreign_key "go_bag_items", "go_bag_categories", column: "category_id", on_delete: :nullify
+  add_foreign_key "go_bag_items", "go_bags", on_delete: :cascade
+  add_foreign_key "go_bags", "households", on_delete: :cascade
+  add_foreign_key "go_bags", "users", column: "created_by_id"
+  add_foreign_key "go_bags", "users", column: "for_user_id", on_delete: :nullify
   add_foreign_key "goal_archivals", "goals", on_delete: :cascade
   add_foreign_key "goal_archivals", "users", column: "archived_by_id"
   add_foreign_key "goal_completions", "goals", on_delete: :cascade

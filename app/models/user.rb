@@ -293,6 +293,11 @@ class User < ApplicationRecord
     DailyBrief::Sharing.where(household: household, daily_brief: daily_briefs).delete_all
   end
 
+  # And clears who that household's go bags are for, so they read "For everyone" (docs/design/go-bags.md, GoBag).
+  def stop_being_go_bag_owner_in(household)
+    household.go_bags.where(for_user: self).update_all(for_user_id: nil, updated_at: Time.current)
+  end
+
   # Membership#deactivate calls this under the household's lock, so a step naming only someone who left can
   # still be finished. Done steps keep their assignments and ticks as history (docs/design/goals.md,
   # "Leaving a household"). A person's tick on a named step always has an assignment beside it.

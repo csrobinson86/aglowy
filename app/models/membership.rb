@@ -41,7 +41,8 @@ class Membership < ApplicationRecord
 
   # Leaving ends the person's meeting-note, goal, meeting-part and daily brief shares here for good, so rejoining never brings them back
   # (docs/design/meeting-notes.md, "Leaving ends a share for good"), takes them off the steps not yet
-  # done in the household's goals (docs/design/goals.md, "Leaving a household"), and ends a child's study AI grant
+  # done in the household's goals (docs/design/goals.md, "Leaving a household"), makes the household's go bags that
+  # were for them for everyone (docs/design/go-bags.md, GoBag), and ends a child's study AI grant
   # (docs/design/personal-study.md, Children).
   def deactivate
     without_losing_last_head(leaves_headship: true) do
@@ -52,6 +53,7 @@ class Membership < ApplicationRecord
           user.stop_sharing_meeting_parts_with(household)
           user.stop_sharing_daily_briefs_with(household)
           user.leave_open_goal_steps_in(household)
+          user.stop_being_go_bag_owner_in(household)
           revoke_study_ai
         end
       end

@@ -18,6 +18,9 @@ class Household < ApplicationRecord
   has_one :meeting_prep, dependent: :delete
   has_many :chats, dependent: :destroy
   has_many :events, class_name: "Household::Event", dependent: :delete_all
+  # Bags in the order they were made; the database takes their items with them (on_delete: :cascade).
+  has_many :go_bags, -> { order(:id) }, dependent: :delete_all
+  has_many :go_bag_categories, -> { order(:position) }, class_name: "GoBag::Category", dependent: :delete_all
   # The weekly previews about it (docs/design/notifications.md, Models).
   has_many :notifications, as: :subject, dependent: :delete_all
   # Their chats take them first (on_delete: :cascade).
