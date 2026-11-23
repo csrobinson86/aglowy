@@ -1,0 +1,21 @@
+<%# locals: (overview:) %>
+<%# A meeting's overview: This week at a glance, then what it teaches about Jehovah, each quality with its point and
+    scripture link (docs/design/study-guide.md, How it looks). The AI's words, escaped. %>
+<section class="study-guide-glance" aria-labelledby="study-guide-glance-heading">
+  <p class="study-guide-glance__kicker" id="study-guide-glance-heading">This week at a glance</p>
+  <p class="study-guide-glance__text"><%= overview.content["glance"] %></p>
+</section>
+<section class="study-guide-jehovah" aria-labelledby="study-guide-jehovah-heading">
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-guide-jehovah-heading", mb: 2)) do %>
+    What this <%= overview.meeting == "weekend" ? "study" : "week's program" %> teaches us about Jehovah
+  <% end %>
+  <dl class="study-guide-jehovah__qualities">
+    <% overview.points("jehovah").each do |point| %>
+      <div class="study-guide-jehovah__quality">
+        <dt class="study-guide-jehovah__name"><%= point["quality"] %></dt>
+        <dd class="study-guide-jehovah__text"><%= point["text"] %>
+          <% if (reference = Bible::Reference.parse(point["ref"])) %><%= render "bible/references/reference", reference: %><% end %></dd>
+      </div>
+    <% end %>
+  </dl>
+</section>

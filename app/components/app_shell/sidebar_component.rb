@@ -62,6 +62,16 @@ class AppShell::SidebarComponent < ApplicationComponent
     MeetingPrepPolicy.new(membership, household).show? && household.prep_cards_this_week?
   end
 
+  # Study guide, after Today's meeting, for a head or adult here with theirs on (docs/design/study-guide.md, Where people
+  # find it).
+  def study_guide?
+    StudyGuidePolicy.new(membership, :study_guide).index? && user.study_guide_on?
+  end
+
+  def study_guides_path
+    household_study_guides_path(household_id: household.id)
+  end
+
   def meeting_preps_path
     household_meeting_preps_path(household_id: household.id)
   end

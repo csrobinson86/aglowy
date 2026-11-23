@@ -1154,6 +1154,21 @@ class MeetingNotesControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, "#ministry"
   end
 
+  test "the edit page links to the person's study guide for the note's week and meeting, while it's on and kept" do
+    note = meeting_notes(:head_weekend)
+    sign_in identities(:head)
+    guide_path = household_study_guide_path(household_id: households(:home), week_of: "2026-11-16", meeting: "weekend")
+
+    get edit_household_meeting_note_path(household_id: households(:home), id: note)
+    assert_select "a[href=?]", guide_path, count: 0
+
+    User::WeeklyStudyGuide.create!(user: users(:head))
+    users(:head).study_guides.create!(week_of: "2026-11-16")
+    get edit_household_meeting_note_path(household_id: households(:home), id: note)
+
+    assert_select "a[href=?]", guide_path, text: "Open my study guide for this week"
+  end
+
   private
     def note_path(note, household = households(:home))
       household_meeting_note_path(household_id: household, id: note)

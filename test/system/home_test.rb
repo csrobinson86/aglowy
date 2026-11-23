@@ -63,4 +63,27 @@ class HomeTest < ApplicationSystemTestCase
     assert_no_link "Get ready", exact: true
     within(".todays-meeting-card") { assert_link "This week's Get ready cards", href: household_meeting_preps_path(household_id: @home) }
   end
+
+  test "Read this week's study guide on the Today's meeting card for a head with it on, not with it off or for a child" do
+    travel_to Time.utc(2026, 11, 12, 16)
+    User::WeeklyStudyGuide.create!(user: users(:head))
+    sign_in identities(:head)
+    visit household_root_url(household_id: @home)
+
+    within(".todays-meeting-card") { assert_link "Read this week's study guide", href: household_study_guides_path(household_id: @home) }
+    assert_accessible
+
+    users(:head).turn_off_study_guide
+    visit household_root_url(household_id: @home)
+
+    assert_selector ".todays-meeting-card"
+    assert_no_link "Read this week's study guide"
+
+    User::WeeklyStudyGuide.create!(user: users(:eli))
+    sign_in identities(:eli)
+    visit household_root_url(household_id: @home)
+
+    assert_selector ".todays-meeting-card"
+    assert_no_link "Read this week's study guide"
+  end
 end

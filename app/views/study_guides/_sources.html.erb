@@ -1,0 +1,34 @@
+<%# locals: (study_guide:, meeting:) %>
+<%# Beside the cards: Pages used, each page's title and host, which passed Ai::SourceLink, and the scriptures this
+    meeting's parts point to (docs/design/study-guide.md, How it looks). Left out of print, which lists the pages at the
+    end with their full addresses instead. %>
+<%= render(Primer::Beta::BorderBox.new(padding: :condensed, mb: 3)) do |box| %>
+  <% box.with_body do %>
+    <section aria-labelledby="study-guide-pages-heading">
+      <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, id: "study-guide-pages-heading", mb: 2)) { "Pages used" } %>
+      <ul class="list-style-none">
+        <% study_guide.sources.each do |source| %>
+          <li class="mb-2 wb-break-word">
+            <%= render(Primer::Beta::Link.new(href: source.url, target: "_blank", rel: "noopener", underline: true)) { source.title } %>
+            <span class="d-block color-fg-muted text-small"><%= source_host(source.url) %></span>
+          </li>
+        <% end %>
+      </ul>
+      <p class="color-fg-muted text-small mb-0">Titles and links only. Open a page to read it on jw.org.</p>
+    </section>
+  <% end %>
+<% end %>
+<% if (references = study_guide.references_for(meeting)).any? %>
+  <%= render(Primer::Beta::BorderBox.new(padding: :condensed)) do |box| %>
+    <% box.with_body do %>
+      <section aria-labelledby="study-guide-scriptures-heading">
+        <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 5, id: "study-guide-scriptures-heading", mb: 2)) { "Scriptures in this guide" } %>
+        <ul class="study-guide-scriptures">
+          <% references.each do |reference| %>
+            <li><%= render "bible/references/reference", reference: %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+  <% end %>
+<% end %>

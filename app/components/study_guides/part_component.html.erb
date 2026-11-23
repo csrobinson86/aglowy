@@ -1,0 +1,24 @@
+<%= tag.section class: "study-guide-part", aria: { labelledby: "study-guide-#{part.step}-heading" } do %>
+  <p class="study-guide-part__kicker">
+    <%= render(Primer::Beta::Octicon.new(:"dot-fill", color:, size: :xsmall, mr: 1)) %><%= kicker %>
+  </p>
+  <%= render(Primer::Beta::Heading.new(tag: :h2, font_size: 4, id: "study-guide-#{part.step}-heading", classes: "wb-break-word")) { title } %>
+  <p class="mt-2 mb-0 wb-break-word"><%= summary %></p>
+  <% if rows.any? %>
+    <dl class="study-guide-part__rows">
+      <% rows.each do |label, points| %>
+        <div class="study-guide-part__row">
+          <dt class="study-guide-part__label"><%= label %></dt>
+          <dd class="study-guide-part__points">
+            <ul>
+              <% points.each do |point| %>
+                <li><%= paragraphs(point) %><%= point["text"] %>
+                  <% if (ref = reference(point)) %><%= render "bible/references/reference", reference: ref %><% end %></li>
+              <% end %>
+            </ul>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  <% end %>
+<% end %>

@@ -1,4 +1,4 @@
-<%# locals: (meeting:, meeting_helper:, listening_game: false, get_ready: false, get_ready_cards: false) -%>
+<%# locals: (meeting:, meeting_helper:, listening_game: false, get_ready: false, get_ready_cards: false, study_guide: false) -%>
 <%# Only on a meeting day (frames adult-home-meeting.png, child-home.png). The button goes through Today's meeting's
     create, which checks the meeting itself, so hiding the card is never the authorization. %>
 <%= render(Primer::Box.new(border: true, border_radius: 2, bg: :subtle, p: 4, mb: 4, display: :flex, direction: [ :column, nil, :row ], align_items: [ nil, nil, :center ], classes: "todays-meeting-card")) do %>
@@ -17,6 +17,11 @@
       <% if listening_game %>
         <p class="mt-1 mb-0">
           <%= render(Primer::Beta::Link.new(href: household_listening_game_path, underline: true)) { "Check this week's listening game" } %>
+        </p>
+      <% end %>
+      <% if study_guide %>
+        <p class="mt-1 mb-0">
+          <%= render(Primer::Beta::Link.new(href: household_study_guides_path, underline: true)) { "Read this week's study guide" } %>
         </p>
       <% end %>
       <% if get_ready_cards %>
