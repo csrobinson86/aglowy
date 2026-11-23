@@ -9,6 +9,8 @@ class GoBagsController < ApplicationController
   def index
     authorize GoBag
     @go_bags = Current.household.go_bags.preloaded
+    # The To buy card, for heads and adults, counted from the same bags as their rows.
+    @shopping_list = GoBag::ShoppingList.new(@go_bags, today: Current.household.today) if policy(GoBag).shopping_list?
   end
 
   # show: the tab, To buy or Use by soon; All when it's neither. Children have no tabs and see every item.

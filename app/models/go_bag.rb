@@ -22,6 +22,8 @@ class GoBag < ApplicationRecord
   validate :for_an_active_member, if: -> { for_user_id && will_save_change_to_for_user_id? }
 
   scope :preloaded, -> { includes(items: %i[ acquisition category ]) }
+  # The bags with something to buy as of today, the household's (docs/design/go-bags.md, To buy).
+  scope :with_items_to_buy, ->(today) { where(id: GoBag::Item.to_buy(today).select(:go_bag_id)) }
 
   # Called on a household's bags: household.go_bags.create_with_suggestions(attributes, suggested: true, by: user).
   def self.create_with_suggestions(attributes, suggested:, by:)
@@ -61,8 +63,12 @@ class GoBag < ApplicationRecord
     items_count.zero? ? 0 : (100.0 * ready_count / items_count).round
   end
 
+  def items_to_buy(today)
+    items.select { it.to_buy?(today) }
+  end
+
   def to_buy_count(today)
-    items.count { it.to_buy?(today) }
+    items_to_buy(today).size
   end
 
   def use_by_soon_count(today)
@@ -74,7 +80,7 @@ class GoBag < ApplicationRecord
   # keeps only the items to buy or to use soon, as of today; nil keeps them all.
   def items_by_category(show: nil, today: nil)
     shown = case show
-    when "to_buy" then items.select { it.to_buy?(today) }
+    when "to_buy" then items_to_buy(today)
     when "use_by_soon" then items.select { it.use_by_soon?(today) }
     else items
     end

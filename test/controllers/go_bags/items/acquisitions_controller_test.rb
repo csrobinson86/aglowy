@@ -39,6 +39,20 @@ class GoBags::Items::AcquisitionsControllerTest < ActionDispatch::IntegrationTes
     end
   end
 
+  test "ticked on To buy, only that row is redrawn, with its box ticked, so it can be unticked (story #438)" do
+    go_bag_items(:water).update!(use_by: Date.new(2026, 12, 10))
+    sign_in identities(:spouse)
+    post acquisition_path(go_bag_items(:water), from: "to_buy"), as: :turbo_stream
+
+    assert go_bag_items(:water).reload.acquired?
+    assert_select "turbo-stream", count: 1
+    assert_select "turbo-stream[action=update][target=#{dom_id(go_bag_items(:water), :to_buy)}] template" do
+      assert_select "form[action=?] input[name=_method][value=delete]", acquisition_path(go_bag_items(:water), from: "to_buy")
+      assert_select "input[type=checkbox][checked][autofocus]"
+      assert_select "svg.octicon-clock", count: 0
+    end
+  end
+
   test "twice is safe" do
     sign_in identities(:spouse)
     assert_difference -> { GoBag::Item::Acquisition.count } do

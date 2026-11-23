@@ -213,6 +213,11 @@ Rails.application.routes.draw do
         resources :completions, only: %i[ create destroy ], module: :steps
       end
     end
+    # To buy across every bag, for heads and adults. Before resources :go_bags, so to_buy isn't taken for an id
+    # (docs/design/go-bags.md, To buy).
+    namespace :go_bags do
+      resource :shopping_list, only: :show, path: "to_buy"
+    end
     # The household's go bags, found through Current.household; children only look (docs/design/go-bags.md, Pages).
     resources :go_bags do
       # An item's dialog, and ticking "we have it" from its row, through the bag's items (An item, Item rows).

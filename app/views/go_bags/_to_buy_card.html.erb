@@ -1,0 +1,11 @@
+<%# locals: (shopping_list:) %>
+<%# For heads and adults, when something's to buy: how many things across how many bags, and how many need replacing
+    soon, linking to To buy (docs/design/go-bags.md, Go bags; frame go-bags.png). %>
+<%= render(Primer::Beta::Link.new(href: household_go_bags_shopping_list_path, classes: "go-bags-to-buy-card d-flex flex-items-center p-3 mb-4 rounded-2 border color-border-attention color-bg-attention color-fg-default no-underline")) do %>
+  <%= render(Primer::Beta::Octicon.new(:checklist, color: :attention, flex_shrink: 0, mr: 3)) %>
+  <span class="flex-1 min-width-0">
+    <span class="d-block text-semibold"><%= pluralize(shopping_list.items_count, "thing") %> to buy</span>
+    <span class="d-block f6 color-fg-muted"><%= go_bags_to_buy_line(shopping_list) %></span>
+  </span>
+  <%= render(Primer::Beta::Octicon.new(:"chevron-right", color: :muted, flex_shrink: 0, ml: 2)) %>
+<% end %>

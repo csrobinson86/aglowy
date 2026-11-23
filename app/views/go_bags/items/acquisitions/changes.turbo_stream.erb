@@ -1,6 +1,14 @@
-<%# A tick redraws its row, with focus back on its box, the ready box, and the tabs' counters. %>
-<%= turbo_stream.update dom_id(@item) do %>
-  <%= render GoBagItemRowComponent.new(item: @item, today: Current.household.today, show: @show, focus: true) %>
+<% if @to_buy %>
+  <%# On To buy, the row is drawn again with its box, so a thing just ticked stays there, ticked, until the page is
+      reloaded, and a mis-tap can be unticked (docs/design/go-bags.md, To buy). %>
+  <%= turbo_stream.update dom_id(@item, :to_buy) do %>
+    <%= render GoBagToBuyRowComponent.new(item: @item, today: Current.household.today, box: true, focus: true) %>
+  <% end %>
+<% else %>
+  <%# A tick redraws its row, with focus back on its box, the ready box, and the tabs' counters. %>
+  <%= turbo_stream.update dom_id(@item) do %>
+    <%= render GoBagItemRowComponent.new(item: @item, today: Current.household.today, show: @show, focus: true) %>
+  <% end %>
+  <%= turbo_stream.replace "go-bag-progress", partial: "go_bags/progress", locals: { go_bag: @go_bag } %>
+  <%= turbo_stream.replace "go-bag-tabs", partial: "go_bags/tabs", locals: { go_bag: @go_bag, show: @show } %>
 <% end %>
-<%= turbo_stream.replace "go-bag-progress", partial: "go_bags/progress", locals: { go_bag: @go_bag } %>
-<%= turbo_stream.replace "go-bag-tabs", partial: "go_bags/tabs", locals: { go_bag: @go_bag, show: @show } %>

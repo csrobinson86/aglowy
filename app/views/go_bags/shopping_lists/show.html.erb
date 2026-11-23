@@ -1,0 +1,32 @@
+<% content_for :title, "To buy" %>
+
+<%# On a phone the back row "‹ Go bags"; from md up, breadcrumbs (docs/design/phone.md, rule 2). A group per bag with
+    something to buy, headed with where it's kept (frame go-bags-to-buy.png). %>
+<%= render(Primer::Beta::Breadcrumbs.new(mb: 2, display: [ :none, nil, :block ])) do |breadcrumbs| %>
+  <% breadcrumbs.with_item(href: household_go_bags_path) { "Go bags" } %>
+  <% breadcrumbs.with_item(href: household_go_bags_shopping_list_path) { "To buy" } %>
+<% end %>
+<%= render BackRowComponent.new(href: household_go_bags_path, label: "Go bags") %>
+
+<%= render Primer::Beta::Subhead.new(mb: 3) do |subhead| %>
+  <% subhead.with_heading(tag: :h1) { "To buy" } %>
+  <% subhead.with_description { "Tick a thing once you've bought it." } %>
+<% end %>
+
+<% if @shopping_list.empty? %>
+  <%= render Primer::Beta::Blankslate.new(border: true) do |blankslate| %>
+    <% blankslate.with_visual_icon(icon: :checklist) %>
+    <% blankslate.with_heading(tag: :h2) { "Nothing to buy." } %>
+    <% blankslate.with_description { "Every bag is ready." } %>
+  <% end %>
+<% end %>
+<% @shopping_list.go_bags.each do |go_bag| %>
+  <section class="mb-4">
+    <h2 class="go-bag__category f5 text-semibold color-fg-muted mb-2 wb-break-word"><%= [ go_bag.name, go_bag_kept_at(go_bag) ].compact.join(" · ") %></h2>
+    <%= render Primer::Beta::BorderBox.new do |box| %>
+      <% @shopping_list.items_in(go_bag).each do |item| %>
+        <% box.with_row(id: dom_id(item, :to_buy)) { render GoBagToBuyRowComponent.new(item:, today: @shopping_list.today) } %>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
