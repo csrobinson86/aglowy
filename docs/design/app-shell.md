@@ -143,7 +143,7 @@ changes when it does.
 
 1. **Aglowy mark:** `LogoComponent`, the Two flames mark then "Aglowy" (`docs/design/brand.md`). Links to the household home.
 2. **Household switcher:** the current household's name, with the person's role in it (Head, Adult, Child) underneath. With two or more active households it opens a menu of them, the current one checked, each with its role. With one, it isn't a menu: the same two lines as plain text, with no chevron and nothing to press. "New household" isn't in the switcher; it's in Settings → My households (`docs/design/settings.md`; Casey, 21 Nov).
-3. **Household group:** Home, Calendar (`docs/design/calendar.md`, once CAL-01 builds it), Family studies, Members, Family goals.
+3. **Household group:** Home, Calendar (`docs/design/calendar.md`, once CAL-01 builds it), Family studies, Members, Family goals, Go bags (`docs/design/go-bags.md`, once GOBAGS-01 builds it).
 4. **Mine group:** Daily brief (`docs/design/daily-brief.md`, heads and adults), Today's meeting, Personal study (`docs/design/personal-study.md`), Notes (`docs/design/notes.md`, whose tabs hold notes, meeting notes and bookmarks), Meeting parts (`docs/design/meeting-parts.md`), My goals. These follow the person between households (`docs/design/users.md`), which is why they're grouped apart.
 5. **Footer:** Notifications with its unread counter, once NOTIFY-01 adds it (`docs/design/notifications.md`, The sidebar), then Settings, for everyone (`docs/design/settings.md`; it replaced Household settings and the link on the person's name in SETTINGS-01), then the person's initial and name with a Sign out button.
 
@@ -167,7 +167,7 @@ changes when it does.
 | Empty states | `Primer::Beta::Blankslate` with `with_visual_icon`, `with_heading(tag: :h2)`, `with_description` and `with_primary_action(href:)` |
 | Messages | `Primer::Beta::Flash`: `scheme: :default` for notice, `:danger` for alert |
 | Impersonation | `Primer::Alpha::Banner` with `scheme: :warning` |
-| Icons | Octicons, all present in octicons 19.42.0: `home`, `book`, `people`, `goal`, `note`, `milestone`, `gear`, `sign-out`, `three-bars`, `sun`, `plus`, `calendar`, `link`, `file`, `check`, `chevron-down`, `x` |
+| Icons | Octicons, all present in octicons 19.42.0: `home`, `book`, `people`, `goal`, `note`, `milestone`, `gear`, `sign-out`, `three-bars`, `sun`, `plus`, `calendar`, `link`, `file`, `check`, `chevron-down`, `x`, `briefcase` (Go bags) |
 
 Wrap the shell in one ViewComponent, `AppShellComponent`, with the sidebar
 contents in `AppShell::SidebarComponent` so the desktop sidebar and the phone
