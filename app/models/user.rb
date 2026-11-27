@@ -228,6 +228,12 @@ class User < ApplicationRecord
     seats.none? || !seats.all?(&:child?)
   end
 
+  # A password link or a new login takes over the person's login, so it's only for someone with no adult or head seat
+  # in any household (#453, docs/design/invitations.md, Traps). Seats they left don't count: they give no access.
+  def child_in_every_household?
+    !head_or_adult_somewhere?
+  end
+
   # Their bookmark for a page or a scripture, or nil (docs/design/bookmarks.md, User). A URL is normalized as saving
   # would, so one Bookmark refuses finds nothing.
   def bookmark_for(url: nil, scripture: nil)
