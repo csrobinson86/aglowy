@@ -56,6 +56,21 @@ class IdentitySessionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to household_root_path(household_id: households(:home))
   end
 
+  # An email or a child's username says who someone is, so Lograge may not write it.
+  test "a sign-in with a username keeps the username out of the Lograge line" do
+    log = StringIO.new
+    lograge_logger, Lograge.logger = Lograge.logger, ActiveSupport::Logger.new(log)
+
+    sign_in_with identities(:eli)
+
+    assert_redirected_to household_root_path(household_id: households(:home))
+    line = JSON.parse(log.string.lines.grep(/"controller":"Devise::SessionsController"/).sole)
+    assert_equal "[FILTERED]", line["params"]["identity"]["login"]
+    assert_not_includes log.string, identities(:eli).username
+  ensure
+    Lograge.logger = lograge_logger
+  end
+
   # Paranoid mode: saying "locked" would confirm the account exists.
   test "a locked identity can't, and is told only that the details are invalid" do
     identities(:spouse).lock_access!(send_instructions: false)
