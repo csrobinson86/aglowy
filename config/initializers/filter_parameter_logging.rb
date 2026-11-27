@@ -18,6 +18,14 @@ Rails.application.config.filter_parameters += [
   # A meeting part's preparation. Its other private fields are encrypted attributes, which Rails filters itself; this is
   # rich text, whose encrypted body is filtered only as encrypted_rich_text.body.
   :preparation,
+  # A note's body: encrypted rich text again, filtered by Rails only as encrypted_rich_text.body.
+  :body,
+  # An email or a child's username, which says who is signing in.
+  :login, :username,
+  # A Get ready card change's encrypted fields. Rails filters them as card.<name>, which the form object's param key
+  # doesn't match; quality isn't encrypted. Keep in step with PrepWeek::Card's encrypts and PrepWeek::Card::Change's
+  # TEXTS and SENTENCES. The \. matches the full key.
+  /\Aprep_week_card_change\.(?:about|quality_line|i_can|reading|story_\d+)\z/,
   meeting_note_part_key,
   # Rails filters a logged query string's keys before decoding them, so decode each one (%73peaker is speaker,
   # %5B is [) and match it again. CGI.unescape leaves a malformed escape alone; Rack rejects that key anyway.

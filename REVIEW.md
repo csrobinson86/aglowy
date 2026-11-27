@@ -53,7 +53,7 @@ Treat each as a Blocker unless clearly harmless.
 - **SQL.** No string interpolation into SQL (`where("… #{x}")`, `order(params[:x])`). Use bound parameters or hashes.
 - **Output.** No `html_safe` or `raw` on user content. Links accept only `http` and `https`. `turbo_stream.*` escapes a String (`config/initializers/turbo_streams.rb`): pass HTML as a partial, a component or a block, never as an `html_safe` String.
 - **Sessions and staff.** Staff checks use `current_identity.staff?`. Impersonation stores the staff identity in the session and can always be stopped.
-- **Secrets.** No keys, tokens or passwords in code, fixtures (other than test passwords) or logs. New sensitive params added to `filter_parameter_logging.rb`.
+- **Secrets.** No keys, tokens or passwords in code, fixtures (other than test passwords) or logs. New sensitive params added to `filter_parameter_logging.rb`. A form object's param key doesn't get Rails' automatic filters for its model's encrypted attributes, so a new form object adds its own keys.
 - **Files** (when Active Storage arrives): served through a controller that runs the policy first; size checked before upload.
 - **Tokens:** invite and mute links use `generates_token_for`; nothing raw stored or passed into job arguments.
 - **Mass deletion:** never `has_many :users, dependent: :destroy` on `Household` (gotcha 10).
