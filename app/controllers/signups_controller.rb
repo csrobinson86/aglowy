@@ -4,6 +4,10 @@ class SignupsController < ApplicationController
   skip_before_action :authenticate_identity!
   skip_after_action :verify_authorized
 
+  # A taken email mails its owner (Signup), so this keeps anyone from filling a stranger's inbox. Every sign-up counts,
+  # so being limited says nothing about an email.
+  rate_limit to: 10, within: 1.hour, only: :create
+
   def new
     @signup = Signup.new
   end
