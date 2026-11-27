@@ -72,7 +72,7 @@ class Goals::StepsController < ApplicationController
     row, panel = params[:panel] ? [ shown, editing ] : [ editing, shown ]
     render turbo_stream: [ turbo_stream.replace(@step, partial: "goals/steps/step", locals: row),
                            turbo_stream.replace(helpers.dom_id(@step, :panel_body), method: :morph, partial: "goals/steps/panel", locals: panel),
-                           turbo_stream.update("#{helpers.dom_id(@step, :panel)}-title", saved.title) ],
+                           turbo_stream.update("#{helpers.dom_id(@step, :panel)}-title", ERB::Util.html_escape(saved.title)) ],
            status: status
   end
 end
