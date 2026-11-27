@@ -50,5 +50,10 @@ class Signup
       end
 
       true
+    rescue SolidQueue::Job::EnqueueError => error
+      # Active Job returns false for its own EnqueueError; Solid Queue raises its own. A new email's sign-up doesn't wait
+      # on the queue, so a server error here would say the email has an account.
+      Rails.error.report(error)
+      true
     end
 end

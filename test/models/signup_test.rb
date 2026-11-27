@@ -42,6 +42,24 @@ class SignupTest < ActiveSupport::TestCase
     end
   end
 
+  # A new email's sign-up doesn't wait on the queue, so a taken one mustn't fail when the queue does: a server error
+  # would say the email has an account. Active Job returns false for its own EnqueueError; Solid Queue raises its own.
+  test "a taken email still saves when Solid Queue can't insert the owner's email" do
+    refused = Object.new
+    refused.define_singleton_method(:deliver_later) { raise SolidQueue::Job::EnqueueError, "ActiveRecord::ConnectionNotEstablished: queue database is down" }
+    signup = Signup.new(valid_attributes.merge(email: identities(:head).email))
+
+    IdentityMailer.stub(:existing_account, refused) do
+      assert_error_reported(SolidQueue::Job::EnqueueError) do
+        assert_no_difference FOUR_ROWS do
+          assert signup.save
+        end
+      end
+    end
+
+    assert_empty signup.errors
+  end
+
   # They never confirmed, so what they need to get in is the confirmation link.
   test "an unconfirmed owner gets the confirmation instructions again" do
     signup = Signup.new(valid_attributes.merge(email: identities(:newcomer).email))
