@@ -142,12 +142,13 @@ Numbered so briefs can cite them. 1–6 and 10 apply to USERS-01.
 22. **Active Storage links are signed, not authorized.** Serve files through a controller that runs the policy first.
 23. **A link is user input.** Accept only `http` and `https`.
 24. **A size limit must bite before the upload.** Check size when the direct-upload blob is created.
+25. **Sign-up must not reveal an account.** A taken email saves as a success and mails the owner (`IdentityMailer#existing_account`), or resends an unconfirmed one's confirmation, matching Devise's `paranoid`. The race the unique index catches (gotcha 3) answers the same way.
 
 ## Scenarios for USERS-01
 
 | Scenario | What changes in the data | Guard |
 | --- | --- | --- |
-| First sign-up | Identity + User + Household + Membership (head), one transaction | Gotcha 1; all-or-nothing |
+| First sign-up | Identity + User + Household + Membership (head), one transaction; a taken email changes nothing and mails its owner | Gotcha 1; all-or-nothing; gotcha 25 |
 | Confirm email | `identities.confirmed_at` set | Devise `:confirmable`; can't sign in before |
 | Sign in, one household | Lands on that household's page | `after_sign_in_path_for` |
 | Sign in, several households | Lands on the household chooser | Only active memberships count |

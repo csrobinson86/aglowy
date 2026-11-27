@@ -24,6 +24,29 @@ class SignupsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='signup[password]']:not([value])"
   end
 
+  # Nothing a visitor sees says whether the email has an account (docs/design/users.md, gotcha 25).
+  test "a taken email answers exactly as a new one does" do
+    answers = [ identities(:head).email, "rosa@example.com" ].map do |email|
+      post signup_path, params: { signup: valid_params.merge(email:) }
+      answer = [ response.status, response.location, flash[:notice] ]
+      follow_redirect!
+      answer << css_select("main").text.squish
+    end
+
+    assert_equal [ 302, new_identity_session_url, "Check your email to confirm your account." ], answers.first.first(3)
+    assert_equal answers.first, answers.last
+  end
+
+  test "a taken email with a blank time zone fails just as a new one does" do
+    answers = [ identities(:head).email, "rosa@example.com" ].map do |email|
+      post signup_path, params: { signup: valid_params.merge(email:, time_zone: "") }
+      [ response.status, css_select("main").text.squish ]
+    end
+
+    assert_equal 422, answers.first.first
+    assert_equal answers.first, answers.last
+  end
+
   private
 
   def valid_params
