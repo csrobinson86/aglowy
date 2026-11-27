@@ -51,7 +51,7 @@ Treat each as a Blocker unless clearly harmless.
 - **Authorization.** Every controller action calls `authorize` (or is a documented public page that skips it). Policies read the membership, never a role on `User`, and don't call methods on a nil membership.
 - **Strong parameters.** No `permit!`; no permitting `role`, `staff`, `user_id`, `household_id` or `active` from user input unless the story says so and a policy guards it.
 - **SQL.** No string interpolation into SQL (`where("… #{x}")`, `order(params[:x])`). Use bound parameters or hashes.
-- **Output.** No `html_safe` or `raw` on user content. Links accept only `http` and `https`.
+- **Output.** No `html_safe` or `raw` on user content. Links accept only `http` and `https`. `turbo_stream.*` escapes a String (`config/initializers/turbo_streams.rb`): pass HTML as a partial, a component or a block, never as an `html_safe` String.
 - **Sessions and staff.** Staff checks use `current_identity.staff?`. Impersonation stores the staff identity in the session and can always be stopped.
 - **Secrets.** No keys, tokens or passwords in code, fixtures (other than test passwords) or logs. New sensitive params added to `filter_parameter_logging.rb`.
 - **Files** (when Active Storage arrives): served through a controller that runs the policy first; size checked before upload.

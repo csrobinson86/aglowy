@@ -124,6 +124,34 @@ class Goals::StepsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Find two parables", step.reload.title
   end
 
+  # turbo-rails marks a String html_safe. The controller escapes the title, and config/initializers/turbo_streams.rb
+  # escapes any String, so another adult's title reaches the panel's title as text (#451).
+  test "an HTML title comes back as text in the panel's title when an edit is invalid" do
+    step = goal_steps(:parables)
+    step.update!(title: "<img src=x onerror=alert(1)>")
+    sign_in identities(:spouse)
+
+    patch step_path(step), params: { goal_step: { title: "", assignee_ids: [ "" ], lock_version: step.lock_version } }, as: :turbo_stream
+
+    assert_turbo_stream(status: :unprocessable_content, action: :update, target: "#{dom_id(step, :panel)}-title") do
+      assert_select "template img", count: 0
+      assert_select "template", text: "<img src=x onerror=alert(1)>"
+    end
+  end
+
+  test "an HTML title comes back as text in the panel's title when an edit is stale" do
+    step = goal_steps(:parables)
+    step.update!(title: "<img src=x onerror=alert(1)>")
+    sign_in identities(:spouse)
+
+    patch step_path(step), params: { goal_step: { title: "Find four parables", assignee_ids: [ "" ], lock_version: 0 } }, as: :turbo_stream
+
+    assert_turbo_stream(status: :conflict, action: :update, target: "#{dom_id(step, :panel)}-title") do
+      assert_select "template img", count: 0
+      assert_select "template", text: "<img src=x onerror=alert(1)>"
+    end
+  end
+
   test "removes it" do
     step = goal_steps(:parables)
     sign_in identities(:spouse)

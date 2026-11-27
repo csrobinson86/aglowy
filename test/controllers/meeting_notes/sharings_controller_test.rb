@@ -77,7 +77,8 @@ class MeetingNotes::SharingsControllerTest < ActionDispatch::IntegrationTest
     assert_turbo_stream(action: :prepend, targets: "main .container-xl") { assert_select "template", text: /Shared with The Head Family\./ }
   end
 
-  # turbo_stream.update marks a String html_safe, so a household's name reaches the hint as text only if escaped.
+  # turbo-rails marks a String html_safe; config/initializers/turbo_streams.rb escapes it, so a household's name
+  # reaches the hint as text.
   test "sharing from the page shows the household's name as text" do
     households(:home).update!(name: "<img src=x onerror=alert(1)>")
     sign_in identities(:head)

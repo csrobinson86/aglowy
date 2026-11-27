@@ -147,6 +147,8 @@ households or roles. The non-negotiables:
 ### Views
 
 - Server-rendered ERB. Turbo Frames and Turbo Streams for dynamic updates.
+- `turbo_stream.*` escapes a String, as ERB does (`config/initializers/turbo_streams.rb`).
+  Pass HTML as a partial, a component or a block, never as an `html_safe` String.
 - Stimulus controllers for JavaScript behavior.
 - No client-side routing, no client-side state management.
 - **Simple reuse** → partials with strict locals.
