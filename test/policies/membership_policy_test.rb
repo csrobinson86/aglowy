@@ -88,6 +88,27 @@ class MembershipPolicyTest < ActiveSupport::TestCase
     assert_not MembershipPolicy.new(memberships(:head_in_home), memberships(:spouse_in_home).reload).new_password_link?
   end
 
+  # A child seat here is no way into an adult or head seat elsewhere (#453).
+  test "new_password_link? and give_login? no when the child has an adult or head seat in another household" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :adult)
+    Membership.create!(user: users(:sofia), household: households(:parents), role: :head)
+
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      assert_not MembershipPolicy.new(memberships(membership), memberships(:eli_in_home)).new_password_link?, "expected #{membership} not to make Eli a link"
+      assert_not MembershipPolicy.new(memberships(membership), memberships(:sofia_in_home)).give_login?, "expected #{membership} not to give Sofia a login"
+    end
+  end
+
+  test "new_password_link? and give_login? still yes when the other seat is a child's or inactive" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :child)
+    Membership.create!(user: users(:sofia), household: households(:parents), role: :head, active: false)
+
+    %i[ head_in_home spouse_in_home ].each do |membership|
+      assert MembershipPolicy.new(memberships(membership), memberships(:eli_in_home)).new_password_link?, "expected #{membership} to make Eli a link"
+      assert MembershipPolicy.new(memberships(membership), memberships(:sofia_in_home)).give_login?, "expected #{membership} to give Sofia a login"
+    end
+  end
+
   # Household settings' Members and roles (docs/design/invitations.md, Who can do what).
   test "update? and destroy? yes for a head, on any member of their household, themselves too" do
     %i[ spouse_in_home eli_in_home head_in_home ].each do |member|

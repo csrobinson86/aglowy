@@ -3,9 +3,11 @@ class MembershipPolicy < ApplicationPolicy
   def create? = head_or_adult?
 
   # A child's login: heads and adults give one to a child without a login, and make a new password link for a
-  # child whose login is a username only (docs/design/invitations.md, Child logins). Never for adults or heads.
-  def give_login?        = manage_login? && record.user.identity.nil?
-  def new_password_link? = manage_login? && record.user.identity.present? && record.user.identity.email.nil?
+  # child whose login is a username only (docs/design/invitations.md, Child logins). Never for adults or heads, and
+  # only for someone who is a child in every household they sit in.
+  # The login checks come first: they read the preloaded identity, and manage_login? asks the database.
+  def give_login?        = record.user.identity.nil? && manage_login?
+  def new_password_link? = record.user.identity.present? && record.user.identity.email.nil? && manage_login?
 
   # Changing a role and removing a member, from Settings → Members and roles: heads of the member's household only
   # (docs/design/invitations.md, Who can do what). The last head is refused by Membership, under the lock.
@@ -20,6 +22,6 @@ class MembershipPolicy < ApplicationPolicy
 
   private
     def manage_login?
-      head_or_adult? && record.child? && record.household_id == membership.household_id
+      head_or_adult? && record.child? && record.household_id == membership.household_id && record.user.child_in_every_household?
     end
 end

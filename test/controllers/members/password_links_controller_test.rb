@@ -43,6 +43,19 @@ class Members::PasswordLinksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "You can't do that in this household.", flash[:alert]
   end
 
+  # A link would take over the login, and with it the adult seat in the other household (#453).
+  test "refused for a child who is an adult in another household" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :adult)
+    sign_in identities(:spouse)
+
+    post household_member_password_link_path(household_id: @household, member_id: @eli)
+
+    assert_redirected_to household_root_path(household_id: @household)
+    assert_equal "You can't do that in this household.", flash[:alert]
+    follow_redirect!
+    assert_select "input#password-link", count: 0
+  end
+
   test "refused for a child with no login yet" do
     sign_in identities(:head)
 

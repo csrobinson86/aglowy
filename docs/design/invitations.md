@@ -89,7 +89,7 @@ Showing an invitation and joining both look it up with `Invitation.find_acceptab
 ## Child logins
 
 - **Give a login** (`GET/POST /:household_id/members/:member_id/login`, `Members::LoginsController`): for a child member with no Identity. Username field with the rules above, then "Create login". Creates an Identity with the username, no email, an unusable random password and `confirmed_at` set, and shows the password link (frames `child-login.png`, `child-login-link.png`). The form says Aglowy keeps only the child's name, username and password.
-- **New password link** (`POST /:household_id/members/:member_id/password_link`, `Members::PasswordLinksController`): for a child member whose login has no email. Shows the same link page.
+- **New password link** (`POST /:household_id/members/:member_id/password_link`, `Members::PasswordLinksController`): for a child member whose login has no email, and who is a child in every household they sit in; someone with an adult or head seat anywhere gets no link. Shows the same link page.
 - **The link:** `identity.generate_token_for(:password_setup)`, `generates_token_for :password_setup, expires_in: 12.hours { encrypted_password.last(10) }`. Setting a password changes `encrypted_password`, so a link works once. The page shows it in a read-only field with "Copy link" and says to open it on the child's device and not share it outside the family. It's never emailed, logged or stored.
 - **Choosing a password** (`GET/PATCH /password_setup?token=…`, `PasswordSetupsController`, focused layout, signed out allowed): "Hi Eli! Choose your password", the username shown, password and "Type it again", then signs them in (frame `child-password.png`). The update takes `identity.lock!` and resolves the token again inside the transaction, so two submissions with one link can't both set a password. An expired or used link shows "Ask a parent to make a new link."
 - Members page: each row says how the person signs in ("maria@example.com", "Signs in as eli.rivera", "No login"), with "Give a login" or "New password link" on child rows for heads and adults (frame `members.png`).
@@ -127,6 +127,7 @@ At `/:household_id/settings` (`Households::SettingsController`, household layout
 - **The invalid-invitation page says nothing about the household,** so a guessed or old link reveals nothing.
 - **Username-only logins have no email,** so any code that emails an identity (Devise mailers, future notifications) must skip them.
 - **Children and the "New household" item:** hide it and refuse it in `HouseholdPolicy#create?`, which has no membership outside a household, so the rule lives on the user: `User#can_start_household?` is true when the person has no memberships at all, or has at least one non-child membership, active or not. So an adult who has left every household can start a new one, and someone who has only ever had child seats can't, even after leaving.
+- **A password link is a takeover of the login,** so it reads every household's seat, not just this one (`User#child_in_every_household?`): a child here who is an adult or head elsewhere gets no link and no new login. Seats they left don't count.
 - **Rejoining reactivates, never duplicates,** because of the unique (`household_id`, `user_id`) index on memberships.
 
 ## States each story checks

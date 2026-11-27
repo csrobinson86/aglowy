@@ -86,6 +86,31 @@ class UserTest < ActiveSupport::TestCase
     assert users(:newcomer).can_start_household?
   end
 
+  test "child_in_every_household? is true for a child in one household, and in two" do
+    assert users(:eli).child_in_every_household?
+
+    Membership.create!(user: users(:eli), household: households(:parents), role: :child)
+    assert users(:eli).child_in_every_household?
+  end
+
+  test "child_in_every_household? is false once an active seat anywhere is an adult's" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :adult)
+
+    assert_not users(:eli).child_in_every_household?
+  end
+
+  test "child_in_every_household? is false once an active seat anywhere is a head's" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :head)
+
+    assert_not users(:eli).child_in_every_household?
+  end
+
+  test "child_in_every_household? is true again when the adult seat is inactive" do
+    Membership.create!(user: users(:eli), household: households(:parents), role: :adult, active: false)
+
+    assert users(:eli).child_in_every_household?
+  end
+
   test "give_login makes a confirmed username-only login whose password nobody knows" do
     identity = users(:sofia).give_login(username: "Sofia.Rivera")
 
