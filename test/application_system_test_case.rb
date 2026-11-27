@@ -2,6 +2,7 @@ require "test_helper"
 require "axe/matchers/be_axe_clean"
 require_relative "support/accessibility_helper"
 require_relative "support/screenshot_helper"
+require_relative "support/chrome_storage_reset"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   include AccessibilityHelper
