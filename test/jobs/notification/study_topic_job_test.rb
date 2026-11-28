@@ -57,6 +57,19 @@ class Notification::StudyTopicJobTest < ActiveJob::TestCase
     assert_not Notification.exists?(subject: session)
   end
 
+  test "one that raises is reported and the next still gets its topic question" do
+    households(:parents).update!(time_zone: CHICAGO.name)
+    sessions = [ @household, households(:parents) ].map { session_on(Date.new(2026, 11, 20), household: it) }
+    first, second = sessions.sort_by { it.family_study.household_id }
+
+    eight_am_on_november_17 do
+      assert_error_reported { failing_delivery_for(first.family_study.household) { Notification::StudyTopicJob.perform_now } }
+    end
+
+    assert_not Notification.exists?(subject: first), "its lock's transaction rolled back"
+    assert Notification.exists?(subject: second)
+  end
+
   test "a session cancelled after the job read it isn't asked about" do
     session = session_on(Date.new(2026, 11, 20))
     FamilyStudy::Session.find(session.id).cancel
@@ -85,9 +98,9 @@ class Notification::StudyTopicJobTest < ActiveJob::TestCase
   end
 
   private
-    def session_on(date, topic: nil)
+    def session_on(date, topic: nil, household: @household)
       travel_to(CHICAGO.local(2026, 11, 16)) do
-        @household.schedule_family_study(topic:, frequency: "once", starts_on: date, time_of_day: "19:00").first_session
+        household.schedule_family_study(topic:, frequency: "once", starts_on: date, time_of_day: "19:00").first_session
       end
     end
 

@@ -270,6 +270,14 @@ class ListeningGame::PrepareJobTest < ActiveJob::TestCase
     assert game_this_week(@home)
   end
 
+  test "a household deleted before its job ran is discarded" do
+    ListeningGame::PrepareJob.perform_later(@home)
+    @home.destroy!
+
+    assert_nothing_raised { perform_enqueued_jobs }
+    assert_not_requested :post, PROVIDER
+  end
+
   test "it runs every hour in production, so every zone has its 2am" do
     task = Rails.application.config_for(:recurring, env: "production").fetch(:prepare_listening_games)
 

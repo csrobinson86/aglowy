@@ -5,8 +5,7 @@ class Notification::DeliveryJob < ApplicationJob
   # Queued only once the notification commits: the queue is another database, so a worker could otherwise look for it
   # before it's there and discard the job.
   self.enqueue_after_transaction_commit = true
-  # Its subject was deleted, taking the notification with it.
-  discard_on ActiveJob::DeserializationError
+  # A deleted subject takes its notifications with it; ApplicationJob discards their jobs.
   retry_on Notification::Delivery::Throttled, wait: :polynomially_longer, attempts: 5
 
   def perform(notification)

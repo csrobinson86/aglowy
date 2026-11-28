@@ -34,6 +34,18 @@ class Notification::InvitationFollowUpJobTest < ActiveJob::TestCase
     assert Notification.exists?(subject_type: "Invitation", subject_id: invitation.id)
   end
 
+  test "one that raises is reported and the next still gets its follow-up" do
+    theirs = travel_to(Time.utc(2026, 11, 12, 13)) { households(:parents).invitations.create!(email: "newcomer@example.com", invited_by: users(:grandparent)) }
+    first, second = [ invite("newcomer@example.com", at: Time.utc(2026, 11, 12, 13)), theirs ].sort_by(&:id)
+
+    at_2_pm_on_november_17 do
+      assert_error_reported { failing_delivery_for(first.household) { Notification::InvitationFollowUpJob.perform_now } }
+    end
+
+    assert_not Notification.exists?(subject: first), "its lock's transaction rolled back"
+    assert Notification.exists?(subject: second)
+  end
+
   test "accepting the invitation deletes its notification" do
     invitation = invite("newcomer@example.com", at: Time.utc(2026, 11, 12, 13))
     at_2_pm_on_november_17 { Notification::InvitationFollowUpJob.perform_now }

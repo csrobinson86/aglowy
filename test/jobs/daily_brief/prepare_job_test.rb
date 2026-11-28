@@ -143,6 +143,21 @@ class DailyBrief::PrepareJobTest < ActiveJob::TestCase
     end
   end
 
+  test "one that raises is reported and the next still gets its brief" do
+    users(:spouse).update!(time_zone: "Central Time (US & Canada)")
+    other = travel_to(central(9) - 16.days) { DailyBrief::Plan.start(users(:spouse), starter: "basics") }
+    first, second = [ @plan, other ].sort_by(&:id).map(&:user)
+    brief_for = DailyBrief.method(:for)
+    fail_for_first = ->(user, **options) { user == first ? raise("brief failed") : brief_for.call(user, **options) }
+
+    travel_to(central(5)) do
+      assert_error_reported { DailyBrief.stub(:for, fail_for_first) { DailyBrief::PrepareJob.perform_now } }
+    end
+
+    assert_empty first.daily_briefs
+    assert_equal [ Date.new(2026, 11, 17) ], second.daily_briefs.pluck(:on)
+  end
+
   test "runs every 15 minutes" do
     task = YAML.load_file(Rails.root.join("config/recurring.yml"), aliases: true).dig("production", "prepare_daily_briefs")
 

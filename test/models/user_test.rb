@@ -361,6 +361,32 @@ class UserTest < ActiveSupport::TestCase
     assert_equal 1, users(:spouse).notifications.count
   end
 
+  test "notify broadcasts the new count once: its counter and its name" do
+    assert_turbo_stream_broadcasts [ users(:spouse), :notifications ], count: 2 do
+      users(:spouse).notify(kind: "shared_with_you", household: households(:home), subject: meeting_notes(:head_midweek), actor: users(:head), dedupe_key: "shared_with_you:1")
+    end
+  end
+
+  test "notify inside a transaction broadcasts the count only once it commits, so a rollback publishes nothing" do
+    broadcasts = -> { capture_turbo_stream_broadcasts([ users(:spouse), :notifications ]).size }
+
+    assert_no_difference broadcasts do
+      Notification.transaction do
+        users(:spouse).notify(kind: "shared_with_you", household: households(:home), subject: meeting_notes(:head_midweek), actor: users(:head), dedupe_key: "shared_with_you:1")
+        raise ActiveRecord::Rollback
+      end
+    end
+    assert_not Notification.exists?(user: users(:spouse))
+
+    before = broadcasts.call
+    assert_difference broadcasts, 2 do
+      Notification.transaction do
+        users(:spouse).notify(kind: "shared_with_you", household: households(:home), subject: meeting_notes(:head_midweek), actor: users(:head), dedupe_key: "shared_with_you:1")
+        assert_equal before, broadcasts.call, "not before the commit"
+      end
+    end
+  end
+
   test "read_all_notifications reads only visible unread ones" do
     note = meeting_notes(:head_midweek)
     unread = users(:head).notify(kind: "shared_with_you", household: households(:home), subject: note, actor: users(:spouse), dedupe_key: "shared_with_you:1")

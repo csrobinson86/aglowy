@@ -29,6 +29,19 @@ class FamilyStudies::ExtendSessionsJobTest < ActiveJob::TestCase
     end
   end
 
+  test "one that raises is reported and the next still gets its sessions" do
+    travel_to Date.new(2026, 11, 14) do
+      first, second = [ study(frequency: "weekly", starts_on: Date.new(2026, 11, 15)), study(frequency: "weekly", starts_on: Date.new(2026, 11, 16)) ].sort_by(&:id)
+      recurrence = Recurrence.method(:new)
+      fail_for_first = ->(**attributes) { attributes[:starts_on] == first.starts_on ? raise("recurrence failed") : recurrence.call(**attributes) }
+
+      assert_error_reported { Recurrence.stub(:new, fail_for_first) { FamilyStudies::ExtendSessionsJob.perform_now } }
+
+      assert_empty first.sessions
+      assert_predicate second.sessions, :any?
+    end
+  end
+
   test "runs daily in production" do
     task = Rails.application.config_for(:recurring, env: "production").fetch(:extend_family_study_sessions)
 

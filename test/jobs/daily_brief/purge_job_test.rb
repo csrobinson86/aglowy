@@ -28,6 +28,18 @@ class DailyBrief::PurgeJobTest < ActiveJob::TestCase
     assert_equal 7, @plan.days.count
   end
 
+  test "one that raises is reported and the next is still deleted" do
+    briefs = [ 62, 61 ].map { |days| travel_to(days.days.ago) { DailyBrief.for(@user) } }
+    first, second = briefs.sort_by(&:id)
+    # A row with no cascade still pointing at the first one's chat: deleting the chat fails.
+    personal_studies(:head_suffering).update_column(:chat_id, daily_brief_writing(first, status: "written", result: { "thread" => "Stuck." }).chat_id)
+
+    assert_error_reported(ActiveRecord::InvalidForeignKey) { DailyBrief::PurgeJob.perform_now }
+
+    assert DailyBrief.exists?(first.id)
+    assert_not DailyBrief.exists?(second.id)
+  end
+
   test "expired is the briefs dated more than 60 days ago" do
     sixty, sixty_one = [ 60, 61 ].map { |days| travel_to(days.days.ago) { DailyBrief.for(@user) } }
 
