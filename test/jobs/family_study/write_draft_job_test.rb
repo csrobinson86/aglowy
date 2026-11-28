@@ -9,4 +9,12 @@ class FamilyStudy::WriteDraftJobTest < ActiveJob::TestCase
     Ai::Moderation.stub(:flagged?, true) { perform_enqueued_jobs }
     assert_predicate draft.reload, :flagged?
   end
+
+  test "a draft deleted before the job ran is nothing to do" do
+    draft = family_study_draft
+    draft.write_later
+    draft.delete
+
+    assert_nothing_raised { perform_enqueued_jobs }
+  end
 end

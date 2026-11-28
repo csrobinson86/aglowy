@@ -20,6 +20,18 @@ class Notification::GoBagUseByJobTest < ActiveJob::TestCase
     assert_not Notification.exists?(subject: @theirs)
   end
 
+  test "one that raises is reported and the next still gets its reminder" do
+    households(:other).update!(time_zone: CHICAGO.name)
+    first, second = [ go_bag_items(:water), @theirs ].sort_by { it.household.id }
+
+    travel_to(CHICAGO.local(2026, 11, 17, 8, 20)) do
+      assert_error_reported { failing_delivery_for(first.household) { Notification::GoBagUseByJob.perform_now } }
+    end
+
+    assert_not Notification.exists?(subject: first), "its lock's transaction rolled back"
+    assert Notification.exists?(subject: second)
+  end
+
   test "not at 9 AM" do
     travel_to(CHICAGO.local(2026, 11, 17, 9, 20)) { Notification::GoBagUseByJob.perform_now }
 

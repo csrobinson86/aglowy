@@ -391,6 +391,7 @@ end
   # Enqueue:
   notification.deliver_later
   ```
+- A recurring job that loops over records uses `each_reporting_failures`. `ApplicationJob` discards a job whose record was deleted.
 
 ---
 

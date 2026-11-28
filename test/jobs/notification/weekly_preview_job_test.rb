@@ -20,4 +20,15 @@ class Notification::WeeklyPreviewJobTest < ActiveJob::TestCase
     assert_equal [ households(:home).id ], Notification.where(kind: "weekly_preview").distinct.pluck(:household_id)
     assert_equal [ { "week_of" => "2026-11-23" } ], Notification.where(kind: "weekly_preview").distinct.pluck(:data)
   end
+
+  test "one that raises is reported and the next still gets its preview" do
+    households(:parents).update!(time_zone: "Central Time (US & Canada)")
+    first, second = [ households(:home), households(:parents) ].sort_by(&:id)
+
+    travel_to(ActiveSupport::TimeZone["Central Time (US & Canada)"].local(2026, 11, 22, 18, 5)) do
+      assert_error_reported { failing_delivery_for(first) { Notification::WeeklyPreviewJob.perform_now } }
+    end
+
+    assert Notification.exists?(kind: "weekly_preview", household: second)
+  end
 end

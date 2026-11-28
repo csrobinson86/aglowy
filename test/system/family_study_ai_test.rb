@@ -506,7 +506,7 @@ class FamilyStudyAiTest < ApplicationSystemTestCase
 
       Ai::Moderation.stub(:flagged?, false) do
         draft.chat.stub(:ask_within_purpose, ask) do
-          FamilyStudy::Draft.stub(:find, draft) { perform_enqueued_jobs }
+          FamilyStudy::Draft.stub(:find_by, draft) { perform_enqueued_jobs }
         end
       end
     end

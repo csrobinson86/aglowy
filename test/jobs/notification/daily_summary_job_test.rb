@@ -221,6 +221,21 @@ class Notification::DailySummaryJobTest < ActiveJob::TestCase
     assert_empty shared.deliveries
   end
 
+  test "one that raises is reported and the next still gets its summary job" do
+    users(:spouse).update!(time_zone: "Central Time (US & Canada)")
+    users(:spouse).notification_settings.change([ %w[ shared_with_you email ] ])
+    first, second = [ @head, users(:spouse) ].sort_by(&:id)
+    perform_later = Notification::SummaryJob.method(:perform_later)
+    fail_for_first = ->(user, through) { user == first ? raise("queue refused") : perform_later.call(user, through) }
+    travel_to chicago(22, 7)
+
+    assert_enqueued_jobs 1, only: Notification::SummaryJob do
+      assert_enqueued_with(job: Notification::SummaryJob, args: [ second, chicago(22, 7) ]) do
+        assert_error_reported { Notification::SummaryJob.stub(:perform_later, fail_for_first) { Notification::DailySummaryJob.perform_now } }
+      end
+    end
+  end
+
   test "it runs every 15 minutes in production" do
     task = Rails.application.config_for(:recurring, env: "production").fetch(:send_daily_summaries)
 

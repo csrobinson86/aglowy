@@ -136,7 +136,7 @@ Read notifications still go in the summary: the summary is a record of what happ
 | `Notification::DailySummaryJob` | every 15 minutes | Enqueues `Notification::SummaryJob` for each person who's due, as above |
 | `Notification::PurgeJob` | every day at 4:45am | Deletes notifications older than 90 days |
 
-Every job is safe to run twice, through the `dedupe_key` and the deliveries.
+Every job is safe to run twice, through the `dedupe_key` and the deliveries. Each one reports a record that fails and goes on to the next.
 
 ## Pages and routes
 

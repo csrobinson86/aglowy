@@ -5,10 +5,10 @@
 # refuses (the day's 3 used already, say) makes no writing, so the plan stays due and the next run asks again; nothing is
 # sent until one is allowed, so that costs a lock and a few reads, not a request. Someone who is
 # no longer a head or adult anywhere can't open a brief, so none is made for them; their plan and briefs are kept for
-# when they're back.
+# when they're back. One plan that fails is reported and the rest go on.
 class DailyBrief::PrepareJob < ApplicationJob
   def perform
-    DailyBrief::Plan.unpaused.includes(:user, :pausing).find_each do |plan|
+    each_reporting_failures(DailyBrief::Plan.unpaused.includes(:user, :pausing)) do |plan|
       next unless plan.due? && plan.user.may_have_daily_brief?
 
       brief = DailyBrief.for(plan.user, pause_if_unseen: true)

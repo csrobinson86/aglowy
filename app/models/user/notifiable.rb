@@ -64,7 +64,8 @@ module User::Notifiable
   end
 
   # The only way notifications are made (Trap 1). The dedupe key makes a job that runs twice, or a second share, find the
-  # first one instead of making another, and only a new one is delivered and counted.
+  # first one instead of making another, and only a new one is delivered and counted. Both wait for it to commit, so a
+  # caller's transaction that rolls back leaves no open page counting it.
   def notify(kind:, household:, subject:, dedupe_key:, actor: nil, data: {})
     notification = notifications.create_or_find_by!(dedupe_key:) do |new_one|
       new_one.assign_attributes(kind:, household:, subject:, actor:, data:)
@@ -72,7 +73,7 @@ module User::Notifiable
 
     if notification.previously_new_record?
       notification.deliver_later
-      broadcast_unread_notifications_count
+      ActiveRecord.after_all_transactions_commit { broadcast_unread_notifications_count }
     end
 
     notification

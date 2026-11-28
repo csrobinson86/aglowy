@@ -13,6 +13,17 @@ class Ai::PurgeExpiredChatsJobTest < ActiveJob::TestCase
     assert_equal 1, recent.messages.count
   end
 
+  test "one that raises is reported and the next is still deleted" do
+    first, second = [ chat_created(9.days.ago), chat_created(8.days.ago) ].sort_by(&:id)
+    # A row with no cascade still pointing at the first chat: deleting it fails.
+    personal_studies(:head_suffering).update_column(:chat_id, first.id)
+
+    assert_error_reported(ActiveRecord::InvalidForeignKey) { Ai::PurgeExpiredChatsJob.perform_now }
+
+    assert Chat.exists?(first.id)
+    assert_not Chat.exists?(second.id)
+  end
+
   test "a draft goes when its chat is purged" do
     draft = travel_to(8.days.ago) { family_study_draft(status: "drafted") }
 

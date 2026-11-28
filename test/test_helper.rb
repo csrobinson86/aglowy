@@ -58,6 +58,14 @@ module ActiveSupport
       %(<action-text-attachment url="https://example.com/cat.png" content-type="image/png"></action-text-attachment>)
     end
 
+    # A recurring job's record that fails: queuing the delivery of any of +household+'s notifications raises, straight
+    # after the notification is made, and the rest queue as usual.
+    def failing_delivery_for(household, &)
+      perform_later = Notification::DeliveryJob.method(:perform_later)
+      fail_for_household = ->(notification) { notification.household == household ? raise("delivery failed") : perform_later.call(notification) }
+      Notification::DeliveryJob.stub(:perform_later, fail_for_household, &)
+    end
+
     # A family study draft with its own chat, as FamilyStudy::Draft.start leaves one, without asking the AI.
     def family_study_draft(household: households(:home), user: users(:head), **attributes)
       chat = Chat.create!(user: user, household: household, purpose: "family_study_draft")
